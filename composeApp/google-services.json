@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "797836104119",
+    "project_id": "tsiptv-76d8f",
+    "storage_bucket": "tsiptv-76d8f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:797836104119:android:5023f41eb2a7c1519fd832",
+        "android_client_info": {
+          "package_name": "tss.t.tsiptv"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAEJBTw6S-LkMJC0jqWgROuzxQpiinCkSI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
