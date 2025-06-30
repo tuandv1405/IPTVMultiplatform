@@ -165,4 +165,28 @@ class M3UParserTest {
         // Assert
         assertEquals(IPTVFormat.M3U, format)
     }
+
+    @Test
+    fun testParseM3UContentWithEPGUrl() {
+        // Arrange
+        val content = """
+            #EXTM3U url-tvg="http://lichphatsong.xyz/schedule/epg.xml.gz"
+            #EXTINF:-1 tvg-id="channel1" tvg-name="Channel 1" tvg-logo="http://example.com/logo1.png" group-title="Group 1",Channel 1
+            http://example.com/stream1.m3u8
+            #EXTINF:-1 tvg-id="channel2" tvg-name="Channel 2" tvg-logo="http://example.com/logo2.png" group-title="Group 2",Channel 2
+            http://example.com/stream2.m3u8
+        """.trimIndent()
+
+        val parser = M3UParser()
+
+        // Act
+        val playlist = parser.parse(content)
+
+        // Assert
+        assertEquals(2, playlist.channels.size)
+        assertEquals("http://lichphatsong.xyz/schedule/epg.xml.gz", playlist.epgUrl)
+
+        // Verify that the playlist doesn't contain any programs
+        assertTrue(playlist.programs.isEmpty())
+    }
 }

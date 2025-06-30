@@ -117,3 +117,48 @@ data class ChannelAttributeEntity(
     val attrKey: String,
     val attrValue: String
 )
+
+/**
+ * Room entity for a program in a program schedule.
+ *
+ * @property id The unique ID of the program
+ * @property channelId The ID of the channel the program belongs to
+ * @property title The title of the program
+ * @property description The description of the program
+ * @property startTime The start time of the program (in milliseconds since epoch)
+ * @property endTime The end time of the program (in milliseconds since epoch)
+ * @property category The category of the program
+ * @property playlistId The ID of the playlist the program belongs to
+ */
+@Entity(
+    tableName = "programs",
+    foreignKeys = [
+        ForeignKey(
+            entity = ChannelEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["channelId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = PlaylistEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["playlistId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index("channelId"),
+        Index("playlistId")
+    ]
+)
+data class ProgramEntity(
+    @PrimaryKey
+    val id: String,
+    val channelId: String,
+    val title: String,
+    val description: String?,
+    val startTime: Long,
+    val endTime: Long,
+    val category: String?,
+    val playlistId: String
+)

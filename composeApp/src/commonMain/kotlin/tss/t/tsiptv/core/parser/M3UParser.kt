@@ -13,9 +13,20 @@ class M3UParser : IPTVParser {
         val channels = mutableListOf<IPTVChannel>()
         val groups = mutableSetOf<IPTVGroup>()
         var playlistName = "IPTV Playlist"
+        var epgUrl: String? = null
 
         var currentExtInf: String? = null
         var currentAttributes = mutableMapOf<String, String>()
+        var currentChannelId: String? = null
+
+        // Extract EPG URL from the header line
+        val headerLine = lines.firstOrNull { it.trim().startsWith("#EXTM3U") }
+        if (headerLine != null) {
+            val urlTvgMatch = "url-tvg=\"([^\"]+)\"".toRegex().find(headerLine)
+            if (urlTvgMatch != null && urlTvgMatch.groupValues.size > 1) {
+                epgUrl = urlTvgMatch.groupValues[1]
+            }
+        }
 
         for (line in lines) {
             val trimmedLine = line.trim()
@@ -37,6 +48,9 @@ class M3UParser : IPTVParser {
                 val groupTitle = currentAttributes["group-title"]
                 val epgId = currentAttributes["tvg-id"]
                 val id = epgId ?: name.replace(" ", "_").lowercase()
+
+                // Store the current channel ID for program association
+                currentChannelId = id
 
                 val channel = IPTVChannel(
                     id = id,
@@ -63,7 +77,8 @@ class M3UParser : IPTVParser {
         return IPTVPlaylist(
             name = playlistName,
             channels = channels,
-            groups = groups.toList()
+            groups = groups.toList(),
+            epgUrl = epgUrl
         )
     }
 
@@ -113,4 +128,5 @@ class M3UParser : IPTVParser {
         }
         return null
     }
+
 }

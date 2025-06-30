@@ -29,11 +29,12 @@ room = "2.7.2"
 firebase-bom = "33.15.0"
 exoplayer = "2.19.1"
 media3 = "1.7.1"
-koin = "3.5.3"
+koin = "4.1.0"
 serialization = "1.8.1"
 multiplatform-settings = "1.1.1"
 androidx-preference = "1.2.1"
 sqlite = "2.5.2"
+uiDesktop = "1.7.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -49,6 +50,14 @@ androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:life
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidx-navigation" }
 kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
+androidx-compose-animation = { module = "androidx.compose.animation:animation", version = "+" }
+androidx-compose-material-iconsExtended = { module = "androidx.compose.material:material-icons-extended", version = "+" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version = "+" }
+androidx-compose-material3-adaptive = { module = "androidx.compose.material3.adaptive:adaptive", version = "+" }
+androidx-compose-material3-adaptive-layout = { module = "androidx.compose.material3.adaptive:adaptive-layout", version = "+" }
+androidx-compose-material3-adaptive-navigation = { module = "androidx.compose.material3.adaptive:adaptive-navigation" }
+androidx-compose-material3-adaptive-navigationSuite = { module = "androidx.compose.material3:material3-adaptive-navigation-suite" }
+androidx-compose-materialWindow = { module = "androidx.compose.material3:material3-window-size-class" }
 
 # Networking
 ktor-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
@@ -96,6 +105,7 @@ media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
+koin-compose-jb = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 
 # Serialization
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
@@ -112,6 +122,7 @@ multiplatform-settings-coroutines = { module = "com.russhwolf:multiplatform-sett
 # Android Preferences
 androidx-preference = { module = "androidx.preference:preference-ktx", version.ref = "androidx-preference" }
 sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
+androidx-ui-desktop = { group = "androidx.compose.ui", name = "ui-desktop", version.ref = "uiDesktop" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

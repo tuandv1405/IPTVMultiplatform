@@ -2,7 +2,6 @@ package tss.t.tsiptv.core.player
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -10,7 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
  * Interface for a media player.
  * This is a platform-independent interface that will have platform-specific implementations.
  */
-interface MediaPlayer {
+interface IMediaPlayer {
     /**
      * The current state of the player.
      */
@@ -191,7 +190,7 @@ class MediaPlayerException(val code: String, override val message: String) : Exc
  * A simple implementation of MediaPlayer that doesn't actually play media.
  * This implementation provides a basic structure that can be extended by platform-specific implementations.
  */
-class SimpleMediaPlayer : MediaPlayer {
+class SimpleIMediaPlayer : IMediaPlayer {
     private val _playerState = MutableStateFlow(PlayerState.IDLE)
     override val playerState: StateFlow<PlayerState> = _playerState
 
@@ -324,3 +323,5 @@ class SimpleMediaPlayer : MediaPlayer {
         // For now, we'll just do nothing
     }
 }
+
+expect fun createMediaPlayer(): IMediaPlayer

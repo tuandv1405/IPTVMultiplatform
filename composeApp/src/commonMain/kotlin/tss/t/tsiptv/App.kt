@@ -1,64 +1,93 @@
 package tss.t.tsiptv
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import tss.t.tsiptv.core.database.createDatabaseFactory
-import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.network.NetworkClientFactory
-import tss.t.tsiptv.navigation.Screen
-import tss.t.tsiptv.navigation.rememberNavigationController
+import tss.t.tsiptv.navigation.NavHost
+import tss.t.tsiptv.navigation.NavRoutes
+import tss.t.tsiptv.navigation.rememberNavController
 import tss.t.tsiptv.ui.AddIPTVScreen
 import tss.t.tsiptv.ui.HomeScreen
-
-import tsiptv.composeapp.generated.resources.Res
-import tsiptv.composeapp.generated.resources.compose_multiplatform
+import tss.t.tsiptv.ui.screens.login.LoginScreen
+import tss.t.tsiptv.ui.PlayerScreen
+import tss.t.tsiptv.ui.screens.login.LoginScreenDesktop
+import tss.t.tsiptv.ui.themes.StreamVaultTheme
+import tss.t.tsiptv.utils.PlatformUtils
 
 @Composable
 @Preview
 fun App() {
-    // Create database and network client instances
     val networkClient = remember { NetworkClientFactory.create().getNetworkClient() }
     val database = remember { createDatabaseFactory(networkClient).createDatabase() }
 
-    // Create a navigation controller
-    val navigationController = rememberNavigationController()
+    var selectedChannelId by remember { mutableStateOf("") }
+    var selectedChannelName by remember { mutableStateOf("") }
+    var selectedChannelUrl by remember { mutableStateOf("") }
 
-    MaterialTheme {
-        // Use the current screen from the navigation controller to determine what to display
-        when (val currentScreen = navigationController.currentScreen) {
-            is Screen.Home -> {
-                HomeScreen(
-                    onNavigateToAddIPTV = {
-                        navigationController.navigateTo(Screen.AddIPTV)
+    val navController = rememberNavController()
+
+    StreamVaultTheme {
+        Scaffold(
+            modifier = Modifier.fillMaxSize()
+        ) { paddingValues ->
+            NavHost(
+                navController = navController,
+                startDestination = NavRoutes.LOGIN,
+                modifier = Modifier.padding(paddingValues)
+            ) {
+                composable(NavRoutes.LOGIN) {
+                    val isDesktop = remember(PlatformUtils.platform) {
+                        PlatformUtils.platform.isDesktop
                     }
-                )
-            }
-            is Screen.AddIPTV -> {
-                AddIPTVScreen(
-                    database = database,
-                    networkClient = networkClient,
-                    onSuccess = {
-                        // Navigate back to home screen on success
-                        navigationController.navigateBack()
-                        // You could add a success message here
-                    },
-                    onCancel = {
-                        // Navigate back to home screen on cancel
-                        navigationController.navigateBack()
+                    if (isDesktop) {
+                        LoginScreenDesktop()
+                    } else {
+                        LoginScreen()
                     }
-                )
+                }
+                composable(NavRoutes.HOME) {
+                    HomeScreen(
+                        onNavigateToAddIPTV = {
+                            navController.navigate(NavRoutes.ADD_IPTV)
+                        },
+                        onChannelClick = { channel ->
+                            // Store the selected channel information
+                            selectedChannelId = channel.id.toString()
+                            selectedChannelName = channel.name
+                            selectedChannelUrl = channel.url
+                            // Navigate to the player screen
+                            navController.navigate(NavRoutes.PLAYER)
+                        },
+                        database = database
+                    )
+                }
+                composable(NavRoutes.ADD_IPTV) {
+                    AddIPTVScreen(
+                        database = database,
+                        networkClient = networkClient,
+                        onSuccess = {
+                            navController.navigateBack()
+                        },
+                        onCancel = {
+                            navController.navigateBack()
+                        }
+                    )
+                }
+                composable(NavRoutes.PLAYER) {
+                    PlayerScreen(
+                        channelId = selectedChannelId,
+                        channelName = selectedChannelName,
+                        channelUrl = selectedChannelUrl,
+                        onBack = {
+                            navController.navigateBack()
+                        }
+                    )
+                }
             }
         }
     }

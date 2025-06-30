@@ -70,12 +70,18 @@ kotlin {
             implementation(libs.androidx.preference)
 
             // Room is now used for database access
+
+            // Add Koin for Android and Compose
+            implementation(libs.koin.android)
+            implementation(libs.koin.compose)
         }
 
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
+            implementation(compose.animation)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
@@ -101,6 +107,10 @@ kotlin {
 
             // Add Kotlinx DateTime for multiplatform date/time operations
             implementation(libs.kotlinx.datetime)
+
+            // Add Koin for dependency injection
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose.jb)
         }
 
         commonTest.dependencies {
@@ -130,7 +140,9 @@ kotlin {
             // Add Desktop-specific Ktor dependencies
             implementation(libs.ktor.cio)
 
-            // Add Room for Desktop
+            implementation("uk.co.caprica:vlcj:5.0.0-M4")
+            implementation("uk.co.caprica:vlcj-natives:5.0.0-M4")
+
         }
     }
 }

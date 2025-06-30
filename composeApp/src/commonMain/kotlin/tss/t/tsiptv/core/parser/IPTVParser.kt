@@ -38,11 +38,15 @@ enum class IPTVFormat {
  * @property name The name of the playlist
  * @property channels The channels in the playlist
  * @property groups The channel groups in the playlist
+ * @property programs The program schedules in the playlist
+ * @property epgUrl The URL of the EPG (Electronic Program Guide) for this playlist
  */
 data class IPTVPlaylist(
     val name: String,
     val channels: List<IPTVChannel>,
-    val groups: List<IPTVGroup>
+    val groups: List<IPTVGroup>,
+    val programs: List<IPTVProgram> = emptyList(),
+    val epgUrl: String? = null
 )
 
 /**
@@ -75,6 +79,29 @@ data class IPTVChannel(
 data class IPTVGroup(
     val id: String,
     val title: String
+)
+
+/**
+ * Data class representing a program in an IPTV program schedule.
+ *
+ * @property id The unique ID of the program
+ * @property channelId The ID of the channel the program belongs to
+ * @property title The title of the program
+ * @property description The description of the program
+ * @property startTime The start time of the program (in milliseconds since epoch)
+ * @property endTime The end time of the program (in milliseconds since epoch)
+ * @property category The category of the program
+ * @property attributes Additional attributes of the program
+ */
+data class IPTVProgram(
+    val id: String,
+    val channelId: String,
+    val title: String,
+    val description: String? = null,
+    val startTime: Long,
+    val endTime: Long,
+    val category: String? = null,
+    val attributes: Map<String, String> = emptyMap()
 )
 
 /**
@@ -111,7 +138,6 @@ object IPTVParserFactory {
      * @return The detected format
      */
     fun detectFormat(content: String): IPTVFormat {
-        println("$content")
         return when {
             content.trimStart().startsWith("#EXTM3U") -> IPTVFormat.M3U
             content.trimStart().startsWith("<?xml") || content.trimStart().startsWith("<tv") -> IPTVFormat.XML
