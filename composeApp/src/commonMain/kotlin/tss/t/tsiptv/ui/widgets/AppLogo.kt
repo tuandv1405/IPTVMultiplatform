@@ -54,7 +54,7 @@ fun AppLogoCircle() {
                 spotColor = TSColors.GradientGreen
             )
             .clip(LogoShape)
-            .background(gradient),
+            .background(TSColors.baseGradient),
         contentAlignment = Alignment.Center
     ) {
         Icon(

@@ -74,6 +74,14 @@ kotlin {
             // Add Koin for Android and Compose
             implementation(libs.koin.android)
             implementation(libs.koin.compose)
+
+            // Add Firebase dependencies for Android
+            implementation(project.dependencies.platform(libs.firebase.bom))
+            implementation(libs.firebase.analytics)
+            implementation(libs.firebase.auth)
+            implementation(libs.firebase.firestore)
+            implementation(libs.firebase.storage)
+            implementation(libs.firebase.crashlytics)
         }
 
         commonMain.dependencies {

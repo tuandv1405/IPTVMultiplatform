@@ -4,14 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,8 +21,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.Icon
 import tss.t.tsiptv.ui.widgets.GradientButton
-import tss.t.tsiptv.ui.widgets.SocialLoginButton
-import tss.t.tsiptv.ui.widgets.SyncDataButton
+import tss.t.tsiptv.ui.widgets.GradientButtonLight
+import tss.t.tsiptv.ui.widgets.SocialLoginButtonAccentBlue
+import tss.t.tsiptv.ui.widgets.SyncDataButtonAccentBlue
 
 // --- The Main Login Screen Composable ---
 @Composable
@@ -100,7 +97,7 @@ fun LoginScreenDesktop() {
             Spacer(Modifier.height(24.dp))
 
             // Sign In Button
-            GradientButton(
+            GradientButtonLight(
                 text = "Sign In",
                 onClick = { /* TODO: Handle sign in logic */ },
                 modifier = Modifier.fillMaxWidth().height(50.dp)
@@ -118,12 +115,12 @@ fun LoginScreenDesktop() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
             ) {
-                SocialLoginButton(
+                SocialLoginButtonAccentBlue(
                     text = "G",
                     onClick = { /* TODO: Google Login */ },
                     modifier = Modifier.weight(1f)
                 )
-                SocialLoginButton(
+                SocialLoginButtonAccentBlue(
                     text = "",
                     onClick = { /* TODO: Apple Login */ },
                     modifier = Modifier.weight(1f)
@@ -133,7 +130,7 @@ fun LoginScreenDesktop() {
             Spacer(Modifier.height(16.dp))
 
             // Sync Data Button
-            SyncDataButton(
+            SyncDataButtonAccentBlue(
                 onClick = { /* TODO: Handle Sync Data */ },
                 modifier = Modifier.fillMaxWidth().height(40.dp)
             )

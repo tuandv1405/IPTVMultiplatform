@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -21,14 +22,40 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import tss.t.tsiptv.ui.themes.TSColors
 
 class Buttons {
 }
 
 @Composable
-fun GradientButton(
+fun GradientButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val gradient = Brush.horizontalGradient(
+        listOf(
+            TSColors.GradientBlue,
+            TSColors.GradientGreen
+        )
+    )
+    Box(
+        modifier = modifier
+            .background(gradient, shape = RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = Color.White,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun GradientButtonLight(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -46,7 +73,7 @@ fun GradientButton(
 }
 
 @Composable
-fun SocialLoginButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun SocialLoginButtonAccentBlue(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Button(
         onClick = onClick,
         modifier = modifier.height(40.dp),
@@ -58,7 +85,28 @@ fun SocialLoginButton(text: String, onClick: () -> Unit, modifier: Modifier = Mo
 }
 
 @Composable
-fun SyncDataButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun SocialLoginButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(50.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = TSColors.ButtonBackground)
+    ) {
+        Text(
+            text = text,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            color = when (text) { // Simple color logic for demo
+                "G" -> Color(0xFFDB4437)
+                else -> Color.White
+            }
+        )
+    }
+}
+
+@Composable
+fun SyncDataButtonAccentBlue(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Button(
         onClick = onClick,
         modifier = modifier,
@@ -73,5 +121,29 @@ fun SyncDataButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
         )
         Spacer(Modifier.width(8.dp))
         Text("Sync Data", color = Color(0xFF4DD0E1))
+    }
+}
+
+
+@Composable
+fun SyncDataButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = TSColors.ButtonBackground)
+    ) {
+        Icon(
+            imageVector = Icons.Default.CloudDownload, // Icon matches the new image
+            contentDescription = "Sync Data",
+            tint = TSColors.GradientGreen,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = "Sync Data",
+            color = Color.White,
+            fontSize = 16.sp
+        )
     }
 }

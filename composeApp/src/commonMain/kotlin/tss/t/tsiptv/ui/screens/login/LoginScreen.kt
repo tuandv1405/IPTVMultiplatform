@@ -2,32 +2,27 @@ package tss.t.tsiptv.ui.screens.login
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import tss.t.tsiptv.Platform
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.widgets.AppLogo
+import tss.t.tsiptv.ui.widgets.AppTextField
 import tss.t.tsiptv.ui.widgets.BackgroundBox
+import tss.t.tsiptv.ui.widgets.GradientButton
+import tss.t.tsiptv.ui.widgets.SocialLoginButton
+import tss.t.tsiptv.ui.widgets.SyncDataButton
+import tss.t.tsiptv.ui.widgets.SyncDataButtonAccentBlue
 
 /**
  * Login screen for the application.
@@ -142,105 +137,5 @@ fun LoginScreen() {
                 )
             }
         }
-    }
-}
-
-@Composable
-fun AppTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    isPassword: Boolean = false,
-    keyboardType: KeyboardType = KeyboardType.Text,
-) {
-    TextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text(label, color = TSColors.TextGray) },
-        shape = RoundedCornerShape(12.dp),
-        singleLine = true,
-        visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        colors = TextFieldDefaults.colors(
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            focusedContainerColor = TSColors.ButtonBackground,
-            unfocusedContainerColor = TSColors.ButtonBackground,
-            cursorColor = TSColors.GradientGreen,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-            focusedLabelColor = TSColors.TextGray,
-            unfocusedLabelColor = TSColors.TextGray
-        )
-    )
-}
-
-@Composable
-fun GradientButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val gradient = Brush.horizontalGradient(
-        listOf(
-            TSColors.GradientBlue,
-            TSColors.GradientGreen
-        )
-    )
-    Box(
-        modifier = modifier
-            .background(gradient, shape = RoundedCornerShape(12.dp))
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = Color.White,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-fun SocialLoginButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Button(
-        onClick = onClick,
-        modifier = modifier.height(50.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = TSColors.ButtonBackground)
-    ) {
-        Text(
-            text = text,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            color = when (text) { // Simple color logic for demo
-                "G" -> Color(0xFFDB4437)
-                else -> Color.White
-            }
-        )
-    }
-}
-
-@Composable
-fun SyncDataButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Button(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = TSColors.ButtonBackground)
-    ) {
-        Icon(
-            imageVector = Icons.Default.CloudDownload, // Icon matches the new image
-            contentDescription = "Sync Data",
-            tint = TSColors.GradientGreen,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text = "Sync Data",
-            color = Color.White,
-            fontSize = 16.sp
-        )
     }
 }
