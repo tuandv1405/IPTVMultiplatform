@@ -3,8 +3,10 @@ package tss.t.tsiptv.ui.widgets
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,12 +28,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import tss.t.tsiptv.ui.themes.TSColors
+import tss.t.tsiptv.ui.themes.TSShapes
 
 class Buttons {
 }
 
 @Composable
-fun GradientButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun GradientButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    paddingValues: PaddingValues = PaddingValues(0.dp),
+) {
     val gradient = Brush.horizontalGradient(
         listOf(
             TSColors.GradientBlue,
@@ -40,8 +48,8 @@ fun GradientButton(text: String, onClick: () -> Unit, modifier: Modifier = Modif
     )
     Box(
         modifier = modifier
-            .background(gradient, shape = RoundedCornerShape(12.dp))
-            .clip(RoundedCornerShape(12.dp))
+            .background(gradient, RoundedCornerShape(12.dp))
+            .padding(paddingValues)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -63,8 +71,7 @@ fun GradientButtonLight(
 ) {
     Box(
         modifier = modifier
-            .background(gradient, shape = RoundedCornerShape(8.dp))
-            .clip(RoundedCornerShape(8.dp))
+            .background(brush = gradient, shape = TSShapes.roundedShape8)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -77,7 +84,7 @@ fun SocialLoginButtonAccentBlue(text: String, onClick: () -> Unit, modifier: Mod
     Button(
         onClick = onClick,
         modifier = modifier.height(40.dp),
-        shape = RoundedCornerShape(8.dp),
+        shape = TSShapes.roundedShape8,
         colors = ButtonDefaults.buttonColors(contentColor = Color(0xFF2D3238))
     ) {
         Text(text, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -110,7 +117,7 @@ fun SyncDataButtonAccentBlue(onClick: () -> Unit, modifier: Modifier = Modifier)
     Button(
         onClick = onClick,
         modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
+        shape = TSShapes.roundedShape8,
         colors = ButtonDefaults.buttonColors(contentColor = Color(0xFF2D3238))
     ) {
         Icon(

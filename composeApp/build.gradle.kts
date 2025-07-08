@@ -15,17 +15,6 @@ plugins {
     alias(libs.plugins.room) // For Room
 }
 
-// Using version catalog for dependencies
-
-// Exclude Android-specific dependencies from iOS targets
-//configurations {
-//    all {
-//        if (name.contains("ios", ignoreCase = true)) {
-//            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-android")
-//        }
-//    }
-//}
-
 kotlin {
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
@@ -58,7 +47,6 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
-            implementation(libs.androidx.navigation.compose)
 
             // Add Android-specific Ktor dependencies with Cronet and OkHttp
             implementation(libs.ktor.android)
@@ -82,6 +70,9 @@ kotlin {
             implementation(libs.firebase.firestore)
             implementation(libs.firebase.storage)
             implementation(libs.firebase.crashlytics)
+            // Add Firebase App Check dependencies
+            implementation("com.google.firebase:firebase-appcheck-playintegrity")
+            implementation("com.google.firebase:firebase-appcheck-debug")
         }
 
         commonMain.dependencies {
@@ -94,7 +85,9 @@ kotlin {
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
+            implementation(libs.androidx.lifecycle.viewmodel.compose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.navigation.common.compose)
 
             // Add common Ktor dependencies
             implementation(libs.ktor.core)
@@ -119,6 +112,12 @@ kotlin {
             // Add Koin for dependency injection
             implementation(libs.koin.core)
             implementation(libs.koin.compose.jb)
+
+            implementation(libs.coil.compose)
+            implementation(libs.haze.blur)
+
+            implementation("dev.gitlive:firebase-common:+")
+            implementation("dev.gitlive:firebase-auth:+")
         }
 
         commonTest.dependencies {

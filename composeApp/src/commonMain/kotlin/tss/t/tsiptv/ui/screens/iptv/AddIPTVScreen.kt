@@ -1,4 +1,4 @@
-package tss.t.tsiptv.ui
+package tss.t.tsiptv.ui.screens.iptv
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -10,6 +10,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import org.koin.compose.koinInject
+import tss.t.tsiptv.core.database.Category
+import tss.t.tsiptv.core.database.Channel
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.database.Playlist
 import tss.t.tsiptv.core.network.NetworkClient
@@ -28,10 +31,10 @@ private fun randomUUID(): String {
 
 @Composable
 fun AddIPTVScreen(
-    database: IPTVDatabase,
-    networkClient: NetworkClient,
-    onSuccess: () -> Unit,
-    onCancel: () -> Unit
+    database: IPTVDatabase = koinInject<IPTVDatabase>(),
+    networkClient: NetworkClient = koinInject<NetworkClient>(),
+    onSuccess: () -> Unit = {},
+    onCancel: () -> Unit = {},
 ) {
     var url by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
@@ -127,7 +130,7 @@ fun AddIPTVScreen(
 
                             // Save categories
                             val categories = playlist.groups.map { group ->
-                                tss.t.tsiptv.core.database.Category(
+                                Category(
                                     id = group.id,
                                     name = group.title,
                                     playlistId = playlistId
@@ -137,7 +140,7 @@ fun AddIPTVScreen(
 
                             // Save channels
                             val channels = playlist.channels.map { channel ->
-                                tss.t.tsiptv.core.database.Channel(
+                                Channel(
                                     id = channel.id,
                                     name = channel.name,
                                     url = channel.url,

@@ -1,5 +1,6 @@
 import SwiftUI
 import Firebase
+import GoogleSignIn
 
 @main
 struct iOSApp: App {
@@ -11,5 +12,11 @@ struct iOSApp: App {
         WindowGroup {
             ContentView()
         }
+    }
+    
+    func application(_ app: UIApplication,
+                     open url: URL,
+                     options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+      return GIDSignIn.sharedInstance.handle(url)
     }
 }

@@ -3,7 +3,7 @@ package tss.t.tsiptv.di
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import tss.t.tsiptv.core.firebase.DesktopFirebaseInitializer
-import tss.t.tsiptv.core.firebase.FirebaseAuth
+import tss.t.tsiptv.core.firebase.IFirebaseAuth
 import tss.t.tsiptv.core.firebase.FirebaseFirestore
 import tss.t.tsiptv.core.firebase.FirebaseStorage
 import tss.t.tsiptv.core.player.IMediaPlayer
@@ -17,7 +17,7 @@ val desktopModule = module {
     single<IMediaPlayer> { SimpleIMediaPlayer() }
 
     // Firebase dependencies
-    single<FirebaseAuth> { DesktopFirebaseInitializer.provideFirebaseAuth() }
+    single<IFirebaseAuth> { DesktopFirebaseInitializer.provideFirebaseAuth() }
     single<FirebaseFirestore> { DesktopFirebaseInitializer.provideFirebaseFirestore() }
     single<FirebaseStorage> { DesktopFirebaseInitializer.provideFirebaseStorage() }
 }

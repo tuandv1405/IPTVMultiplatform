@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TSIPTV</string>
+
+    <!-- Login Screen -->
+    <string name="login">Login</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="email_invalid">Invalid Email</string>
+
+    <!-- Common -->
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="error">Error</string>
+    <string name="error_occurred">An error occurred</string>
+    <string name="success">Success</string>
+    <string name="loading">Loading...</string>
+    <string name="or_continue_with">Or continue with</string>
+
+    <!-- Settings -->
+    <string name="language_settings">Language Settings</string>
+
+    <string name="profile_title">Profile</string>
+    <string name="logout_button_title">Logout</string>
+</resources>

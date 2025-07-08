@@ -11,11 +11,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import tss.t.tsiptv.ui.themes.TSColors
+import tss.t.tsiptv.utils.customShadow
+import tss.t.tsiptv.utils.innerShadow
 
 val LogoShape = RoundedCornerShape(24.dp)
 
@@ -24,13 +24,22 @@ fun AppLogo() {
     Box(
         modifier = Modifier
             .size(100.dp)
-            .shadow(
-                elevation = 20.dp,
-                shape = LogoShape,
-                spotColor = TSColors.GradientGreen
+            .customShadow(
+                blurRadius = 20.dp,
+                offsetX = 3.dp,
+                offsetY = 3.dp,
+                borderRadius = 20.dp,
+                color = TSColors.GradientGreen
             )
-            .clip(LogoShape)
-            .background(TSColors.baseGradient),
+            .background(TSColors.baseGradient, LogoShape)
+            .innerShadow(
+                color = TSColors.GradientBlue.copy(alpha = 0.6f),
+                blur = 10.dp,
+                spread = 2.dp,
+                offsetX = 2.dp,
+                offsetY = 2.dp,
+                shape = LogoShape
+            ),
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -44,17 +53,25 @@ fun AppLogo() {
 
 
 @Composable
-fun AppLogoCircle() {
+fun AppLogoCircle(modifier: Modifier = Modifier) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(100.dp)
-            .shadow(
-                elevation = 20.dp,
-                shape = CircleShape,
-                spotColor = TSColors.GradientGreen
+            .customShadow(
+                blurRadius = 20.dp,
+                offsetX = 3.dp,
+                offsetY = 3.dp,
+                color = TSColors.GradientGreen
             )
-            .clip(LogoShape)
-            .background(TSColors.baseGradient),
+            .background(TSColors.baseGradient, LogoShape)
+            .innerShadow(
+                color = TSColors.GradientGreen.copy(alpha = 0.7f),
+                blur = 8.dp,
+                spread = 1.dp,
+                offsetX = -2.dp,
+                offsetY = -2.dp,
+                shape = CircleShape
+            ),
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -65,4 +82,3 @@ fun AppLogoCircle() {
         )
     }
 }
-

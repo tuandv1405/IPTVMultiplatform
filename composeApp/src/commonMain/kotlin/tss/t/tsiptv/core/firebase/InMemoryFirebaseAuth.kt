@@ -1,107 +1,17 @@
 package tss.t.tsiptv.core.firebase
 
+import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
+
 
 /**
- * Interface for Firebase Authentication.
- * This is a platform-independent interface that will have platform-specific implementations.
- */
-interface FirebaseAuth {
-    /**
-     * The current user, or null if not signed in.
-     */
-    val currentUser: Flow<FirebaseUser?>
-
-    /**
-     * Signs in with email and password.
-     *
-     * @param email The user's email
-     * @param password The user's password
-     * @return The signed-in user
-     * @throws FirebaseAuthException if sign-in fails
-     */
-    suspend fun signInWithEmailAndPassword(email: String, password: String): FirebaseUser
-
-    /**
-     * Creates a new user with email and password.
-     *
-     * @param email The user's email
-     * @param password The user's password
-     * @return The newly created user
-     * @throws FirebaseAuthException if user creation fails
-     */
-    suspend fun createUserWithEmailAndPassword(email: String, password: String): FirebaseUser
-
-    /**
-     * Signs out the current user.
-     */
-    suspend fun signOut()
-
-    /**
-     * Sends a password reset email.
-     *
-     * @param email The email to send the password reset to
-     * @throws FirebaseAuthException if sending the email fails
-     */
-    suspend fun sendPasswordResetEmail(email: String)
-
-    /**
-     * Updates the current user's email.
-     *
-     * @param email The new email
-     * @throws FirebaseAuthException if updating the email fails
-     */
-    suspend fun updateEmail(email: String)
-
-    /**
-     * Updates the current user's password.
-     *
-     * @param password The new password
-     * @throws FirebaseAuthException if updating the password fails
-     */
-    suspend fun updatePassword(password: String)
-
-    /**
-     * Deletes the current user.
-     *
-     * @throws FirebaseAuthException if deleting the user fails
-     */
-    suspend fun deleteUser()
-}
-
-/**
- * Data class representing a Firebase user.
- *
- * @property uid The user's unique ID
- * @property email The user's email, or null if not available
- * @property displayName The user's display name, or null if not available
- * @property photoUrl The URL of the user's profile photo, or null if not available
- * @property isEmailVerified Whether the user's email is verified
- */
-data class FirebaseUser(
-    val uid: String,
-    val email: String?,
-    val displayName: String?,
-    val photoUrl: String?,
-    val isEmailVerified: Boolean
-)
-
-/**
- * Exception thrown when a Firebase Authentication operation fails.
- *
- * @property code The error code
- * @property message The error message
- */
-class FirebaseAuthException(val code: String, override val message: String) : Exception(message)
-
-/**
- * A simple in-memory implementation of FirebaseAuth.
+ * A simple in-memory implementation of IFirebaseAuth.
  * This implementation doesn't actually interact with Firebase, but provides a basic structure
  * that can be extended by platform-specific implementations.
  */
-class InMemoryFirebaseAuth : FirebaseAuth {
+@VisibleForTesting
+class InMemoryFirebaseAuth : IFirebaseAuth {
     private val _currentUser = MutableStateFlow<FirebaseUser?>(null)
     override val currentUser: Flow<FirebaseUser?> = _currentUser
 
@@ -120,7 +30,22 @@ class InMemoryFirebaseAuth : FirebaseAuth {
         return user
     }
 
-    override suspend fun createUserWithEmailAndPassword(email: String, password: String): FirebaseUser {
+    override suspend fun signInWithGoogle(idToken: String): FirebaseUser {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun signInWithFacebook(accessToken: String): FirebaseUser {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun signInWithApple(idToken: String): FirebaseUser {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun createUserWithEmailAndPassword(
+        email: String,
+        password: String,
+    ): FirebaseUser {
         if (users.values.any { it.email == email }) {
             throw FirebaseAuthException("auth/email-already-in-use", "Email already in use")
         }

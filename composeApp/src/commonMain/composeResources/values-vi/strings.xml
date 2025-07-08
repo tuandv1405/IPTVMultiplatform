@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TSIPTV</string>
+
+    <!-- Login Screen -->
+    <string name="login">Đăng nhập</string>
+    <string name="email">Email</string>
+    <string name="password">Mật khẩu</string>
+    <string name="forgot_password">Quên mật khẩu?</string>
+    <string name="sign_up">Đăng ký</string>
+    <string name="email_invalid">Email không hợp lệ</string>
+
+    <!-- Common -->
+    <string name="ok">OK</string>
+    <string name="cancel">Hủy</string>
+    <string name="error">Lỗi</string>
+    <string name="error_occurred">Đã xảy ra lỗi</string>
+    <string name="success">Thành công</string>
+    <string name="loading">Đang tải...</string>
+    <string name="or_continue_with">Hoặc tiếp tục với</string>
+
+    <!-- Settings -->
+    <string name="language_settings">Cài đặt ngôn ngữ</string>
+</resources>
