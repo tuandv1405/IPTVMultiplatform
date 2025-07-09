@@ -72,6 +72,10 @@ fun App() {
             navController.navigateAndRemoveFromBackStack(NavRoutes.HOME) {
                 launchSingleTop = true
             }
+        } else if (authState.isNetworkAvailable) {
+            navController.navigateAndRemoveFromBackStack(NavRoutes.LOGIN) {
+                launchSingleTop = true
+            }
         }
     }
 

@@ -1,10 +1,14 @@
 package tss.t.tsiptv.ui.widgets
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,21 +20,43 @@ import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
+import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.ic_logout
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 
-class Buttons {
+object TSButtonDefaults {
+    val negativeGradient by lazy {
+        Brush.horizontalGradient(
+            listOf(
+                Color(0xFFEF4444),
+                Color(0xFFDC2626)
+            )
+        )
+    }
+
+    val positiveGradient by lazy {
+        Brush.horizontalGradient(
+            listOf(
+                Color(0xFF22C55E),
+                Color(0xFF3B82F6)
+            )
+        )
+    }
 }
 
 @Composable
@@ -152,5 +178,86 @@ fun SyncDataButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
             color = Color.White,
             fontSize = 16.sp
         )
+    }
+}
+
+@Composable
+fun PositiveButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: Shape = TSShapes.roundedShape12,
+) {
+    Box(
+        modifier = modifier
+            .background(
+                brush = TSButtonDefaults.negativeGradient,
+                shape = shape
+            )
+            .defaultMinSize(minHeight = 52.dp)
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.align(Alignment.Center)
+                .padding(vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Image(
+                painter = painterResource(Res.drawable.ic_logout),
+                contentDescription = text,
+                modifier = Modifier.size(16.dp)
+            )
+
+            Text(
+                text = text,
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.W600,
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+    }
+}
+
+@Composable
+fun NegativeButton(
+    text: String,
+    icon: DrawableResource? = null,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: Shape = TSShapes.roundedShape12,
+) {
+    Box(
+        modifier = modifier
+            .background(
+                brush = TSButtonDefaults.negativeGradient,
+                shape = shape
+            )
+            .defaultMinSize(minHeight = 52.dp)
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.align(Alignment.Center)
+                .padding(vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            icon?.let {
+                Image(
+                    painter = painterResource(it),
+                    contentDescription = "Download",
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+
+            Text(
+                text = text,
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.W600,
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
     }
 }

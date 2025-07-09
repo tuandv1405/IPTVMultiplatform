@@ -341,7 +341,7 @@ fun LoginScreenDesktop() {
 
             Spacer(Modifier.height(16.dp))
 
-            // Social Login Buttons
+            // Social Login TSButtonDefaults
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)

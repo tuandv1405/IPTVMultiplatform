@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -23,6 +24,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import dev.chrisbanes.haze.HazeState
 import org.koin.compose.koinInject
+import tss.t.tsiptv.core.permission.Permission
+import tss.t.tsiptv.core.permission.PermissionCheckerFactory
+import tss.t.tsiptv.core.permission.PermissionExample
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.ui.screens.iptv.AddIPTVScreen
@@ -68,9 +72,12 @@ fun HomeNavHost(
         }
 
         composable(route = NavRoutes.HomeScreens.SETTINGS) {
-            SettingsScreen(
-                onNavigateToLanguageSettings = {
-
+            PermissionExample(
+                permissionChecker = remember {
+                    PermissionCheckerFactory.create()
+                },
+                permission = remember {
+                    Permission.CAMERA
                 }
             )
         }

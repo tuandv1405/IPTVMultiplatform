@@ -23,5 +23,12 @@
     <string name="language_settings">Language Settings</string>
 
     <string name="profile_title">Profile</string>
-    <string name="logout_button_title">Logout</string>
+    <string name="logout_button_title">Log Out</string>
+
+    <string name="account_group_title">Account Settings</string>
+    <string name="preferences_group_title">Preferences</string>
+    <string name="profile_edit_title">Edit Profile</string>
+    <string name="profile_change_password_title">Change Password</string>
+    <string name="profile_subscription_title">Subscription Info</string>
+    <string name="profile_notification_title">Notifications</string>
 </resources>

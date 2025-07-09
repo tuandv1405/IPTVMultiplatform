@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import tss.t.tsiptv.core.firebase.FirebaseUser
+import tss.t.tsiptv.core.network.NetworkConnectivityChecker
+import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
 import tss.t.tsiptv.feature.auth.domain.model.AuthResult
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
@@ -21,6 +23,7 @@ import tss.t.tsiptv.ui.screens.login.models.LoginEvents
  */
 class AuthViewModel(
     private val authRepository: AuthRepository,
+    private val networkConnectivityChecker: NetworkConnectivityChecker = NetworkConnectivityCheckerFactory.create()
 ) : ViewModel() {
     private val viewModelScope = CoroutineScope(Dispatchers.Main)
 
@@ -33,6 +36,7 @@ class AuthViewModel(
     private var password: String = ""
 
     init {
+        // Observe auth state
         viewModelScope.launch {
             authRepository.authState.collect { authState ->
                 _uiState.update { currentState ->
@@ -52,6 +56,17 @@ class AuthViewModel(
                             ?: "Anonymous"
                     )
                 }
+            }
+        }
+
+        // Observe network status
+        viewModelScope.launch {
+            // Set initial network status
+            _uiState.update { it.copy(isNetworkAvailable = networkConnectivityChecker.isNetworkAvailable()) }
+
+            // Observe network status changes
+            networkConnectivityChecker.observeNetworkStatus().collect { isAvailable ->
+                _uiState.update { it.copy(isNetworkAvailable = isAvailable) }
             }
         }
 
@@ -131,6 +146,17 @@ class AuthViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
+            // Check network connectivity
+            if (!networkConnectivityChecker.isNetworkAvailable()) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "No internet connection. Please check your network settings and try again."
+                    )
+                }
+                return@launch
+            }
+
             val result = authRepository.signInWithEmailAndPassword(email, password)
 
             when (result) {
@@ -166,6 +192,17 @@ class AuthViewModel(
     private fun createUserWithEmailAndPassword() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
+
+            // Check network connectivity
+            if (!networkConnectivityChecker.isNetworkAvailable()) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "No internet connection. Please check your network settings and try again."
+                    )
+                }
+                return@launch
+            }
 
             val result = authRepository.createUserWithEmailAndPassword(email, password)
 
@@ -203,6 +240,17 @@ class AuthViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
+            // Check network connectivity
+            if (!networkConnectivityChecker.isNetworkAvailable()) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "No internet connection. Please check your network settings and try again."
+                    )
+                }
+                return@launch
+            }
+
             val result = authRepository.signInWithGoogle()
 
             when (result) {
@@ -238,6 +286,17 @@ class AuthViewModel(
     private fun signInWithApple() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
+
+            // Check network connectivity
+            if (!networkConnectivityChecker.isNetworkAvailable()) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "No internet connection. Please check your network settings and try again."
+                    )
+                }
+                return@launch
+            }
 
             val result = authRepository.signInWithApple()
 
@@ -275,6 +334,17 @@ class AuthViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
+            // Check network connectivity
+            if (!networkConnectivityChecker.isNetworkAvailable()) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "No internet connection. Please check your network settings and try again."
+                    )
+                }
+                return@launch
+            }
+
             val result = authRepository.signOut()
 
             when (result) {
@@ -309,6 +379,16 @@ class AuthViewModel(
      */
     private fun refreshToken() {
         viewModelScope.launch {
+            // Check network connectivity
+            if (!networkConnectivityChecker.isNetworkAvailable()) {
+                _uiState.update {
+                    it.copy(
+                        error = "No internet connection. Please check your network settings and try again."
+                    )
+                }
+                return@launch
+            }
+
             val result = authRepository.refreshTokenIfNeeded()
 
             if (result is AuthResult.Error) {
@@ -334,4 +414,5 @@ data class AuthUiState(
     val isEmailValid: Boolean = true,
     val isEmailEmpty: Boolean = false,
     val isPasswordValid: Boolean = true,
+    val isNetworkAvailable: Boolean = true,
 )

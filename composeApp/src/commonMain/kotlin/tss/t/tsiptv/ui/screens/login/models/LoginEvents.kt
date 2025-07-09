@@ -1,6 +1,7 @@
 package tss.t.tsiptv.ui.screens.login.models
 
 import androidx.compose.runtime.Immutable
+import tss.t.tsiptv.ui.screens.ProfileScreenActions
 
 @Immutable
 sealed interface LoginEvents {
@@ -33,4 +34,6 @@ sealed interface LoginEvents {
     object OnLogoutPressed : LoginEvents
 
     object OnDismissErrorDialog : LoginEvents
+
+    data class OnProfileActionEvent(val action: ProfileScreenActions) : LoginEvents
 }

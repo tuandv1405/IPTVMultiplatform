@@ -10,6 +10,7 @@ object TSColors {
     val GradientGreen = Color(0xFF10B981)
 
     val TextGray = Color(0xFF8E8E93)
+    val TextSecondary = Color(0xFF9CA3AF)
 
     val ButtonBackground = Color(0xFF2C2C2E)
     val ButtonBackgroundBlue = Color(0xFF2D3238)

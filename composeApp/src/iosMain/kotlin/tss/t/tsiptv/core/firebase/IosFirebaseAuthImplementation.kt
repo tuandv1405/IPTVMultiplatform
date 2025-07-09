@@ -105,7 +105,10 @@ class IosFirebaseAuthImplementation : IFirebaseAuth {
                     continuation.resume(firebaseUser)
                 } else {
                     continuation.resumeWithException(
-                        FirebaseAuthException("auth/unknown", "Unknown error signing in with Google")
+                        FirebaseAuthException(
+                            "auth/unknown",
+                            "Unknown error signing in with Google"
+                        )
                     )
                 }
             }
@@ -207,6 +210,41 @@ class IosFirebaseAuthImplementation : IFirebaseAuth {
 
         // For now, we'll use the InMemoryFirebaseAuth implementation
         InMemoryFirebaseAuth().updateEmail(email)
+    }
+
+    override suspend fun updateDisplayName(displayName: String) {
+        val currentUser = FIRAuth.auth().currentUser() ?: throw FirebaseAuthException(
+            "auth/no-current-user",
+            "No current user"
+        )
+        return suspendCancellableCoroutine { continuation ->
+            currentUser.setDisplayName(displayName)
+            FIRAuth.auth()
+                .updateCurrentUser(currentUser) { error ->
+                    if (error == null) {
+                        currentUser.reloadWithCompletion {
+                            if (it != null) {
+                                val nsError = it
+                                continuation.resumeWithException(
+                                    FirebaseAuthException(
+                                        it.domain ?: "auth/unknown",
+                                        nsError.localizedDescription
+                                    )
+                                )
+                            } else {
+                                continuation.resumeWith(Result.success(Unit))
+                            }
+                        }
+                    } else {
+                        continuation.resumeWithException(
+                            FirebaseAuthException(
+                                error.domain ?: "auth/unknown",
+                                error.localizedDescription
+                            )
+                        )
+                    }
+                }
+        }
     }
 
     override suspend fun updatePassword(password: String) {

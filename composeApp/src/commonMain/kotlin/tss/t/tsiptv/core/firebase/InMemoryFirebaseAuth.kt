@@ -91,6 +91,14 @@ class InMemoryFirebaseAuth : IFirebaseAuth {
         _currentUser.value = updatedUser
     }
 
+    override suspend fun updateDisplayName(displayName: String) {
+        val user = _currentUser.value
+            ?: throw FirebaseAuthException("auth/no-current-user", "No current user")
+        val updatedUser = user.copy(displayName = displayName)
+        users[user.uid] = updatedUser
+        _currentUser.value = updatedUser
+    }
+
     override suspend fun updatePassword(password: String) {
         val user = _currentUser.value
             ?: throw FirebaseAuthException("auth/no-current-user", "No current user")
