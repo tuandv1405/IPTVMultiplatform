@@ -1,7 +1,5 @@
 package tss.t.tsiptv.navigation
 
-import kotlinx.serialization.Serializable
-
 /**
  * Navigation routes for the app.
  */
@@ -16,6 +14,8 @@ object NavRoutes {
     const val IMPORT_IPTV = "import_iptv"
     const val SIGN_UP = "sign_up"
     const val LANGUAGE_SETTINGS = "language_settings"
+
+    const val WEBVIEW = "web_view"
 
     // Home screen bottom navigation routes
     object HomeScreens {

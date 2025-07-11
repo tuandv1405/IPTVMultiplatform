@@ -414,5 +414,5 @@ data class AuthUiState(
     val isEmailValid: Boolean = true,
     val isEmailEmpty: Boolean = false,
     val isPasswordValid: Boolean = true,
-    val isNetworkAvailable: Boolean = true,
+    val isNetworkAvailable: Boolean = false,
 )

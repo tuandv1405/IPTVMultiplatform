@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.utils.customShadow
@@ -53,12 +54,17 @@ fun AppLogo() {
 
 
 @Composable
-fun AppLogoCircle(modifier: Modifier = Modifier) {
+fun AppLogoCircle(
+    modifier: Modifier = Modifier,
+    size: Dp = 100.dp,
+    iconSize: Dp = 50.dp,
+    blurRadius: Dp = 20.dp,
+) {
     Box(
         modifier = modifier
-            .size(100.dp)
+            .size(size)
             .customShadow(
-                blurRadius = 20.dp,
+                blurRadius = blurRadius,
                 offsetX = 3.dp,
                 offsetY = 3.dp,
                 color = TSColors.GradientGreen
@@ -68,8 +74,8 @@ fun AppLogoCircle(modifier: Modifier = Modifier) {
                 color = TSColors.GradientGreen.copy(alpha = 0.7f),
                 blur = 8.dp,
                 spread = 1.dp,
-                offsetX = -2.dp,
-                offsetY = -2.dp,
+                offsetX = (-2).dp,
+                offsetY = (-2).dp,
                 shape = CircleShape
             ),
         contentAlignment = Alignment.Center
@@ -78,7 +84,7 @@ fun AppLogoCircle(modifier: Modifier = Modifier) {
             imageVector = Icons.Default.Tv,
             contentDescription = "App Logo",
             tint = Color.White,
-            modifier = Modifier.size(50.dp)
+            modifier = Modifier.size(iconSize)
         )
     }
 }

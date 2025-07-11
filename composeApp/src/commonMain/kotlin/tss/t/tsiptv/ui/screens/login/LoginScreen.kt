@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -49,6 +48,7 @@ import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.app_name
 import tsiptv.composeapp.generated.resources.email
 import tsiptv.composeapp.generated.resources.email_invalid
+import tsiptv.composeapp.generated.resources.forgot_password
 import tsiptv.composeapp.generated.resources.ic_apple
 import tsiptv.composeapp.generated.resources.ic_google
 import tsiptv.composeapp.generated.resources.ic_monitor
@@ -57,21 +57,13 @@ import tsiptv.composeapp.generated.resources.or_continue_with
 import tsiptv.composeapp.generated.resources.password
 import tsiptv.composeapp.generated.resources.sign_up
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
+import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
+import tss.t.tsiptv.ui.widgets.GradientButton1
+import tss.t.tsiptv.ui.widgets.GradientButton2
 import tss.t.tsiptv.ui.widgets.SocialButton
 import tss.t.tsiptv.utils.PlatformUtils
 import tss.t.tsiptv.utils.customShadow
-
-val DarkBlue900 = Color(0xFF0C0D2C)
-val DeepBlue = Color(0xFF03041D)
-val CardBackground = Color(0xFF161A32)
-val TextFieldBackground = Color(0xFF0D0F24)
-
-val AccentGreen = Color(0xFF00F5A0)
-val AccentCyan = Color(0xFF00D9E9)
-
-val TextPrimary = Color.White
-val TextSecondary = Color(0xFF9E9E9E)
 
 @OptIn(ExperimentalResourceApi::class, InternalResourceApi::class)
 @Composable
@@ -84,8 +76,8 @@ fun LoginScreenPhone(
 
     val accentGradient = Brush.horizontalGradient(
         colors = listOf(
-            AccentGreen,
-            AccentCyan
+            TSColors.AccentGreen,
+            TSColors.AccentCyan
         ),
         startX = 0f,
         endX = Float.POSITIVE_INFINITY
@@ -113,8 +105,8 @@ fun LoginScreenPhone(
                 Brush.horizontalGradient(
                     colors = listOf(
                         Color(0xFF0A0A0A),
-                        DeepBlue,
-                        DarkBlue900
+                        TSColors.DeepBlue,
+                        TSColors.backgroundGradientColor1
                     ),
                     startX = 0f,
                     endX = Float.POSITIVE_INFINITY
@@ -133,7 +125,7 @@ fun LoginScreenPhone(
                     color = Color(0xFF00F5FF).copy(alpha = 0.3f)
                 )
                 .clip(TSShapes.roundedShape16)
-                .background(CardBackground, TSShapes.roundedShape16)
+                .background(TSColors.SecondaryBackgroundColor, TSShapes.roundedShape16)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -156,7 +148,7 @@ fun LoginScreenPhone(
             Text(
                 text = stringResource(Res.string.app_name),
                 style = MaterialTheme.typography.titleMedium,
-                color = TextSecondary
+                color = TSColors.TextSecondary
             )
 
             // Email Field
@@ -166,7 +158,7 @@ fun LoginScreenPhone(
             ) {
                 Text(
                     stringResource(Res.string.email),
-                    color = TextSecondary,
+                    color = TSColors.TextSecondary,
                     style = MaterialTheme.typography.labelMedium
                 )
                 Spacer(Modifier.height(4.dp))
@@ -179,15 +171,15 @@ fun LoginScreenPhone(
                     singleLine = true,
                     isError = !authState.isEmailValid,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = TextFieldBackground,
-                        unfocusedContainerColor = TextFieldBackground,
-                        disabledContainerColor = TextFieldBackground,
-                        cursorColor = AccentCyan,
+                        focusedContainerColor = TSColors.TextFieldBackground,
+                        unfocusedContainerColor = TSColors.TextFieldBackground,
+                        disabledContainerColor = TSColors.TextFieldBackground,
+                        cursorColor = TSColors.AccentCyan,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         errorIndicatorColor = Color.Transparent
                     ),
-                    textStyle = TextStyle(color = TextPrimary),
+                    textStyle = TextStyle(color = TSColors.TextPrimary),
                     supportingText = if (!authState.isEmailValid) {
                         @Composable {
                             Text(
@@ -203,7 +195,7 @@ fun LoginScreenPhone(
             Column(horizontalAlignment = Alignment.Start, modifier = Modifier.fillMaxWidth()) {
                 Text(
                     stringResource(Res.string.password),
-                    color = TextSecondary,
+                    color = TSColors.TextSecondary,
                     style = MaterialTheme.typography.labelMedium
                 )
                 Spacer(Modifier.height(4.dp))
@@ -216,51 +208,26 @@ fun LoginScreenPhone(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = TextFieldBackground,
-                        unfocusedContainerColor = TextFieldBackground,
-                        disabledContainerColor = TextFieldBackground,
-                        cursorColor = AccentCyan,
+                        focusedContainerColor = TSColors.TextFieldBackground,
+                        unfocusedContainerColor = TSColors.TextFieldBackground,
+                        disabledContainerColor = TSColors.TextFieldBackground,
+                        cursorColor = TSColors.AccentCyan,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
-                    textStyle = TextStyle(color = TextPrimary)
+                    textStyle = TextStyle(color = TSColors.TextPrimary)
                 )
             }
 
-            // Sign In Button
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .clickable(onClick = {
-                        onEvent(LoginEvents.OnSignInPressed)
-                    })
-                    .background(accentGradient, TSShapes.roundedShape8),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    stringResource(Res.string.login),
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
+            GradientButton1(
+                text = stringResource(Res.string.login),
+                onClick = { onEvent(LoginEvents.OnSignInPressed) },
+            )
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .clickable(onClick = {
-                        onEvent(LoginEvents.OnSignUpPressed)
-                    })
-                    .background(accentGradient, TSShapes.roundedShape8),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    stringResource(Res.string.sign_up),
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
+            GradientButton2(
+                text = stringResource(Res.string.sign_up),
+                onClick = { onEvent(LoginEvents.OnSignUpPressed) },
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -269,17 +236,17 @@ fun LoginScreenPhone(
             ) {
                 HorizontalDivider(
                     modifier = Modifier.weight(1f),
-                    color = TextSecondary.copy(alpha = 0.3f)
+                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
                 )
                 Text(
                     stringResource(Res.string.or_continue_with),
-                    color = TextSecondary,
+                    color = TSColors.TextSecondary,
                     fontSize = 12.sp,
                     textAlign = TextAlign.Center
                 )
                 HorizontalDivider(
                     modifier = Modifier.weight(1f),
-                    color = TextSecondary.copy(alpha = 0.3f)
+                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
                 )
             }
 

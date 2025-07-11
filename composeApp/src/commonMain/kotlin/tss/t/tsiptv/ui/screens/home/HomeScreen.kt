@@ -7,7 +7,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,10 +16,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,8 +29,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,27 +38,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
-import org.jetbrains.compose.resources.painterResource
 import tsiptv.composeapp.generated.resources.Res
-import tsiptv.composeapp.generated.resources.background
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.ui.screens.home.models.BottomNavItem
+import tss.t.tsiptv.ui.screens.login.AuthUiState
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
+import tss.t.tsiptv.ui.widgets.HeaderWithAvatar
 import tss.t.tsiptv.utils.customShadow
 
 internal val defNavItems = listOf(
@@ -92,7 +86,11 @@ internal val defNavItems = listOf(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(hazeState: HazeState) {
+fun HomeScreen(
+    hazeState: HazeState,
+    parentNavController: NavHostController,
+    authState: AuthUiState,
+) {
     // Create a nav controller for the bottom navigation
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -131,38 +129,25 @@ fun HomeScreen(hazeState: HazeState) {
                     )).togetherWith(fadeOut(animationSpec = tween(90)))
                 },
             ) {
-                when (selectedItemIndex) {
-                    0 -> TopAppBar(
-                        title = { Text("TSIPTV") },
-                        navigationIcon = {
-                            IconButton(onClick = { /* Open drawer */ }) {
-                                Icon(Icons.Default.Menu, contentDescription = "Menu")
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent,
-                            scrolledContainerColor = Color.Transparent,
-                            titleContentColor = Color.Transparent,
-                            navigationIconContentColor = Color.Transparent,
-                            actionIconContentColor = Color.Transparent
-                        ),
-                        modifier = Modifier
-                            .hazeEffect(
-                                state = hazeState,
-                                style = remember {
-                                    HazeDefaults.style(
-                                        backgroundColor = Color.Transparent,
-                                        tint = HazeTint(
-                                            color = TSColors.SecondaryBackgroundColor.copy(alpha = 0.1f)
-                                        ),
-                                    )
-                                }
-                            )
-                    )
+                HeaderWithAvatar(
+                    modifier = Modifier
+                        .background(TSColors.BackgroundColor)
+                        .hazeEffect(hazeState)
+                        .statusBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    helloTitle = "Hello${authState.user?.displayName?.let { " $it" } ?: ""}",
+                    name = authState.user?.email ?: "",
+                    notificationCount = 10,
+                    onSettingClick = {
+                        parentNavController.navigate(NavRoutes.LANGUAGE_SETTINGS)
+                    },
+                    onNotificationClick = {
 
-                    3 -> {
+                    },
+                    onAvatarClick = {
+                        navController.navigate(NavRoutes.HomeScreens.PROFILE)
                     }
-                }
+                )
             }
         },
         bottomBar = {
@@ -177,9 +162,11 @@ fun HomeScreen(hazeState: HazeState) {
         )
         HomeNavHost(
             navController = navController,
+            parentNavController = parentNavController,
             modifier = Modifier
                 .fillMaxSize(),
-            hazeState = hazeState
+            hazeState = hazeState,
+            paddingValues = paddingValues
         )
     }
 
@@ -205,7 +192,7 @@ fun HomeScreen(hazeState: HazeState) {
                     state = hazeState,
                     style = remember {
                         HazeDefaults.style(
-                            backgroundColor = Color.Transparent,
+                            backgroundColor = TSColors.SecondaryBackgroundColor,
                             tint = HazeTint(
                                 color = TSColors.SecondaryBackgroundColor.copy(alpha = 0.1f)
                             ),

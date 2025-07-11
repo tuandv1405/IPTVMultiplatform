@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -36,24 +38,33 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.ic_logout
+import tss.t.tsiptv.ui.screens.addiptv.GlowBlue
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
+import tss.t.tsiptv.utils.customShadow
 
 object TSButtonDefaults {
-    val negativeGradient by lazy {
-        Brush.horizontalGradient(
-            listOf(
-                Color(0xFFEF4444),
-                Color(0xFFDC2626)
-            )
-        )
-    }
 
     val positiveGradient by lazy {
         Brush.horizontalGradient(
             listOf(
                 Color(0xFF22C55E),
-                Color(0xFF3B82F6)
+                TSColors.GradientBlue
+            )
+        )
+    }
+    val defaultShadow = Color(0xFF22C55E).copy(alpha = 0.3f)
+    val defaultGradientButton2 = TSColors.baseGradient
+    val defaultShadowGradientButton2 = Color(0xFF3B82F6).copy(alpha = 0.3f)
+
+    val mainGlowButtonColor = Color(0xFF2563EB)
+    val shadowGlowButtonColor = TSColors.GradientBlue
+
+    val negativeGradient by lazy {
+        Brush.horizontalGradient(
+            listOf(
+                Color(0xFFEF4444),
+                Color(0xFFDC2626)
             )
         )
     }
@@ -102,6 +113,122 @@ fun GradientButtonLight(
         contentAlignment = Alignment.Center
     ) {
         Text(text, color = Color.White, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun GradientButton1(
+    text: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    CommonButton(
+        text = text,
+        onClick = onClick,
+        modifier = modifier,
+        gradient = TSButtonDefaults.positiveGradient,
+        shadowColor = TSButtonDefaults.defaultShadow
+    )
+}
+
+@Composable
+fun GradientButton2(
+    text: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    CommonButton(
+        text = text,
+        onClick = onClick,
+        modifier = modifier,
+        gradient = TSButtonDefaults.defaultGradientButton2,
+        shadowColor = TSButtonDefaults.defaultShadowGradientButton2
+    )
+}
+
+@Composable
+fun GlowingButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    mainColor: Color = TSButtonDefaults.mainGlowButtonColor,
+    glowColor: Color = TSButtonDefaults.shadowGlowButtonColor,
+) {
+    CommonButton(
+        text = text,
+        onClick = onClick,
+        modifier = modifier,
+        gradient = Brush.horizontalGradient(listOf(mainColor, glowColor)),
+        shadowColor = glowColor.copy(alpha = 0.5f)
+    )
+}
+
+@Composable
+fun CommonButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    gradient: Brush = Brush.horizontalGradient(
+        listOf(
+            Color(0xFF00BFA5),
+            Color(0xFF4DD0E1)
+        )
+    ),
+    shadowColor: Color = Color(0xFF22C55E)
+        .copy(alpha = 0.3f),
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .customShadow(
+                color = shadowColor,
+                blurRadius = 10.dp,
+                offsetY = 2.dp,
+                borderRadius = 12.dp
+            )
+            .clip(TSShapes.roundedShape8)
+            .background(brush = gradient, shape = TSShapes.roundedShape8)
+            .padding(vertical = 14.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = Color.White,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp
+        )
+    }
+}
+
+@Composable
+fun ColoredButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = Color(0xFF2563EB),
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .customShadow(
+                color = color.copy(0.1f),
+                blurRadius = 10.dp,
+                offsetY = 2.dp,
+                borderRadius = 12.dp
+            )
+            .clip(TSShapes.roundedShape8)
+            .background(color = color, shape = TSShapes.roundedShape8)
+            .padding(vertical = 14.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = Color.White,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp
+        )
     }
 }
 
@@ -186,38 +313,12 @@ fun PositiveButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: Shape = TSShapes.roundedShape12,
 ) {
-    Box(
-        modifier = modifier
-            .background(
-                brush = TSButtonDefaults.negativeGradient,
-                shape = shape
-            )
-            .defaultMinSize(minHeight = 52.dp)
-            .clickable(onClick = onClick)
-    ) {
-        Row(
-            modifier = Modifier.align(Alignment.Center)
-                .padding(vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Image(
-                painter = painterResource(Res.drawable.ic_logout),
-                contentDescription = text,
-                modifier = Modifier.size(16.dp)
-            )
-
-            Text(
-                text = text,
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.W600,
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-    }
+    GradientButton1(
+        text = text,
+        modifier = modifier,
+        onClick = onClick,
+    )
 }
 
 @Composable

@@ -31,4 +31,10 @@
     <string name="profile_change_password_title">Change Password</string>
     <string name="profile_subscription_title">Subscription Info</string>
     <string name="profile_notification_title">Notifications</string>
+
+    <string name="empty_iptv_source_title">No IPTV Source Connected</string>
+    <string name="btn_add_iptv_source_title">Add IPTV</string>
+    <string name="iptv_help_title">Need help finding a source?</string>
+    <string name="what_is_iptv_title">What is an IPTV Source?</string>
+    <string name="what_is_iptv_desc">An IPTV source is a playlist file (.m3u or .m3u8) with supported format is XML or JSON that contains links to live TV channels. You can get these from your IPTV provider.</string>
 </resources>

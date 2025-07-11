@@ -47,6 +47,7 @@ import tss.t.tsiptv.ui.screens.login.SignUpScreen
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.screens.settings.LanguageSettingsScreen
 import tss.t.tsiptv.ui.screens.splash.SplashScreen
+import tss.t.tsiptv.ui.screens.webview.WebViewInApp
 import tss.t.tsiptv.ui.themes.StreamVaultTheme
 import tss.t.tsiptv.utils.PlatformUtils
 
@@ -68,11 +69,7 @@ fun App() {
     val authState by authViewModel.uiState.collectAsState()
 
     LaunchedEffect(authState.isAuthenticated) {
-        if (authState.isAuthenticated) {
-            navController.navigateAndRemoveFromBackStack(NavRoutes.HOME) {
-                launchSingleTop = true
-            }
-        } else if (authState.isNetworkAvailable) {
+        if (!authState.isAuthenticated && authState.isNetworkAvailable) {
             navController.navigateAndRemoveFromBackStack(NavRoutes.LOGIN) {
                 launchSingleTop = true
             }
@@ -191,12 +188,19 @@ fun App() {
                     }
 
                     composable(NavRoutes.SPLASH) {
-                        SplashScreen()
+                        SplashScreen(
+                            navController = navController,
+                            authState = authState,
+                        )
                     }
 
                     composable(NavRoutes.HOME) {
                         val hazeState = rememberHazeState()
-                        HomeScreen(hazeState = hazeState)
+                        HomeScreen(
+                            hazeState = hazeState,
+                            parentNavController = navController,
+                            authState = authState,
+                        )
                     }
 
                     composable(NavRoutes.ADD_IPTV) {
@@ -213,9 +217,9 @@ fun App() {
                     }
                     composable(NavRoutes.PLAYER) {
                         PlayerScreen(
-                            channelId = "",
-                            channelName = "",
-                            channelUrl = "",
+                            channelId = "sample_video",
+                            channelName = "Sample Video",
+                            channelUrl = "https://videos.pexels.com/video-files/1409899/1409899-uhd_2560_1440_25fps.mp4",
                             onBack = {
                                 navController.popBackStack()
                             }
@@ -231,6 +235,10 @@ fun App() {
                                 navController.popBackStack()
                             }
                         )
+                    }
+
+                    composable(NavRoutes.WEBVIEW) {
+                        WebViewInApp()
                     }
                 }
             )

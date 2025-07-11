@@ -57,6 +57,7 @@ import tsiptv.composeapp.generated.resources.ic_google
 import tsiptv.composeapp.generated.resources.ic_monitor
 import tsiptv.composeapp.generated.resources.ic_sync
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
+import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.widgets.GradientButtonLight
 import tss.t.tsiptv.ui.widgets.SocialButton
@@ -73,8 +74,8 @@ fun LoginScreenDesktop2(onEvent: (LoginEvents) -> Unit = {}) {
 
     val accentGradient = Brush.horizontalGradient(
         colors = listOf(
-            AccentGreen,
-            AccentCyan
+            TSColors.AccentGreen,
+            TSColors.AccentCyan
         ),
         startX = 0f,
         endX = Float.POSITIVE_INFINITY
@@ -89,7 +90,7 @@ fun LoginScreenDesktop2(onEvent: (LoginEvents) -> Unit = {}) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(DeepBlue, DarkBlue900))),
+            .background(TSColors.loginBrush),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -104,7 +105,7 @@ fun LoginScreenDesktop2(onEvent: (LoginEvents) -> Unit = {}) {
                     color = Color(0xFF00F5FF).copy(alpha = 0.3f)
                 )
                 .clip(TSShapes.roundedShape16)
-                .background(CardBackground, TSShapes.roundedShape16)
+                .background(TSColors.SecondaryBackgroundColor, TSShapes.roundedShape16)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -126,12 +127,12 @@ fun LoginScreenDesktop2(onEvent: (LoginEvents) -> Unit = {}) {
             Text(
                 text = "Welcome back",
                 style = MaterialTheme.typography.titleMedium,
-                color = TextSecondary
+                color = TSColors.TextSecondary
             )
 
             // Email Field
             Column(horizontalAlignment = Alignment.Start, modifier = Modifier.fillMaxWidth()) {
-                Text("Email", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
+                Text("Email", color = TSColors.TextSecondary, style = MaterialTheme.typography.labelMedium)
                 Spacer(Modifier.height(4.dp))
                 TextField(
                     value = email,
@@ -141,14 +142,14 @@ fun LoginScreenDesktop2(onEvent: (LoginEvents) -> Unit = {}) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = TextFieldBackground,
-                        unfocusedContainerColor = TextFieldBackground,
-                        disabledContainerColor = TextFieldBackground,
-                        cursorColor = AccentCyan,
+                        focusedContainerColor = TSColors.TextFieldBackground,
+                        unfocusedContainerColor = TSColors.TextFieldBackground,
+                        disabledContainerColor = TSColors.TextFieldBackground,
+                        cursorColor = TSColors.AccentCyan,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
-                    textStyle = TextStyle(color = TextPrimary)
+                    textStyle = TextStyle(color = TSColors.TextPrimary)
                 )
             }
 
@@ -157,7 +158,7 @@ fun LoginScreenDesktop2(onEvent: (LoginEvents) -> Unit = {}) {
             Column(horizontalAlignment = Alignment.Start, modifier = Modifier.fillMaxWidth()) {
                 Text(
                     "Password",
-                    color = TextSecondary,
+                    color = TSColors.TextSecondary,
                     style = MaterialTheme.typography.labelMedium
                 )
                 Spacer(Modifier.height(4.dp))
@@ -170,14 +171,14 @@ fun LoginScreenDesktop2(onEvent: (LoginEvents) -> Unit = {}) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = TextFieldBackground,
-                        unfocusedContainerColor = TextFieldBackground,
-                        disabledContainerColor = TextFieldBackground,
-                        cursorColor = AccentCyan,
+                        focusedContainerColor = TSColors.TextFieldBackground,
+                        unfocusedContainerColor = TSColors.TextFieldBackground,
+                        disabledContainerColor = TSColors.TextFieldBackground,
+                        cursorColor = TSColors.AccentCyan,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
-                    textStyle = TextStyle(color = TextPrimary)
+                    textStyle = TextStyle(color = TSColors.TextPrimary)
                 )
             }
 
@@ -202,17 +203,17 @@ fun LoginScreenDesktop2(onEvent: (LoginEvents) -> Unit = {}) {
             ) {
                 HorizontalDivider(
                     modifier = Modifier.weight(1f),
-                    color = TextSecondary.copy(alpha = 0.3f)
+                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
                 )
                 Text(
                     "Or continue with",
-                    color = TextSecondary,
+                    color = TSColors.TextSecondary,
                     fontSize = 12.sp,
                     textAlign = TextAlign.Center
                 )
                 HorizontalDivider(
                     modifier = Modifier.weight(1f),
-                    color = TextSecondary.copy(alpha = 0.3f)
+                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
                 )
             }
 
@@ -247,10 +248,10 @@ fun LoginScreenDesktop2(onEvent: (LoginEvents) -> Unit = {}) {
                 Image(
                     painter = painterResource(Res.drawable.ic_sync),
                     contentDescription = null,
-                    colorFilter = ColorFilter.tint(AccentGreen)
+                    colorFilter = ColorFilter.tint(TSColors.AccentGreen)
                 )
                 Spacer(Modifier.width(8.dp))
-                Text("Sync Data", color = AccentGreen)
+                Text("Sync Data", color = TSColors.AccentGreen)
             }
         }
     }

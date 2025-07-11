@@ -15,9 +15,7 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import tss.t.tsiptv.ui.screens.login.AccentCyan
-import tss.t.tsiptv.ui.screens.login.TextPrimary
-import tss.t.tsiptv.ui.screens.login.TextSecondary
+import tss.t.tsiptv.ui.themes.TSColors
 
 
 @OptIn(ExperimentalResourceApi::class)
@@ -32,9 +30,9 @@ fun SocialButton(
         onClick = onClick,
         modifier = modifier.height(50.dp),
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, TextSecondary.copy(alpha = 0.3f)),
+        border = BorderStroke(1.dp, TSColors.TextSecondary.copy(alpha = 0.3f)),
         colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = TextPrimary,
+            contentColor = TSColors.TextPrimary,
             containerColor = Color.Transparent
         )
     ) {
@@ -42,7 +40,7 @@ fun SocialButton(
             painter = painterResource(iconRes),
             contentDescription = contentDescription,
             modifier = Modifier.size(24.dp),
-            colorFilter = ColorFilter.tint(AccentCyan)
+            colorFilter = ColorFilter.tint(TSColors.AccentCyan)
         )
     }
 }

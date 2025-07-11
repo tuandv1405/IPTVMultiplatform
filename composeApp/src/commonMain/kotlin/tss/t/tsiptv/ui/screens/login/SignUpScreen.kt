@@ -46,7 +46,6 @@ import org.jetbrains.compose.resources.InternalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
-import tsiptv.composeapp.generated.resources.app_name
 import tsiptv.composeapp.generated.resources.email
 import tsiptv.composeapp.generated.resources.email_invalid
 import tsiptv.composeapp.generated.resources.ic_apple
@@ -56,6 +55,7 @@ import tsiptv.composeapp.generated.resources.or_continue_with
 import tsiptv.composeapp.generated.resources.password
 import tsiptv.composeapp.generated.resources.sign_up
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
+import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.widgets.SocialButton
 import tss.t.tsiptv.utils.PlatformUtils
 import tss.t.tsiptv.utils.customShadow
@@ -76,8 +76,8 @@ fun SignUpScreen(
 
     val accentGradient = Brush.horizontalGradient(
         colors = listOf(
-            AccentGreen,
-            AccentCyan
+            TSColors.AccentGreen,
+            TSColors.AccentCyan
         ),
         startX = 0f,
         endX = Float.POSITIVE_INFINITY
@@ -106,11 +106,7 @@ fun SignUpScreen(
             )
             .background(
                 Brush.horizontalGradient(
-                    colors = listOf(
-                        Color(0xFF0A0A0A),
-                        DeepBlue,
-                        DarkBlue900
-                    ),
+                    colors = TSColors.loginBackgroundGradientColors,
                     startX = 0f,
                     endX = Float.POSITIVE_INFINITY
                 )
@@ -128,7 +124,7 @@ fun SignUpScreen(
                     color = Color(0xFF00F5FF).copy(alpha = 0.3f)
                 )
                 .clip(RoundedCornerShape(10.dp))
-                .background(CardBackground, RoundedCornerShape(16.dp))
+                .background(TSColors.SecondaryBackgroundColor, RoundedCornerShape(16.dp))
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -151,7 +147,7 @@ fun SignUpScreen(
             Text(
                 text = stringResource(Res.string.sign_up),
                 style = MaterialTheme.typography.titleMedium,
-                color = TextSecondary
+                color = TSColors.TextSecondary
             )
 
             // Email Field
@@ -161,7 +157,7 @@ fun SignUpScreen(
             ) {
                 Text(
                     stringResource(Res.string.email),
-                    color = TextSecondary,
+                    color = TSColors.TextSecondary,
                     style = MaterialTheme.typography.labelMedium
                 )
                 Spacer(Modifier.height(4.dp))
@@ -174,15 +170,15 @@ fun SignUpScreen(
                     singleLine = true,
                     isError = !authState.isEmailValid,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = TextFieldBackground,
-                        unfocusedContainerColor = TextFieldBackground,
-                        disabledContainerColor = TextFieldBackground,
-                        cursorColor = AccentCyan,
+                        focusedContainerColor = TSColors.TextFieldBackground,
+                        unfocusedContainerColor = TSColors.TextFieldBackground,
+                        disabledContainerColor = TSColors.TextFieldBackground,
+                        cursorColor = TSColors.AccentCyan,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         errorIndicatorColor = Color.Transparent
                     ),
-                    textStyle = TextStyle(color = TextPrimary),
+                    textStyle = TextStyle(color = TSColors.TextPrimary),
                     supportingText = if (!authState.isEmailValid) {
                         @Composable {
                             Text(
@@ -198,7 +194,7 @@ fun SignUpScreen(
             Column(horizontalAlignment = Alignment.Start, modifier = Modifier.fillMaxWidth()) {
                 Text(
                     stringResource(Res.string.password),
-                    color = TextSecondary,
+                    color = TSColors.TextSecondary,
                     style = MaterialTheme.typography.labelMedium
                 )
                 Spacer(Modifier.height(4.dp))
@@ -211,14 +207,14 @@ fun SignUpScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = TextFieldBackground,
-                        unfocusedContainerColor = TextFieldBackground,
-                        disabledContainerColor = TextFieldBackground,
-                        cursorColor = AccentCyan,
+                        focusedContainerColor = TSColors.TextFieldBackground,
+                        unfocusedContainerColor = TSColors.TextFieldBackground,
+                        disabledContainerColor = TSColors.TextFieldBackground,
+                        cursorColor = TSColors.AccentCyan,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
-                    textStyle = TextStyle(color = TextPrimary)
+                    textStyle = TextStyle(color = TSColors.TextPrimary)
                 )
             }
 
@@ -226,7 +222,7 @@ fun SignUpScreen(
             Column(horizontalAlignment = Alignment.Start, modifier = Modifier.fillMaxWidth()) {
                 Text(
                     "Confirm Password",
-                    color = TextSecondary,
+                    color = TSColors.TextSecondary,
                     style = MaterialTheme.typography.labelMedium
                 )
                 Spacer(Modifier.height(4.dp))
@@ -240,15 +236,15 @@ fun SignUpScreen(
                     singleLine = true,
                     isError = !passwordsMatch,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = TextFieldBackground,
-                        unfocusedContainerColor = TextFieldBackground,
-                        disabledContainerColor = TextFieldBackground,
-                        cursorColor = AccentCyan,
+                        focusedContainerColor = TSColors.TextFieldBackground,
+                        unfocusedContainerColor = TSColors.TextFieldBackground,
+                        disabledContainerColor = TSColors.TextFieldBackground,
+                        cursorColor = TSColors.AccentCyan,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         errorIndicatorColor = Color.Transparent
                     ),
-                    textStyle = TextStyle(color = TextPrimary),
+                    textStyle = TextStyle(color = TSColors.TextPrimary),
                     supportingText = if (!passwordsMatch) {
                         @Composable {
                             Text(
@@ -301,7 +297,7 @@ fun SignUpScreen(
                 Text(
                     "Already have an account? Login",
                     fontWeight = FontWeight.Normal,
-                    color = TextSecondary
+                    color = TSColors.TextSecondary
                 )
             }
 
@@ -312,17 +308,17 @@ fun SignUpScreen(
             ) {
                 HorizontalDivider(
                     modifier = Modifier.weight(1f),
-                    color = TextSecondary.copy(alpha = 0.3f)
+                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
                 )
                 Text(
                     stringResource(Res.string.or_continue_with),
-                    color = TextSecondary,
+                    color = TSColors.TextSecondary,
                     fontSize = 12.sp,
                     textAlign = TextAlign.Center
                 )
                 HorizontalDivider(
                     modifier = Modifier.weight(1f),
-                    color = TextSecondary.copy(alpha = 0.3f)
+                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
                 )
             }
 

@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.sp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
+import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.utils.customShadow
 import tss.t.tsiptv.utils.blur
 
@@ -78,7 +79,6 @@ import tss.t.tsiptv.utils.blur
 val DarkNavy = Color(0xFF1A202C)
 val SlateGray = Color(0xFF2D3748)
 val LightSlate = Color(0xFF4A5568)
-val TextPrimary = Color.White
 val TextSecondary = Color(0xFFA0AEC0)
 
 // Accent Colors
@@ -176,9 +176,9 @@ private fun IPTVAppBar(modifier: Modifier = Modifier) {
         title = { Text("IPTV List Parser", fontWeight = FontWeight.Bold) },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = SlateGray.copy(alpha = 0.7f), // Make it slightly transparent for better blur effect
-            titleContentColor = TextPrimary,
-            actionIconContentColor = TextPrimary,
-            navigationIconContentColor = TextPrimary,
+            titleContentColor = TSColors.TextPrimary,
+            actionIconContentColor = TSColors.TextPrimary,
+            navigationIconContentColor = TSColors.TextPrimary,
             scrolledContainerColor = Color.Transparent
         )
     )
@@ -201,7 +201,7 @@ private fun ImportCard() {
                 "Import IPTV List",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary
+                color = TSColors.TextPrimary
             )
 
             OutlinedTextField(
@@ -222,8 +222,8 @@ private fun ImportCard() {
                     focusedContainerColor = DarkNavy,
                     unfocusedBorderColor = Color.Transparent,
                     focusedBorderColor = PrimaryBlue,
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary,
+                    focusedTextColor = TSColors.TextPrimary,
+                    unfocusedTextColor = TSColors.TextPrimary,
                 )
             )
 
@@ -235,7 +235,7 @@ private fun ImportCard() {
                 ) {
                     Icon(Icons.Default.Upload, contentDescription = null, tint = TextSecondary)
                     Spacer(Modifier.width(8.dp))
-                    Text("Upload File", color = TextPrimary)
+                    Text("Upload File", color = TSColors.TextPrimary)
                 }
                 OutlinedButton(
                     onClick = {},
@@ -244,7 +244,7 @@ private fun ImportCard() {
                 ) {
                     Icon(Icons.Default.Link, contentDescription = null, tint = TextSecondary)
                     Spacer(Modifier.width(8.dp))
-                    Text("From URL", color = TextPrimary)
+                    Text("From URL", color = TSColors.TextPrimary)
                 }
             }
 
@@ -301,7 +301,7 @@ private fun ParsedChannelsCard(channels: List<Channel>) {
                     "Parsed Channels",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary
+                    color = TSColors.TextPrimary
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
@@ -356,7 +356,7 @@ private fun ChannelListItem(channel: Channel) {
         Spacer(Modifier.width(16.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(channel.name, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+            Text(channel.name, fontWeight = FontWeight.SemiBold, color = TSColors.TextPrimary)
             Text(
                 "${channel.category} • ${channel.country}",
                 color = TextSecondary,
@@ -389,7 +389,7 @@ private fun StatusIndicator(status: ChannelStatus) {
 @Composable
 private fun SelectableChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
     val backgroundColor = if (isSelected) PrimaryBlue else LightSlate
-    val contentColor = if (isSelected) TextPrimary else TextSecondary
+    val contentColor = if (isSelected) TSColors.TextPrimary else TextSecondary
 
     Button(
         onClick = onClick,
