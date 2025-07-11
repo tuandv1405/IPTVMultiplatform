@@ -63,6 +63,12 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.koin.compose)
 
+            // Add Media3 dependencies for Android
+            implementation(libs.media3.exoplayer)
+            implementation(libs.media3.exoplayer.dash)
+            implementation(libs.media3.exoplayer.hls)
+            implementation(libs.media3.ui)
+
             // Add Firebase dependencies for Android
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.firebase.analytics)

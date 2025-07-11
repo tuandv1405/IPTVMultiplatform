@@ -7,8 +7,6 @@ import tss.t.tsiptv.core.firebase.AndroidFirebaseAuth
 import tss.t.tsiptv.core.firebase.IFirebaseAuth
 import tss.t.tsiptv.core.googlesignin.AndroidGoogleSignInImplementation
 import tss.t.tsiptv.core.googlesignin.GoogleSignIn
-import tss.t.tsiptv.core.player.IMediaPlayer
-import tss.t.tsiptv.core.player.SimpleIMediaPlayer
 import tss.t.tsiptv.core.storage.AndroidSettingsFactory
 import tss.t.tsiptv.core.storage.SettingsFactory
 
@@ -16,9 +14,6 @@ import tss.t.tsiptv.core.storage.SettingsFactory
  * Android-specific module for dependencies
  */
 val androidModule = module {
-    // Android-specific dependencies
-    single<IMediaPlayer> { SimpleIMediaPlayer() }
-
     // Settings factory
     single<SettingsFactory> {
         AndroidSettingsFactory(get())

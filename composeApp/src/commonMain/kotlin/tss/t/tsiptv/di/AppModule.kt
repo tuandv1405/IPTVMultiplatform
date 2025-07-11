@@ -1,5 +1,10 @@
 package tss.t.tsiptv.di
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.plus
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
@@ -20,6 +25,8 @@ import tss.t.tsiptv.core.language.LanguageRepository
 import tss.t.tsiptv.core.language.LocaleManager
 import tss.t.tsiptv.core.parser.IPTVParser
 import tss.t.tsiptv.feature.auth.di.authModule
+import tss.t.tsiptv.player.MediaPlayer
+import tss.t.tsiptv.player.MediaPlayerFactory
 
 /**
  * Common module for shared dependencies
@@ -67,6 +74,20 @@ val commonModule = module {
     // Language
     single { LanguageRepository(get()) }
     single { LocaleManager(get()) }
+
+
+    single<CoroutineScope>(named("MediaCoroutine")) {
+        CoroutineScope(Dispatchers.IO) + SupervisorJob()
+    }
+
+    single<CoroutineScope>(named("MediaCoroutineUI")) {
+        CoroutineScope(Dispatchers.Main) + SupervisorJob()
+    }
+
+    single<MediaPlayer> {
+        MediaPlayerFactory.createPlayer(get(named("MediaCoroutine")))
+    }
+
 }
 
 /**

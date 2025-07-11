@@ -6,9 +6,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import tss.t.tsiptv.core.player.MediaItem
-import tss.t.tsiptv.core.player.SimpleIMediaPlayer
-import tss.t.tsiptv.core.player.createMediaPlayer
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
+import tss.t.tsiptv.player.MediaItem
+import tss.t.tsiptv.player.MediaPlayer
+import tss.t.tsiptv.player.PlaybackState
+import tss.t.tsiptv.player.ui.MediaPlayerView
 
 /**
  * Player screen for playing IPTV channels.
@@ -23,10 +26,11 @@ fun PlayerScreen(
     channelId: String,
     channelName: String,
     channelUrl: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     // Create a MediaPlayer instance
-    val mediaPlayer = remember { createMediaPlayer() }
+    val coroutineScope = rememberCoroutineScope()
+    val mediaPlayer = koinInject<MediaPlayer>()
 
     // Create a MediaItem from the channel
     val mediaItem = remember {
@@ -39,15 +43,16 @@ fun PlayerScreen(
 
     // Set up the player
     LaunchedEffect(mediaItem) {
-        mediaPlayer.setMediaItem(mediaItem)
-        mediaPlayer.prepare()
+        mediaPlayer.prepare(mediaItem)
         mediaPlayer.play()
     }
 
     // Clean up when leaving the screen
     DisposableEffect(Unit) {
         onDispose {
-            mediaPlayer.release()
+            coroutineScope.launch {
+                mediaPlayer.release()
+            }
         }
     }
 
@@ -68,10 +73,10 @@ fun PlayerScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .padding(bottom = 16.dp)
+                .aspectRatio(16 / 9f)
         ) {
-            mediaPlayer.PlayerView(
+            MediaPlayerView(
+                mediaItem = mediaItem,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -82,15 +87,17 @@ fun PlayerScreen(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val isPlaying by mediaPlayer.isPlaying.collectAsState()
-
+            val playbackState by mediaPlayer.playbackState.collectAsState()
+            val isPlaying by derivedStateOf { playbackState == PlaybackState.PLAYING }
             // Play/Pause button
             Button(
                 onClick = {
-                    if (isPlaying) {
-                        mediaPlayer.pause()
-                    } else {
-                        mediaPlayer.play()
+                    coroutineScope.launch {
+                        if (playbackState == PlaybackState.PLAYING) {
+                            mediaPlayer.pause()
+                        } else {
+                            mediaPlayer.play()
+                        }
                     }
                 }
             ) {
@@ -100,7 +107,9 @@ fun PlayerScreen(
             // Stop button
             Button(
                 onClick = {
-                    mediaPlayer.stop()
+                    coroutineScope.launch {
+                        mediaPlayer.stop()
+                    }
                 }
             ) {
                 Text("Stop")
