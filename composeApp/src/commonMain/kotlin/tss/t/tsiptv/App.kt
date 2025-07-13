@@ -88,6 +88,7 @@ fun App() {
     // Wrap the app in the AppLocaleProvider to provide the current locale
     AppLocaleProvider(
         localeManager = localeManager,
+        authState = authState,
         initialLanguage = LocalAppLocale.current
     ) {
         StreamVaultTheme {

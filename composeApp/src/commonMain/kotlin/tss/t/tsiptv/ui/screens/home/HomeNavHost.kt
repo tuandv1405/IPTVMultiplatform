@@ -30,7 +30,6 @@ import tss.t.tsiptv.core.permission.PermissionCheckerFactory
 import tss.t.tsiptv.core.permission.PermissionExample
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.navigation.NavRoutes
-import tss.t.tsiptv.ui.screens.iptv.AddIPTVScreen
 import tss.t.tsiptv.ui.screens.ProfileScreen
 import tss.t.tsiptv.ui.screens.addiptv.ImportIPTVScreen
 import tss.t.tsiptv.ui.screens.login.AuthViewModel
@@ -70,7 +69,6 @@ fun HomeNavHost(
                 navController = navController,
                 parentNavController = parentNavController,
                 hazeState = hazeState,
-                contentPadding = paddingValues
             )
         }
 

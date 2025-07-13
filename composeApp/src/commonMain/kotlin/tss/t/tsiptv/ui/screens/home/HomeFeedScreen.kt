@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -20,8 +21,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -44,9 +48,11 @@ import tsiptv.composeapp.generated.resources.iptv_help_title
 import tsiptv.composeapp.generated.resources.what_is_iptv_desc
 import tsiptv.composeapp.generated.resources.what_is_iptv_title
 import tss.t.tsiptv.navigation.NavRoutes
+import tss.t.tsiptv.ui.screens.login.provider.LocalAuthProvider
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.widgets.GradientButton1
+import tss.t.tsiptv.ui.widgets.HeaderWithAvatar
 
 
 /**
@@ -57,48 +63,81 @@ fun HomeFeedScreen(
     navController: NavHostController,
     parentNavController: NavHostController,
     hazeState: HazeState,
-    contentPadding: PaddingValues = PaddingValues(),
 ) {
     val scrollState = rememberLazyListState()
+    val authState = LocalAuthProvider.current
 
-    LazyColumn(
-        state = scrollState,
-        contentPadding = contentPadding,
-        modifier = Modifier.fillMaxSize()
-            .hazeSource(hazeState),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        item("EmptyIptvSourceCard") {
-            EmptyIptvSourceCard(
-                navController = navController,
-                parentNavController = parentNavController,
-            )
-        }
-        item("EmptyIptvHelp") {
-            Spacer(Modifier.height(20.dp))
-            Text(
-                stringResource(Res.string.iptv_help_title),
-                style = MaterialTheme.typography.titleLarge
-                    .copy(
-                        color = TSColors.TextSecondary,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 15.sp,
-                        textDecoration = TextDecoration.Underline
-                    ),
-                modifier = Modifier.clickable {
-                    // Set the URL parameter before navigating
-                    val router = NavRoutes.WebView("https://dvt1405.github.io/iMediaReleasePages/")
-                    parentNavController.navigate(router,
-                    ) {
-                        launchSingleTop = true
-                    }
+    val helloTitle = remember(authState) {
+        "Hello${authState?.user?.displayName?.let { " $it" } ?: ""}"
+    }
+    val name = remember(authState) {
+        authState?.user?.email ?: ""
+    }
+
+    Scaffold(
+        topBar = {
+            HeaderWithAvatar(
+                modifier = Modifier
+                    .background(TSColors.BackgroundColor)
+                    .hazeEffect(hazeState)
+                    .statusBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                helloTitle = helloTitle,
+                name = name,
+                notificationCount = 10,
+                onSettingClick = {
+                    parentNavController.navigate(NavRoutes.LanguageSettings())
+                },
+                onNotificationClick = {
+
+                },
+                onAvatarClick = {
+                    navController.navigate(NavRoutes.HomeScreens.PROFILE)
                 }
             )
-            Spacer(Modifier.height(20.dp))
         }
+    ) {
+        LazyColumn(
+            state = scrollState,
+            contentPadding = it,
+            modifier = Modifier.fillMaxSize()
+                .hazeSource(hazeState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            item("EmptyIptvSourceCard") {
+                EmptyIptvSourceCard(
+                    navController = navController,
+                    parentNavController = parentNavController,
+                )
+            }
+            item("EmptyIptvHelp") {
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    stringResource(Res.string.iptv_help_title),
+                    style = MaterialTheme.typography.titleLarge
+                        .copy(
+                            color = TSColors.TextSecondary,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 15.sp,
+                            textDecoration = TextDecoration.Underline
+                        ),
+                    modifier = Modifier.clickable {
+                        // Set the URL parameter before navigating
+                        val router =
+                            NavRoutes.WebView("https://dvt1405.github.io/iMediaReleasePages/")
+                        parentNavController.navigate(
+                            router,
+                        ) {
+                            launchSingleTop = true
+                        }
+                    }
+                )
+                Spacer(Modifier.height(20.dp))
+            }
 
-        item("EmptyIPTVIntroduce") {
-            EmptyIPTVIntroduce()
+            item("EmptyIPTVIntroduce") {
+                EmptyIPTVIntroduce()
+            }
         }
     }
 }

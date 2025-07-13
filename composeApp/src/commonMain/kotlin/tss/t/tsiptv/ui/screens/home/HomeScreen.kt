@@ -110,46 +110,6 @@ fun HomeScreen(
     }
 
     Scaffold(
-        topBar = {
-            AnimatedContent(
-                selectedItemIndex,
-                transitionSpec = {
-                    (fadeIn(
-                        initialAlpha = 0.3f,
-                        animationSpec = tween(
-                            durationMillis = 200,
-                            easing = FastOutLinearInEasing
-                        )
-                    ) + scaleIn(
-                        initialScale = 0.9f,
-                        animationSpec = tween(
-                            durationMillis = 200,
-                            easing = FastOutLinearInEasing
-                        )
-                    )).togetherWith(fadeOut(animationSpec = tween(90)))
-                },
-            ) {
-                HeaderWithAvatar(
-                    modifier = Modifier
-                        .background(TSColors.BackgroundColor)
-                        .hazeEffect(hazeState)
-                        .statusBarsPadding()
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
-                    helloTitle = "Hello${authState.user?.displayName?.let { " $it" } ?: ""}",
-                    name = authState.user?.email ?: "",
-                    notificationCount = 10,
-                    onSettingClick = {
-                        parentNavController.navigate(NavRoutes.LanguageSettings())
-                    },
-                    onNotificationClick = {
-
-                    },
-                    onAvatarClick = {
-                        navController.navigate(NavRoutes.HomeScreens.PROFILE)
-                    }
-                )
-            }
-        },
         bottomBar = {
             Box(Modifier.height(56.dp))
         }

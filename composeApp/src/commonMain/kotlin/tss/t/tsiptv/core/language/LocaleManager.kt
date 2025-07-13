@@ -8,6 +8,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import tss.t.tsiptv.ui.screens.login.AuthUiState
+import tss.t.tsiptv.ui.screens.login.provider.LocalAuthProvider
 
 /**
  * Composition local for providing the current locale.
@@ -60,15 +62,19 @@ class LocaleManager(private val languageRepository: LanguageRepository) {
 @Composable
 fun AppLocaleProvider(
     localeManager: LocaleManager,
+    authState: AuthUiState,
     initialLanguage: SupportedLanguage,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     // Observe the current language from the locale manager
-    val currentLanguage by remember(localeManager) { 
-        localeManager.observeCurrentLanguage() 
+    val currentLanguage by remember(localeManager) {
+        localeManager.observeCurrentLanguage()
     }.collectAsState(initial = initialLanguage)
 
-    CompositionLocalProvider(LocalAppLocale provides currentLanguage) {
+    CompositionLocalProvider(
+        LocalAppLocale provides currentLanguage,
+        LocalAuthProvider provides authState
+    ) {
         content()
     }
 }
