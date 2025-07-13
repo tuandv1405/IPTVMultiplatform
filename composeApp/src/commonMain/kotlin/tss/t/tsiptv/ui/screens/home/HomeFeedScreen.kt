@@ -18,11 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Save
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -90,7 +86,10 @@ fun HomeFeedScreen(
                         textDecoration = TextDecoration.Underline
                     ),
                 modifier = Modifier.clickable {
-                    parentNavController.navigate(NavRoutes.WEBVIEW) {
+                    // Set the URL parameter before navigating
+                    val router = NavRoutes.WebView("https://dvt1405.github.io/iMediaReleasePages/")
+                    parentNavController.navigate(router,
+                    ) {
                         launchSingleTop = true
                     }
                 }
@@ -149,7 +148,7 @@ private fun EmptyIptvSourceCard(
         GradientButton1(
             text = stringResource(Res.string.btn_add_iptv_source_title),
         ) {
-            parentNavController.navigate(NavRoutes.IMPORT_IPTV) {
+            parentNavController.navigate(NavRoutes.ImportIptv) {
                 launchSingleTop = true
             }
         }

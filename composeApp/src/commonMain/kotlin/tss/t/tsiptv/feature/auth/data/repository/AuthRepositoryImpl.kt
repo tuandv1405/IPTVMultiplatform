@@ -2,6 +2,7 @@ package tss.t.tsiptv.feature.auth.data.repository
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -37,21 +38,23 @@ class AuthRepositoryImpl(
     override val authState: Flow<AuthState> = _authState
 
     init {
-        // Initialize the auth state by collecting the current user flow
-        CoroutineScope(Dispatchers.Main).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             firebaseAuth.currentUser.collect { user ->
+                println(user)
                 if (user != null) {
                     val token = getAuthToken()
                     _authState.value = AuthState(
                         isAuthenticated = true,
                         user = user,
-                        authToken = token
+                        authToken = token,
+                        isLoading = false
                     )
                 } else {
                     _authState.value = AuthState(
                         isAuthenticated = false,
                         user = null,
-                        authToken = null
+                        authToken = null,
+                        isLoading = false
                     )
                 }
             }

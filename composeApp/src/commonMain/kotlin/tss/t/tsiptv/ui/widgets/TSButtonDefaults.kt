@@ -60,6 +60,9 @@ object TSButtonDefaults {
     val mainGlowButtonColor = Color(0xFF2563EB)
     val shadowGlowButtonColor = TSColors.GradientBlue
 
+    val grayContainerColor = Color(0xFFE5E7EB)
+    val grayContainerShadowColor = grayContainerColor.copy(alpha = 0.1f)
+
     val negativeGradient by lazy {
         Brush.horizontalGradient(
             listOf(
@@ -180,7 +183,6 @@ fun CommonButton(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
             .customShadow(
                 color = shadowColor,
                 blurRadius = 10.dp,
@@ -188,6 +190,7 @@ fun CommonButton(
                 borderRadius = 12.dp
             )
             .clip(TSShapes.roundedShape8)
+            .clickable(onClick = onClick)
             .background(brush = gradient, shape = TSShapes.roundedShape8)
             .padding(vertical = 14.dp),
         contentAlignment = Alignment.Center
@@ -211,7 +214,6 @@ fun ColoredButton(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
             .customShadow(
                 color = color.copy(0.1f),
                 blurRadius = 10.dp,
@@ -219,6 +221,7 @@ fun ColoredButton(
                 borderRadius = 12.dp
             )
             .clip(TSShapes.roundedShape8)
+            .clickable(onClick = onClick)
             .background(color = color, shape = TSShapes.roundedShape8)
             .padding(vertical = 14.dp),
         contentAlignment = Alignment.Center
@@ -360,5 +363,34 @@ fun NegativeButton(
                 style = MaterialTheme.typography.titleMedium
             )
         }
+    }
+}
+
+@Composable
+fun GrayButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .customShadow(
+                color = TSButtonDefaults.grayContainerShadowColor,
+                blurRadius = 10.dp,
+                offsetY = 2.dp,
+                borderRadius = 12.dp
+            )
+            .clip(TSShapes.roundedShape8)
+            .clickable(onClick = onClick)
+            .background(color = TSButtonDefaults.grayContainerColor, shape = TSShapes.roundedShape8)
+            .padding(vertical = 14.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = TSColors.TextTitlePrimaryDart,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp
+        )
     }
 }

@@ -23,7 +23,7 @@ import tss.t.tsiptv.ui.screens.login.models.LoginEvents
  */
 class AuthViewModel(
     private val authRepository: AuthRepository,
-    private val networkConnectivityChecker: NetworkConnectivityChecker = NetworkConnectivityCheckerFactory.create()
+    private val networkConnectivityChecker: NetworkConnectivityChecker = NetworkConnectivityCheckerFactory.create(),
 ) : ViewModel() {
     private val viewModelScope = CoroutineScope(Dispatchers.Main)
 
@@ -62,12 +62,12 @@ class AuthViewModel(
         // Observe network status
         viewModelScope.launch {
             // Set initial network status
-            _uiState.update { it.copy(isNetworkAvailable = networkConnectivityChecker.isNetworkAvailable()) }
+//            _uiState.update { it.copy(isNetworkAvailable = networkConnectivityChecker.isNetworkAvailable()) }
 
             // Observe network status changes
-            networkConnectivityChecker.observeNetworkStatus().collect { isAvailable ->
-                _uiState.update { it.copy(isNetworkAvailable = isAvailable) }
-            }
+//            networkConnectivityChecker.observeNetworkStatus().collect { isAvailable ->
+//                _uiState.update { it.copy(isNetworkAvailable = isAvailable) }
+//            }
         }
 
         // Check if token needs refresh
@@ -118,7 +118,12 @@ class AuthViewModel(
             }
 
             is LoginEvents.OnDismissErrorDialog -> {
-                _uiState.update { it.copy(error = null) }
+                _uiState.update {
+                    it.copy(
+                        isAuthenticated = false,
+                        error = null
+                    )
+                }
             }
 
             else -> {
@@ -409,10 +414,10 @@ data class AuthUiState(
     val user: FirebaseUser? = null,
     val displayName: String? = null,
     val isAuthenticated: Boolean = false,
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val error: String? = null,
     val isEmailValid: Boolean = true,
     val isEmailEmpty: Boolean = false,
     val isPasswordValid: Boolean = true,
-    val isNetworkAvailable: Boolean = false,
+    val isNetworkAvailable: Boolean = true,
 )

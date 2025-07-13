@@ -139,7 +139,7 @@ fun HomeScreen(
                     name = authState.user?.email ?: "",
                     notificationCount = 10,
                     onSettingClick = {
-                        parentNavController.navigate(NavRoutes.LANGUAGE_SETTINGS)
+                        parentNavController.navigate(NavRoutes.LanguageSettings())
                     },
                     onNotificationClick = {
 

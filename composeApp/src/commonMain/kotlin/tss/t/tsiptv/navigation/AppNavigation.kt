@@ -30,7 +30,7 @@ import kotlin.math.roundToInt
  * @param builder Optional lambda to configure additional NavOptions
  */
 fun NavController.navigateAndRemoveFromBackStack(
-    route: String,
+    route: NavRoutes.RootRoutes,
     builder: (NavOptionsBuilder.() -> Unit)? = null
 ) {
     val currentRoute = currentBackStackEntry?.destination?.route

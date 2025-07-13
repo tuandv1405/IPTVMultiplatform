@@ -15,6 +15,6 @@ data class AuthState(
     val isAuthenticated: Boolean = false,
     val user: FirebaseUser? = null,
     val authToken: AuthToken? = null,
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val error: String? = null
 )

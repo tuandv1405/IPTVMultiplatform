@@ -1,28 +1,52 @@
 package tss.t.tsiptv.navigation
 
+import kotlinx.serialization.Serializable
+
 /**
  * Navigation routes for the app.
  */
 object NavRoutes {
-    const val SPLASH = "splash"
+    @Serializable
+    sealed interface RootRoutes
 
-    const val LOGIN = "login"
+    @Serializable
+    data object Splash : RootRoutes
 
-    const val HOME = "home"
-    const val ADD_IPTV = "add_iptv"
-    const val PLAYER = "player"
-    const val IMPORT_IPTV = "import_iptv"
-    const val SIGN_UP = "sign_up"
-    const val LANGUAGE_SETTINGS = "language_settings"
+    @Serializable
+    data object Login : RootRoutes
 
-    const val WEBVIEW = "web_view"
+    @Serializable
+    data class Home(
+        val childNodes: String = HomeScreens.HOME_FEED,
+    ) : RootRoutes
 
-    // Home screen bottom navigation routes
+    @Serializable
+    data class AddIptv(
+        val defaultValue: String? = null,
+    ) : RootRoutes
+
+    @Serializable
+    data class Player(
+        val mediaItemId: String? = null,
+    ) : RootRoutes
+
+    @Serializable
+    data object ImportIptv : RootRoutes
+    @Serializable
+    data object SignUp : RootRoutes
+
+    @Serializable
+    data class LanguageSettings(val defaultValue: String? = null) : RootRoutes
+
+    @Serializable
+    data class WebView(
+        val url: String,
+    ) : RootRoutes
+
     object HomeScreens {
         const val HOME_FEED = "home_feed"
         const val SETTINGS = "settings"
         const val FAVORITES = "favorites"
         const val PROFILE = "profile"
     }
-    // Add more routes as needed
 }

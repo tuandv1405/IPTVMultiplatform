@@ -18,6 +18,8 @@ object TSColors {
     val TextGray = Color(0xFF8E8E93)
     val TextSecondary = Color(0xFF9CA3AF)
     val TextPrimary = Color.White
+    val TextTitlePrimaryDart = Color(0xFF111827)
+    val TextBodyPrimaryDart = Color(0xFF4B5563)
 
     val ButtonBackground = Color(0xFF2C2C2E)
     val ButtonBackgroundBlue = Color(0xFF2D3238)

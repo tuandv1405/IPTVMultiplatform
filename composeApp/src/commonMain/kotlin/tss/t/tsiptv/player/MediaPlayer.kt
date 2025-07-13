@@ -1,6 +1,7 @@
 package tss.t.tsiptv.player
 
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.Serializable
 
 /**
  * Common interface for media player implementations across all platforms.
@@ -90,6 +91,7 @@ enum class PlaybackState {
 /**
  * Represents a media item that can be played
  */
+@Serializable
 data class MediaItem(
     val id: String,
     val uri: String,
