@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -104,6 +105,7 @@ fun HomeFeedScreen(
     }
 
     var showStickyHeader by remember { mutableStateOf(false) }
+    val categoryListState: LazyListState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
         snapshotFlow { scrollState.layoutInfo.visibleItemsInfo to isEmpty }
@@ -159,7 +161,8 @@ fun HomeFeedScreen(
                                 .background(TSColors.BackgroundColor)
                                 .hazeEffect(hazeState)
                                 .padding(vertical = 12.dp),
-                            onHomeEvent = onHomeEvent
+                            onHomeEvent = onHomeEvent,
+                            listState = categoryListState
                         )
                     }
                 }
@@ -189,7 +192,8 @@ fun HomeFeedScreen(
                 else -> {
                     homeItemList(
                         homeUiState = homeUiState,
-                        onHomeEvent = onHomeEvent
+                        onHomeEvent = onHomeEvent,
+                        categoryListState = categoryListState
                     )
                 }
             }
@@ -203,6 +207,7 @@ fun HomeFeedScreen(
 
 private fun LazyListScope.homeItemList(
     homeUiState: HomeUiState,
+    categoryListState: LazyListState,
     onHomeEvent: (HomeEvent) -> Unit,
 ) {
     item("NowWatchingTitle") {
@@ -226,7 +231,8 @@ private fun LazyListScope.homeItemList(
             homeUiState = homeUiState,
             modifier = Modifier.fillMaxWidth()
                 .padding(vertical = 16.dp),
-            onHomeEvent = onHomeEvent
+            onHomeEvent = onHomeEvent,
+            listState = categoryListState
         )
     }
 
@@ -246,11 +252,13 @@ private fun LazyListScope.homeItemList(
 private fun CategoryRow(
     homeUiState: HomeUiState,
     modifier: Modifier = Modifier,
+    listState: LazyListState = rememberLazyListState(),
     onHomeEvent: (HomeEvent) -> Unit,
 ) {
     LazyRow(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        state = listState
     ) {
         item {
             Spacer(Modifier.width(8.dp))
