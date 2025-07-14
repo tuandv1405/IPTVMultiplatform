@@ -1,9 +1,12 @@
 package tss.t.tsiptv.player.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,6 +25,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +35,7 @@ import org.koin.compose.koinInject
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.PlaybackState
+import tss.t.tsiptv.utils.PlatformUtils
 
 /**
  * A composable that displays a media player with controls.
@@ -62,103 +67,36 @@ fun MediaPlayerView(
             }
         }
     }
+    val showCustomControls = remember {
+        !PlatformUtils.platform.isIOS
+    }
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Box(
+        modifier.fillMaxWidth()
     ) {
-        // Video view is platform-specific and will be implemented in expect/actual
+        if (showCustomControls) {
+            MediaPlayerControls(
+                playbackState,
+                currentPosition,
+                duration,
+                isBuffering,
+            )
+        }
         MediaPlayerContent(
             player = player,
             modifier = Modifier.fillMaxWidth()
                 .aspectRatio(16 / 9f)
         )
-
-        // Media info
-        Text(
-            text = mediaItem.title,
-            style = MaterialTheme.typography.titleLarge
-        )
-
-        if (mediaItem.artist.isNotEmpty()) {
-            Text(
-                text = mediaItem.artist,
-                style = MaterialTheme.typography.bodyLarge
-            )
-        }
-
-        // Progress bar
-        if (duration > 0) {
-            Slider(
-                value = currentPosition.toFloat(),
-                onValueChange = {
-                    coroutineScope.launch {
-                        player.seekTo(it.toLong())
-                    }
-                },
-                valueRange = 0f..duration.toFloat(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            )
-
-            // Time display
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(formatTime(currentPosition))
-                Text(formatTime(duration))
-            }
-        }
-
-        // Playback controls
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            IconButton(
-                onClick = {
-                    coroutineScope.launch {
-                        player.stop()
-                    }
-                }
-            ) {
-                Icon(Icons.Default.Stop, contentDescription = "Stop")
-            }
-
-            IconButton(
-                onClick = {
-                    coroutineScope.launch {
-                        if (playbackState == PlaybackState.PLAYING) {
-                            player.pause()
-                        } else {
-                            player.play()
-                        }
-                    }
-                }
-            ) {
-                if (playbackState == PlaybackState.PLAYING) {
-                    Icon(Icons.Default.Pause, contentDescription = "Pause")
-                } else {
-                    Icon(Icons.Default.PlayArrow, contentDescription = "Play")
-                }
-            }
-        }
-
-        // Buffering indicator
-        if (isBuffering) {
-            CircularProgressIndicator(
-                modifier = Modifier
-                    .size(24.dp)
-                    .padding(top = 8.dp)
-            )
-        }
     }
+}
+
+@Composable
+fun BoxScope.MediaPlayerControls(
+    playbackState: PlaybackState,
+    currentPosition: Long,
+    duration: Long,
+    isBuffering: Boolean,
+) {
 }
 
 /**

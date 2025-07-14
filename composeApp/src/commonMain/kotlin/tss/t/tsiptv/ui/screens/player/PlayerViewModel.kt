@@ -34,10 +34,19 @@ class PlayerViewModel(
         viewModelScope.launch {
             val item = iptvChannel.toMediaItem()
             _mediaItem.value = item
+            launch {
+                loadPrograms(iptvChannel)
+            }
             withContext(Dispatchers.Main) {
                 _mediaPlayer.prepare(item)
                 _mediaPlayer.play()
             }
+        }
+    }
+
+    fun loadPrograms(iptvChannel: Channel) {
+        viewModelScope.launch(Dispatchers.IO) {
+
         }
     }
 
