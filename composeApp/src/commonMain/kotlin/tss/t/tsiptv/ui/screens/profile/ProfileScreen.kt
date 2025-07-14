@@ -1,6 +1,5 @@
-package tss.t.tsiptv.ui.screens
+package tss.t.tsiptv.ui.screens.profile
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,7 +20,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,6 +43,8 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.account_group_title
+import tsiptv.composeapp.generated.resources.btn_logout_cancel
+import tsiptv.composeapp.generated.resources.btn_logout_ok
 import tsiptv.composeapp.generated.resources.ic_key
 import tsiptv.composeapp.generated.resources.ic_logout
 import tsiptv.composeapp.generated.resources.ic_notification
@@ -61,11 +60,14 @@ import tsiptv.composeapp.generated.resources.profile_notification_title
 import tsiptv.composeapp.generated.resources.profile_subscription_title
 import tsiptv.composeapp.generated.resources.profile_title
 import tsiptv.composeapp.generated.resources.ic_arrow_right
+import tsiptv.composeapp.generated.resources.logout_dialog_message
+import tsiptv.composeapp.generated.resources.logout_dialog_title
 import tss.t.tsiptv.ui.screens.login.AuthUiState
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.widgets.NegativeButton
+import tss.t.tsiptv.ui.widgets.TSDialog
 
 data class ProfileItem(
     val title: StringResource,
@@ -277,16 +279,19 @@ fun ProfileScreen(
         }
     }
 
-    AnimatedVisibility(showLogoutDialog) {
-        BasicAlertDialog(
-            onDismissRequest = {
+    if (showLogoutDialog) {
+        TSDialog(
+            title = stringResource(Res.string.logout_dialog_title),
+            message = stringResource(Res.string.logout_dialog_message),
+            positiveButtonText = stringResource(Res.string.btn_logout_cancel),
+            negativeButtonText = stringResource(Res.string.btn_logout_ok),
+            onPositiveClick = {
                 showLogoutDialog = false
             },
-            content = {
-
+            onNegativeClick = {
+                onProfileEvent(LoginEvents.OnLogoutPressed)
             }
         )
-        onProfileEvent(LoginEvents.OnLogoutPressed)
     }
 }
 

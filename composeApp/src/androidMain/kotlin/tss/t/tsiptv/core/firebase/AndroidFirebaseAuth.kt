@@ -16,13 +16,14 @@ import kotlinx.coroutines.tasks.await
  * This implementation uses the Firebase SDK for Android.
  */
 class AndroidFirebaseAuth : IFirebaseAuth {
-    private val auth = FirebaseAuth.getInstance()
+    private val auth by lazy {
+        FirebaseAuth.getInstance()
+    }
 
     override val currentUser: Flow<FirebaseUser?> = callbackFlow {
         val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
             trySend(firebaseAuth.currentUser?.toFirebaseUser())
         }
-
         auth.addAuthStateListener(authStateListener)
 
         trySend(auth.currentUser?.toFirebaseUser())

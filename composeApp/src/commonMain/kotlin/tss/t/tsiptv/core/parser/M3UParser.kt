@@ -17,7 +17,6 @@ class M3UParser : IPTVParser {
 
         var currentExtInf: String? = null
         var currentAttributes = mutableMapOf<String, String>()
-        var currentChannelId: String? = null
 
         // Extract EPG URL from the header line
         val headerLine = lines.firstOrNull { it.trim().startsWith("#EXTM3U") }
@@ -43,14 +42,17 @@ class M3UParser : IPTVParser {
             } else if (!trimmedLine.startsWith("#") && currentExtInf != null) {
                 // This is a URL line
                 val url = trimmedLine
-                val name = currentAttributes["tvg-name"] ?: extractNameFromExtInf(currentExtInf) ?: "Unknown Channel"
+                val name = currentAttributes["tvg-name"] ?: extractNameFromExtInf(currentExtInf)
+                ?: "Unknown Channel"
                 val logoUrl = currentAttributes["tvg-logo"]
                 val groupTitle = currentAttributes["group-title"]
                 val epgId = currentAttributes["tvg-id"]
                 val id = epgId ?: name.replace(" ", "_").lowercase()
 
-                // Store the current channel ID for program association
-                currentChannelId = id
+                if (groupTitle != null) {
+                    val groupId = groupTitle.replace(" ", "_").lowercase()
+                    groups.add(IPTVGroup(id = groupId, title = groupTitle))
+                }
 
                 val channel = IPTVChannel(
                     id = id,
@@ -58,16 +60,11 @@ class M3UParser : IPTVParser {
                     url = url,
                     logoUrl = logoUrl,
                     groupTitle = groupTitle,
+                    groupId = groupTitle?.replace(" ", "_")?.lowercase(),
                     epgId = epgId,
                     attributes = currentAttributes.toMap()
                 )
                 channels.add(channel)
-
-                if (groupTitle != null) {
-                    val groupId = groupTitle.replace(" ", "_").lowercase()
-                    groups.add(IPTVGroup(id = groupId, title = groupTitle))
-                }
-
                 // Reset for next channel
                 currentExtInf = null
                 currentAttributes = mutableMapOf()

@@ -23,6 +23,7 @@ class XMLParser : IPTVParser {
         var currentUrl = ""
         var currentLogoUrl: String? = null
         var currentGroupTitle: String? = null
+        var currentGroupId: String? = null
 
         for (line in lines) {
             val trimmedLine = line.trim()
@@ -75,21 +76,23 @@ class XMLParser : IPTVParser {
             } else if (trimmedLine.startsWith("</channel>")) {
                 // End of a channel
                 if (currentId.isNotEmpty() && currentName.isNotEmpty() && currentUrl.isNotEmpty()) {
+                    if (currentGroupTitle != null) {
+                        val groupId = currentGroupTitle.replace(" ", "_").lowercase()
+                        currentGroupId = groupId
+                        groups.add(IPTVGroup(id = groupId, title = currentGroupTitle))
+                    }
+
                     val channel = IPTVChannel(
                         id = currentId,
                         name = currentName,
                         url = currentUrl,
                         logoUrl = currentLogoUrl,
+                        groupId = currentGroupId,
                         groupTitle = currentGroupTitle,
                         epgId = currentId,
                         attributes = emptyMap()
                     )
                     channels.add(channel)
-
-                    if (currentGroupTitle != null) {
-                        val groupId = currentGroupTitle.replace(" ", "_").lowercase()
-                        groups.add(IPTVGroup(id = groupId, title = currentGroupTitle))
-                    }
                 }
 
                 // Reset for next channel
@@ -98,6 +101,7 @@ class XMLParser : IPTVParser {
                 currentUrl = ""
                 currentLogoUrl = null
                 currentGroupTitle = null
+                currentGroupId = null
             }
         }
 

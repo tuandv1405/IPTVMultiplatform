@@ -27,6 +27,8 @@ import platform.CoreMedia.CMTimeGetSeconds
 import platform.CoreMedia.CMTimeMake
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSURL
+import tss.t.tsiptv.player.models.MediaItem
+import tss.t.tsiptv.player.models.PlaybackState
 import kotlin.math.roundToLong
 
 /**

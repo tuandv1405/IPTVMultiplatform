@@ -66,6 +66,7 @@ data class IPTVChannel(
     val url: String,
     val logoUrl: String? = null,
     val groupTitle: String? = null,
+    val groupId: String? = null,
     val epgId: String? = null,
     val attributes: Map<String, String> = emptyMap()
 )

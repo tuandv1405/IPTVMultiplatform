@@ -1,6 +1,7 @@
 package tss.t.tsiptv.core.database
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.Serializable
 
 /**
  * Interface for the IPTV database.
@@ -13,6 +14,20 @@ interface IPTVDatabase {
      * @return A flow of all channels
      */
     fun getAllChannels(): Flow<List<Channel>>
+
+    /**
+     * Gets all channels.
+     *
+     * @return A flow of all channels
+     */
+    fun getAllChannelsByPlayListId(playListId: String): Flow<List<Channel>>
+
+    /**
+     * Gets all categories.
+     *
+     * @return A flow of all categories
+     */
+    suspend fun getCategoriesByPlaylist(playlistId: String): List<Category>
 
     /**
      * Gets a channel by ID.
@@ -72,6 +87,13 @@ interface IPTVDatabase {
      * @return A flow of all categories
      */
     fun getAllCategories(): Flow<List<Category>>
+
+    /**
+     * Gets all categories.
+     *
+     * @return A flow of all categories
+     */
+    suspend fun getAllCategoriesByPlayListId(playListId: String): List<Category>
 
     /**
      * Gets a category by ID.
@@ -152,6 +174,8 @@ interface IPTVDatabase {
      */
     suspend fun deletePlaylistById(id: String)
 
+    suspend fun deleteChannelsInPlaylist(playlistId: String)
+
     /**
      * Clears all data from the database.
      */
@@ -170,6 +194,7 @@ interface IPTVDatabase {
  * @property isFavorite Whether the channel is a favorite
  * @property lastWatched The timestamp when the channel was last watched, or null if never watched
  */
+@Serializable
 data class Channel(
     val id: String,
     val name: String,
@@ -206,5 +231,5 @@ data class Playlist(
     val id: String,
     val name: String,
     val url: String,
-    val lastUpdated: Long
+    val lastUpdated: Long,
 )

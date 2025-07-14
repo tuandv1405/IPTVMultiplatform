@@ -29,7 +29,8 @@ class JSONParser : IPTVParser {
 
         // Format 1: Array of channels
         // [{"id": "...", "name": "...", "url": "..."}]
-        val channelPattern = "\\{[^\\{\\}]*\"id\"\\s*:\\s*\"([^\"]+)\"[^\\{\\}]*\"name\"\\s*:\\s*\"([^\"]+)\"[^\\{\\}]*\"url\"\\s*:\\s*\"([^\"]+)\"[^\\{\\}]*\\}".toRegex()
+        val channelPattern =
+            "\\{[^\\{\\}]*\"id\"\\s*:\\s*\"([^\"]+)\"[^\\{\\}]*\"name\"\\s*:\\s*\"([^\"]+)\"[^\\{\\}]*\"url\"\\s*:\\s*\"([^\"]+)\"[^\\{\\}]*\\}".toRegex()
         val channelMatches = channelPattern.findAll(content)
 
         for (match in channelMatches) {
@@ -48,13 +49,14 @@ class JSONParser : IPTVParser {
 
                 // Try to extract group
                 var groupTitle: String? = null
+                var groupId: String? = null
                 val groupPattern = "\"group(?:Title)?\"\\s*:\\s*\"([^\"]+)\"".toRegex()
                 val groupMatch = groupPattern.find(match.value)
                 if (groupMatch != null && groupMatch.groupValues.size > 1) {
                     groupTitle = groupMatch.groupValues[1]
 
                     // Add group
-                    val groupId = groupTitle.replace(" ", "_").lowercase()
+                    groupId = groupTitle.replace(" ", "_").lowercase()
                     groups.add(IPTVGroup(id = groupId, title = groupTitle))
                 }
 
@@ -72,6 +74,7 @@ class JSONParser : IPTVParser {
                     url = url,
                     logoUrl = logoUrl,
                     groupTitle = groupTitle,
+                    groupId = groupId,
                     epgId = epgId,
                     attributes = emptyMap()
                 )
@@ -154,7 +157,8 @@ class JSONParser : IPTVParser {
                 if (endIndex == -1) endIndex = content.length
 
                 val groupsContent = content.substring(startIndex, endIndex)
-                val groupPattern = "\\{[^\\{\\}]*\"name\"\\s*:\\s*\"([^\"]+)\"[^\\{\\}]*\"channels\"\\s*:\\s*\\[([^\\[\\]]*)\\][^\\{\\}]*\\}".toRegex()
+                val groupPattern =
+                    "\\{[^\\{\\}]*\"name\"\\s*:\\s*\"([^\"]+)\"[^\\{\\}]*\"channels\"\\s*:\\s*\\[([^\\[\\]]*)\\][^\\{\\}]*\\}".toRegex()
                 val groupMatches = groupPattern.findAll(groupsContent)
 
                 for (groupMatch in groupMatches) {

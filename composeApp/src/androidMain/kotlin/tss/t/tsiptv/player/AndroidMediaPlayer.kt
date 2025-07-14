@@ -1,7 +1,6 @@
 package tss.t.tsiptv.player
 
 import android.content.Context
-import androidx.media3.common.MediaItem as Media3MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import kotlinx.coroutines.CoroutineScope
@@ -10,6 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import tss.t.tsiptv.player.models.MediaItem
+import tss.t.tsiptv.player.models.PlaybackState
 import tss.t.tsiptv.player.service.MediaPlayerService
 
 /**

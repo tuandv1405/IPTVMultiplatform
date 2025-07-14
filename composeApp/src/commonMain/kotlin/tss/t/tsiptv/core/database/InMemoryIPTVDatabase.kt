@@ -3,6 +3,7 @@ package tss.t.tsiptv.core.database
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 
 /**
  * A simple in-memory implementation of IPTVDatabase.
@@ -16,6 +17,18 @@ class InMemoryIPTVDatabase : IPTVDatabase {
 
     override fun getAllChannels(): Flow<List<Channel>> {
         return channels.map { it.values.toList() }
+    }
+
+    override fun getAllChannelsByPlayListId(playListId: String): Flow<List<Channel>> {
+        return channels.map { channelMap ->
+            channelMap.values.filter { it.playlistId == playListId }
+        }
+    }
+
+    override suspend fun getCategoriesByPlaylist(playlistId: String): List<Category> {
+        return categories.map { categoryMap ->
+            categoryMap.values.filter { it.playlistId == playlistId }
+        }.toList().flatten()
     }
 
     override suspend fun getChannelById(id: String): Channel? {
@@ -54,6 +67,12 @@ class InMemoryIPTVDatabase : IPTVDatabase {
 
     override fun getAllCategories(): Flow<List<Category>> {
         return categories.map { it.values.toList() }
+    }
+
+    override suspend fun getAllCategoriesByPlayListId(playListId: String): List<Category> {
+        return categories.map { categoryMap ->
+            categoryMap.values.filter { it.playlistId == playListId }
+        }.toList().flatten()
     }
 
     override suspend fun getCategoryById(id: String): Category? {
@@ -98,6 +117,9 @@ class InMemoryIPTVDatabase : IPTVDatabase {
 
     override suspend fun deletePlaylistById(id: String) {
         playlists.value = playlists.value - id
+    }
+    override suspend fun deleteChannelsInPlaylist(playlistId: String) {
+        channels.value = channels.value.filterNot { it.value.playlistId == playlistId }
     }
 
     override suspend fun clearAllData() {

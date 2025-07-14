@@ -8,15 +8,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,14 +21,18 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import dev.chrisbanes.haze.HazeState
 import org.koin.compose.koinInject
+import tss.t.tsiptv.core.database.IPTVDatabase
+import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.permission.Permission
 import tss.t.tsiptv.core.permission.PermissionCheckerFactory
 import tss.t.tsiptv.core.permission.PermissionExample
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.navigation.NavRoutes
-import tss.t.tsiptv.ui.screens.ProfileScreen
 import tss.t.tsiptv.ui.screens.addiptv.ImportIPTVScreen
+import tss.t.tsiptv.ui.screens.login.AuthUiState
 import tss.t.tsiptv.ui.screens.login.AuthViewModel
+import tss.t.tsiptv.ui.screens.login.models.LoginEvents
+import tss.t.tsiptv.ui.screens.profile.ProfileScreen
 
 /**
  * Navigation host for the Home screen sections.
@@ -44,13 +44,25 @@ fun HomeNavHost(
     parentNavController: NavHostController,
     modifier: Modifier = Modifier,
     hazeState: HazeState,
-    paddingValues: PaddingValues = PaddingValues(),
+    contentPadding: PaddingValues,
+    homeUiState: HomeUiState,
+    authState: AuthUiState,
+    onLoginEvent: (LoginEvents) -> Unit = {},
+    onHomeEvent: (HomeEvent) -> Unit = {},
 ) {
     val viewStoreOwner = LocalViewModelStoreOwner.current!!
     val authRepository = koinInject<AuthRepository>()
     val authViewModel: AuthViewModel = viewModel(viewModelStoreOwner = viewStoreOwner) {
         AuthViewModel(
             authRepository = authRepository,
+        )
+    }
+    val iptvDatabase = koinInject<IPTVDatabase>()
+    val networkClient = koinInject<NetworkClient>()
+    val homeViewModel = viewModel<HomeViewModel>(viewModelStoreOwner = viewStoreOwner) {
+        HomeViewModel(
+            iptvDatabase = iptvDatabase,
+            networkClient = networkClient
         )
     }
     val authState by authViewModel.uiState.collectAsState()
@@ -69,6 +81,9 @@ fun HomeNavHost(
                 navController = navController,
                 parentNavController = parentNavController,
                 hazeState = hazeState,
+                homeUiState = homeUiState,
+                onHomeEvent = onHomeEvent,
+                contentPadding = contentPadding
             )
         }
 
@@ -85,7 +100,21 @@ fun HomeNavHost(
 
         composable(route = NavRoutes.HomeScreens.FAVORITES) {
             ImportIPTVScreen(
-                hazeState = hazeState
+                hazeState = hazeState,
+                homeUiState = homeUiState,
+                initSourceName = homeUiState.playListName ?: "",
+                initSourceUrl = homeUiState.playListId ?: "",
+                onEvent = {
+                    when (it) {
+                        HomeEvent.OnBackPressed -> {
+                            navController.popBackStack()
+                        }
+
+                        else -> {
+                            homeViewModel.onHandleEvent(it)
+                        }
+                    }
+                }
             )
         }
 
@@ -125,18 +154,3 @@ private val defaultEnterTransition: EnterTransition = fadeIn(
         delayMillis = 0
     )
 )
-
-/**
- * Settings screen
- */
-@Composable
-fun SettingsScreen(
-    onNavigateToLanguageSettings: () -> Unit,
-) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Settings Screen")
-    }
-}

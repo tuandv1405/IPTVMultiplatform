@@ -3,6 +3,7 @@ package tss.t.tsiptv.player.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,12 +26,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-import tss.t.tsiptv.player.MediaItem
+import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.MediaPlayer
-import tss.t.tsiptv.player.PlaybackState
+import tss.t.tsiptv.player.models.PlaybackState
 
 /**
  * A composable that displays a media player with controls.
@@ -42,9 +42,9 @@ import tss.t.tsiptv.player.PlaybackState
 @Composable
 fun MediaPlayerView(
     mediaItem: MediaItem,
+    player: MediaPlayer = koinInject<MediaPlayer>(),
     modifier: Modifier = Modifier,
 ) {
-    val player = koinInject<MediaPlayer>()
     val playbackState by player.playbackState.collectAsState()
     val currentPosition by player.currentPosition.collectAsState()
     val duration by player.duration.collectAsState()
@@ -72,7 +72,8 @@ fun MediaPlayerView(
         // Video view is platform-specific and will be implemented in expect/actual
         MediaPlayerContent(
             player = player,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.fillMaxWidth()
+                .aspectRatio(16 / 9f)
         )
 
         // Media info

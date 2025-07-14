@@ -120,6 +120,7 @@ kotlin {
             implementation(libs.koin.compose.jb)
 
             implementation(libs.coil.compose)
+            implementation(libs.coil.network)
             implementation(libs.haze.blur)
 
             implementation("dev.gitlive:firebase-common:+")

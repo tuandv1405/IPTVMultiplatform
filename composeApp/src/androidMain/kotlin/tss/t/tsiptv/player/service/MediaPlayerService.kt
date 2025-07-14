@@ -12,14 +12,12 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.media3.common.MediaItem as Media3MediaItem
-import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.PlayerNotificationManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import tss.t.tsiptv.player.MediaItem
+import tss.t.tsiptv.player.models.MediaItem
 
 /**
  * Foreground service for media playback using Media3 ExoPlayer.

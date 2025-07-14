@@ -123,6 +123,8 @@ fun GradientButtonLight(
 fun GradientButton1(
     text: String,
     modifier: Modifier = Modifier,
+    clickable: Boolean = true,
+    icon: @Composable (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     CommonButton(
@@ -130,7 +132,9 @@ fun GradientButton1(
         onClick = onClick,
         modifier = modifier,
         gradient = TSButtonDefaults.positiveGradient,
-        shadowColor = TSButtonDefaults.defaultShadow
+        shadowColor = TSButtonDefaults.defaultShadow,
+        clickable = clickable,
+        icon = icon
     )
 }
 
@@ -138,6 +142,8 @@ fun GradientButton1(
 fun GradientButton2(
     text: String,
     modifier: Modifier = Modifier,
+    clickable: Boolean = true,
+    icon: @Composable (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     CommonButton(
@@ -145,7 +151,9 @@ fun GradientButton2(
         onClick = onClick,
         modifier = modifier,
         gradient = TSButtonDefaults.defaultGradientButton2,
-        shadowColor = TSButtonDefaults.defaultShadowGradientButton2
+        shadowColor = TSButtonDefaults.defaultShadowGradientButton2,
+        clickable = clickable,
+        icon = icon
     )
 }
 
@@ -179,6 +187,8 @@ fun CommonButton(
     ),
     shadowColor: Color = Color(0xFF22C55E)
         .copy(alpha = 0.3f),
+    clickable: Boolean = true,
+    icon: @Composable (() -> Unit)? = null,
 ) {
     Box(
         modifier = modifier
@@ -190,17 +200,26 @@ fun CommonButton(
                 borderRadius = 12.dp
             )
             .clip(TSShapes.roundedShape8)
-            .clickable(onClick = onClick)
+            .clickable(
+                enabled = clickable,
+                onClick = onClick
+            )
             .background(brush = gradient, shape = TSShapes.roundedShape8)
             .padding(vertical = 14.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = text,
-            color = Color.White,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 14.sp
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            icon?.let {
+                it()
+                Spacer(Modifier.width(12.dp))
+            }
+            Text(
+                text = text,
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp
+            )
+        }
     }
 }
 
@@ -314,13 +333,17 @@ fun SyncDataButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 fun PositiveButton(
     text: String,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    clickable: Boolean = true,
+    icon: (@Composable (() -> Unit))? = null,
+    onClick: () -> Unit,
 ) {
     GradientButton1(
         text = text,
         modifier = modifier,
         onClick = onClick,
+        clickable = clickable,
+        icon = icon,
     )
 }
 

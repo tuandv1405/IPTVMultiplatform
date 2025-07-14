@@ -81,6 +81,15 @@ interface ChannelDao {
     suspend fun getChannelById(id: String): ChannelEntity?
 
     /**
+     * Gets channels by playlist ID.
+     *
+     * @param playlistId The ID of the playlist to get channels for
+     * @return A flow of channels in the given playlist
+     */
+    @Query("SELECT * FROM channels WHERE playlistId = :playlistId")
+    fun getChannelsInPlaylist(playlistId: String): Flow<List<ChannelEntity>>
+
+    /**
      * Gets channels by category.
      *
      * @param categoryId The ID of the category to get channels for
@@ -177,7 +186,7 @@ interface CategoryDao {
      * @return A flow of categories in the given playlist
      */
     @Query("SELECT * FROM categories WHERE playlistId = :playlistId")
-    fun getCategoriesByPlaylist(playlistId: String): Flow<List<CategoryEntity>>
+    suspend fun getCategoriesByPlaylist(playlistId: String): List<CategoryEntity>
 
     /**
      * Inserts or updates a category.

@@ -1,7 +1,8 @@
 package tss.t.tsiptv.player
 
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.serialization.Serializable
+import tss.t.tsiptv.player.models.MediaItem
+import tss.t.tsiptv.player.models.PlaybackState
 
 /**
  * Common interface for media player implementations across all platforms.
@@ -74,29 +75,3 @@ interface MediaPlayer {
      */
     suspend fun release()
 }
-
-/**
- * Represents the current state of media playback
- */
-enum class PlaybackState {
-    IDLE,
-    BUFFERING,
-    READY,
-    PLAYING,
-    PAUSED,
-    ENDED,
-    ERROR
-}
-
-/**
- * Represents a media item that can be played
- */
-@Serializable
-data class MediaItem(
-    val id: String,
-    val uri: String,
-    val title: String = "",
-    val artist: String = "",
-    val artworkUri: String? = null,
-    val mimeType: String? = null
-)

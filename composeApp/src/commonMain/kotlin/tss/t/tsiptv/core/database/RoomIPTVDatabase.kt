@@ -17,7 +17,7 @@ import kotlin.time.Duration.Companion.days
  */
 class RoomIPTVDatabase(
     private val database: AppDatabase,
-    private val networkClient: NetworkClient
+    private val networkClient: NetworkClient,
 ) : IPTVDatabase {
     private val playlistDao = database.playlistDao()
     private val channelDao = database.channelDao()
@@ -27,6 +27,18 @@ class RoomIPTVDatabase(
     override fun getAllChannels(): Flow<List<Channel>> {
         return channelDao.getAllChannels().map { channelEntities ->
             channelEntities.map { it.toChannel() }
+        }
+    }
+
+    override fun getAllChannelsByPlayListId(playListId: String): Flow<List<Channel>> {
+        return channelDao.getChannelsInPlaylist(playListId).map { channelEntities ->
+            channelEntities.map { it.toChannel() }
+        }
+    }
+
+    override suspend fun getCategoriesByPlaylist(playlistId: String): List<Category> {
+        return categoryDao.getCategoriesByPlaylist(playlistId).map {
+            it.toCategory()
         }
     }
 
@@ -65,6 +77,12 @@ class RoomIPTVDatabase(
     override fun getAllCategories(): Flow<List<Category>> {
         return categoryDao.getAllCategories().map { categoryEntities ->
             categoryEntities.map { it.toCategory() }
+        }
+    }
+
+    override suspend fun getAllCategoriesByPlayListId(playListId: String): List<Category> {
+        return categoryDao.getCategoriesByPlaylist(playListId).map {
+            it.toCategory()
         }
     }
 
@@ -180,6 +198,10 @@ class RoomIPTVDatabase(
 
     override suspend fun deletePlaylistById(id: String) {
         playlistDao.deletePlaylistById(id)
+    }
+
+    override suspend fun deleteChannelsInPlaylist(playlistId: String) {
+        channelDao.deleteChannelsByPlaylist(playlistId)
     }
 
     override suspend fun clearAllData() {

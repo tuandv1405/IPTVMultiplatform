@@ -110,13 +110,6 @@ class AuthViewModel(
                 signInWithApple()
             }
 
-            is LoginEvents.OnLogoutPressed -> {
-                viewModelScope.launch {
-                    authRepository.signOut()
-                    _uiState.update { it.copy(isAuthenticated = false) }
-                }
-            }
-
             is LoginEvents.OnDismissErrorDialog -> {
                 _uiState.update {
                     it.copy(
