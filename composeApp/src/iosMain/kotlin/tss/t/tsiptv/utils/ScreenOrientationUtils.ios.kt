@@ -88,11 +88,11 @@ class IOSScreenOrientationUtils : ScreenOrientationUtils {
     }
 
     override fun hideSystemUI() {
-        UIApplication.sharedApplication.setStatusBarHidden(false, animated = true)
+        UIApplication.sharedApplication.setStatusBarHidden(true, animated = true)
     }
 
     override fun showSystemUI() {
-        UIApplication.sharedApplication.setStatusBarHidden(true, animated = true)
+        UIApplication.sharedApplication.setStatusBarHidden(false, animated = true)
     }
 
     companion object {

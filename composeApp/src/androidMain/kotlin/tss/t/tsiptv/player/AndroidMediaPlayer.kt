@@ -47,6 +47,12 @@ class AndroidMediaPlayer(
     private val _isPlaying = MutableStateFlow(false)
     override val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
+    private val _volume = MutableStateFlow(1.0f)
+    override val volume: StateFlow<Float> = _volume.asStateFlow()
+
+    private val _isMuted = MutableStateFlow(false)
+    override val isMuted: StateFlow<Boolean> = _isMuted.asStateFlow()
+
     // ExoPlayer instance for direct control when needed
     private var exoPlayer: ExoPlayer? = null
     private var observerPlayer: Job? = null
@@ -140,6 +146,19 @@ class AndroidMediaPlayer(
         exoPlayer = null
         _playbackState.value = PlaybackState.IDLE
         observerPlayer = null
+    }
+
+    override suspend fun setVolume(volume: Float) {
+        val clampedVolume = volume.coerceIn(0f, 1f)
+        MediaPlayerService.setVolume(clampedVolume)
+        _volume.value = clampedVolume
+        _isMuted.value = clampedVolume == 0f
+    }
+
+    override suspend fun setMuted(muted: Boolean) {
+        MediaPlayerService.setMuted(muted)
+        _isMuted.value = muted
+        _volume.value = if (muted) 0f else 1f
     }
 
     private fun updatePlaybackState(playbackState: Int) {

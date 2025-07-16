@@ -27,6 +27,7 @@ import platform.AVFoundation.rate
 import platform.AVFoundation.removeTimeObserver
 import platform.AVFoundation.replaceCurrentItemWithPlayerItem
 import platform.AVFoundation.seekToTime
+import platform.AVFoundation.setVolume
 import platform.CoreMedia.CMTimeGetSeconds
 import platform.CoreMedia.CMTimeMake
 import platform.Foundation.NSNotificationCenter
@@ -69,6 +70,12 @@ class IOSMediaPlayer(
     override val isBuffering: StateFlow<Boolean> = _isBuffering.asStateFlow()
 
     private val _isPlaying = MutableStateFlow(false)
+    private val _volume = MutableStateFlow(1.0f)
+    override val volume: StateFlow<Float> = _volume.asStateFlow()
+
+    private val _isMuted = MutableStateFlow(false)
+    override val isMuted: StateFlow<Boolean> = _isMuted.asStateFlow()
+
     private var avPlayer: AVPlayer? = AVPlayer()
     override val isPlaying: StateFlow<Boolean>
         get() = _playbackState.map {
@@ -435,6 +442,29 @@ class IOSMediaPlayer(
         avPlayer = null
 
         _playbackState.value = PlaybackState.IDLE
+    }
+
+    override suspend fun setVolume(volume: Float) {
+        val clampedVolume = volume.coerceIn(0f, 1f)
+        avPlayer?.setVolume(clampedVolume)
+        _volume.value = clampedVolume
+        _isMuted.value = clampedVolume == 0f
+    }
+
+    override suspend fun setMuted(muted: Boolean) {
+        avPlayer?.let { player ->
+            if (muted) {
+                player.setVolume(0f)
+            } else {
+                player.setVolume(_volume.value.takeIf { it > 0f } ?: 1f)
+            }
+        }
+        _isMuted.value = muted
+        if (muted) {
+            _volume.value = 0f
+        } else if (_volume.value == 0f) {
+            _volume.value = 1f
+        }
     }
 
     /**

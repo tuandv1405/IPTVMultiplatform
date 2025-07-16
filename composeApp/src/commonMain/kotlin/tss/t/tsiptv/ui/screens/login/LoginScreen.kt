@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -29,9 +30,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +86,7 @@ fun LoginScreenPhone(
         endX = Float.POSITIVE_INFINITY
     )
     val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(email) {
         onEvent(LoginEvents.EmailChanged(email))
@@ -167,7 +171,16 @@ fun LoginScreenPhone(
                     onValueChange = { email = it },
                     modifier = Modifier.fillMaxWidth(),
                     shape = TSShapes.roundedShape8,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    keyboardOptions = remember {
+                        KeyboardOptions(keyboardType = KeyboardType.Email)
+                    },
+                    keyboardActions = remember {
+                        KeyboardActions(
+                            onNext = {
+                                focusManager.moveFocus(FocusDirection.Down)
+                            }
+                        )
+                    },
                     singleLine = true,
                     isError = !authState.isEmailValid,
                     colors = TextFieldDefaults.colors(
@@ -204,8 +217,20 @@ fun LoginScreenPhone(
                     onValueChange = { password = it },
                     modifier = Modifier.fillMaxWidth(),
                     shape = TSShapes.roundedShape8,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    visualTransformation = remember {
+                        PasswordVisualTransformation()
+                    },
+                    keyboardOptions = remember {
+                        KeyboardOptions(keyboardType = KeyboardType.Password)
+                    },
+                    keyboardActions = remember {
+                        KeyboardActions(
+                            onDone = {
+                                KeyboardActions.Default.onDone?.invoke(this)
+                                onEvent(LoginEvents.OnSignInPressed)
+                            }
+                        )
+                    },
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = TSColors.TextFieldBackground,

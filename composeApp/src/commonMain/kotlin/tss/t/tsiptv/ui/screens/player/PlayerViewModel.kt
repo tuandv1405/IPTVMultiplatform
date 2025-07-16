@@ -58,6 +58,8 @@ class PlayerViewModel(
 
     val playbackState: StateFlow<PlaybackState> = _mediaPlayer.playbackState
     val isPlaying: StateFlow<Boolean> = _mediaPlayer.isPlaying
+    val volume: StateFlow<Float> = _mediaPlayer.volume
+    val isMuted: StateFlow<Boolean> = _mediaPlayer.isMuted
     val player: MediaPlayer = _mediaPlayer
 
     fun playMedia(mediaItem: MediaItem) {
@@ -138,6 +140,8 @@ class PlayerViewModel(
 
                 is PlayerEvent.Play -> _mediaPlayer.play()
                 is PlayerEvent.Pause -> _mediaPlayer.pause()
+                is PlayerEvent.ToggleMute -> toggleMute()
+                is PlayerEvent.SetVolume -> setVolume(event.volume)
                 else -> {}
             }
         }
@@ -209,6 +213,24 @@ class PlayerViewModel(
             }
         }
     }
+
+    /**
+     * Toggle mute/unmute
+     */
+    private fun toggleMute() {
+        viewModelScope.launch {
+            _mediaPlayer.setMuted(!_mediaPlayer.isMuted.value)
+        }
+    }
+
+    /**
+     * Set volume level (0.0 to 1.0)
+     */
+    private fun setVolume(volume: Float) {
+        viewModelScope.launch {
+            _mediaPlayer.setVolume(volume)
+        }
+    }
 }
 
 @Immutable
@@ -235,6 +257,10 @@ sealed interface PlayerEvent {
     data object OnPlayerViewExitFillScreen169 : PlayerEvent
 
     data object OnHorizontalPlayerBack : PlayerEvent
+
+    // Volume control events
+    data object ToggleMute : PlayerEvent
+    data class SetVolume(val volume: Float) : PlayerEvent
 }
 
 data class PlayerUIState(

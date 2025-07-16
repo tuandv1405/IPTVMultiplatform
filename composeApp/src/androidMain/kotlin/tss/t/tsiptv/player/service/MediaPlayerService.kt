@@ -138,6 +138,40 @@ class MediaPlayerService : MediaSessionService() {
         fun setPlaybackSpeed(speed: Float) {
             exoPlayer?.setPlaybackSpeed(speed)
         }
+
+        /**
+         * Set the volume level (0.0 to 1.0)
+         */
+        fun setVolume(volume: Float) {
+            exoPlayer?.volume = volume.coerceIn(0f, 1f)
+        }
+
+        /**
+         * Mute or unmute the player
+         */
+        fun setMuted(muted: Boolean) {
+            exoPlayer?.let { player ->
+                if (muted) {
+                    player.volume = 0f
+                } else {
+                    player.volume = 1f
+                }
+            }
+        }
+
+        /**
+         * Get the current volume level
+         */
+        fun getVolume(): Float {
+            return exoPlayer?.volume ?: 1f
+        }
+
+        /**
+         * Check if the player is muted
+         */
+        fun isMuted(): Boolean {
+            return exoPlayer?.volume == 0f
+        }
     }
 
     private var startForeground = false
