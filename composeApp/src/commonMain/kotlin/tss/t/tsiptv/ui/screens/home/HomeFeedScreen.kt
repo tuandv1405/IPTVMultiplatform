@@ -1,6 +1,13 @@
 package tss.t.tsiptv.ui.screens.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,13 +17,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
@@ -24,11 +34,15 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,15 +54,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.all_channels_title
 import tsiptv.composeapp.generated.resources.btn_add_iptv_source_title
@@ -58,11 +78,17 @@ import tsiptv.composeapp.generated.resources.ic_info
 import tsiptv.composeapp.generated.resources.iptv_help_title
 import tsiptv.composeapp.generated.resources.what_is_iptv_desc
 import tsiptv.composeapp.generated.resources.what_is_iptv_title
+import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.navigation.NavRoutes
+import tss.t.tsiptv.player.MediaPlayer
+import tss.t.tsiptv.player.models.MediaItem
+import tss.t.tsiptv.player.ui.MediaPlayerContent
+import tss.t.tsiptv.player.ui.MediaPlayerView
 import tss.t.tsiptv.ui.screens.home.widget.HomeCategoryItem
 import tss.t.tsiptv.ui.screens.home.widget.HomeChannelItem
 import tss.t.tsiptv.ui.screens.home.widget.NowPlayingCard
 import tss.t.tsiptv.ui.screens.login.provider.LocalAuthProvider
+import tss.t.tsiptv.ui.screens.player.PlayerViewModel
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.widgets.GradientButton1
@@ -106,6 +132,17 @@ fun HomeFeedScreen(
 
     var showStickyHeader by remember { mutableStateOf(false) }
     val categoryListState: LazyListState = rememberLazyListState()
+    val mediaPlayer = koinInject<MediaPlayer>()
+    val iptvDatabase = koinInject<IPTVDatabase>()
+    val viewStoreOwner = LocalViewModelStoreOwner.current!!
+    val playerViewModel = viewModel<PlayerViewModel>(viewStoreOwner) {
+        PlayerViewModel(
+            _mediaPlayer = mediaPlayer,
+            _iptvDatabase = iptvDatabase
+        )
+    }
+    val mediaItem by playerViewModel.mediaItemState.collectAsStateWithLifecycle()
+    var showMiniPlayer by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         snapshotFlow { scrollState.layoutInfo.visibleItemsInfo to isEmpty }
@@ -128,6 +165,13 @@ fun HomeFeedScreen(
                     }
                 }
             }
+    }
+
+    LifecycleResumeEffect(mediaItem) {
+        showMiniPlayer = mediaItem != MediaItem.EMPTY
+        onPauseOrDispose {
+            showMiniPlayer = false
+        }
     }
 
     Scaffold(
@@ -169,37 +213,127 @@ fun HomeFeedScreen(
             }
         }
     ) {
-        LazyColumn(
-            state = scrollState,
-            modifier = Modifier.fillMaxSize()
-                .hazeSource(hazeState),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+        Box {
+            LazyColumn(
+                state = scrollState,
+                modifier = Modifier.fillMaxSize()
+                    .hazeSource(hazeState),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
 
-            item("HomeSpaceTop") {
-                Spacer(Modifier.height(it.calculateTopPadding()))
-            }
-
-            when {
-                isEmpty -> {
-                    homeEmptyIptvSource(navController, parentNavController)
+                item("HomeSpaceTop") {
+                    Spacer(Modifier.height(it.calculateTopPadding()))
                 }
 
-                isInitLoading -> {
-                    homeInitLoading(hazeState)
+                when {
+                    isEmpty -> {
+                        homeEmptyIptvSource(navController, parentNavController)
+                    }
+
+                    isInitLoading -> {
+                        homeInitLoading(hazeState)
+                    }
+
+                    else -> {
+                        homeItemList(
+                            homeUiState = homeUiState,
+                            onHomeEvent = onHomeEvent,
+                            categoryListState = categoryListState
+                        )
+                    }
                 }
 
-                else -> {
-                    homeItemList(
-                        homeUiState = homeUiState,
-                        onHomeEvent = onHomeEvent,
-                        categoryListState = categoryListState
+                item {
+                    Spacer(
+                        Modifier
+                            .navigationBarsPadding()
+                            .height(contentPadding.calculateBottomPadding() + 12.dp)
                     )
                 }
             }
 
-            item {
-                Spacer(Modifier.height(contentPadding.calculateBottomPadding() + 16.dp))
+            AnimatedVisibility(
+                visible = showMiniPlayer,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter),
+                enter = slideInVertically(
+                    initialOffsetY = { it },
+                    animationSpec = tween(
+                        durationMillis = 300,
+                        easing = LinearOutSlowInEasing
+                    )
+                ),
+                exit = slideOutVertically(
+                    targetOffsetY = { it },
+                    animationSpec = tween(
+                        durationMillis = 300,
+                        easing = LinearOutSlowInEasing
+                    )
+                ) + fadeOut(
+                    targetAlpha = 0.5f,
+                    animationSpec = tween(
+                        durationMillis = 300,
+                        easing = LinearOutSlowInEasing
+                    )
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .padding(bottom = contentPadding.calculateBottomPadding() + 12.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .clip(TSShapes.roundedShape8)
+                        .clickable {
+                            onHomeEvent(HomeEvent.OnResumeMediaItem(mediaItem))
+                        }
+                        .hazeEffect(hazeState),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    MediaPlayerContent(
+                        player = playerViewModel.player,
+                        modifier = Modifier
+                            .size(160.dp, 90.dp)
+                            .clip(TSShapes.roundedShape8)
+                            .background(
+                                color = TSColors.PlayerBackgroundColor,
+                                shape = TSShapes.roundedShape8
+                            )
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = mediaItem.title,
+                            color = TSColors.TextPrimary,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 16.sp
+                        )
+                        Text(
+                            text = mediaItem.id,
+                            color = TSColors.TextSecondaryLight,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 13.sp,
+                            lineHeight = 14.sp
+                        )
+                    }
+                    Image(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = "Close",
+                        modifier = Modifier.size(32.dp)
+                            .clip(CircleShape)
+                            .padding(4.dp)
+                            .clickable {
+                                if (showMiniPlayer) {
+                                    showMiniPlayer = false
+                                    playerViewModel.stopMedia()
+                                }
+                            },
+                        colorFilter = ColorFilter.tint(TSColors.TextPrimary)
+                    )
+                }
             }
         }
     }

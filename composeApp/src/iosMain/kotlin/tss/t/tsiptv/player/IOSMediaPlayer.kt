@@ -6,6 +6,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import platform.AVFoundation.AVPlayer
 import platform.AVFoundation.AVPlayerItem
@@ -13,6 +15,7 @@ import platform.AVFoundation.AVPlayerItemDidPlayToEndTimeNotification
 import platform.AVFoundation.AVPlayerItemStatusFailed
 import platform.AVFoundation.AVPlayerItemStatusReadyToPlay
 import platform.AVFoundation.addPeriodicTimeObserverForInterval
+import platform.AVFoundation.audiovisualBackgroundPlaybackPolicy
 import platform.AVFoundation.currentItem
 import platform.AVFoundation.currentTime
 import platform.AVFoundation.duration
@@ -27,6 +30,10 @@ import platform.CoreMedia.CMTimeGetSeconds
 import platform.CoreMedia.CMTimeMake
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSURL
+import platform.UIKit.UIApplication
+import platform.UIKit.UIApplicationDidEnterBackgroundNotification
+import platform.UIKit.UIApplicationWillEnterForegroundNotification
+import platform.UIKit.UIImage
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackState
 import kotlin.math.roundToLong
@@ -44,6 +51,10 @@ class IOSMediaPlayer(
     private val _currentMedia = MutableStateFlow<MediaItem?>(null)
     override val currentMedia: StateFlow<MediaItem?> = _currentMedia.asStateFlow()
 
+    // Cache for artwork images
+    private var cachedArtworkImage: UIImage? = null
+    private var lastLoadedArtworkUri: String? = null
+
     private val _currentPosition = MutableStateFlow(0L)
     override val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
 
@@ -56,6 +67,19 @@ class IOSMediaPlayer(
     private val _isBuffering = MutableStateFlow(false)
     override val isBuffering: StateFlow<Boolean> = _isBuffering.asStateFlow()
 
+    private val _isPlaying = MutableStateFlow(false)
+    override val isPlaying: StateFlow<Boolean>
+        get() = _playbackState.map {
+            when (it) {
+                PlaybackState.PLAYING -> true
+                else -> false
+            }
+        }.stateIn(
+            coroutineScope,
+            kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
     // AVPlayer instance
     private var avPlayer: AVPlayer? = AVPlayer()
 
@@ -65,17 +89,111 @@ class IOSMediaPlayer(
     // Notification observer for playback ended
     private var itemObserver: Any? = null
 
+    // Notification observers for app lifecycle events
+    private var backgroundObserver: Any? = null
+    private var foregroundObserver: Any? = null
+
+    // Flag to track if app is in background
+    private var isInBackground = false
+
     init {
         // Start position update job
         startPositionUpdateJob()
+
+        // Request notification permissions
+        requestNotificationPermissions()
+
+        // Configure audio session for background playback
+        IOSAudioSessionManager.configureAudioSessionForBackgroundPlayback()
+
+        // Set up app lifecycle observers
+        setupAppLifecycleObservers()
+    }
+
+    /**
+     * Sets up observers for app lifecycle events to handle background/foreground transitions
+     */
+    private fun setupAppLifecycleObservers() {
+        val notificationCenter = NSNotificationCenter.defaultCenter
+
+        // Observer for when app enters background
+        backgroundObserver = notificationCenter.addObserverForName(
+            UIApplicationDidEnterBackgroundNotification,
+            null,
+            null
+        ) { _ ->
+            println("App entered background")
+            isInBackground = true
+            handleAppBackgrounded()
+        }
+
+        // Observer for when app enters foreground
+        foregroundObserver = notificationCenter.addObserverForName(
+            UIApplicationWillEnterForegroundNotification,
+            null,
+            null
+        ) { _ ->
+            println("App will enter foreground")
+            isInBackground = false
+            handleAppForegrounded()
+        }
+    }
+
+    /**
+     * Handles actions when app goes to background
+     * Ensures audio continues to play while video display is hidden
+     */
+    private fun handleAppBackgrounded() {
+        // Continue audio playback in background
+        if (_playbackState.value == PlaybackState.PLAYING) {
+            // Make sure audio continues to play
+            avPlayer?.play()
+
+            // Show notification for background playback
+            showPlaybackNotification()
+        }
+    }
+
+    /**
+     * Handles actions when app comes to foreground
+     * Restores video display
+     */
+    private fun handleAppForegrounded() {
+        // Resume normal playback state
+        if (_playbackState.value == PlaybackState.PLAYING) {
+            avPlayer?.play()
+        }
+    }
+
+    /**
+     * Requests permission to display notifications
+     */
+    private fun requestNotificationPermissions() {
+        try {
+            val notificationCenter = platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter()
+
+            // Request authorization for notifications
+            notificationCenter.requestAuthorizationWithOptions(
+                platform.UserNotifications.UNAuthorizationOptionAlert.or(
+                    platform.UserNotifications.UNAuthorizationOptionBadge.or(
+                        platform.UserNotifications.UNAuthorizationOptionSound
+                    )
+                )
+            ) { granted, error ->
+                if (granted) {
+                    println("Notification permission granted")
+                } else {
+                    println("Notification permission denied: ${error?.localizedDescription}")
+                }
+            }
+        } catch (e: Exception) {
+            println("Error requesting notification permissions: ${e.message}")
+        }
     }
 
     private fun startPositionUpdateJob() {
         coroutineScope.launch(Dispatchers.Main) {
-            while (true) {
-                updateCurrentPosition()
-                kotlinx.coroutines.delay(500) // Update every 500ms
-            }
+            updateCurrentPosition()
         }
     }
 
@@ -175,6 +293,86 @@ class IOSMediaPlayer(
     override suspend fun play() {
         avPlayer?.play()
         _playbackState.value = PlaybackState.PLAYING
+
+        // Show notification when playing
+        showPlaybackNotification()
+    }
+
+    /**
+     * Shows a notification for the currently playing media
+     */
+    private fun showPlaybackNotification() {
+        try {
+            // Get current media item
+            val mediaItem = _currentMedia.value ?: return
+
+            // Format title and description for better display
+            val formattedTitle = if (mediaItem.title.isNotEmpty()) {
+                "Now Playing: ${mediaItem.title}"
+            } else {
+                "Now Playing"
+            }
+
+            // Create a more detailed description
+            val description = buildString {
+                if (mediaItem.artist?.isNotEmpty() == true) {
+                    append(mediaItem.artist)
+                }
+
+                // Add stream type info if available
+                if (mediaItem.uri.contains(".m3u8") || mediaItem.uri.contains("live")) {
+                    if (isNotEmpty()) append(" • ")
+                    append("Live Stream")
+                } else if (mediaItem.mimeType?.isNotEmpty() == true) {
+                    if (isNotEmpty()) append(" • ")
+                    append(mediaItem.mimeType)
+                }
+
+                // Add a default if nothing else is available
+                if (isEmpty()) {
+                    append("Streaming media content")
+                }
+            }
+
+            // Create notification content with improved formatting
+            val content = platform.UserNotifications.UNMutableNotificationContent().apply {
+                setTitle(formattedTitle)
+                setBody(description)
+                setSound(null) // No sound for media notifications
+
+                // Set category for media playback
+                setThreadIdentifier("media_playback")
+                setCategoryIdentifier("media_playback")
+
+                // Add user info for handling notification actions
+                val userInfo = mapOf<Any?, Any?>(
+                    "mediaUri" to (mediaItem.uri ?: ""),
+                    "mediaId" to (mediaItem.id ?: ""),
+                    "mediaTitle" to (mediaItem.title ?: ""),
+                    "mediaArtist" to (mediaItem.artist ?: ""),
+                    "mediaArtworkUri" to (mediaItem.artworkUri ?: "")
+                )
+                setUserInfo(userInfo)
+            }
+
+            // Create a unique identifier for this notification
+            val requestIdentifier = "media_playback_${platform.Foundation.NSUUID.UUID().UUIDString()}"
+
+            // Create the notification request
+            val request = platform.UserNotifications.UNNotificationRequest.requestWithIdentifier(
+                requestIdentifier,
+                content,
+                null // No trigger, show immediately
+            )
+
+            // Add the notification request
+            platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter()
+                .addNotificationRequest(request, null)
+
+            println("Enhanced media playback notification shown")
+        } catch (e: Exception) {
+            println("Error showing notification: ${e.message}")
+        }
     }
 
     override suspend fun pause() {
@@ -210,9 +408,22 @@ class IOSMediaPlayer(
             timeObserverToken = null
         }
 
+        // Remove notification observers
+        val notificationCenter = NSNotificationCenter.defaultCenter
+
         itemObserver?.let { observer ->
-            NSNotificationCenter.defaultCenter.removeObserver(observer)
+            notificationCenter.removeObserver(observer)
             itemObserver = null
+        }
+
+        backgroundObserver?.let { observer ->
+            notificationCenter.removeObserver(observer)
+            backgroundObserver = null
+        }
+
+        foregroundObserver?.let { observer ->
+            notificationCenter.removeObserver(observer)
+            foregroundObserver = null
         }
 
         // Stop and release player

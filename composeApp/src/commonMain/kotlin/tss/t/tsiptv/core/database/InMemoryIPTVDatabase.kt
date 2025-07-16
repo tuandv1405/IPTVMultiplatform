@@ -4,6 +4,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import tss.t.tsiptv.core.model.Category
+import tss.t.tsiptv.core.model.Channel
+import tss.t.tsiptv.core.model.Playlist
+import tss.t.tsiptv.core.model.Program
 
 /**
  * A simple in-memory implementation of IPTVDatabase.
@@ -14,6 +18,7 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     private val channels = MutableStateFlow<Map<String, Channel>>(emptyMap())
     private val categories = MutableStateFlow<Map<String, Category>>(emptyMap())
     private val playlists = MutableStateFlow<Map<String, Playlist>>(emptyMap())
+    private val programs = MutableStateFlow<Map<String, Program>>(emptyMap())
 
     override fun getAllChannels(): Flow<List<Channel>> {
         return channels.map { it.values.toList() }
@@ -122,9 +127,79 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         channels.value = channels.value.filterNot { it.value.playlistId == playlistId }
     }
 
+    override fun getAllPrograms(): Flow<List<Program>> {
+        return programs.map { it.values.toList() }
+    }
+
+    override suspend fun getProgramById(id: String): Program? {
+        return programs.value[id]
+    }
+
+    override suspend fun getProgramsForChannel(channelId: String): List<Program> {
+        return programs.value.values.filter { it.channelId == channelId }
+    }
+
+    override suspend fun getProgramsForChannelInTimeRange(
+        channelId: String,
+        startTime: Long,
+        endTime: Long,
+    ): List<Program> {
+        return programs.value.values.filter { 
+            it.channelId == channelId && 
+            it.startTime >= startTime && 
+            it.endTime <= endTime 
+        }
+    }
+
+    override suspend fun getCurrentAndUpcomingProgramsForChannel(
+        channelId: String,
+        currentTime: Long,
+    ): List<Program> {
+        return programs.value.values.filter { 
+            it.channelId == channelId && 
+            it.endTime > currentTime 
+        }.sortedBy { it.startTime }
+    }
+
+    override suspend fun getCurrentProgramForChannel(
+        channelId: String,
+        currentTime: Long,
+    ): Program? {
+        return programs.value.values.find { 
+            it.channelId == channelId && 
+            it.startTime <= currentTime && 
+            it.endTime > currentTime 
+        }
+    }
+
+    override suspend fun insertProgram(program: Program) {
+        programs.value = programs.value + (program.id to program)
+    }
+
+    override suspend fun insertPrograms(programs: List<Program>) {
+        this.programs.value = this.programs.value + programs.associateBy { it.id }
+    }
+
+    override suspend fun deleteProgram(program: Program) {
+        deleteProgramById(program.id)
+    }
+
+    override suspend fun deleteProgramById(id: String) {
+        programs.value = programs.value - id
+    }
+
+    override suspend fun deleteProgramsForChannel(channelId: String) {
+        programs.value = programs.value.filterNot { it.value.channelId == channelId }
+    }
+
+    override suspend fun deleteProgramsForPlaylist(playlistId: String) {
+        programs.value = programs.value.filterNot { it.value.playlistId == playlistId }
+    }
+
     override suspend fun clearAllData() {
         channels.value = emptyMap()
         categories.value = emptyMap()
         playlists.value = emptyMap()
+        programs.value = emptyMap()
     }
 }

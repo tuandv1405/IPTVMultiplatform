@@ -1,7 +1,7 @@
 package tss.t.tsiptv.player.models
 
 import kotlinx.serialization.Serializable
-import tss.t.tsiptv.core.database.Channel
+import tss.t.tsiptv.core.model.Channel
 
 /**
  * Represents a media item that can be played
@@ -10,6 +10,7 @@ import tss.t.tsiptv.core.database.Channel
 data class MediaItem(
     val id: String,
     val uri: String,
+    val description: String = "",
     val title: String = "",
     val artist: String = "",
     val artworkUri: String? = null,
@@ -24,6 +25,7 @@ fun Channel.toMediaItem() = MediaItem(
     id = id,
     uri = url,
     title = name,
+    description = categoryId ?: "",
     artist = categoryId ?: "",
     artworkUri = logoUrl,
     mimeType = null

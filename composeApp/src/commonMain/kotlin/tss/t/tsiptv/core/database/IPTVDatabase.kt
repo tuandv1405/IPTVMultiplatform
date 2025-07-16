@@ -1,7 +1,10 @@
 package tss.t.tsiptv.core.database
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.serialization.Serializable
+import tss.t.tsiptv.core.model.Category
+import tss.t.tsiptv.core.model.Channel
+import tss.t.tsiptv.core.model.Playlist
+import tss.t.tsiptv.core.model.Program
 
 /**
  * Interface for the IPTV database.
@@ -177,59 +180,100 @@ interface IPTVDatabase {
     suspend fun deleteChannelsInPlaylist(playlistId: String)
 
     /**
+     * Gets all programs.
+     *
+     * @return A flow of all programs
+     */
+    fun getAllPrograms(): Flow<List<Program>>
+
+    /**
+     * Gets a program by ID.
+     *
+     * @param id The ID of the program to get
+     * @return The program with the given ID, or null if not found
+     */
+    suspend fun getProgramById(id: String): Program?
+
+    /**
+     * Gets programs for a channel.
+     *
+     * @param channelId The ID of the channel
+     * @return A list of programs for the channel
+     */
+    suspend fun getProgramsForChannel(channelId: String): List<Program>
+
+    /**
+     * Gets programs for a channel within a time range.
+     *
+     * @param channelId The ID of the channel
+     * @param startTime The start time of the range
+     * @param endTime The end time of the range
+     * @return A list of programs for the channel within the time range
+     */
+    suspend fun getProgramsForChannelInTimeRange(channelId: String, startTime: Long, endTime: Long): List<Program>
+
+    /**
+     * Gets current and upcoming programs for a channel.
+     *
+     * @param channelId The ID of the channel
+     * @param currentTime The current time
+     * @return A list of current and upcoming programs for the channel
+     */
+    suspend fun getCurrentAndUpcomingProgramsForChannel(channelId: String, currentTime: Long): List<Program>
+
+    /**
+     * Gets the current program for a channel.
+     *
+     * @param channelId The ID of the channel
+     * @param currentTime The current time
+     * @return The current program, or null if not found
+     */
+    suspend fun getCurrentProgramForChannel(channelId: String, currentTime: Long): Program?
+
+    /**
+     * Inserts or updates a program.
+     *
+     * @param program The program to insert or update
+     */
+    suspend fun insertProgram(program: Program)
+
+    /**
+     * Inserts or updates multiple programs.
+     *
+     * @param programs The programs to insert or update
+     */
+    suspend fun insertPrograms(programs: List<Program>)
+
+    /**
+     * Deletes a program.
+     *
+     * @param program The program to delete
+     */
+    suspend fun deleteProgram(program: Program)
+
+    /**
+     * Deletes a program by ID.
+     *
+     * @param id The ID of the program to delete
+     */
+    suspend fun deleteProgramById(id: String)
+
+    /**
+     * Deletes all programs for a channel.
+     *
+     * @param channelId The ID of the channel
+     */
+    suspend fun deleteProgramsForChannel(channelId: String)
+
+    /**
+     * Deletes all programs for a playlist.
+     *
+     * @param playlistId The ID of the playlist
+     */
+    suspend fun deleteProgramsForPlaylist(playlistId: String)
+
+    /**
      * Clears all data from the database.
      */
     suspend fun clearAllData()
 }
-
-/**
- * Data class representing a channel.
- *
- * @property id The unique ID of the channel
- * @property name The name of the channel
- * @property url The URL of the channel
- * @property logoUrl The URL of the channel's logo
- * @property categoryId The ID of the category the channel belongs to
- * @property playlistId The ID of the playlist the channel belongs to
- * @property isFavorite Whether the channel is a favorite
- * @property lastWatched The timestamp when the channel was last watched, or null if never watched
- */
-@Serializable
-data class Channel(
-    val id: String,
-    val name: String,
-    val url: String,
-    val logoUrl: String? = null,
-    val categoryId: String? = null,
-    val playlistId: String,
-    val isFavorite: Boolean = false,
-    val lastWatched: Long? = null
-)
-
-/**
- * Data class representing a category.
- *
- * @property id The unique ID of the category
- * @property name The name of the category
- * @property playlistId The ID of the playlist the category belongs to
- */
-data class Category(
-    val id: String,
-    val name: String,
-    val playlistId: String
-)
-
-/**
- * Data class representing a playlist.
- *
- * @property id The unique ID of the playlist
- * @property name The name of the playlist
- * @property url The URL of the playlist
- * @property lastUpdated The timestamp when the playlist was last updated
- */
-data class Playlist(
-    val id: String,
-    val name: String,
-    val url: String,
-    val lastUpdated: Long,
-)

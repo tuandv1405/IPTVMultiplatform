@@ -1,4 +1,4 @@
-package tss.t.tsiptv.core.database
+package tss.t.tsiptv.core.database.entity
 
 import androidx.room.*
 

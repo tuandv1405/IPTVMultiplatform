@@ -3,6 +3,23 @@ package tss.t.tsiptv.core.database
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
+import tss.t.tsiptv.core.database.entity.CategoryEntity
+import tss.t.tsiptv.core.database.entity.ChannelAttributeEntity
+import tss.t.tsiptv.core.database.entity.ChannelEntity
+import tss.t.tsiptv.core.database.entity.PlaylistEntity
+import tss.t.tsiptv.core.database.entity.ProgramEntity
+import tss.t.tsiptv.core.database.entity.toCategory
+import tss.t.tsiptv.core.database.entity.toCategoryEntity
+import tss.t.tsiptv.core.database.entity.toChannel
+import tss.t.tsiptv.core.database.entity.toChannelEntity
+import tss.t.tsiptv.core.database.entity.toPlaylist
+import tss.t.tsiptv.core.database.entity.toPlaylistEntity
+import tss.t.tsiptv.core.database.entity.toProgram
+import tss.t.tsiptv.core.database.entity.toProgramEntity
+import tss.t.tsiptv.core.model.Category
+import tss.t.tsiptv.core.model.Channel
+import tss.t.tsiptv.core.model.Playlist
+import tss.t.tsiptv.core.model.Program
 import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.parser.IPTVFormat
 import tss.t.tsiptv.core.parser.IPTVParserFactory
@@ -23,6 +40,7 @@ class RoomIPTVDatabase(
     private val channelDao = database.channelDao()
     private val categoryDao = database.categoryDao()
     private val channelAttributeDao = database.channelAttributeDao()
+    private val programDao = database.programDao()
 
     override fun getAllChannels(): Flow<List<Channel>> {
         return channelDao.getAllChannels().map { channelEntities ->
@@ -208,65 +226,66 @@ class RoomIPTVDatabase(
 
     }
 
-    // Extension functions to convert between domain models and entities
-    private fun PlaylistEntity.toPlaylist(): Playlist {
-        return Playlist(
-            id = id,
-            name = name,
-            url = url,
-            lastUpdated = lastUpdated
-        )
+    // Program-related methods
+    override fun getAllPrograms(): Flow<List<Program>> {
+        return programDao.getAllPrograms().map { programEntities ->
+            programEntities.map { it.toProgram() }
+        }
     }
 
-    private fun Playlist.toPlaylistEntity(): PlaylistEntity {
-        return PlaylistEntity(
-            id = id,
-            name = name,
-            url = url,
-            lastUpdated = lastUpdated,
-            format = IPTVFormat.UNKNOWN.name // This will be updated when the playlist is parsed
-        )
+    override suspend fun getProgramById(id: String): Program? {
+        return programDao.getProgramById(id)?.toProgram()
     }
 
-    private fun ChannelEntity.toChannel(): Channel {
-        return Channel(
-            id = id,
-            name = name,
-            url = url,
-            logoUrl = logoUrl,
-            categoryId = categoryId,
-            playlistId = playlistId,
-            isFavorite = isFavorite,
-            lastWatched = lastWatched
-        )
+    override suspend fun getProgramsForChannel(channelId: String): List<Program> {
+        return programDao.getProgramsForChannel(channelId).map { it.toProgram() }
     }
 
-    private fun Channel.toChannelEntity(): ChannelEntity {
-        return ChannelEntity(
-            id = id,
-            name = name,
-            url = url,
-            logoUrl = logoUrl,
-            categoryId = categoryId,
-            playlistId = playlistId,
-            isFavorite = isFavorite,
-            lastWatched = lastWatched
-        )
+    override suspend fun getProgramsForChannelInTimeRange(
+        channelId: String,
+        startTime: Long,
+        endTime: Long,
+    ): List<Program> {
+        return programDao.getProgramsForChannelInTimeRange(channelId, startTime, endTime)
+            .map { it.toProgram() }
     }
 
-    private fun CategoryEntity.toCategory(): Category {
-        return Category(
-            id = id,
-            name = name,
-            playlistId = playlistId
-        )
+    override suspend fun getCurrentAndUpcomingProgramsForChannel(
+        channelId: String,
+        currentTime: Long,
+    ): List<Program> {
+        return programDao.getCurrentAndUpcomingProgramsForChannel(channelId, currentTime)
+            .map { it.toProgram() }
     }
 
-    private fun Category.toCategoryEntity(): CategoryEntity {
-        return CategoryEntity(
-            id = id,
-            name = name,
-            playlistId = playlistId
-        )
+    override suspend fun getCurrentProgramForChannel(
+        channelId: String,
+        currentTime: Long,
+    ): Program? {
+        return programDao.getCurrentProgramForChannel(channelId, currentTime)?.toProgram()
+    }
+
+    override suspend fun insertProgram(program: Program) {
+        programDao.insertProgram(program.toProgramEntity())
+    }
+
+    override suspend fun insertPrograms(programs: List<Program>) {
+        programDao.insertPrograms(programs.map { it.toProgramEntity() })
+    }
+
+    override suspend fun deleteProgram(program: Program) {
+        programDao.deleteProgram(program.toProgramEntity())
+    }
+
+    override suspend fun deleteProgramById(id: String) {
+        programDao.deleteProgramById(id)
+    }
+
+    override suspend fun deleteProgramsForChannel(channelId: String) {
+        programDao.deleteProgramsForChannel(channelId)
+    }
+
+    override suspend fun deleteProgramsForPlaylist(playlistId: String) {
+        programDao.deleteProgramsForPlaylist(playlistId)
     }
 }

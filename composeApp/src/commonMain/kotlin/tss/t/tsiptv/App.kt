@@ -43,7 +43,6 @@ import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.navigation.navigateAndRemoveFromBackStack
 import tss.t.tsiptv.player.MediaPlayer
-import tss.t.tsiptv.ui.screens.player.PlayerScreen
 import tss.t.tsiptv.ui.screens.addiptv.ImportIPTVScreen
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.screens.home.HomeScreen
@@ -54,6 +53,8 @@ import tss.t.tsiptv.ui.screens.login.LoginScreenDesktop2
 import tss.t.tsiptv.ui.screens.login.LoginScreenPhone
 import tss.t.tsiptv.ui.screens.login.SignUpScreen
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
+import tss.t.tsiptv.ui.screens.player.PlayerEvent
+import tss.t.tsiptv.ui.screens.player.PlayerScreen
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
 import tss.t.tsiptv.ui.screens.settings.LanguageSettingsScreen
 import tss.t.tsiptv.ui.screens.splash.SplashScreen
@@ -93,7 +94,6 @@ fun App() {
         }
     }
 
-    // Wrap the app in the AppLocaleProvider to provide the current locale
     AppLocaleProvider(
         localeManager = localeManager,
         authState = authState,
@@ -198,8 +198,6 @@ fun App() {
 
                     composable<NavRoutes.Home>() {
                         val hazeState = rememberHazeState()
-                        val database = koinInject<IPTVDatabase>()
-                        val networkClient = koinInject<NetworkClient>()
                         val homeViewModel = viewModel<HomeViewModel>(viewModelStoreOwner) {
                             HomeViewModel(
                                 iptvDatabase = database,
@@ -210,7 +208,8 @@ fun App() {
                         val mediaPlayer = koinInject<MediaPlayer>()
                         val playerViewModel = viewModel<PlayerViewModel>(viewModelStoreOwner) {
                             PlayerViewModel(
-                                _mediaPlayer = mediaPlayer
+                                _mediaPlayer = mediaPlayer,
+                                _iptvDatabase = database
                             )
                         }
 
@@ -221,11 +220,17 @@ fun App() {
                             homeUiState = homeUIState,
                             onHomeEvent = {
                                 if (it is HomeEvent.OnOpenVideoPlayer) {
+                                    homeViewModel.getRelatedChannels(it.channel)
                                     playerViewModel.playIptv(it.channel)
                                     navController.navigate(NavRoutes.Player(it.channel.id))
                                 }
 
                                 when (it) {
+                                    is HomeEvent.OnResumeMediaItem -> {
+                                        navController.navigate(NavRoutes.Player(""))
+                                        playerViewModel.resumeMediaItem(it.mediaItem)
+                                    }
+
                                     else -> homeViewModel.onHandleEvent(it)
                                 }
                             }
@@ -249,20 +254,37 @@ fun App() {
                         val mediaPlayer = koinInject<MediaPlayer>()
                         val playerViewModel = viewModel<PlayerViewModel>(viewModelStoreOwner) {
                             PlayerViewModel(
-                                _mediaPlayer = mediaPlayer
+                                _mediaPlayer = mediaPlayer,
+                                _iptvDatabase = database
                             )
                         }
                         val mediaItem by playerViewModel.mediaItemState.collectAsState()
-                        val playbackState by playerViewModel.playbackState.collectAsState()
+                        val homeViewModel = viewModel<HomeViewModel>(viewModelStoreOwner) {
+                            HomeViewModel(
+                                iptvDatabase = database,
+                                networkClient = networkClient
+                            )
+                        }
+                        val relatedChannels by homeViewModel.relatedChannels.collectAsState()
+
+                        LaunchedEffect(channelId) {
+                            playerViewModel.verifyPlayingMediaItem(channelId)
+                        }
 
                         PlayerScreen(
                             mediaItem = mediaItem,
-                            playbackState = playbackState,
                             mediaPlayer = playerViewModel.player,
-                            onEvent = {
-                                playerViewModel.onHandleEvent(it)
+                            relatedMediaItems = relatedChannels,
+                        ) { event ->
+                            if (event is PlayerEvent.PlayIptv) {
+                                homeViewModel.getRelatedChannels(event.iptvChannel)
                             }
-                        )
+
+                            when (event) {
+                                PlayerEvent.OnVerticalPlayerBack -> navController.popBackStack()
+                                else -> playerViewModel.onHandleEvent(event)
+                            }
+                        }
                     }
 
                     composable<NavRoutes.ImportIptv> {

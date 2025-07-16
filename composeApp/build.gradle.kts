@@ -68,6 +68,8 @@ kotlin {
             implementation(libs.media3.exoplayer.dash)
             implementation(libs.media3.exoplayer.hls)
             implementation(libs.media3.ui)
+            implementation(libs.media3.session)
+            implementation(libs.media3.common)
 
             // Add Firebase dependencies for Android
             implementation(project.dependencies.platform(libs.firebase.bom))

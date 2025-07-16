@@ -7,16 +7,24 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import tss.t.tsiptv.core.database.Category
-import tss.t.tsiptv.core.database.Channel
+import tss.t.tsiptv.core.model.Category
+import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.database.IPTVDatabase
-import tss.t.tsiptv.core.database.Playlist
+import tss.t.tsiptv.core.model.Playlist
+import tss.t.tsiptv.core.model.Program
 import tss.t.tsiptv.core.network.NetworkClient
+import tss.t.tsiptv.core.parser.EPGParserFactory
 import tss.t.tsiptv.core.parser.IPTVParserFactory
+import tss.t.tsiptv.core.parser.IPTVProgram
+import tss.t.tsiptv.player.models.MediaItem
 
 class HomeViewModel(
     private val iptvDatabase: IPTVDatabase,
@@ -26,6 +34,15 @@ class HomeViewModel(
     private var _currentListChannel: List<Channel> = emptyList()
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState
+
+    val relatedChannels: StateFlow<List<Channel>> = _uiState.map {
+        it.relatedChannels
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList()
+    )
+
     private val _homeEvent by lazy {
         MutableSharedFlow<HomeEvent>()
     }
@@ -91,6 +108,7 @@ class HomeViewModel(
                     id = url.hashCode().toString(), // Use URL hash as ID
                     name = name,
                     url = url,
+                    epgUrl = playlist.epgUrl,
                     lastUpdated = Clock.System.now().toEpochMilliseconds()
                 )
                 iptvDatabase.insertPlaylist(newPlaylist)
@@ -183,11 +201,16 @@ class HomeViewModel(
                     val parser = IPTVParserFactory.createParserForContent(content)
                     val parsedPlaylist = parser.parse(content)
                     val updatedPlaylist = playlist.copy(
-                        lastUpdated = Clock.System.now().toEpochMilliseconds()
+                        lastUpdated = Clock.System.now().toEpochMilliseconds(),
+                        epgUrl = parsedPlaylist.epgUrl
                     )
                     if (parsedPlaylist.channels.isNotEmpty()) {
                         iptvDatabase.deletePlaylistById(playlistId)
                     }
+                    parsePlaylistEpg(
+                        playListId = playlistId,
+                        playListEpgUrl = parsedPlaylist.epgUrl
+                    )
                     iptvDatabase.deleteChannelsInPlaylist(playlistId)
                     iptvDatabase.insertPlaylist(updatedPlaylist)
 
@@ -227,6 +250,35 @@ class HomeViewModel(
                 }
             }
         }
+    }
+
+    fun parsePlaylistEpg(
+        playListId: String,
+        playListEpgUrl: String?,
+    ) {
+        val epgUrl = playListEpgUrl ?: return
+        if (epgUrl.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val content = networkClient.get(epgUrl)
+            val epgParser = EPGParserFactory.createParserForContent(content)
+            val epg = epgParser.parse(content)
+            iptvDatabase.insertPrograms(epg.map {
+                it.toProgram(playListId)
+            })
+        }
+    }
+
+    private fun IPTVProgram.toProgram(playListId: String): Program {
+        return Program(
+            id = this.id,
+            title = this.title,
+            description = this.description,
+            category = this.category,
+            startTime = this.startTime,
+            endTime = this.endTime,
+            playlistId = playListId,
+            channelId = this.channelId
+        )
     }
 
     /**
@@ -341,6 +393,28 @@ class HomeViewModel(
             else -> {}
         }
     }
+
+    fun getRelatedChannels(channel: Channel) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val categoryId = channel.categoryId ?: return@launch
+            iptvDatabase.getChannelsByCategory(categoryId)
+                .catch {
+                    emit(_uiState.value.listChannels)
+                }
+                .map {
+                    it.ifEmpty {
+                        _uiState.value.listChannels
+                    }
+                }
+                .collect { channels ->
+                    _uiState.update {
+                        it.copy(
+                            relatedChannels = channels
+                        )
+                    }
+                }
+        }
+    }
 }
 
 /**
@@ -356,6 +430,7 @@ data class HomeUiState(
     val categories: List<Category> = emptyList(),
     val selectedCategory: Category? = null,
     val listChannels: List<Channel> = emptyList(),
+    val relatedChannels: List<Channel> = emptyList(),
     val error: Throwable? = null,
 )
 
@@ -382,8 +457,8 @@ sealed interface HomeEvent {
         val url: String,
     ) : HomeEvent
 
-    data class OnOpenVideoPlayer(val channel: Channel) : HomeEvent {
-    }
+    data class OnOpenVideoPlayer(val channel: Channel) : HomeEvent
+    data class OnResumeMediaItem(val mediaItem: MediaItem) : HomeEvent
 
     data object OnCancelParseIPTVSource : HomeEvent
     data object OnParseIPTVSourceSuccess : HomeEvent

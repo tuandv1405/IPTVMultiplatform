@@ -1,10 +1,13 @@
 package tss.t.tsiptv.player
 
 import android.content.Context
+import androidx.annotation.OptIn
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,9 +20,10 @@ import tss.t.tsiptv.player.service.MediaPlayerService
  * Android implementation of the MediaPlayer interface using Media3 ExoPlayer.
  * This implementation uses a foreground service for background playback.
  */
+@OptIn(UnstableApi::class)
 class AndroidMediaPlayer(
     private val context: Context,
-    private val coroutineScope: CoroutineScope
+    private val coroutineScope: CoroutineScope,
 ) : MediaPlayer {
 
     private val _playbackState = MutableStateFlow(PlaybackState.IDLE)
@@ -40,8 +44,22 @@ class AndroidMediaPlayer(
     private val _isBuffering = MutableStateFlow(false)
     override val isBuffering: StateFlow<Boolean> = _isBuffering.asStateFlow()
 
+    private val _isPlaying = MutableStateFlow(false)
+    override val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
+
     // ExoPlayer instance for direct control when needed
     private var exoPlayer: ExoPlayer? = null
+    private var observerPlayer: Job? = null
+
+    init {
+        observerPlayer = coroutineScope.launch(Dispatchers.Main) {
+            MediaPlayerService.globalPlayer.collect {
+                exoPlayer?.removeListener(playerListener)
+                exoPlayer = it
+                it?.addListener(playerListener)
+            }
+        }
+    }
 
     // Player listener to update state flows
     private val playerListener = object : Player.Listener {
@@ -50,6 +68,7 @@ class AndroidMediaPlayer(
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
+            _isPlaying.value = isPlaying
             if (isPlaying) {
                 _playbackState.value = PlaybackState.PLAYING
             } else if (_playbackState.value == PlaybackState.PLAYING) {
@@ -78,17 +97,11 @@ class AndroidMediaPlayer(
 
     override suspend fun prepare(mediaItem: MediaItem) {
         _currentMedia.value = mediaItem
-
-        // Start the media service
         MediaPlayerService.startService(context, mediaItem)
-
-        // Get the ExoPlayer instance from the service
         exoPlayer = MediaPlayerService.getExoPlayer()
         exoPlayer?.let { player ->
-            // Add listener
+            player.playWhenReady = true
             player.addListener(playerListener)
-
-            // Update duration when available
             _duration.value = player.duration.takeIf { it > 0 }
                 ?: 0L
         }
@@ -126,6 +139,7 @@ class AndroidMediaPlayer(
         MediaPlayerService.stopService(context)
         exoPlayer = null
         _playbackState.value = PlaybackState.IDLE
+        observerPlayer = null
     }
 
     private fun updatePlaybackState(playbackState: Int) {
@@ -135,6 +149,7 @@ class AndroidMediaPlayer(
             Player.STATE_READY -> {
                 if (exoPlayer?.isPlaying == true) PlaybackState.PLAYING else PlaybackState.READY
             }
+
             Player.STATE_ENDED -> PlaybackState.ENDED
             else -> PlaybackState.ERROR
         }

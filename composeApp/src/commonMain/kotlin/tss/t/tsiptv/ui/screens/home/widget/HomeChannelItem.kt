@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -25,7 +26,7 @@ import coil3.request.crossfade
 import org.jetbrains.compose.resources.painterResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.ic_loading_gradient_overlay
-import tss.t.tsiptv.core.database.Channel
+import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 
@@ -48,7 +49,7 @@ fun HomeChannelItem(
         verticalAlignment = CenterVertically
     ) {
         AsyncImage(
-            model = remember {
+            model = remember(channel.logoUrl) {
                 ImageRequest.Builder(platformContext)
                     .data(channel.logoUrl)
                     .crossfade(200)
@@ -77,12 +78,13 @@ fun HomeChannelItem(
                 fontWeight = FontWeight.Medium,
                 fontSize = 16.sp
             )
-            Spacer(modifier = Modifier.size(2.dp))
             Text(
                 text = channel.id,
                 color = TSColors.TextSecondaryLight,
                 fontWeight = FontWeight.Normal,
-                fontSize = 13.sp
+                fontSize = 13.sp,
+                textAlign = TextAlign.Start,
+                lineHeight = 14.sp
             )
         }
     }

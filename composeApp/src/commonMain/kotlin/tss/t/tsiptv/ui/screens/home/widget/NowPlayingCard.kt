@@ -30,8 +30,8 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.now_playing_title
-import tss.t.tsiptv.core.database.Category
-import tss.t.tsiptv.core.database.Channel
+import tss.t.tsiptv.core.model.Category
+import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes

@@ -39,6 +39,11 @@ interface MediaPlayer {
      * Whether the player is buffering
      */
     val isBuffering: StateFlow<Boolean>
+
+    /**
+     * Whether the player is playing
+     */
+    val isPlaying: StateFlow<Boolean>
     
     /**
      * Prepare the player with the given media item

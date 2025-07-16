@@ -11,10 +11,10 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.koin.compose.koinInject
-import tss.t.tsiptv.core.database.Category
-import tss.t.tsiptv.core.database.Channel
+import tss.t.tsiptv.core.model.Category
+import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.database.IPTVDatabase
-import tss.t.tsiptv.core.database.Playlist
+import tss.t.tsiptv.core.model.Playlist
 import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.parser.IPTVParserFactory
 

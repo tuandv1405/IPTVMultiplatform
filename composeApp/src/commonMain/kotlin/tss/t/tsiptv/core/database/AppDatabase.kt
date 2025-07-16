@@ -10,6 +10,16 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import tss.t.tsiptv.core.database.dao.CategoryDao
+import tss.t.tsiptv.core.database.dao.ChannelAttributeDao
+import tss.t.tsiptv.core.database.dao.ChannelDao
+import tss.t.tsiptv.core.database.dao.PlaylistDao
+import tss.t.tsiptv.core.database.dao.ProgramDao
+import tss.t.tsiptv.core.database.entity.CategoryEntity
+import tss.t.tsiptv.core.database.entity.ChannelAttributeEntity
+import tss.t.tsiptv.core.database.entity.ChannelEntity
+import tss.t.tsiptv.core.database.entity.PlaylistEntity
+import tss.t.tsiptv.core.database.entity.ProgramEntity
 
 /**
  * Room database for the application.
@@ -54,6 +64,13 @@ abstract class AppDatabase : RoomDatabase() {
      * @return The channel attribute DAO
      */
     abstract fun channelAttributeDao(): ChannelAttributeDao
+
+    /**
+     * Gets the program DAO.
+     *
+     * @return The program DAO
+     */
+    abstract fun programDao(): ProgramDao
 }
 
 // The Room compiler generates the `actual` implementations.
