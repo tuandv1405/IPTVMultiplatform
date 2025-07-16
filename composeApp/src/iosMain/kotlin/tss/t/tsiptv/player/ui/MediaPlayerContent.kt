@@ -38,10 +38,13 @@ actual fun MediaPlayerContent(
     modifier: Modifier,
 ) {
     // Cast to IOSMediaPlayer to access the AVPlayer
-    val iosPlayer = player as? IOSMediaPlayer ?: return
+    val iosPlayer = remember(player) {
+        player as IOSMediaPlayer
+    }
 
     // Get the current playback state
     val playbackState by iosPlayer.playbackState.collectAsState()
+    val mediaItem by iosPlayer.currentMedia.collectAsState()
 
     // Track whether the app is in background
     var isInBackground by remember { mutableStateOf(false) }
@@ -103,17 +106,19 @@ actual fun MediaPlayerContent(
                 // Add the player view controller's view to the container
                 val playerView = playerViewController.view
                 containerView.addSubview(playerView)
+                playerViewController.title = mediaItem?.title
 
                 // Configure the player layer
                 (playerView.layer as? AVPlayerLayer)?.videoGravity = AVLayerVideoGravityResizeAspect
 
                 // Position the player view to fill the container
                 playerView.setFrame(containerView.bounds)
-                playerView.setAutoresizingMask(UIViewAutoresizingFlexibleWidth.toULong() or UIViewAutoresizingFlexibleHeight.toULong())
+                playerView.setAutoresizingMask(UIViewAutoresizingFlexibleWidth or UIViewAutoresizingFlexibleHeight)
 
                 containerView
             },
             update = { view ->
+                playerViewController.updatesNowPlayingInfoCenter()
                 playerViewController.view.setFrame(view.bounds)
             },
             properties = remember {

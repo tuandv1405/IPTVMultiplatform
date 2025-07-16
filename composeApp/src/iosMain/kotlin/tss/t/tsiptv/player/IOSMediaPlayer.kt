@@ -4,6 +4,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
@@ -68,6 +69,7 @@ class IOSMediaPlayer(
     override val isBuffering: StateFlow<Boolean> = _isBuffering.asStateFlow()
 
     private val _isPlaying = MutableStateFlow(false)
+    private var avPlayer: AVPlayer? = AVPlayer()
     override val isPlaying: StateFlow<Boolean>
         get() = _playbackState.map {
             when (it) {
@@ -75,13 +77,12 @@ class IOSMediaPlayer(
                 else -> false
             }
         }.stateIn(
-            coroutineScope,
-            kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
+            scope = coroutineScope,
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = false
         )
 
     // AVPlayer instance
-    private var avPlayer: AVPlayer? = AVPlayer()
 
     // Time observer token for position updates
     private var timeObserverToken: Any? = null
@@ -170,7 +171,8 @@ class IOSMediaPlayer(
      */
     private fun requestNotificationPermissions() {
         try {
-            val notificationCenter = platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter()
+            val notificationCenter =
+                platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter()
 
             // Request authorization for notifications
             notificationCenter.requestAuthorizationWithOptions(
@@ -346,17 +348,18 @@ class IOSMediaPlayer(
 
                 // Add user info for handling notification actions
                 val userInfo = mapOf<Any?, Any?>(
-                    "mediaUri" to (mediaItem.uri ?: ""),
-                    "mediaId" to (mediaItem.id ?: ""),
-                    "mediaTitle" to (mediaItem.title ?: ""),
-                    "mediaArtist" to (mediaItem.artist ?: ""),
+                    "mediaUri" to mediaItem.uri,
+                    "mediaId" to mediaItem.id,
+                    "mediaTitle" to mediaItem.title,
+                    "mediaArtist" to mediaItem.artist,
                     "mediaArtworkUri" to (mediaItem.artworkUri ?: "")
                 )
                 setUserInfo(userInfo)
             }
 
             // Create a unique identifier for this notification
-            val requestIdentifier = "media_playback_${platform.Foundation.NSUUID.UUID().UUIDString()}"
+            val requestIdentifier =
+                "media_playback_${platform.Foundation.NSUUID.UUID().UUIDString()}"
 
             // Create the notification request
             val request = platform.UserNotifications.UNNotificationRequest.requestWithIdentifier(
@@ -366,7 +369,8 @@ class IOSMediaPlayer(
             )
 
             // Add the notification request
-            platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter()
+            platform.UserNotifications.UNUserNotificationCenter
+                .currentNotificationCenter()
                 .addNotificationRequest(request, null)
 
             println("Enhanced media playback notification shown")

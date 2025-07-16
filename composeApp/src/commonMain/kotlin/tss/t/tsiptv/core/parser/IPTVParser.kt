@@ -29,6 +29,7 @@ enum class IPTVFormat {
     M3U,
     XML,
     JSON,
+    XSPF,
     UNKNOWN
 }
 
@@ -128,6 +129,7 @@ object IPTVParserFactory {
             IPTVFormat.M3U -> M3UParser()
             IPTVFormat.XML -> XMLParser()
             IPTVFormat.JSON -> JSONParser()
+            IPTVFormat.XSPF -> XSPFParser()
             IPTVFormat.UNKNOWN -> throw IllegalArgumentException("Unknown format")
         }
     }
@@ -141,6 +143,9 @@ object IPTVParserFactory {
     fun detectFormat(content: String): IPTVFormat {
         return when {
             content.trimStart().startsWith("#EXTM3U") -> IPTVFormat.M3U
+            content.trimStart().startsWith("<?xml") && content.contains("<playlist") && 
+                (content.contains("xmlns=\"http://xspf.org/ns/0/\"") || 
+                 content.contains("xmlns:vlc=\"http://www.videolan.org/vlc/playlist/ns/0/\"")) -> IPTVFormat.XSPF
             content.trimStart().startsWith("<?xml") || content.trimStart().startsWith("<tv") -> IPTVFormat.XML
             content.trimStart().startsWith("{") -> IPTVFormat.JSON
             else -> IPTVFormat.UNKNOWN
