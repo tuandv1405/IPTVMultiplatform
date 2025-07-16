@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
         )
         super.onCreate(savedInstanceState)
 
-        AndroidPlatformUtils.appContext = applicationContext
+        AndroidPlatformUtils.appContext = this
 
         PermissionCheckerFactory.create()
         PermissionCheckerFactory.initialize(

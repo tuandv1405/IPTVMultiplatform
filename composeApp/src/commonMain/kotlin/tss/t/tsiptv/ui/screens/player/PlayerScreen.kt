@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -50,8 +51,10 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.LocalPlatformContext
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
@@ -59,6 +62,7 @@ import tss.t.tsiptv.player.ui.MediaPlayerView
 import tss.t.tsiptv.ui.screens.home.widget.HomeChannelItem
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.utils.KeepScreenOnState
+import tss.t.tsiptv.utils.getScreenOrientationUtils
 
 
 /**
@@ -72,6 +76,7 @@ import tss.t.tsiptv.utils.KeepScreenOnState
 fun PlayerScreen(
     mediaItem: MediaItem,
     mediaPlayer: MediaPlayer,
+    playerControlState: PlayerUIState,
     relatedMediaItems: List<Channel> = emptyList(),
     onEvent: (PlayerEvent) -> Unit,
 ) {
@@ -110,6 +115,37 @@ fun PlayerScreen(
                 }
             }
     }
+    LaunchedEffect(playerControlState.isFullScreen) {
+        if (playerControlState.isFullScreen) {
+            getScreenOrientationUtils().hideSystemUI()
+        } else {
+            getScreenOrientationUtils().showSystemUI()
+        }
+    }
+
+    if (playerControlState.isFullScreen) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize()
+                .background(TSColors.PlayerBackgroundColor)
+        ) {
+            MediaPlayerView(
+                mediaItem = mediaItem,
+                player = mediaPlayer,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(
+                        start = if (playerControlState.isFitWidth ||
+                            playerControlState.isFillScreen169
+                        ) 0.dp else it.calculateStartPadding(LayoutDirection.Ltr),
+                        end = if (playerControlState.isFitWidth ||
+                            playerControlState.isFillScreen169
+                        ) 0.dp else it.calculateRightPadding(LayoutDirection.Ltr),
+                    ),
+                playerUIState = playerControlState,
+                onPlayerControl = onEvent
+            )
+        }
+        return
+    }
 
     Scaffold(
         topBar = {
@@ -124,6 +160,7 @@ fun PlayerScreen(
                     player = mediaPlayer,
                     modifier = Modifier
                         .fillMaxWidth(),
+                    playerUIState = playerControlState,
                     onPlayerControl = onEvent
                 )
             }

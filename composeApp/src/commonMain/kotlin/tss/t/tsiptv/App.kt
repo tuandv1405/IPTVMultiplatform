@@ -266,6 +266,7 @@ fun App() {
                             )
                         }
                         val relatedChannels by homeViewModel.relatedChannels.collectAsState()
+                        val playerUIState by playerViewModel.playerUIState.collectAsState()
 
                         LaunchedEffect(channelId) {
                             playerViewModel.verifyPlayingMediaItem(channelId)
@@ -275,6 +276,7 @@ fun App() {
                             mediaItem = mediaItem,
                             mediaPlayer = playerViewModel.player,
                             relatedMediaItems = relatedChannels,
+                            playerControlState = playerUIState,
                         ) { event ->
                             if (event is PlayerEvent.PlayIptv) {
                                 homeViewModel.getRelatedChannels(event.iptvChannel)

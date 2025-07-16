@@ -11,18 +11,22 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.FullscreenExit
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Text
@@ -43,6 +47,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,12 +58,17 @@ import org.koin.compose.koinInject
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.ic_back_navigation
 import tsiptv.composeapp.generated.resources.ic_enter_full_screen
+import tsiptv.composeapp.generated.resources.ic_exit_full_screen
 import tsiptv.composeapp.generated.resources.ic_settings
 import tsiptv.composeapp.generated.resources.ic_volume
+import tsiptv.composeapp.generated.resources.ic_full_screen_fit_width
+import tsiptv.composeapp.generated.resources.ic_full_screen_fill
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackState
 import tss.t.tsiptv.ui.screens.player.PlayerEvent
+import tss.t.tsiptv.ui.screens.player.PlayerUIState
+import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.utils.PlatformUtils
 
@@ -73,6 +83,7 @@ fun MediaPlayerView(
     mediaItem: MediaItem,
     player: MediaPlayer = koinInject<MediaPlayer>(),
     modifier: Modifier = Modifier,
+    playerUIState: PlayerUIState,
     onPlayerControl: (PlayerEvent) -> Unit = {},
 ) {
     val playbackState by player.playbackState.collectAsState()
@@ -106,6 +117,8 @@ fun MediaPlayerView(
             autoShowControls = false
         }
     }
+    val screenWidth = LocalWindowInfo.current.containerSize.width
+    val screenHeight = LocalWindowInfo.current.containerSize.height
 
     Box(
         modifier.fillMaxWidth()
@@ -113,13 +126,52 @@ fun MediaPlayerView(
                 detectTapGestures {
                     autoShowControls = !autoShowControls
                 }
+
+                detectVerticalDragGestures(
+                    onVerticalDrag = { change, dragAmount ->
+                    },
+                    onDragEnd = {
+                    },
+                    onDragCancel = {
+                    },
+                    onDragStart = {
+
+                    }
+                )
             }
     ) {
-        MediaPlayerContent(
-            player = player,
-            modifier = Modifier.fillMaxWidth()
-                .aspectRatio(16 / 9f)
-        )
+        if (playerUIState.isFullScreen) {
+            MediaPlayerContent(
+                player = player,
+                modifier = when {
+                    playerUIState.isFillScreen169 -> {
+                        Modifier
+                            .background(TSColors.PlayerBackgroundColor)
+                            .fillMaxSize()
+                            .align(Alignment.Center)
+                    }
+
+                    playerUIState.isFitWidth -> {
+                        Modifier
+                            .background(TSColors.PlayerBackgroundColor)
+                            .fillMaxWidth()
+                            .aspectRatio(16 / 9f)
+                    }
+
+                    else -> {
+                        Modifier
+                            .background(TSColors.PlayerBackgroundColor)
+                            .fillMaxWidth()
+                    }
+                }
+            )
+        } else {
+            MediaPlayerContent(
+                player = player,
+                modifier = Modifier.fillMaxWidth()
+                    .aspectRatio(16 / 9f)
+            )
+        }
         if (showCustomControls) {
             MediaPlayerControls(
                 playbackState = playbackState,
@@ -127,9 +179,14 @@ fun MediaPlayerView(
                 duration = duration,
                 isBuffering = isBuffering,
                 isPlaying = isPlaying,
+                isFullScreen = playerUIState.isFullScreen,
+                isFitWidth = playerUIState.isFitWidth,
+                isFillScreen169 = playerUIState.isFillScreen169,
                 showControls = if (!isPlaying) {
                     true
-                } else autoShowControls,
+                } else {
+                    autoShowControls
+                },
                 onPlayerControl = {
                     resetAutoHideTimer++
                     onPlayerControl(it)
@@ -146,6 +203,9 @@ fun BoxScope.MediaPlayerControls(
     currentPosition: Long,
     duration: Long,
     isBuffering: Boolean,
+    isFullScreen: Boolean,
+    isFitWidth: Boolean = false,
+    isFillScreen169: Boolean = false,
     isPlaying: Boolean = playbackState == PlaybackState.PLAYING,
     onPlayerControl: (PlayerEvent) -> Unit = {},
 ) {
@@ -186,7 +246,11 @@ fun BoxScope.MediaPlayerControls(
                 modifier = Modifier.size(48.dp)
                     .clip(CircleShape)
                     .clickable {
-                        onPlayerControl(PlayerEvent.OnVerticalPlayerBack)
+                        if (isFullScreen) {
+                            onPlayerControl(PlayerEvent.OnExitFullScreen)
+                        } else {
+                            onPlayerControl(PlayerEvent.OnVerticalPlayerBack)
+                        }
                     }
                     .padding(16.dp)
             )
@@ -307,16 +371,91 @@ fun BoxScope.MediaPlayerControls(
                         .padding(8.dp)
                 )
                 Spacer(Modifier.width(4.dp))
-                Image(
-                    painter = painterResource(Res.drawable.ic_enter_full_screen),
-                    contentDescription = "FullScreen",
-                    modifier = Modifier.size(32.dp)
-                        .clip(CircleShape)
-                        .clickable {
-                            onPlayerControl(PlayerEvent.OnEnterFullScreen)
+
+                if (remember(isFullScreen) { isFullScreen }) {
+                    AnimatedContent(isFillScreen169) {
+                        if (it) {
+                            Image(
+                                painter = painterResource(Res.drawable.ic_full_screen_fill),
+                                contentDescription = "FullScreen",
+                                modifier = Modifier.size(32.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        onPlayerControl(PlayerEvent.OnPlayerViewExitFillScreen169)
+                                    }
+                                    .padding(8.dp),
+                                colorFilter = ColorFilter.tint(TSColors.TextSecondary)
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(Res.drawable.ic_full_screen_fill),
+                                contentDescription = "FullScreen",
+                                modifier = Modifier.size(32.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        onPlayerControl(PlayerEvent.OnPlayerViewFillScreen169)
+                                    }
+                                    .padding(8.dp),
+                                colorFilter = ColorFilter.tint(Color.White)
+                            )
                         }
-                        .padding(8.dp)
-                )
+                    }
+
+                    AnimatedContent(isFitWidth) {
+                        if (it) {
+                            Image(
+                                painter = painterResource(Res.drawable.ic_full_screen_fit_width),
+                                contentDescription = "FullScreen",
+                                modifier = Modifier.size(32.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        onPlayerControl(PlayerEvent.OnPlayerViewExitFitWidth)
+                                    }
+                                    .padding(8.dp),
+                                colorFilter = ColorFilter.tint(TSColors.TextSecondary)
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(Res.drawable.ic_full_screen_fit_width),
+                                contentDescription = "FullScreen",
+                                modifier = Modifier.size(32.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        onPlayerControl(PlayerEvent.OnPlayerViewFitWidth)
+                                    }
+                                    .padding(8.dp),
+                                colorFilter = ColorFilter.tint(Color.White)
+                            )
+                        }
+                    }
+                }
+
+                AnimatedContent(isFullScreen) {
+                    if (isFullScreen) {
+                        Image(
+                            painter = painterResource(Res.drawable.ic_exit_full_screen),
+                            contentDescription = "FullScreen",
+                            modifier = Modifier.size(32.dp)
+                                .clip(CircleShape)
+                                .clickable {
+                                    onPlayerControl(PlayerEvent.OnExitFullScreen)
+                                }
+                                .padding(8.dp),
+                            colorFilter = ColorFilter.tint(Color.White)
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(Res.drawable.ic_enter_full_screen),
+                            contentDescription = "FullScreen",
+                            modifier = Modifier.size(32.dp)
+                                .clip(CircleShape)
+                                .clickable {
+                                    onPlayerControl(PlayerEvent.OnEnterFullScreen)
+                                }
+                                .padding(8.dp)
+                        )
+                    }
+                }
             }
         }
     }
