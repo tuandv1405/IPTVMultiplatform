@@ -39,9 +39,9 @@ class AndroidFirebaseAuth : IFirebaseAuth {
             return result.user?.toFirebaseUser()
                 ?: throw FirebaseAuthException("auth/unknown", "Unknown error signing in")
         } catch (e: FirebaseAuthInvalidUserException) {
-            throw FirebaseAuthException("auth/user-not-found", "No user found with email $email")
+            throw FirebaseAuthException(e.errorCode, "No user found with email $email")
         } catch (e: FirebaseAuthInvalidCredentialsException) {
-            throw FirebaseAuthException("auth/wrong-password", "Wrong password")
+            throw FirebaseAuthException(e.errorCode, "Wrong password")
         } catch (e: Exception) {
             Log.e("AndroidFirebaseAuth", "Error signing in", e)
             throw FirebaseAuthException("auth/unknown", e.message ?: "Unknown error signing in")

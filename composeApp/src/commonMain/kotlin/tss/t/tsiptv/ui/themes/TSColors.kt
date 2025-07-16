@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 object TSColors {
+    val White: Color = Color.White
     val PlayerBackgroundColor = Color.Black
     val SecondaryBackgroundColor = Color(0xFF161A32)
     val DeepBlue = Color(0xFF03041D)

@@ -384,7 +384,7 @@ fun BoxScope.MediaPlayerControls(
                                         onPlayerControl(PlayerEvent.OnPlayerViewExitFillScreen169)
                                     }
                                     .padding(8.dp),
-                                colorFilter = ColorFilter.tint(TSColors.TextSecondary)
+                                colorFilter = ColorFilter.tint(TSColors.White)
                             )
                         } else {
                             Image(
@@ -396,7 +396,7 @@ fun BoxScope.MediaPlayerControls(
                                         onPlayerControl(PlayerEvent.OnPlayerViewFillScreen169)
                                     }
                                     .padding(8.dp),
-                                colorFilter = ColorFilter.tint(Color.White)
+                                colorFilter = ColorFilter.tint(TSColors.TextSecondary)
                             )
                         }
                     }
@@ -412,7 +412,7 @@ fun BoxScope.MediaPlayerControls(
                                         onPlayerControl(PlayerEvent.OnPlayerViewExitFitWidth)
                                     }
                                     .padding(8.dp),
-                                colorFilter = ColorFilter.tint(TSColors.TextSecondary)
+                                colorFilter = ColorFilter.tint(TSColors.White)
                             )
                         } else {
                             Image(
@@ -424,7 +424,7 @@ fun BoxScope.MediaPlayerControls(
                                         onPlayerControl(PlayerEvent.OnPlayerViewFitWidth)
                                     }
                                     .padding(8.dp),
-                                colorFilter = ColorFilter.tint(Color.White)
+                                colorFilter = ColorFilter.tint(TSColors.TextSecondary)
                             )
                         }
                     }
