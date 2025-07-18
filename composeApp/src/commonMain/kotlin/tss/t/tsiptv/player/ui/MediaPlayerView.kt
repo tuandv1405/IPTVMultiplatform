@@ -414,14 +414,14 @@ fun BoxScope.MediaPlayerControls(
                                 colors = colors,
                                 sliderState = it,
                                 thumbTrackGapSize = 1.dp,
-                                trackInsideCornerSize = 8.dp
+                                trackInsideCornerSize = 2.dp
                             )
                         },
                         thumb = {
                             SliderDefaults.Thumb(
                                 colors = colors,
                                 interactionSource = interactionSource,
-                                thumbSize = DpSize(16.dp, 16.dp),
+                                thumbSize = DpSize(4.dp, 16.dp),
                             )
                         }
                     )
