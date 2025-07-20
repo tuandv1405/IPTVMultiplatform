@@ -6,18 +6,23 @@ import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.database.entity.CategoryEntity
 import tss.t.tsiptv.core.database.entity.ChannelAttributeEntity
 import tss.t.tsiptv.core.database.entity.ChannelEntity
+import tss.t.tsiptv.core.database.entity.ChannelHistoryEntity
+import tss.t.tsiptv.core.database.entity.ChannelWithHistory
 import tss.t.tsiptv.core.database.entity.PlaylistEntity
 import tss.t.tsiptv.core.database.entity.ProgramEntity
 import tss.t.tsiptv.core.database.entity.toCategory
 import tss.t.tsiptv.core.database.entity.toCategoryEntity
 import tss.t.tsiptv.core.database.entity.toChannel
 import tss.t.tsiptv.core.database.entity.toChannelEntity
+import tss.t.tsiptv.core.database.entity.toChannelHistory
+import tss.t.tsiptv.core.database.entity.toChannelHistoryEntity
 import tss.t.tsiptv.core.database.entity.toPlaylist
 import tss.t.tsiptv.core.database.entity.toPlaylistEntity
 import tss.t.tsiptv.core.database.entity.toProgram
 import tss.t.tsiptv.core.database.entity.toProgramEntity
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
+import tss.t.tsiptv.core.model.ChannelHistory
 import tss.t.tsiptv.core.model.Playlist
 import tss.t.tsiptv.core.model.Program
 import tss.t.tsiptv.core.network.NetworkClient
@@ -41,6 +46,7 @@ class RoomIPTVDatabase(
     private val categoryDao = database.categoryDao()
     private val channelAttributeDao = database.channelAttributeDao()
     private val programDao = database.programDao()
+    private val channelHistoryDao = database.channelHistoryDao()
 
     override fun getAllChannels(): Flow<List<Channel>> {
         return channelDao.getAllChannels().map { channelEntities ->
@@ -287,5 +293,74 @@ class RoomIPTVDatabase(
 
     override suspend fun deleteProgramsForPlaylist(playlistId: String) {
         programDao.deleteProgramsForPlaylist(playlistId)
+    }
+
+    // Channel History methods implementation
+
+    override suspend fun recordChannelPlay(channelId: String, playlistId: String, timestamp: Long) {
+        val existingHistory = channelHistoryDao.getChannelHistory(channelId, playlistId)
+        if (existingHistory != null) {
+            // Update existing record - increment play count and update timestamp
+            channelHistoryDao.incrementPlayCount(channelId, playlistId, timestamp)
+        } else {
+            // Create new record
+            val newHistory = ChannelHistoryEntity(
+                channelId = channelId,
+                playlistId = playlistId,
+                lastPlayedTimestamp = timestamp,
+                totalPlayedTimeMs = 0,
+                playCount = 1
+            )
+            channelHistoryDao.insertOrUpdateChannelHistory(newHistory)
+        }
+    }
+
+    override suspend fun updateChannelPlayTime(
+        channelId: String,
+        playlistId: String,
+        additionalTimeMs: Long,
+        timestamp: Long
+    ) {
+        channelHistoryDao.updatePlayedTime(channelId, playlistId, additionalTimeMs, timestamp)
+    }
+
+    override suspend fun updateChannelPositionAndDuration(
+        channelId: String,
+        playlistId: String,
+        currentPositionMs: Long,
+        totalDurationMs: Long,
+        timestamp: Long
+    ) {
+        channelHistoryDao.updatePositionAndDuration(channelId, playlistId, currentPositionMs, totalDurationMs, timestamp)
+    }
+
+    override fun getAllPlayedChannelsInPlaylist(playlistId: String): Flow<List<ChannelHistory>> {
+        return channelHistoryDao.getAllPlayedChannelsInPlaylist(playlistId).map { historyEntities ->
+            historyEntities.map { it.toChannelHistory() }
+        }
+    }
+
+    override suspend fun getLastPlayedChannelInPlaylist(playlistId: String): ChannelWithHistory? {
+        return channelHistoryDao.getLastPlayedChannelInPlaylistWithDetails(playlistId)
+    }
+
+    override fun getTop3MostPlayedChannelsInPlaylist(playlistId: String): Flow<List<ChannelWithHistory>> {
+        return channelHistoryDao.getTop3MostPlayedChannelsInPlaylistWithDetails(playlistId)
+    }
+
+    override suspend fun getMostPlayedChannelInPlaylist(playlistId: String): ChannelWithHistory? {
+        return channelHistoryDao.getMostPlayedChannelInPlaylistWithDetails(playlistId)
+    }
+
+    override suspend fun getLastWatchedChannelWithDetails(playlistId: String?): ChannelWithHistory? {
+        return channelHistoryDao.getLastWatchedChannelWithDetails(playlistId)
+    }
+
+    override fun getAllWatchedChannelsWithDetails(playlistId: String): Flow<List<ChannelWithHistory>> {
+        return channelHistoryDao.getAllWatchedChannelsWithDetails(playlistId)
+    }
+
+    override fun getLastTop3WatchedChannelsWithDetails(playlistId: String?): Flow<List<ChannelWithHistory>> {
+        return channelHistoryDao.getLastTop3WatchedChannelsWithDetails(playlistId)
     }
 }

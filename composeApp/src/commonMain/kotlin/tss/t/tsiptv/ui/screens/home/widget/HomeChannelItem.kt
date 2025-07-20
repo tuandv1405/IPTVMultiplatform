@@ -26,9 +26,15 @@ import coil3.request.crossfade
 import org.jetbrains.compose.resources.painterResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.ic_loading_gradient_overlay
+import tss.t.tsiptv.core.database.entity.ChannelWithHistory
 import tss.t.tsiptv.core.model.Channel
+import tss.t.tsiptv.core.model.ChannelHistory
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
+import tss.t.tsiptv.utils.formatDateTime
+import tss.t.tsiptv.utils.formatDynamic
+import tss.t.tsiptv.utils.isToday
+import tss.t.tsiptv.utils.isYesterday
 
 @Composable
 fun HomeChannelItem(
@@ -80,6 +86,88 @@ fun HomeChannelItem(
             )
             Text(
                 text = channel.id,
+                color = TSColors.TextSecondaryLight,
+                fontWeight = FontWeight.Normal,
+                fontSize = 13.sp,
+                textAlign = TextAlign.Start,
+                lineHeight = 14.sp
+            )
+        }
+    }
+}
+
+
+@Composable
+fun HomeChannelHistoryItem(
+    channel: ChannelWithHistory,
+    modifier: Modifier = Modifier,
+    onItemClick: (Channel) -> Unit = {},
+) {
+    val platformContext = LocalPlatformContext.current
+    val description = remember(channel.categoryId, channel.lastPlayedTimestamp) {
+        when {
+            channel.lastPlayedTimestamp.isToday() -> "Hôm nay, ${
+                channel.lastPlayedTimestamp.formatDynamic(
+                    "HH:mm"
+                )
+            }"
+
+            channel.lastPlayedTimestamp.isYesterday() -> "Hôm qua, ${
+                channel.lastPlayedTimestamp.formatDynamic(
+                    "HH:mm"
+                )
+            }"
+
+            else -> channel.lastPlayedTimestamp.formatDynamic(
+                "dd-MM, HH:mm"
+            )
+        }
+    }
+
+    Row(
+        modifier = modifier.clip(TSShapes.roundedShape12)
+            .background(TSColors.SecondaryBackgroundColor, TSShapes.roundedShape12)
+            .clickable(
+                onClick = {
+                    onItemClick(channel.getChannel())
+                }
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = CenterVertically
+    ) {
+        AsyncImage(
+            model = remember(channel.logoUrl) {
+                ImageRequest.Builder(platformContext)
+                    .data(channel.logoUrl)
+                    .crossfade(200)
+                    .diskCacheKey(channel.logoUrl)
+                    .build()
+            },
+            contentDescription = channel.channelName,
+            modifier = Modifier.size(48.dp)
+                .clip(TSShapes.roundedShape8),
+            contentScale = ContentScale.Inside,
+            onError = {
+                it.result.throwable.let {
+                    println(it.message)
+                }
+            },
+            error = painterResource(Res.drawable.ic_loading_gradient_overlay),
+        )
+        Spacer(modifier = Modifier.size(16.dp))
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = channel.channelName,
+                color = TSColors.TextPrimary,
+                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp
+            )
+
+            Text(
+                text = channel.categoryId + " • " + description,
                 color = TSColors.TextSecondaryLight,
                 fontWeight = FontWeight.Normal,
                 fontSize = 13.sp,

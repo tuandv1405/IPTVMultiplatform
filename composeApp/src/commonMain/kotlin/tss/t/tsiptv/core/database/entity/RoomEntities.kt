@@ -1,6 +1,8 @@
 package tss.t.tsiptv.core.database.entity
 
 import androidx.room.*
+import tss.t.tsiptv.core.model.Channel
+import kotlin.String
 
 /**
  * Room entity for a playlist.
@@ -162,3 +164,108 @@ data class ProgramEntity(
     val category: String?,
     val playlistId: String
 )
+
+/**
+ * Room entity for channel history tracking.
+ *
+ * @property id The unique ID of the history entry (auto-generated)
+ * @property channelId The ID of the channel that was played
+ * @property playlistId The ID of the playlist the channel belongs to
+ * @property lastPlayedTimestamp The timestamp when the channel was last played
+ * @property totalPlayedTimeMs The total time the channel has been played (in milliseconds)
+ * @property playCount The number of times the channel has been played
+ * @property currentPositionMs The current playback position when last played (in milliseconds)
+ * @property totalDurationMs The total duration of the media item (in milliseconds)
+ */
+@Entity(
+    tableName = "channel_history",
+    foreignKeys = [
+        ForeignKey(
+            entity = ChannelEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["channelId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = PlaylistEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["playlistId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index("channelId"),
+        Index("playlistId"),
+        Index("lastPlayedTimestamp"),
+        Index(value = ["channelId", "playlistId"], unique = true)
+    ]
+)
+data class ChannelHistoryEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val channelId: String,
+    val playlistId: String,
+    val lastPlayedTimestamp: Long,
+    val totalPlayedTimeMs: Long = 0,
+    val playCount: Int = 1,
+    val currentPositionMs: Long = 0,
+    val totalDurationMs: Long = 0
+)
+
+// Conversion functions for ChannelHistory
+fun ChannelHistoryEntity.toChannelHistory() = tss.t.tsiptv.core.model.ChannelHistory(
+    id = id,
+    channelId = channelId,
+    playlistId = playlistId,
+    lastPlayedTimestamp = lastPlayedTimestamp,
+    totalPlayedTimeMs = totalPlayedTimeMs,
+    playCount = playCount,
+    currentPositionMs = currentPositionMs,
+    totalDurationMs = totalDurationMs
+)
+
+fun tss.t.tsiptv.core.model.ChannelHistory.toChannelHistoryEntity() = ChannelHistoryEntity(
+    id = id,
+    channelId = channelId,
+    playlistId = playlistId,
+    lastPlayedTimestamp = lastPlayedTimestamp,
+    totalPlayedTimeMs = totalPlayedTimeMs,
+    playCount = playCount,
+    currentPositionMs = currentPositionMs,
+    totalDurationMs = totalDurationMs
+)
+
+/**
+ * Data class for joined Channel and ChannelHistory query results.
+ * Contains complete channel information along with history data.
+ */
+data class ChannelWithHistory(
+    // Channel information
+    val channelId: String,
+    val channelName: String,
+    val channelUrl: String,
+    val logoUrl: String?,
+    val categoryId: String?,
+    val playlistId: String,
+    val isFavorite: Boolean,
+    val lastWatched: Long?,
+
+    // History information
+    val historyId: Long,
+    val lastPlayedTimestamp: Long,
+    val totalPlayedTimeMs: Long,
+    val playCount: Int,
+    val currentPositionMs: Long,
+    val totalDurationMs: Long,
+) {
+    fun getChannel() = Channel(
+        id = channelId,
+        name = channelName,
+        url = channelUrl,
+        logoUrl = logoUrl,
+        categoryId = categoryId,
+        playlistId = playlistId,
+        isFavorite = isFavorite,
+        lastWatched = lastPlayedTimestamp
+    )
+}

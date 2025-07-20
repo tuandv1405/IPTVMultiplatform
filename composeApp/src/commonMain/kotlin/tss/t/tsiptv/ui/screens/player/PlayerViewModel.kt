@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import tss.t.tsiptv.core.database.IPTVDatabase
+import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
@@ -24,7 +25,9 @@ import tss.t.tsiptv.utils.getScreenOrientationUtils
 class PlayerViewModel(
     private val _mediaPlayer: MediaPlayer,
     private val _iptvDatabase: IPTVDatabase,
+    private val historyTracker: ChannelHistoryTracker,
 ) : ViewModel() {
+
     // Flag to track if auto full-screen is enabled
     private var autoFullScreenEnabled = false
 
@@ -41,6 +44,36 @@ class PlayerViewModel(
             _mediaPlayer.isPlaying.collect { isPlaying ->
                 if (isPlaying && autoFullScreenEnabled) {
                     handleFullScreenMode(true)
+                }
+                if (_playerControlsUIState.value.isPlaying != isPlaying) {
+                    _playerControlsUIState.update {
+                        it.copy(
+                            isPlaying = isPlaying
+                        )
+                    }
+                }
+            }
+        }
+
+        // Observe playback state changes to track when media stops
+        viewModelScope.launch {
+            _mediaPlayer.playbackState.collect { state ->
+                when (state) {
+                    PlaybackState.ENDED, PlaybackState.IDLE -> {
+                        // Media has stopped, save history
+                        historyTracker.onPlaybackStopped()
+                    }
+                    PlaybackState.PLAYING -> {
+                        // Media is playing, resume tracking if needed
+                        historyTracker.onPlaybackResumed()
+                    }
+                    PlaybackState.PAUSED -> {
+                        // Media is paused, pause tracking
+                        historyTracker.onPlaybackPaused()
+                    }
+                    else -> {
+                        // Other states (BUFFERING, READY, ERROR) - no action needed
+                    }
                 }
             }
         }
@@ -73,6 +106,10 @@ class PlayerViewModel(
                 _mediaPlayer.prepare(item)
                 _mediaPlayer.play()
             }
+
+            // Track channel play history
+            historyTracker.onChannelPlay(iptvChannel, iptvChannel.playlistId)
+
             launch {
                 loadPrograms(iptvChannel)
             }
@@ -90,7 +127,7 @@ class PlayerViewModel(
             when (event) {
                 is PlayerEvent.PlayMedia -> playMedia(event.mediaItem)
                 is PlayerEvent.PlayIptv -> playIptv(event.iptvChannel)
-                is PlayerEvent.TogglePlayPause -> togglePlayPause()
+
                 is PlayerEvent.OnPlayBackground -> {
                     // Handle background playback
                 }
@@ -138,8 +175,18 @@ class PlayerViewModel(
                     }
                 }
 
-                is PlayerEvent.Play -> _mediaPlayer.play()
-                is PlayerEvent.Pause -> _mediaPlayer.pause()
+                is PlayerEvent.Play -> {
+                    _mediaPlayer.play()
+                    historyTracker.onPlaybackResumed()
+                }
+                is PlayerEvent.Pause -> {
+                    _mediaPlayer.pause()
+                    historyTracker.onPlaybackPaused()
+                }
+                is PlayerEvent.Stop -> {
+                    _mediaPlayer.stop()
+                    historyTracker.onPlaybackStopped()
+                }
                 is PlayerEvent.ToggleMute -> toggleMute()
                 is PlayerEvent.SetVolume -> setVolume(event.volume)
                 else -> {}
@@ -181,8 +228,10 @@ class PlayerViewModel(
     private suspend fun togglePlayPause() {
         if (_mediaPlayer.isPlaying.value) {
             _mediaPlayer.pause()
+            historyTracker.onPlaybackPaused()
         } else {
             _mediaPlayer.play()
+            historyTracker.onPlaybackResumed()
         }
     }
 
@@ -240,7 +289,6 @@ sealed interface PlayerEvent {
 
     data object OnPlayBackground : PlayerEvent
     data object OnPictureInPicture : PlayerEvent
-    data object TogglePlayPause : PlayerEvent
 
     data object Pause : PlayerEvent
     data object Stop : PlayerEvent
@@ -267,4 +315,5 @@ data class PlayerUIState(
     val isFullScreen: Boolean = false,
     val isFitWidth: Boolean = false,
     val isFillScreen169: Boolean = false,
+    val isPlaying: Boolean = false
 )

@@ -26,12 +26,15 @@ import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.permission.Permission
 import tss.t.tsiptv.core.permission.PermissionCheckerFactory
 import tss.t.tsiptv.core.permission.PermissionExample
+import tss.t.tsiptv.core.repository.IHistoryRepository
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.ui.screens.addiptv.ImportIPTVScreen
+import tss.t.tsiptv.ui.screens.home.homeiptvlist.HomeFeedScreen
 import tss.t.tsiptv.ui.screens.login.AuthUiState
 import tss.t.tsiptv.ui.screens.login.AuthViewModel
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
+import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.screens.profile.ProfileScreen
 
 /**
@@ -46,6 +49,7 @@ fun HomeNavHost(
     hazeState: HazeState,
     contentPadding: PaddingValues,
     homeUiState: HomeUiState,
+    playerUIState: PlayerUIState,
     authState: AuthUiState,
     onLoginEvent: (LoginEvents) -> Unit = {},
     onHomeEvent: (HomeEvent) -> Unit = {},
@@ -59,10 +63,12 @@ fun HomeNavHost(
     }
     val iptvDatabase = koinInject<IPTVDatabase>()
     val networkClient = koinInject<NetworkClient>()
+    val historyRepository = koinInject<IHistoryRepository>()
     val homeViewModel = viewModel<HomeViewModel>(viewModelStoreOwner = viewStoreOwner) {
         HomeViewModel(
             iptvDatabase = iptvDatabase,
-            networkClient = networkClient
+            networkClient = networkClient,
+            historyRepository = historyRepository
         )
     }
     val authState by authViewModel.uiState.collectAsState()
@@ -83,7 +89,8 @@ fun HomeNavHost(
                 hazeState = hazeState,
                 homeUiState = homeUiState,
                 onHomeEvent = onHomeEvent,
-                contentPadding = contentPadding
+                contentPadding = contentPadding,
+                playerUIState = playerUIState
             )
         }
 
@@ -111,7 +118,7 @@ fun HomeNavHost(
                         }
 
                         else -> {
-                            homeViewModel.onHandleEvent(it)
+                            homeViewModel.onEmitEvent(it)
                         }
                     }
                 }

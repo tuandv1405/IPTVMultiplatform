@@ -15,20 +15,23 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import tss.t.tsiptv.core.database.IPTVDatabase
+import tss.t.tsiptv.core.database.entity.ChannelWithHistory
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
-import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.model.Playlist
 import tss.t.tsiptv.core.model.Program
 import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.parser.EPGParserFactory
 import tss.t.tsiptv.core.parser.IPTVParserFactory
 import tss.t.tsiptv.core.parser.IPTVProgram
+import tss.t.tsiptv.core.repository.IHistoryRepository
 import tss.t.tsiptv.player.models.MediaItem
 
 class HomeViewModel(
     private val iptvDatabase: IPTVDatabase,
     private val networkClient: NetworkClient,
+    private val historyRepository: IHistoryRepository,
 ) : ViewModel() {
 
     private var _currentListChannel: List<Channel> = emptyList()
@@ -55,13 +58,14 @@ class HomeViewModel(
                 playlists.collect { playlistList ->
                     if (playlistList.isNotEmpty()) {
                         val currentPlaylist = playlistList.first()
+                        onHandleEvent(HomeEvent.LoadHistory)
                         _uiState.update {
                             it.copy(
                                 playListId = currentPlaylist.id,
                                 playListName = currentPlaylist.name,
                                 categories = iptvDatabase.getCategoriesByPlaylist(
                                     currentPlaylist.id
-                                )
+                                ),
                             )
                         }
                         getAllChannelForIptvSource(playlistId = currentPlaylist.id)
@@ -82,7 +86,7 @@ class HomeViewModel(
                 }
             }
         }
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _homeEvent.collect { event ->
                 onHandleEvent(event)
             }
@@ -137,7 +141,8 @@ class HomeViewModel(
                         isLoading = false,
                         playListId = newPlaylist.id,
                         playListName = newPlaylist.name,
-                        categories = iptvDatabase.getCategoriesByPlaylist(newPlaylist.id)
+                        categories = iptvDatabase.getCategoriesByPlaylist(newPlaylist.id),
+                        listChannels = channels
                     )
                 }
                 onEmitEvent(HomeEvent.OnParseIPTVSourceSuccess)
@@ -322,6 +327,7 @@ class HomeViewModel(
                         )
                     }
                     getAllChannelForIptvSource(playlistId = playlistId)
+                    loadHistoryData(playlistId)
                 } else {
                     _uiState.update {
                         it.copy(
@@ -347,7 +353,7 @@ class HomeViewModel(
         }
     }
 
-    fun onHandleEvent(event: HomeEvent) {
+    private fun onHandleEvent(event: HomeEvent) {
         when (event) {
             HomeEvent.RefreshIPTVSource -> refreshIPTVChannel(_uiState.value.playListId!!)
             HomeEvent.OnBackPressed -> {}
@@ -364,11 +370,16 @@ class HomeViewModel(
             HomeEvent.OnAboutPressed -> {}
             HomeEvent.OnSearchPressed -> {}
             HomeEvent.OnClearFilterCategory -> {
-                _uiState.update {
-                    it.copy(
-                        selectedCategory = null,
-                        listChannels = _currentListChannel
-                    )
+                viewModelScope.launch(Dispatchers.IO) {
+                    _uiState.update {
+                        it.copy(
+                            selectedCategory = null,
+                            listChannels = searchWithFilter(
+                                searchKey = uiState.value.searchText,
+                                category = null
+                            )
+                        )
+                    }
                 }
             }
 
@@ -378,21 +389,63 @@ class HomeViewModel(
                 }
             }
 
+            HomeEvent.LoadHistory -> {
+                _uiState.value.playListId?.let {
+                    loadHistoryData(it)
+                }
+            }
+
             is HomeEvent.OnCategorySelected -> {
-                _uiState.update {
-                    it.copy(
-                        selectedCategory = event.category,
-                        listChannels = _currentListChannel.filter { channel ->
-                            channel.categoryId == event.category.id ||
-                                    channel.categoryId == event.category.name
-                        }
-                    )
+                viewModelScope.launch(Dispatchers.IO) {
+                    _uiState.update {
+                        it.copy(
+                            selectedCategory = event.category,
+                            listChannels = searchWithFilter(
+                                searchKey = uiState.value.searchText,
+                                category = event.category
+                            )
+                        )
+                    }
+                }
+            }
+
+            is HomeEvent.OnSearchKeyChange -> {
+                val searchKey = event.key
+                viewModelScope.launch(Dispatchers.IO) {
+                    _uiState.update {
+                        val category = it.selectedCategory
+                        it.copy(
+                            searchText = searchKey,
+                            listChannels = searchWithFilter(searchKey, category)
+                        )
+                    }
                 }
             }
 
             else -> {}
         }
     }
+
+    private fun searchWithFilter(
+        searchKey: String,
+        category: Category?,
+    ): List<Channel> = _currentListChannel
+        .filter {
+            if (searchKey.trim().isEmpty()) {
+                return@filter true
+            }
+            it.name.lowercase()
+                .contains(searchKey.lowercase()) ||
+                    true == it.categoryId?.lowercase()
+                ?.contains(searchKey.lowercase())
+        }
+        .filter { channel ->
+            if (category == null) {
+                return@filter true
+            }
+            channel.categoryId == category.id ||
+                    channel.categoryId == category.name
+        }
 
     fun getRelatedChannels(channel: Channel) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -415,12 +468,42 @@ class HomeViewModel(
                 }
         }
     }
+
+    /**
+     * Loads history data for the specified playlist and updates UI state.
+     */
+    private fun loadHistoryData(playlistId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // Load last played channel (now playing)
+            val lastPlayedChannel = historyRepository.getLastWatchedChannelWithDetails(playlistId)
+
+            if (lastPlayedChannel != null) {
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        nowPlayingChannel = lastPlayedChannel,
+                    )
+                }
+            }
+            // Load top 3 most played channels
+            historyRepository.getLastTop3WatchedChannelsWithDetails(playlistId)
+                .collect { top3List ->
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            nowPlayingChannel = lastPlayedChannel,
+                            mostPlayedChannel = top3List.firstOrNull(),
+                            top3MostPlayedChannels = top3List
+                        )
+                    }
+                }
+        }
+    }
 }
 
 /**
  * Represents the UI state for the Home screen
  */
 data class HomeUiState(
+    val searchText: String = "",
     val isLoading: Boolean = true,
     val playListId: String? = null,
     val playListName: String? = null,
@@ -432,6 +515,10 @@ data class HomeUiState(
     val listChannels: List<Channel> = emptyList(),
     val relatedChannels: List<Channel> = emptyList(),
     val error: Throwable? = null,
+    // History-related fields
+    val nowPlayingChannel: ChannelWithHistory? = null, // Last played channel from history
+    val top3MostPlayedChannels: List<ChannelWithHistory> = emptyList(), // Top 3 most played channels
+    val mostPlayedChannel: ChannelWithHistory? = null, // Most played channel
 )
 
 sealed interface HomeEvent {
@@ -445,7 +532,9 @@ sealed interface HomeEvent {
     data object OnChangeIPTVChannelPressed : HomeEvent
     data object OnSettingsPressed : HomeEvent
     data object OnAboutPressed : HomeEvent
+
     data object OnSearchPressed : HomeEvent
+    data class OnSearchKeyChange(val key: String) : HomeEvent
 
     data object OnDismissErrorDialog : HomeEvent
 
@@ -462,4 +551,9 @@ sealed interface HomeEvent {
 
     data object OnCancelParseIPTVSource : HomeEvent
     data object OnParseIPTVSourceSuccess : HomeEvent
+    data class OnPlayNowPlaying(val channel: Channel) : HomeEvent
+
+    data class OnPauseNowPlaying(val channel: Channel) : HomeEvent {}
+
+    data object LoadHistory : HomeEvent {}
 }

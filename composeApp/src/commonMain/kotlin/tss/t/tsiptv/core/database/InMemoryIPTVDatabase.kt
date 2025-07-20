@@ -4,10 +4,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
+import tss.t.tsiptv.core.model.ChannelHistory
 import tss.t.tsiptv.core.model.Playlist
 import tss.t.tsiptv.core.model.Program
+import tss.t.tsiptv.core.database.entity.ChannelWithHistory
 
 /**
  * A simple in-memory implementation of IPTVDatabase.
@@ -19,6 +22,7 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     private val categories = MutableStateFlow<Map<String, Category>>(emptyMap())
     private val playlists = MutableStateFlow<Map<String, Playlist>>(emptyMap())
     private val programs = MutableStateFlow<Map<String, Program>>(emptyMap())
+    private val channelHistory = MutableStateFlow<Map<String, ChannelHistory>>(emptyMap())
 
     override fun getAllChannels(): Flow<List<Channel>> {
         return channels.map { it.values.toList() }
@@ -201,5 +205,264 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         categories.value = emptyMap()
         playlists.value = emptyMap()
         programs.value = emptyMap()
+        channelHistory.value = emptyMap()
+    }
+
+    // Channel History methods implementation
+
+    override suspend fun recordChannelPlay(channelId: String, playlistId: String, timestamp: Long) {
+        val key = "${channelId}_${playlistId}"
+        val currentHistory = channelHistory.value
+        val existingHistory = currentHistory[key]
+
+        if (existingHistory != null) {
+            // Update existing record - increment play count and update timestamp
+            val updatedHistory = existingHistory.copy(
+                lastPlayedTimestamp = timestamp,
+                playCount = existingHistory.playCount + 1
+            )
+            channelHistory.value = currentHistory + (key to updatedHistory)
+        } else {
+            // Create new record
+            val newHistory = ChannelHistory(
+                id = Clock.System.now().toEpochMilliseconds(), // Simple ID generation for in-memory
+                channelId = channelId,
+                playlistId = playlistId,
+                lastPlayedTimestamp = timestamp,
+                totalPlayedTimeMs = 0,
+                playCount = 1
+            )
+            channelHistory.value = currentHistory + (key to newHistory)
+        }
+    }
+
+    override suspend fun updateChannelPlayTime(
+        channelId: String,
+        playlistId: String,
+        additionalTimeMs: Long,
+        timestamp: Long
+    ) {
+        val key = "${channelId}_${playlistId}"
+        val currentHistory = channelHistory.value
+        val existingHistory = currentHistory[key]
+
+        if (existingHistory != null) {
+            val updatedHistory = existingHistory.copy(
+                totalPlayedTimeMs = existingHistory.totalPlayedTimeMs + additionalTimeMs,
+                lastPlayedTimestamp = timestamp
+            )
+            channelHistory.value = currentHistory + (key to updatedHistory)
+        }
+    }
+
+    override suspend fun updateChannelPositionAndDuration(
+        channelId: String,
+        playlistId: String,
+        currentPositionMs: Long,
+        totalDurationMs: Long,
+        timestamp: Long,
+    ) {
+        val key = "$channelId-$playlistId"
+        val currentHistory = channelHistory.value
+        val existingHistory = currentHistory[key]
+
+        if (existingHistory != null) {
+            val updatedHistory = existingHistory.copy(
+                currentPositionMs = currentPositionMs,
+                totalDurationMs = totalDurationMs,
+                lastPlayedTimestamp = timestamp
+            )
+            channelHistory.value = currentHistory + (key to updatedHistory)
+        }
+    }
+
+    override fun getAllPlayedChannelsInPlaylist(playlistId: String): Flow<List<ChannelHistory>> {
+        return channelHistory.map { historyMap ->
+            historyMap.values
+                .filter { it.playlistId == playlistId }
+                .sortedByDescending { it.lastPlayedTimestamp }
+        }
+    }
+
+    override suspend fun getLastPlayedChannelInPlaylist(playlistId: String): ChannelWithHistory? {
+        val lastHistory = channelHistory.value.values
+            .filter { it.playlistId == playlistId }
+            .maxByOrNull { it.lastPlayedTimestamp }
+
+        return lastHistory?.let { history ->
+            val channel = channels.value[history.channelId]
+            channel?.let {
+                ChannelWithHistory(
+                    channelId = it.id,
+                    channelName = it.name,
+                    channelUrl = it.url,
+                    logoUrl = it.logoUrl,
+                    categoryId = it.categoryId,
+                    playlistId = it.playlistId,
+                    isFavorite = it.isFavorite,
+                    lastWatched = it.lastWatched,
+                    historyId = history.id,
+                    lastPlayedTimestamp = history.lastPlayedTimestamp,
+                    totalPlayedTimeMs = history.totalPlayedTimeMs,
+                    playCount = history.playCount,
+                    currentPositionMs = history.currentPositionMs,
+                    totalDurationMs = history.totalDurationMs
+                )
+            }
+        }
+    }
+
+    override fun getTop3MostPlayedChannelsInPlaylist(playlistId: String): Flow<List<ChannelWithHistory>> {
+        return channelHistory.map { historyMap ->
+            historyMap.values
+                .filter { it.playlistId == playlistId }
+                .sortedByDescending { it.totalPlayedTimeMs }
+                .take(3)
+                .mapNotNull { history ->
+                    val channel = channels.value[history.channelId]
+                    channel?.let {
+                        ChannelWithHistory(
+                            channelId = it.id,
+                            channelName = it.name,
+                            channelUrl = it.url,
+                            logoUrl = it.logoUrl,
+                            categoryId = it.categoryId,
+                            playlistId = it.playlistId,
+                            isFavorite = it.isFavorite,
+                            lastWatched = it.lastWatched,
+                            historyId = history.id,
+                            lastPlayedTimestamp = history.lastPlayedTimestamp,
+                            totalPlayedTimeMs = history.totalPlayedTimeMs,
+                            playCount = history.playCount,
+                            currentPositionMs = history.currentPositionMs,
+                            totalDurationMs = history.totalDurationMs
+                        )
+                    }
+                }
+        }
+    }
+
+    override suspend fun getMostPlayedChannelInPlaylist(playlistId: String): ChannelWithHistory? {
+        val mostPlayedHistory = channelHistory.value.values
+            .filter { it.playlistId == playlistId }
+            .maxByOrNull { it.totalPlayedTimeMs }
+
+        return mostPlayedHistory?.let { history ->
+            val channel = channels.value[history.channelId]
+            channel?.let {
+                ChannelWithHistory(
+                    channelId = it.id,
+                    channelName = it.name,
+                    channelUrl = it.url,
+                    logoUrl = it.logoUrl,
+                    categoryId = it.categoryId,
+                    playlistId = it.playlistId,
+                    isFavorite = it.isFavorite,
+                    lastWatched = it.lastWatched,
+                    historyId = history.id,
+                    lastPlayedTimestamp = history.lastPlayedTimestamp,
+                    totalPlayedTimeMs = history.totalPlayedTimeMs,
+                    playCount = history.playCount,
+                    currentPositionMs = history.currentPositionMs,
+                    totalDurationMs = history.totalDurationMs
+                )
+            }
+        }
+    }
+
+    override suspend fun getLastWatchedChannelWithDetails(playlistId: String?): ChannelWithHistory? {
+        val historyEntries = if (playlistId != null) {
+            channelHistory.value.values.filter { it.playlistId == playlistId }
+        } else {
+            channelHistory.value.values.toList()
+        }
+
+        val lastHistory = historyEntries.maxByOrNull { it.lastPlayedTimestamp }
+
+        return lastHistory?.let { history ->
+            val channel = channels.value[history.channelId]
+            channel?.let {
+                ChannelWithHistory(
+                    channelId = it.id,
+                    channelName = it.name,
+                    channelUrl = it.url,
+                    logoUrl = it.logoUrl,
+                    categoryId = it.categoryId,
+                    playlistId = it.playlistId,
+                    isFavorite = it.isFavorite,
+                    lastWatched = it.lastWatched,
+                    historyId = history.id,
+                    lastPlayedTimestamp = history.lastPlayedTimestamp,
+                    totalPlayedTimeMs = history.totalPlayedTimeMs,
+                    playCount = history.playCount,
+                    currentPositionMs = history.currentPositionMs,
+                    totalDurationMs = history.totalDurationMs
+                )
+            }
+        }
+    }
+
+    override fun getAllWatchedChannelsWithDetails(playlistId: String): Flow<List<ChannelWithHistory>> {
+        return channelHistory.map { historyMap ->
+            historyMap.values
+                .filter { it.playlistId == playlistId }
+                .sortedByDescending { it.lastPlayedTimestamp }
+                .mapNotNull { history ->
+                    val channel = channels.value[history.channelId]
+                    channel?.let {
+                        ChannelWithHistory(
+                            channelId = it.id,
+                            channelName = it.name,
+                            channelUrl = it.url,
+                            logoUrl = it.logoUrl,
+                            categoryId = it.categoryId,
+                            playlistId = it.playlistId,
+                            isFavorite = it.isFavorite,
+                            lastWatched = it.lastWatched,
+                            historyId = history.id,
+                            lastPlayedTimestamp = history.lastPlayedTimestamp,
+                            totalPlayedTimeMs = history.totalPlayedTimeMs,
+                            playCount = history.playCount,
+                            currentPositionMs = history.currentPositionMs,
+                            totalDurationMs = history.totalDurationMs
+                        )
+                    }
+                }
+        }
+    }
+
+    override fun getLastTop3WatchedChannelsWithDetails(playlistId: String?): Flow<List<ChannelWithHistory>> {
+        return channelHistory.map { historyMap ->
+            val historyEntries = if (playlistId != null) {
+                historyMap.values.filter { it.playlistId == playlistId }
+            } else {
+                historyMap.values.toList()
+            }
+
+            historyEntries
+                .sortedByDescending { it.lastPlayedTimestamp }
+                .take(3)
+                .mapNotNull { history ->
+                    val channel = channels.value[history.channelId]
+                    channel?.let {
+                        ChannelWithHistory(
+                            channelId = it.id,
+                            channelName = it.name,
+                            channelUrl = it.url,
+                            logoUrl = it.logoUrl,
+                            categoryId = it.categoryId,
+                            playlistId = it.playlistId,
+                            isFavorite = it.isFavorite,
+                            lastWatched = it.lastWatched,
+                            historyId = history.id,
+                            lastPlayedTimestamp = history.lastPlayedTimestamp,
+                            totalPlayedTimeMs = history.totalPlayedTimeMs,
+                            playCount = history.playCount,
+                            currentPositionMs = history.currentPositionMs,
+                            totalDurationMs = history.totalDurationMs
+                        )
+                    }
+                }
+        }
     }
 }

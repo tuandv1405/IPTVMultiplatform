@@ -13,11 +13,13 @@ import kotlinx.coroutines.IO
 import tss.t.tsiptv.core.database.dao.CategoryDao
 import tss.t.tsiptv.core.database.dao.ChannelAttributeDao
 import tss.t.tsiptv.core.database.dao.ChannelDao
+import tss.t.tsiptv.core.database.dao.ChannelHistoryDao
 import tss.t.tsiptv.core.database.dao.PlaylistDao
 import tss.t.tsiptv.core.database.dao.ProgramDao
 import tss.t.tsiptv.core.database.entity.CategoryEntity
 import tss.t.tsiptv.core.database.entity.ChannelAttributeEntity
 import tss.t.tsiptv.core.database.entity.ChannelEntity
+import tss.t.tsiptv.core.database.entity.ChannelHistoryEntity
 import tss.t.tsiptv.core.database.entity.PlaylistEntity
 import tss.t.tsiptv.core.database.entity.ProgramEntity
 
@@ -30,10 +32,11 @@ import tss.t.tsiptv.core.database.entity.ProgramEntity
         ChannelEntity::class,
         CategoryEntity::class,
         ChannelAttributeEntity::class,
-        ProgramEntity::class
+        ProgramEntity::class,
+        ChannelHistoryEntity::class
     ],
-    version = 2,
-    exportSchema = false
+    version = 1,
+    exportSchema = false,
 )
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -71,6 +74,13 @@ abstract class AppDatabase : RoomDatabase() {
      * @return The program DAO
      */
     abstract fun programDao(): ProgramDao
+
+    /**
+     * Gets the channel history DAO.
+     *
+     * @return The channel history DAO
+     */
+    abstract fun channelHistoryDao(): ChannelHistoryDao
 }
 
 // The Room compiler generates the `actual` implementations.
@@ -83,13 +93,24 @@ fun getRoomDatabase(
     builder: RoomDatabase.Builder<AppDatabase>
 ): AppDatabase {
     return builder
-        .addMigrations(object : Migration(1, 2) {
-            override fun migrate(connection: SQLiteConnection) {
-                connection.execSQL("CREATE TABLE IF NOT EXISTS `programs` (`id` TEXT NOT NULL, `channelId` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT, `startTime` INTEGER NOT NULL, `endTime` INTEGER NOT NULL, `category` TEXT, `playlistId` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`channelId`) REFERENCES `channels`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`playlistId`) REFERENCES `playlists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
-                connection.execSQL("CREATE INDEX IF NOT EXISTS `index_programs_channelId` ON `programs` (`channelId`)")
-                connection.execSQL("CREATE INDEX IF NOT EXISTS `index_programs_playlistId` ON `programs` (`playlistId`)")
+        .addMigrations(
+            object : Migration(1, 2) {
+                override fun migrate(connection: SQLiteConnection) {
+                    connection.execSQL("CREATE TABLE IF NOT EXISTS `programs` (`id` TEXT NOT NULL, `channelId` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT, `startTime` INTEGER NOT NULL, `endTime` INTEGER NOT NULL, `category` TEXT, `playlistId` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`channelId`) REFERENCES `channels`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`playlistId`) REFERENCES `playlists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+                    connection.execSQL("CREATE INDEX IF NOT EXISTS `index_programs_channelId` ON `programs` (`channelId`)")
+                    connection.execSQL("CREATE INDEX IF NOT EXISTS `index_programs_playlistId` ON `programs` (`playlistId`)")
+                }
+            },
+            object : Migration(2, 3) {
+                override fun migrate(connection: SQLiteConnection) {
+                    connection.execSQL("CREATE TABLE IF NOT EXISTS `channel_history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `channelId` TEXT NOT NULL, `playlistId` TEXT NOT NULL, `lastPlayedTimestamp` INTEGER NOT NULL, `totalPlayedTimeMs` INTEGER NOT NULL, `playCount` INTEGER NOT NULL, FOREIGN KEY(`channelId`) REFERENCES `channels`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`playlistId`) REFERENCES `playlists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+                    connection.execSQL("CREATE INDEX IF NOT EXISTS `index_channel_history_channelId` ON `channel_history` (`channelId`)")
+                    connection.execSQL("CREATE INDEX IF NOT EXISTS `index_channel_history_playlistId` ON `channel_history` (`playlistId`)")
+                    connection.execSQL("CREATE INDEX IF NOT EXISTS `index_channel_history_lastPlayedTimestamp` ON `channel_history` (`lastPlayedTimestamp`)")
+                    connection.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_channel_history_channelId_playlistId` ON `channel_history` (`channelId`, `playlistId`)")
+                }
             }
-        })
+        )
         .fallbackToDestructiveMigrationOnDowngrade(true)
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)

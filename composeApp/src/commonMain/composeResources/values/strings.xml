@@ -20,8 +20,13 @@
     <string name="or_continue_with">Or continue with</string>
     <string name="try_again">Try Login</string>
     <string name="error_dialog_title">Oops!</string>
-    <string name="iptv_import_success_msg">Parse channel successfully! Found %1d channels</string>
+    <string name="iptv_import_success_msg">Parse channel successfully! Found %1$d channels</string>
     <string name="iptv_import_success_title">Congratulation</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="continue_watching">Continue Watching</string>
+    <string name="last_hour">Last Hour</string>
+    <string name="now">Now</string>
 
     <!-- Settings -->
     <string name="language_settings">Language Settings</string>
@@ -60,5 +65,8 @@
     <string name="cancel_parsing_btn_cancel">No, Keep Parsing</string>
 
     <string name="now_playing_title">Now Playing</string>
-    <string name="all_channels_title">All</string>
+    <string name="all_channels_title">All Channels</string>
+
+    <string name="today_format">Today, %1$s</string>
+    <string name="yesterday_format">Yesterday, %1$s</string>
 </resources>

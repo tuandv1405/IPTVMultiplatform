@@ -373,7 +373,9 @@ fun BoxScope.MediaPlayerControls(
                     )
                 } else {
                     Text(
-                        text = formatTime(currentPosition),
+                        text = remember(currentPosition) {
+                            formatTime(currentPosition)
+                        },
                         modifier = Modifier.padding(end = 8.dp)
                     )
                 }

@@ -47,6 +47,7 @@ import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.ui.screens.home.models.BottomNavItem
 import tss.t.tsiptv.ui.screens.login.AuthUiState
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
+import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.utils.customShadow
@@ -84,6 +85,7 @@ fun HomeScreen(
     parentNavController: NavHostController,
     authState: AuthUiState,
     homeUiState: HomeUiState,
+    playerUIState: PlayerUIState,
     onLoginEvent: (LoginEvents) -> Unit = {},
     onHomeEvent: (HomeEvent) -> Unit = {},
 ) {
@@ -123,6 +125,7 @@ fun HomeScreen(
             contentPadding = paddingValues,
             authState = authState,
             homeUiState = homeUiState,
+            playerUIState = playerUIState,
             onLoginEvent = onLoginEvent,
             onHomeEvent = onHomeEvent,
         )
