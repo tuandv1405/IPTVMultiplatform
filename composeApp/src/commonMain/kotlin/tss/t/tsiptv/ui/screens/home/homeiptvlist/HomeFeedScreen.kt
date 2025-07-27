@@ -1,0 +1,711 @@
+package tss.t.tsiptv.ui.screens.home.homeiptvlist
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.FileDownload
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
+import tss.t.tsiptv.core.database.IPTVDatabase
+import tss.t.tsiptv.core.history.ChannelHistoryTracker
+import tss.t.tsiptv.navigation.NavRoutes
+import tss.t.tsiptv.player.MediaPlayer
+import tss.t.tsiptv.player.models.MediaItem
+import tss.t.tsiptv.player.ui.MediaPlayerContent
+import tss.t.tsiptv.ui.screens.home.HomeEvent
+import tss.t.tsiptv.ui.screens.home.HomeUiState
+import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.CategoryRow
+import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.homeEmptyIptvSource
+import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.homeItemList
+import tss.t.tsiptv.ui.screens.login.provider.LocalAuthProvider
+import tss.t.tsiptv.ui.screens.player.PlayerUIState
+import tss.t.tsiptv.ui.screens.player.PlayerViewModel
+import tss.t.tsiptv.ui.themes.TSColors
+import tss.t.tsiptv.ui.themes.TSShapes
+import tss.t.tsiptv.ui.widgets.DialogPreview_R
+import tss.t.tsiptv.ui.widgets.HeaderWithAvatar
+import tss.t.tsiptv.ui.widgets.SearchWidget
+
+
+/**
+ * Home feed screen showing the list of channels
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeFeedScreen(
+    navController: NavHostController,
+    parentNavController: NavHostController,
+    hazeState: HazeState,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    homeUiState: HomeUiState,
+    playerUIState: PlayerUIState,
+    onHomeEvent: (HomeEvent) -> Unit = {},
+) {
+    val scrollState = rememberLazyListState()
+    val authState = LocalAuthProvider.current
+
+    val helloTitle = remember(authState) {
+        "Hello${authState?.user?.displayName?.let { " $it" } ?: ""}"
+    }
+    val name = remember(authState) {
+        authState?.user?.email ?: ""
+    }
+
+    val isInitLoading = remember(homeUiState) {
+        homeUiState.isLoading
+    }
+
+    val isEmpty = remember(
+        homeUiState.listChannels,
+        homeUiState.isLoading
+    ) {
+        !homeUiState.isLoading &&
+                homeUiState.listChannels.isEmpty() &&
+                homeUiState.playListId.isNullOrEmpty()
+    }
+
+    var showStickyHeader by remember { mutableStateOf(false) }
+    val categoryListState: LazyListState = rememberLazyListState()
+    val mediaPlayer = koinInject<MediaPlayer>()
+    val iptvDatabase = koinInject<IPTVDatabase>()
+    val historyTracker = koinInject<ChannelHistoryTracker>()
+    val viewStoreOwner = LocalViewModelStoreOwner.current!!
+    val playerViewModel = viewModel<PlayerViewModel>(viewStoreOwner) {
+        PlayerViewModel(
+            _mediaPlayer = mediaPlayer,
+            _iptvDatabase = iptvDatabase,
+            historyTracker = historyTracker
+        )
+    }
+    val mediaItem by playerViewModel.mediaItemState.collectAsStateWithLifecycle()
+    var showMiniPlayer by remember { mutableStateOf(false) }
+
+    var isRefreshing by remember {
+        mutableStateOf(false)
+    }
+    val state = rememberPullToRefreshState()
+    var searchOffset by remember {
+        mutableStateOf(0)
+    }
+
+    LaunchedEffect(homeUiState.isLoading) {
+        isRefreshing = false
+    }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { scrollState.layoutInfo.visibleItemsInfo to isEmpty }
+            .collect { layoutInfo ->
+                val isEmpty = layoutInfo.second
+                if (isEmpty) {
+                    showStickyHeader = false
+                    return@collect
+                }
+                val isVisible = layoutInfo.first.any { itemInfo ->
+                    itemInfo.key == "GroupChannelsTitle"
+                }
+                if (isVisible) {
+                    layoutInfo.first.firstOrNull {
+                        it.key == "GroupChannelsTitle"
+                    }?.offset
+                        ?.let {
+                            it < searchOffset
+                        }?.let {
+                            showStickyHeader = it
+                        }
+                } else {
+                    showStickyHeader = true
+                }
+            }
+    }
+
+    LifecycleResumeEffect(mediaItem) {
+        showMiniPlayer = mediaItem != MediaItem.EMPTY
+        onHomeEvent(HomeEvent.LoadHistory)
+        onPauseOrDispose {
+            showMiniPlayer = false
+        }
+    }
+
+    // Dialog-based bottom sheet state - BEST PRACTICE for dialog behavior
+    var showBottomSheet by remember { mutableStateOf(false) }
+
+    // Main content with Scaffold
+    Scaffold(
+        containerColor = Color.Transparent,
+        topBar = {
+            Column {
+                HeaderWithAvatar(
+                    modifier = Modifier
+                        .background(TSColors.BackgroundColor)
+                        .hazeEffect(hazeState)
+                        .statusBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    helloTitle = helloTitle,
+                    name = name,
+                    notificationCount = 10,
+                    onSettingClick = {
+
+                    },
+                    onNotificationClick = {
+                        showBottomSheet = true
+                    },
+                    onAvatarClick = {
+                        navController.navigate(NavRoutes.HomeScreens.PROFILE)
+                    }
+                )
+
+                SearchWidget(
+                    modifier = Modifier.fillMaxWidth()
+                        .onGloballyPositioned {
+                            searchOffset = it.positionOnScreen().y.toInt()
+                                .coerceAtLeast(searchOffset)
+                        }
+                        .background(TSColors.BackgroundColor)
+                        .hazeEffect(hazeState)
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 16.dp),
+                    initText = homeUiState.searchText,
+                    placeholder = "Search channels, shows...",
+                    onValueChange = {
+                        onHomeEvent(HomeEvent.OnSearchKeyChange(it))
+                    },
+                    onClear = {
+                        onHomeEvent(HomeEvent.OnSearchKeyChange(""))
+                    }
+                )
+
+                AnimatedVisibility(showStickyHeader) {
+                    if (showStickyHeader) {
+                        CategoryRow(
+                            homeUiState = homeUiState,
+                            modifier = Modifier.fillMaxWidth()
+                                .background(TSColors.BackgroundColor)
+                                .hazeEffect(hazeState)
+                                .padding(vertical = 12.dp),
+                            onHomeEvent = onHomeEvent,
+                            listState = categoryListState
+                        )
+                    }
+                }
+            }
+        },
+        content = {
+            if (isInitLoading) {
+                val infiniteTransition = rememberInfiniteTransition(label = "liquidGlass")
+                val shimmerColor by infiniteTransition.animateFloat(
+                    initialValue = 0.1f,
+                    targetValue = 0.15f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(2_000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "liquidFlow"
+                )
+
+                Column(
+                    modifier = Modifier
+                        .padding(top = it.calculateTopPadding())
+                        .fillMaxSize(),
+                ) {
+                    repeat(2) {
+                        Box(
+                            modifier = Modifier.padding(16.dp)
+                                .fillMaxWidth()
+                                .height(100.dp)
+                                .clip(TSShapes.roundedShape12)
+                                .background(
+                                    TSColors.White.copy(alpha = shimmerColor),
+                                    TSShapes.roundedShape12
+                                )
+                                .blur(20.dp)
+                        )
+
+                        Box(
+                            modifier = Modifier.padding(16.dp)
+                                .fillMaxWidth()
+                                .height(150.dp)
+                                .clip(TSShapes.roundedShape12)
+                                .blur(20.dp)
+                                .background(
+                                    TSColors.White.copy(alpha = shimmerColor),
+                                    TSShapes.roundedShape12
+                                )
+                        )
+                    }
+                }
+                return@Scaffold
+            }
+
+            Box(
+                modifier = Modifier.animateContentSize()
+                    .fillMaxSize()
+            ) {
+                LazyColumn(
+                    state = scrollState,
+                    modifier = Modifier.fillMaxSize()
+                        .hazeSource(hazeState)
+                        .pullToRefresh(
+                            isRefreshing = isRefreshing,
+                            state = state,
+                            threshold = PullToRefreshDefaults.PositionalThreshold + it.calculateTopPadding()
+                        ) {
+                            isRefreshing = true
+                            onHomeEvent(HomeEvent.RefreshIPTVSource)
+                        },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+
+                    item("HomeSpaceTop") {
+                        Spacer(Modifier.height(it.calculateTopPadding()))
+                    }
+
+                    when {
+                        isEmpty -> {
+                            homeEmptyIptvSource(navController, parentNavController)
+                        }
+
+                        isInitLoading -> {
+                        }
+
+                        else -> {
+                            homeItemList(
+                                homeUiState = homeUiState,
+                                playerUIState = playerUIState,
+                                onHomeEvent = onHomeEvent,
+                                categoryListState = categoryListState
+                            )
+                        }
+                    }
+
+                    item {
+                        Spacer(
+                            Modifier
+                                .navigationBarsPadding()
+                                .height(contentPadding.calculateBottomPadding() + 12.dp)
+                        )
+                    }
+
+                    if (showMiniPlayer) {
+                        item {
+                            Spacer(
+                                Modifier.height(MiniPlayerHeight)
+                            )
+                        }
+                    }
+                }
+
+                HomeMiniPlayer(
+                    showMiniPlayer = showMiniPlayer,
+                    contentPadding = contentPadding,
+                    onHomeEvent = onHomeEvent,
+                    mediaItem = mediaItem,
+                    hazeState = hazeState,
+                    playerViewModel = playerViewModel,
+                    onHideMiniPlayer = {
+                        showMiniPlayer = false
+                    }
+                )
+            }
+        }
+    )
+
+    // ModalBottomSheet for dialog behavior - BEST PRACTICE
+    if (showBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBottomSheet = false },
+            shape = TSShapes.roundShapeTop16,
+            containerColor = TSColors.White,
+            dragHandle = {
+                // Custom drag handle for better UX - BEST PRACTICE
+                Surface(
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .size(width = 32.dp, height = 4.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(2.dp)),
+                    color = TSColors.Black.copy(alpha = 0.3f)
+                ) {}
+            }
+        ) {
+            // Improved BottomSheet content following best practices
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding() // Handle system navigation bars - BEST PRACTICE
+                    .padding(bottom = 16.dp)
+            ) {
+                // Header with title and close button - BEST PRACTICE
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Quick Actions",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TSColors.Black
+                    )
+
+                    IconButton(
+                        onClick = { showBottomSheet = false }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = "Close",
+                            tint = TSColors.Black.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+
+                // Divider
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = TSColors.Black.copy(alpha = 0.08f)
+                )
+
+                // Actions list with better UX - BEST PRACTICE
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Add IPTV Source
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                parentNavController.navigate(NavRoutes.AddIptv)
+                                showBottomSheet = false
+                            }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Add,
+                            contentDescription = null,
+                            tint = TSColors.Black,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Add IPTV Source",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = TSColors.Black
+                            )
+                            Text(
+                                text = "Add a new IPTV playlist",
+                                fontSize = 14.sp,
+                                color = TSColors.Black.copy(alpha = 0.7f),
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                    }
+
+                    // Import Playlist
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                // Handle import playlist action
+                                showBottomSheet = false
+                            }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.FileDownload,
+                            contentDescription = null,
+                            tint = TSColors.Black,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Import Playlist",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = TSColors.Black
+                            )
+                            Text(
+                                text = "Import from file or URL",
+                                fontSize = 14.sp,
+                                color = TSColors.Black.copy(alpha = 0.7f),
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                    }
+
+                    // Refresh Channels
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onHomeEvent(HomeEvent.RefreshIPTVSource)
+                                showBottomSheet = false
+                            }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Refresh,
+                            contentDescription = null,
+                            tint = TSColors.Black,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Refresh Channels",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = TSColors.Black
+                            )
+                            Text(
+                                text = "Update channel list",
+                                fontSize = 14.sp,
+                                color = TSColors.Black.copy(alpha = 0.7f),
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                    }
+
+                    // Settings
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                // Navigate to settings
+                                showBottomSheet = false
+                            }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Settings,
+                            contentDescription = null,
+                            tint = TSColors.Black,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Settings",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = TSColors.Black
+                            )
+                            Text(
+                                text = "Configure app preferences",
+                                fontSize = 14.sp,
+                                color = TSColors.Black.copy(alpha = 0.7f),
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private val MiniPlayerHeight = 90.dp
+
+@Composable
+private fun BoxScope.HomeMiniPlayer(
+    showMiniPlayer: Boolean,
+    contentPadding: PaddingValues,
+    onHomeEvent: (HomeEvent) -> Unit,
+    mediaItem: MediaItem,
+    hazeState: HazeState,
+    playerViewModel: PlayerViewModel,
+    onHideMiniPlayer: () -> Unit,
+) {
+    AnimatedVisibility(
+        visible = showMiniPlayer,
+        modifier = Modifier
+            .align(Alignment.BottomCenter),
+        enter = slideInVertically(
+            initialOffsetY = { it },
+            animationSpec = tween(
+                durationMillis = 300,
+                easing = LinearOutSlowInEasing
+            )
+        ),
+        exit = slideOutVertically(
+            targetOffsetY = { it },
+            animationSpec = tween(
+                durationMillis = 300,
+                easing = LinearOutSlowInEasing
+            )
+        ) + fadeOut(
+            targetAlpha = 0.5f,
+            animationSpec = tween(
+                durationMillis = 300,
+                easing = LinearOutSlowInEasing
+            )
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .navigationBarsPadding()
+                .padding(bottom = contentPadding.calculateBottomPadding() + 12.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .clip(TSShapes.roundedShape8)
+                .clickable {
+                    onHomeEvent(HomeEvent.OnResumeMediaItem(mediaItem))
+                }
+                .hazeEffect(hazeState),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            MediaPlayerContent(
+                player = playerViewModel.player,
+                modifier = Modifier
+                    .size(160.dp, MiniPlayerHeight)
+                    .clip(TSShapes.roundedShape8)
+                    .background(
+                        color = TSColors.PlayerBackgroundColor,
+                        shape = TSShapes.roundedShape8
+                    )
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = mediaItem.title,
+                    color = TSColors.TextPrimary,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp
+                )
+                Text(
+                    text = mediaItem.id,
+                    color = TSColors.TextSecondaryLight,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 13.sp,
+                    lineHeight = 14.sp
+                )
+            }
+            Image(
+                imageVector = Icons.Rounded.Close,
+                contentDescription = "Close",
+                modifier = Modifier.size(32.dp)
+                    .clip(CircleShape)
+                    .padding(4.dp)
+                    .clickable {
+                        if (showMiniPlayer) {
+                            onHideMiniPlayer()
+                            playerViewModel.stopMedia()
+                        }
+                    },
+                colorFilter = ColorFilter.tint(TSColors.TextPrimary)
+            )
+        }
+    }
+}
+
+private fun DrawScope.drawShimmerEffect(
+    shimmerOffset: Float,
+    canvasWidth: Float,
+) {
+    val shimmerWidth = canvasWidth * 0.3f
+    val startX = canvasWidth * shimmerOffset - shimmerWidth
+    val shimmerX = (canvasWidth + shimmerWidth) * shimmerOffset - shimmerWidth
+
+    val shimmerGradient = Brush.horizontalGradient(
+        colors = listOf(
+            TSColors.White.copy(0f),
+            TSColors.White.copy(0.1f),
+            TSColors.White.copy(0.15f),
+            TSColors.White.copy(0.1f),
+            TSColors.White.copy(0.0f),
+        ),
+        startX = startX,
+        endX = shimmerX + shimmerWidth
+    )
+
+    drawRect(brush = shimmerGradient)
+}

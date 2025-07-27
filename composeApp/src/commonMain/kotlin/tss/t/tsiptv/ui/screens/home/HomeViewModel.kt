@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,6 +51,7 @@ class HomeViewModel(
         MutableSharedFlow<HomeEvent>()
     }
     val homeUIEvent: Flow<HomeEvent> = _homeEvent
+    val currentTime = Clock.System.now().toEpochMilliseconds()
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -175,6 +177,11 @@ class HomeViewModel(
                 .getAllChannelsByPlayListId(playlistId)
                 .collect { channels ->
                     _currentListChannel = channels
+                    val runningTime = Clock.System.now().toEpochMilliseconds()
+                    delay(
+                        (700 - runningTime)
+                            .coerceAtLeast(0)
+                    )
                     _uiState.update {
                         it.copy(
                             listChannels = channels,
@@ -264,9 +271,13 @@ class HomeViewModel(
         val epgUrl = playListEpgUrl ?: return
         if (epgUrl.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
-            val content = networkClient.get(epgUrl)
+            val content = networkClient.getManualGzipIfNeed(
+                epgUrl,
+                mapOf("Content-Encoding" to "gzip")
+            )
             val epgParser = EPGParserFactory.createParserForContent(content)
             val epg = epgParser.parse(content)
+            println(epg.size)
             iptvDatabase.insertPrograms(epg.map {
                 it.toProgram(playListId)
             })
