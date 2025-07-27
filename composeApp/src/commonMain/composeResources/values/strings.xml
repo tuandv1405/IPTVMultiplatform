@@ -69,4 +69,8 @@
 
     <string name="today_format">Today, %1$s</string>
     <string name="yesterday_format">Yesterday, %1$s</string>
+    <string name="quick_close_action">Quick Actions</string>
+    <string name="bottom_sheet_add_iptv">Add IPTV Source</string>
+    <string name="bottom_sheet_import_playlist">Import Playlist</string>
+    <string name="bottom_sheet_refresh_channel">Refresh Channels</string>
 </resources>

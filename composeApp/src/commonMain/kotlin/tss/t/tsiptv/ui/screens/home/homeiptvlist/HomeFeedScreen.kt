@@ -35,32 +35,18 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.FileDownload
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -84,7 +70,6 @@ import androidx.navigation.NavHostController
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
@@ -102,7 +87,6 @@ import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
-import tss.t.tsiptv.ui.widgets.DialogPreview_R
 import tss.t.tsiptv.ui.widgets.HeaderWithAvatar
 import tss.t.tsiptv.ui.widgets.SearchWidget
 
@@ -224,7 +208,7 @@ fun HomeFeedScreen(
                     name = name,
                     notificationCount = 10,
                     onSettingClick = {
-
+                        showBottomSheet = true
                     },
                     onNotificationClick = {
                         showBottomSheet = true
@@ -389,204 +373,14 @@ fun HomeFeedScreen(
         }
     )
 
-    // ModalBottomSheet for dialog behavior - BEST PRACTICE
     if (showBottomSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showBottomSheet = false },
-            shape = TSShapes.roundShapeTop16,
-            containerColor = TSColors.White,
-            dragHandle = {
-                // Custom drag handle for better UX - BEST PRACTICE
-                Surface(
-                    modifier = Modifier
-                        .padding(vertical = 8.dp)
-                        .size(width = 32.dp, height = 4.dp)
-                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(2.dp)),
-                    color = TSColors.Black.copy(alpha = 0.3f)
-                ) {}
-            }
-        ) {
-            // Improved BottomSheet content following best practices
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding() // Handle system navigation bars - BEST PRACTICE
-                    .padding(bottom = 16.dp)
-            ) {
-                // Header with title and close button - BEST PRACTICE
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Quick Actions",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TSColors.Black
-                    )
-
-                    IconButton(
-                        onClick = { showBottomSheet = false }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = "Close",
-                            tint = TSColors.Black.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-
-                // Divider
-                HorizontalDivider(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = TSColors.Black.copy(alpha = 0.08f)
-                )
-
-                // Actions list with better UX - BEST PRACTICE
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    // Add IPTV Source
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                parentNavController.navigate(NavRoutes.AddIptv)
-                                showBottomSheet = false
-                            }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Add,
-                            contentDescription = null,
-                            tint = TSColors.Black,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Add IPTV Source",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = TSColors.Black
-                            )
-                            Text(
-                                text = "Add a new IPTV playlist",
-                                fontSize = 14.sp,
-                                color = TSColors.Black.copy(alpha = 0.7f),
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                    }
-
-                    // Import Playlist
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                // Handle import playlist action
-                                showBottomSheet = false
-                            }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.FileDownload,
-                            contentDescription = null,
-                            tint = TSColors.Black,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Import Playlist",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = TSColors.Black
-                            )
-                            Text(
-                                text = "Import from file or URL",
-                                fontSize = 14.sp,
-                                color = TSColors.Black.copy(alpha = 0.7f),
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                    }
-
-                    // Refresh Channels
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                onHomeEvent(HomeEvent.RefreshIPTVSource)
-                                showBottomSheet = false
-                            }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Refresh,
-                            contentDescription = null,
-                            tint = TSColors.Black,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Refresh Channels",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = TSColors.Black
-                            )
-                            Text(
-                                text = "Update channel list",
-                                fontSize = 14.sp,
-                                color = TSColors.Black.copy(alpha = 0.7f),
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                    }
-
-                    // Settings
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                // Navigate to settings
-                                showBottomSheet = false
-                            }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Settings,
-                            contentDescription = null,
-                            tint = TSColors.Black,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Settings",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = TSColors.Black
-                            )
-                            Text(
-                                text = "Configure app preferences",
-                                fontSize = 14.sp,
-                                color = TSColors.Black.copy(alpha = 0.7f),
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
+        SettingOptionsBottomSheet(
+            parentNavController = parentNavController,
+            onDismissRequest = {
+                showBottomSheet = false
+            },
+            onHomeEvent = onHomeEvent
+        )
     }
 }
 
