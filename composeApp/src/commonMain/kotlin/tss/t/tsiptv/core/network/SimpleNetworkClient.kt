@@ -14,6 +14,13 @@ class SimpleNetworkClient : NetworkClient {
         return "GET response from $url"
     }
 
+    override suspend fun getManualGzipIfNeed(
+        url: String,
+        headers: Map<String, String>,
+    ): String {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun post(url: String, body: String, headers: Map<String, String>): String {
         // Placeholder implementation
         return "POST response from $url with body: $body"

@@ -102,6 +102,7 @@ kotlin {
             implementation(libs.ktor.content.negotiation)
             implementation(libs.ktor.json)
             implementation(libs.ktor.logging)
+            implementation(libs.ktor.client.encoding)
 
             // Add Kotlin Serialization
             implementation(libs.kotlinx.serialization.json)

@@ -171,7 +171,7 @@ class XMLTVEPGParser : EPGParser {
                 val nameEnd = line.indexOf("</display-name>")
                 if (nameStart > 14 && nameEnd > nameStart) {
                     val displayName = line.substring(nameStart, nameEnd)
-                    channelMap[currentChannelId!!] = displayName
+                    channelMap[currentChannelId] = displayName
                 }
             } else if (line.contains("</channel>")) {
                 currentChannelId = null

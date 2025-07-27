@@ -17,6 +17,15 @@ interface NetworkClient {
     suspend fun get(url: String, headers: Map<String, String> = emptyMap()): String
 
     /**
+     * Performs a GET request to the specified URL.
+     *
+     * @param url The URL to make the request to
+     * @param headers Optional headers to include in the request
+     * @return A Flow emitting the response as a String
+     */
+    suspend fun getManualGzipIfNeed(url: String, headers: Map<String, String> = emptyMap()): String
+
+    /**
      * Performs a POST request to the specified URL.
      *
      * @param url The URL to make the request to

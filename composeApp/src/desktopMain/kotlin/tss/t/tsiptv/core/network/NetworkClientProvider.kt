@@ -2,6 +2,7 @@ package tss.t.tsiptv.core.network
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.compression.ContentEncoding
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.serialization.kotlinx.json.*
@@ -39,6 +40,12 @@ class DesktopKtorNetworkClient : KtorNetworkClient() {
         install(Logging) {
             logger = Logger.DEFAULT
             level = LogLevel.INFO
+        }
+
+
+        install(ContentEncoding) {
+            deflate(1.0F)
+            gzip(0.9F)
         }
     }
 }
