@@ -128,6 +128,7 @@ kotlin {
 
             implementation("dev.gitlive:firebase-common:+")
             implementation("dev.gitlive:firebase-auth:+")
+            implementation("io.ktor:ktor-serialization-kotlinx-xml:3.2.2")
         }
 
         commonTest.dependencies {
