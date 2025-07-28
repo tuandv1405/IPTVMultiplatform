@@ -14,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -22,6 +23,7 @@ import androidx.navigation.compose.composable
 import dev.chrisbanes.haze.HazeState
 import org.koin.compose.koinInject
 import tss.t.tsiptv.core.database.IPTVDatabase
+import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.permission.Permission
 import tss.t.tsiptv.core.permission.PermissionCheckerFactory
@@ -29,12 +31,14 @@ import tss.t.tsiptv.core.permission.PermissionExample
 import tss.t.tsiptv.core.repository.IHistoryRepository
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.navigation.NavRoutes
-import tss.t.tsiptv.ui.screens.addiptv.ImportIPTVScreen
+import tss.t.tsiptv.player.MediaPlayer
+import tss.t.tsiptv.ui.screens.history.HistoryScreen
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.HomeFeedScreen
 import tss.t.tsiptv.ui.screens.login.AuthUiState
 import tss.t.tsiptv.ui.screens.login.AuthViewModel
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.screens.player.PlayerUIState
+import tss.t.tsiptv.ui.screens.player.PlayerViewModel
 import tss.t.tsiptv.ui.screens.profile.ProfileScreen
 
 /**
@@ -71,6 +75,16 @@ fun HomeNavHost(
             historyRepository = historyRepository
         )
     }
+    val mediaPlayer = koinInject<MediaPlayer>()
+    val historyTracker = koinInject<ChannelHistoryTracker>()
+    val playerViewModel = viewModel<PlayerViewModel>(viewStoreOwner) {
+        PlayerViewModel(
+            _mediaPlayer = mediaPlayer,
+            _iptvDatabase = iptvDatabase,
+            historyTracker = historyTracker
+        )
+    }
+    val mediaItem by playerViewModel.mediaItemState.collectAsStateWithLifecycle()
     val authState by authViewModel.uiState.collectAsState()
 
     NavHost(
@@ -105,22 +119,23 @@ fun HomeNavHost(
             )
         }
 
-        composable(route = NavRoutes.HomeScreens.FAVORITES) {
-            ImportIPTVScreen(
+        composable(route = NavRoutes.HomeScreens.HISTORY) {
+            val mediaItem by playerViewModel.mediaItemState.collectAsStateWithLifecycle()
+
+            HistoryScreen(
                 hazeState = hazeState,
                 homeUiState = homeUiState,
-                initSourceName = homeUiState.playListName ?: "",
-                initSourceUrl = homeUiState.playListId ?: "",
-                onEvent = {
-                    when (it) {
-                        HomeEvent.OnBackPressed -> {
-                            navController.popBackStack()
-                        }
-
-                        else -> {
-                            homeViewModel.onEmitEvent(it)
-                        }
-                    }
+                navController = navController,
+                parentNavController = parentNavController,
+                playerUIState = playerUIState,
+                mediaItem = mediaItem,
+                contentPadding = contentPadding,
+                onHomeEvent = onHomeEvent,
+                onPlay = { channel ->
+                    onHomeEvent(HomeEvent.OnPlayNowPlaying(channel))
+                },
+                onPause = { channel ->
+                    onHomeEvent(HomeEvent.OnPauseNowPlaying(channel))
                 }
             )
         }

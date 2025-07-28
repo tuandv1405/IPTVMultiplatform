@@ -1,6 +1,8 @@
 package tss.t.tsiptv
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,11 +37,11 @@ import tsiptv.composeapp.generated.resources.iptv_import_success_title
 import tsiptv.composeapp.generated.resources.ok
 import tsiptv.composeapp.generated.resources.try_again
 import tss.t.tsiptv.core.database.IPTVDatabase
+import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.language.AppLocaleProvider
 import tss.t.tsiptv.core.language.LocalAppLocale
 import tss.t.tsiptv.core.language.LocaleManager
 import tss.t.tsiptv.core.network.NetworkClient
-import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.repository.IHistoryRepository
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.navigation.NavRoutes
@@ -49,7 +51,6 @@ import tss.t.tsiptv.ui.screens.addiptv.ImportIPTVScreen
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.screens.home.HomeScreen
 import tss.t.tsiptv.ui.screens.home.HomeViewModel
-import tss.t.tsiptv.ui.screens.iptv.AddIPTVScreen
 import tss.t.tsiptv.ui.screens.login.AuthViewModel
 import tss.t.tsiptv.ui.screens.login.LoginScreenDesktop2
 import tss.t.tsiptv.ui.screens.login.LoginScreenPhone
@@ -228,9 +229,17 @@ fun App() {
                             onHomeEvent = {
                                 if (it is HomeEvent.OnOpenVideoPlayer) {
                                     homeViewModel.getRelatedChannels(it.channel)
+                                    homeViewModel.loadProgramForChannel(it.channel)
                                     playerViewModel.playIptv(it.channel)
                                     navController.navigate(NavRoutes.Player(it.channel.id))
                                     homeViewModel.onEmitEvent(HomeEvent.LoadHistory)
+                                }
+
+                                if (it is HomeEvent.OnResumeMediaItem) {
+                                    homeViewModel.loadProgramForChannel(it.mediaItem.id)
+                                }
+                                if (it is HomeEvent.OnPlayNowPlaying) {
+                                    homeViewModel.loadProgramForChannel(it.channel)
                                 }
 
                                 when (it) {
@@ -258,19 +267,10 @@ fun App() {
                         )
                     }
 
-                    composable<NavRoutes.AddIptv>() {
-                        AddIPTVScreen(
-                            database = database,
-                            networkClient = networkClient,
-                            onSuccess = {
-                                navController.popBackStack()
-                            },
-                            onCancel = {
-                                navController.popBackStack()
-                            }
-                        )
-                    }
-                    composable<NavRoutes.Player>() {
+                    composable<NavRoutes.Player>(
+                        enterTransition = { slideInVertically { it / 5 } },
+                        exitTransition = { slideOutVertically { it / 5 } }
+                    ) {
                         val channelId = it.toRoute<NavRoutes.Player>().mediaItemId
                         val mediaItem by playerViewModel.mediaItemState.collectAsState()
                         val historyRepository = koinInject<IHistoryRepository>()
@@ -282,14 +282,16 @@ fun App() {
                             )
                         }
                         val relatedChannels by homeViewModel.relatedChannels.collectAsState()
+                        val currentProgram by homeViewModel.currentProgram.collectAsState()
                         val playerUIState by playerViewModel.playerUIState.collectAsState()
-
+                        println("TuanDv: currentProgram: $currentProgram")
                         LaunchedEffect(channelId) {
                             playerViewModel.verifyPlayingMediaItem(channelId)
                         }
 
                         PlayerScreen(
                             mediaItem = mediaItem,
+                            currentProgram = currentProgram,
                             mediaPlayer = playerViewModel.player,
                             relatedMediaItems = relatedChannels,
                             playerControlState = playerUIState,

@@ -25,4 +25,3 @@ data class Channel(
     val isFavorite: Boolean = false,
     val lastWatched: Long? = null
 )
-

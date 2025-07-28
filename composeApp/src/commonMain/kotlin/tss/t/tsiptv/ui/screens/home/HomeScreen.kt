@@ -11,10 +11,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,7 +45,12 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
+import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.home_nav_history
+import tsiptv.composeapp.generated.resources.home_nav_main
+import tsiptv.composeapp.generated.resources.home_nav_profile
+import tsiptv.composeapp.generated.resources.home_nav_settings
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.ui.screens.home.models.BottomNavItem
 import tss.t.tsiptv.ui.screens.login.AuthUiState
@@ -55,23 +63,23 @@ import tss.t.tsiptv.utils.customShadow
 internal val defNavItems = listOf(
     BottomNavItem(
         route = NavRoutes.HomeScreens.HOME_FEED,
-        icon = Icons.Default.Home,
-        label = "Home"
+        icon = Icons.Rounded.Home,
+        labelRes = Res.string.home_nav_main
     ),
     BottomNavItem(
-        route = NavRoutes.HomeScreens.FAVORITES,
-        icon = Icons.Default.Favorite,
-        label = "Favorites"
+        route = NavRoutes.HomeScreens.HISTORY,
+        icon = Icons.Rounded.History,
+        labelRes = Res.string.home_nav_history
     ),
     BottomNavItem(
         route = NavRoutes.HomeScreens.SETTINGS,
-        icon = Icons.Default.Settings,
-        label = "Settings"
+        icon = Icons.Rounded.Settings,
+        labelRes = Res.string.home_nav_settings
     ),
     BottomNavItem(
         route = NavRoutes.HomeScreens.PROFILE,
-        icon = Icons.Default.Person,
-        label = "Profile",
+        icon = Icons.Rounded.Person,
+        labelRes = Res.string.home_nav_profile
     )
 )
 
@@ -234,7 +242,9 @@ private fun BoxScope.BottomAppBar(
                                 )
                             }
                             Text(
-                                item.label,
+                                item.labelRes?.let {
+                                    stringResource(it)
+                                } ?: item.label ?: "",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme
@@ -248,4 +258,3 @@ private fun BoxScope.BottomAppBar(
         }
     }
 }
-

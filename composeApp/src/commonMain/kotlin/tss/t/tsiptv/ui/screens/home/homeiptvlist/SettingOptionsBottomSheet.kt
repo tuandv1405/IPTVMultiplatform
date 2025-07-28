@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FileDownload
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -23,9 +23,9 @@ import androidx.navigation.NavHostController
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.bottom_sheet_add_iptv
+import tsiptv.composeapp.generated.resources.bottom_sheet_change_language
 import tsiptv.composeapp.generated.resources.bottom_sheet_import_playlist
 import tsiptv.composeapp.generated.resources.bottom_sheet_refresh_channel
-import tsiptv.composeapp.generated.resources.quick_close_action
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.themes.TSColors
@@ -63,17 +63,6 @@ fun SettingOptionsBottomSheet(
                 .padding(bottom = 16.dp)
         ) {
             IconTitleActionItem(
-                imageVector = Icons.Rounded.Close,
-                title = stringResource(Res.string.quick_close_action),
-                onClick = {
-                    onDismissRequest()
-                }
-            )
-            HorizontalDivider(
-                modifier = Modifier.fillMaxWidth(),
-                color = TSColors.White.copy(alpha = 0.08f)
-            )
-            IconTitleActionItem(
                 imageVector = Icons.Rounded.Add,
                 title = stringResource(Res.string.bottom_sheet_add_iptv),
                 onClick = {
@@ -101,7 +90,19 @@ fun SettingOptionsBottomSheet(
                 imageVector = Icons.Rounded.Refresh,
                 title = stringResource(Res.string.bottom_sheet_refresh_channel),
                 onClick = {
-                    parentNavController.navigate(NavRoutes.ImportIptv)
+                    onHomeEvent(HomeEvent.RefreshIPTVSource)
+                    onDismissRequest()
+                }
+            )
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                color = TSColors.White.copy(alpha = 0.08f)
+            )
+            IconTitleActionItem(
+                imageVector = Icons.Rounded.Language,
+                title = stringResource(Res.string.bottom_sheet_change_language),
+                onClick = {
+                    parentNavController.navigate(NavRoutes.LanguageSettings())
                     onDismissRequest()
                 }
             )

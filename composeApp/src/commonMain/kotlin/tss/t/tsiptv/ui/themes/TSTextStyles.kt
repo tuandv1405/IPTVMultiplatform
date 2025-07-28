@@ -96,6 +96,8 @@ object TSTextStyles {
         lineHeight = 14.sp
     )
 
+    val primaryToolbarTitle = semiBold17.copy(TSColors.TextPrimary)
+
     val primaryTitle = semiBold15.copy(TSColors.TextPrimary)
     val secondaryTitle = semiBold15.copy(TSColors.TextSecondary)
     val secondaryTitleLight = semiBold15.copy(TSColors.TextSecondaryLight)

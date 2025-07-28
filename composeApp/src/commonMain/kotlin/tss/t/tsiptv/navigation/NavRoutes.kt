@@ -32,6 +32,7 @@ object NavRoutes {
 
     @Serializable
     data object ImportIptv : RootRoutes
+
     @Serializable
     data object SignUp : RootRoutes
 
@@ -46,7 +47,7 @@ object NavRoutes {
     object HomeScreens {
         const val HOME_FEED = "home_feed"
         const val SETTINGS = "settings"
-        const val FAVORITES = "favorites"
+        const val HISTORY = "favorites"
         const val PROFILE = "profile"
     }
 }

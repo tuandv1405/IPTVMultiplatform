@@ -20,6 +20,7 @@ import org.jetbrains.compose.resources.painterResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.ic_back_navigation
 import tss.t.tsiptv.ui.themes.TSColors
+import tss.t.tsiptv.ui.themes.TSTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,10 +45,8 @@ fun IPTVAppBar(
         },
         title = {
             Text(
-                title,
-                fontWeight = FontWeight.SemiBold,
-                color = TSColors.TextPrimary,
-                fontSize = 17.sp
+                text = title,
+                style = TSTextStyles.primaryToolbarTitle
             )
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(

@@ -51,8 +51,8 @@ fun IconTitleActionItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Companion.Medium,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Normal,
                 color = colors.titleTextColor
             )
 
@@ -82,7 +82,7 @@ fun IconTitleActionItem(
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(paddingValues),
-        verticalAlignment = Alignment.Companion.CenterVertically
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = imageVector,
@@ -95,14 +95,14 @@ fun IconTitleActionItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Companion.Medium,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Normal,
                 color = colors.titleTextColor
             )
             description?.let {
                 Text(
                     text = it,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     color = colors.descriptionTextColor,
                     modifier = Modifier.padding(top = 2.dp)
                 )
@@ -113,7 +113,7 @@ fun IconTitleActionItem(
 
 object IconTitleActionItemDefaults {
 
-    val paddingValues = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+    val paddingValues = PaddingValues(horizontal = 16.dp, vertical = 16.dp)
 
     @Immutable
     data class DefColors(

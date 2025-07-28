@@ -10,7 +10,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,9 +27,13 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.ic_loading_gradient_overlay
+import tsiptv.composeapp.generated.resources.today_format
+import tsiptv.composeapp.generated.resources.yesterday_format
 import tss.t.tsiptv.core.database.entity.ChannelWithHistory
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.ChannelHistory
@@ -104,23 +112,29 @@ fun HomeChannelHistoryItem(
     onItemClick: (Channel) -> Unit = {},
 ) {
     val platformContext = LocalPlatformContext.current
-    val description = remember(channel.categoryId, channel.lastPlayedTimestamp) {
-        when {
-            channel.lastPlayedTimestamp.isToday() -> "Hôm nay, ${
-                channel.lastPlayedTimestamp.formatDynamic(
-                    "HH:mm"
-                )
-            }"
+    var description by remember {
+        mutableStateOf(
+            channel.lastPlayedTimestamp.formatDynamic("dd-MM, HH:mm")
+        )
+    }
 
-            channel.lastPlayedTimestamp.isYesterday() -> "Hôm qua, ${
-                channel.lastPlayedTimestamp.formatDynamic(
-                    "HH:mm"
+    LaunchedEffect(channel.channelId, channel.lastPlayedTimestamp) {
+        description = when {
+            channel.lastPlayedTimestamp.isToday() -> {
+                getString(
+                    Res.string.today_format,
+                    channel.lastPlayedTimestamp.formatDynamic("HH:mm")
                 )
-            }"
+            }
 
-            else -> channel.lastPlayedTimestamp.formatDynamic(
-                "dd-MM, HH:mm"
-            )
+            channel.lastPlayedTimestamp.isYesterday() -> {
+                getString(
+                    Res.string.yesterday_format,
+                    channel.lastPlayedTimestamp.formatDynamic("HH:mm")
+                )
+            }
+
+            else -> channel.lastPlayedTimestamp.formatDynamic("dd-MM, HH:mm")
         }
     }
 

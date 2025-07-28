@@ -15,6 +15,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -182,7 +183,7 @@ fun HomeFeedScreen(
             }
     }
 
-    LifecycleResumeEffect(mediaItem) {
+    LifecycleResumeEffect(key1 = mediaItem) {
         showMiniPlayer = mediaItem != MediaItem.EMPTY
         onHomeEvent(HomeEvent.LoadHistory)
         onPauseOrDispose {
@@ -201,6 +202,13 @@ fun HomeFeedScreen(
                 HeaderWithAvatar(
                     modifier = Modifier
                         .background(TSColors.BackgroundColor)
+                        .clickable(
+                            indication = null,
+                            onClick = {},
+                            interactionSource = remember {
+                                MutableInteractionSource()
+                            }
+                        )
                         .hazeEffect(hazeState)
                         .statusBarsPadding()
                         .padding(horizontal = 20.dp, vertical = 16.dp),
@@ -301,21 +309,13 @@ fun HomeFeedScreen(
             }
 
             Box(
-                modifier = Modifier.animateContentSize()
+                modifier = Modifier
                     .fillMaxSize()
             ) {
                 LazyColumn(
                     state = scrollState,
                     modifier = Modifier.fillMaxSize()
-                        .hazeSource(hazeState)
-                        .pullToRefresh(
-                            isRefreshing = isRefreshing,
-                            state = state,
-                            threshold = PullToRefreshDefaults.PositionalThreshold + it.calculateTopPadding()
-                        ) {
-                            isRefreshing = true
-                            onHomeEvent(HomeEvent.RefreshIPTVSource)
-                        },
+                        .hazeSource(hazeState),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
 
