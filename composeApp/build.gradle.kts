@@ -167,7 +167,7 @@ kotlin {
 
 android {
     namespace = "tss.t.tsiptv"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdkVersion(libs.versions.android.compileSdk.get().toInt())
 
     defaultConfig {
         applicationId = "tss.t.tsiptv"
