@@ -8,7 +8,7 @@ import dev.chrisbanes.haze.HazeState
 import tss.t.tsiptv.core.model.Channel
 
 /**
- * A component that displays a list of channels.
+ * A component that displays a list of channel.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

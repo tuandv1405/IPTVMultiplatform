@@ -112,9 +112,9 @@ class XSPFParser : IPTVParser {
             }
         }
 
-        // Process channels to assign groups based on vlc:item references
+        // Process channel to assign groups based on vlc:item references
         // This would require a more complex parsing approach to match vlc:item tid values with channel IDs
-        // For simplicity, we're just using the node title as the group for all channels
+        // For simplicity, we're just using the node title as the group for all channel
 
         return IPTVPlaylist(
             name = playlistName,

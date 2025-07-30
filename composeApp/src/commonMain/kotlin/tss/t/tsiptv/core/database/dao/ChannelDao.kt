@@ -14,11 +14,11 @@ import tss.t.tsiptv.core.database.entity.ChannelEntity
 @Dao
 interface ChannelDao {
     /**
-     * Gets all channels.
+     * Gets all channel.
      *
-     * @return A flow of all channels
+     * @return A flow of all channel
      */
-    @Query("SELECT * FROM channels")
+    @Query("SELECT * FROM channel")
     fun getAllChannels(): Flow<List<ChannelEntity>>
 
     /**
@@ -27,43 +27,43 @@ interface ChannelDao {
      * @param id The ID of the channel to get
      * @return The channel with the given ID, or null if not found
      */
-    @Query("SELECT * FROM channels WHERE id = :id")
+    @Query("SELECT * FROM channel WHERE id = :id")
     suspend fun getChannelById(id: String): ChannelEntity?
 
     /**
-     * Gets channels by playlist ID.
+     * Gets channel by playlist ID.
      *
-     * @param playlistId The ID of the playlist to get channels for
-     * @return A flow of channels in the given playlist
+     * @param playlistId The ID of the playlist to get channel for
+     * @return A flow of channel in the given playlist
      */
-    @Query("SELECT * FROM channels WHERE playlistId = :playlistId")
+    @Query("SELECT * FROM channel WHERE playlistId = :playlistId")
     fun getChannelsInPlaylist(playlistId: String): Flow<List<ChannelEntity>>
 
     /**
-     * Gets channels by category.
+     * Gets channel by category.
      *
-     * @param categoryId The ID of the category to get channels for
-     * @return A flow of channels in the given category
+     * @param categoryId The ID of the category to get channel for
+     * @return A flow of channel in the given category
      */
-    @Query("SELECT * FROM channels WHERE categoryId = :categoryId")
+    @Query("SELECT * FROM channel WHERE categoryId = :categoryId")
     fun getChannelsByCategory(categoryId: String): Flow<List<ChannelEntity>>
 
     /**
-     * Gets channels by playlist.
+     * Gets channel by playlist.
      *
-     * @param playlistId The ID of the playlist to get channels for
-     * @return A flow of channels in the given playlist
+     * @param playlistId The ID of the playlist to get channel for
+     * @return A flow of channel in the given playlist
      */
-    @Query("SELECT * FROM channels WHERE playlistId = :playlistId")
+    @Query("SELECT * FROM channel WHERE playlistId = :playlistId")
     fun getChannelsByPlaylist(playlistId: String): Flow<List<ChannelEntity>>
 
     /**
-     * Searches for channels by name.
+     * Searches for channel by name.
      *
      * @param query The search query
-     * @return A flow of channels matching the search query
+     * @return A flow of channel matching the search query
      */
-    @Query("SELECT * FROM channels WHERE name LIKE '%' || :query || '%'")
+    @Query("SELECT * FROM channel WHERE name LIKE '%' || :query || '%'")
     fun searchChannels(query: String): Flow<List<ChannelEntity>>
 
     /**
@@ -75,9 +75,9 @@ interface ChannelDao {
     suspend fun insertChannel(channel: ChannelEntity)
 
     /**
-     * Inserts or updates multiple channels.
+     * Inserts or updates multiple channel.
      *
-     * @param channels The channels to insert or update
+     * @param channels The channel to insert or update
      */
     @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insertChannels(channels: List<ChannelEntity>)
@@ -95,14 +95,14 @@ interface ChannelDao {
      *
      * @param id The ID of the channel to delete
      */
-    @Query("DELETE FROM channels WHERE id = :id")
+    @Query("DELETE FROM channel WHERE id = :id")
     suspend fun deleteChannelById(id: String)
 
     /**
-     * Deletes all channels for a playlist.
+     * Deletes all channel for a playlist.
      *
-     * @param playlistId The ID of the playlist to delete channels for
+     * @param playlistId The ID of the playlist to delete channel for
      */
-    @Query("DELETE FROM channels WHERE playlistId = :playlistId")
+    @Query("DELETE FROM channel WHERE playlistId = :playlistId")
     suspend fun deleteChannelsByPlaylist(playlistId: String)
 }

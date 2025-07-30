@@ -6,6 +6,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.database.IPTVDatabase
+import tss.t.tsiptv.core.database.entity.ProgramEntity
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.player.MediaPlayer
 
@@ -16,7 +17,7 @@ import tss.t.tsiptv.player.MediaPlayer
 class ChannelHistoryTracker(
     private val database: IPTVDatabase,
     private val scope: CoroutineScope,
-    private val mediaPlayer: MediaPlayer
+    private val mediaPlayer: MediaPlayer,
 ) {
     private var currentChannel: Channel? = null
     private var currentPlaylistId: String? = null
@@ -29,7 +30,11 @@ class ChannelHistoryTracker(
     /**
      * Called when a channel starts playing.
      */
-    suspend fun onChannelPlay(channel: Channel, playlistId: String) {
+    suspend fun onChannelPlay(
+        channel: Channel,
+        playlistId: String,
+        programEntity: ProgramEntity? = null
+    ) {
         // Save previous channel's play time if different channel
         if (currentChannel != null && currentChannel?.id != channel.id) {
             saveCurrentPlayTime()

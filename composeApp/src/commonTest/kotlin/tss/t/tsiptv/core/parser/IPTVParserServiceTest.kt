@@ -95,6 +95,13 @@ class IPTVParserServiceTest {
                 throw UnsupportedOperationException("Not used in this test")
             }
 
+            override suspend fun getManualGzipIfNeed(
+                url: String,
+                headers: Map<String, String>,
+            ): String {
+                TODO("Not yet implemented")
+            }
+
             override suspend fun post(url: String, body: String, headers: Map<String, String>): String {
                 throw UnsupportedOperationException("Not used in this test")
             }

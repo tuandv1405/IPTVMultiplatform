@@ -80,6 +80,7 @@ import tsiptv.composeapp.generated.resources.ic_full_screen_fill
 import tsiptv.composeapp.generated.resources.ic_full_screen_fit_width
 import tsiptv.composeapp.generated.resources.ic_settings
 import tsiptv.composeapp.generated.resources.ic_volume
+import tss.t.tsiptv.core.parser.IPTVProgram
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackState
@@ -101,6 +102,7 @@ import kotlin.math.min
 @Composable
 fun MediaPlayerView(
     mediaItem: MediaItem,
+    currentProgram: IPTVProgram? = null,
     player: MediaPlayer = koinInject<MediaPlayer>(),
     modifier: Modifier = Modifier,
     playerUIState: PlayerUIState,

@@ -114,6 +114,15 @@ class IOSMediaPlayer(
         // Configure audio session for background playback
         IOSAudioSessionManager.configureAudioSessionForBackgroundPlayback()
 
+        // Log silence mode configuration guidance
+        IOSAudioSessionManager.logSilenceModeConfiguration()
+
+        // Set initial volume on the AVPlayer
+        avPlayer?.let { player ->
+            player.setVolume(_volume.value)
+            println("Initial AVPlayer volume set to: ${_volume.value}")
+        }
+
         // Set up app lifecycle observers
         setupAppLifecycleObservers()
     }
@@ -168,9 +177,9 @@ class IOSMediaPlayer(
      */
     private fun handleAppForegrounded() {
         // Resume normal playback state
-        if (_playbackState.value == PlaybackState.PLAYING) {
-            avPlayer?.play()
-        }
+//        if (_playbackState.value == PlaybackState.PLAYING) {
+//            avPlayer?.play()
+//        }
     }
 
     /**
@@ -232,6 +241,14 @@ class IOSMediaPlayer(
             avPlayer = AVPlayer.playerWithPlayerItem(playerItem)
         } else if (playerItem != null) {
             avPlayer?.replaceCurrentItemWithPlayerItem(playerItem)
+        }
+
+        // Ensure the player has the correct volume settings
+        avPlayer?.let { player ->
+            // Set volume based on current state
+            val currentVolume = if (_isMuted.value) 0f else _volume.value
+            player.setVolume(currentVolume)
+            println("AVPlayer volume set to: $currentVolume (muted: ${_isMuted.value})")
         }
 
         // Add observers
@@ -300,10 +317,15 @@ class IOSMediaPlayer(
     }
 
     override suspend fun play() {
-        avPlayer?.play()
-        _playbackState.value = PlaybackState.PLAYING
+        avPlayer?.let { player ->
+            // Ensure volume is set correctly before playing
+            val currentVolume = if (_isMuted.value) 0f else _volume.value
+            player.setVolume(currentVolume)
+            println("Play: AVPlayer volume set to: $currentVolume (muted: ${_isMuted.value})")
 
-        // Show notification when playing
+            player.play()
+        }
+        _playbackState.value = PlaybackState.PLAYING
         showPlaybackNotification()
     }
 
@@ -433,9 +455,12 @@ class IOSMediaPlayer(
         }
 
         foregroundObserver?.let { observer ->
-            notificationCenter.removeObserver(observer)
+//            notificationCenter.removeObserver(observer)
             foregroundObserver = null
         }
+
+        // Deactivate audio session
+        IOSAudioSessionManager.deactivateAudioSession()
 
         // Stop and release player
         avPlayer?.pause()

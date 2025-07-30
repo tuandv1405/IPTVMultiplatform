@@ -10,6 +10,7 @@ import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.io.readByteArray
 import okio.Buffer
 import okio.GzipSource
 import okio.buffer
@@ -43,6 +44,7 @@ abstract class KtorNetworkClient : NetworkClient {
         }
         val body = response.bodyAsBytes()
         val isGzip = isGzipCompressed(body)
+        println("Gzip: $isGzip")
         return if (isGzip) {
             decompressGzip(body)
         } else {
@@ -132,7 +134,7 @@ abstract class KtorNetworkClient : NetworkClient {
 
         while (!channel.isClosedForRead) {
             val packet = channel.readRemaining(4096L)
-            val bytes = packet.readBytes()
+            val bytes = packet.readByteArray()
             val offset = bytesDownloaded.toInt()
 
             if (data.size >= offset + bytes.size) {

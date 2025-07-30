@@ -9,7 +9,7 @@ import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.ChannelHistory
 import tss.t.tsiptv.core.model.Playlist
-import tss.t.tsiptv.core.model.Program
+import tss.t.tsiptv.core.parser.IPTVProgram
 import tss.t.tsiptv.core.database.entity.ChannelWithHistory
 
 /**
@@ -21,7 +21,7 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     private val channels = MutableStateFlow<Map<String, Channel>>(emptyMap())
     private val categories = MutableStateFlow<Map<String, Category>>(emptyMap())
     private val playlists = MutableStateFlow<Map<String, Playlist>>(emptyMap())
-    private val programs = MutableStateFlow<Map<String, Program>>(emptyMap())
+    private val programs = MutableStateFlow<Map<String, IPTVProgram>>(emptyMap())
     private val channelHistory = MutableStateFlow<Map<String, ChannelHistory>>(emptyMap())
 
     override fun getAllChannels(): Flow<List<Channel>> {
@@ -131,15 +131,15 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         channels.value = channels.value.filterNot { it.value.playlistId == playlistId }
     }
 
-    override fun getAllPrograms(): Flow<List<Program>> {
+    override fun getAllPrograms(): Flow<List<IPTVProgram>> {
         return programs.map { it.values.toList() }
     }
 
-    override suspend fun getProgramById(id: String): Program? {
+    override suspend fun getProgramById(id: String): IPTVProgram? {
         return programs.value[id]
     }
 
-    override suspend fun getProgramsForChannel(channelId: String): List<Program> {
+    override suspend fun getProgramsForChannel(channelId: String): List<IPTVProgram> {
         return programs.value.values.filter { it.channelId == channelId }
     }
 
@@ -147,7 +147,7 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         channelId: String,
         startTime: Long,
         endTime: Long,
-    ): List<Program> {
+    ): List<IPTVProgram> {
         return programs.value.values.filter { 
             it.channelId == channelId && 
             it.startTime >= startTime && 
@@ -158,7 +158,7 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     override suspend fun getCurrentAndUpcomingProgramsForChannel(
         channelId: String,
         currentTime: Long,
-    ): List<Program> {
+    ): List<IPTVProgram> {
         return programs.value.values.filter { 
             it.channelId == channelId && 
             it.endTime > currentTime 
@@ -168,7 +168,7 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     override suspend fun getCurrentProgramForChannel(
         channelId: String,
         currentTime: Long,
-    ): Program? {
+    ): IPTVProgram? {
         return programs.value.values.find { 
             it.channelId == channelId && 
             it.startTime <= currentTime && 
@@ -176,15 +176,15 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         }
     }
 
-    override suspend fun insertProgram(program: Program) {
+    override suspend fun insertProgram(program: IPTVProgram, playlistId: String) {
         programs.value = programs.value + (program.id to program)
     }
 
-    override suspend fun insertPrograms(programs: List<Program>) {
+    override suspend fun insertPrograms(programs: List<IPTVProgram>, playlistId: String) {
         this.programs.value = this.programs.value + programs.associateBy { it.id }
     }
 
-    override suspend fun deleteProgram(program: Program) {
+    override suspend fun deleteProgram(program: IPTVProgram) {
         deleteProgramById(program.id)
     }
 
@@ -197,7 +197,9 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     }
 
     override suspend fun deleteProgramsForPlaylist(playlistId: String) {
-        programs.value = programs.value.filterNot { it.value.playlistId == playlistId }
+        // Since IPTVProgram doesn't have playlistId, we need to find programs by channels in the playlist
+        val channelsInPlaylist = channels.value.values.filter { it.playlistId == playlistId }.map { it.id }
+        programs.value = programs.value.filterNot { channelsInPlaylist.contains(it.value.channelId) }
     }
 
     override suspend fun clearAllData() {

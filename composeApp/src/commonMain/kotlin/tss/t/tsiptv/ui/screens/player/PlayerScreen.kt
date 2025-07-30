@@ -13,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -29,6 +31,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,12 +57,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import tss.t.tsiptv.core.model.Channel
+import coil3.compose.AsyncImage
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.ic_dislike
+import tsiptv.composeapp.generated.resources.ic_like
+import tsiptv.composeapp.generated.resources.ic_report
+import tsiptv.composeapp.generated.resources.ic_share
+import tsiptv.composeapp.generated.resources.now
+import tsiptv.composeapp.generated.resources.player_dislike
+import tsiptv.composeapp.generated.resources.player_like
+import tsiptv.composeapp.generated.resources.player_report
+import tsiptv.composeapp.generated.resources.player_share
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.ui.MediaPlayerView
+import tss.t.tsiptv.ui.screens.home.HomeUiState
 import tss.t.tsiptv.ui.screens.home.widget.HomeChannelItem
+import tss.t.tsiptv.ui.screens.programs.ProgramItem
 import tss.t.tsiptv.ui.themes.TSColors
+import tss.t.tsiptv.ui.themes.TSShapes
+import tss.t.tsiptv.ui.themes.TSTextStyles
 import tss.t.tsiptv.utils.KeepScreenOnState
 import tss.t.tsiptv.utils.getScreenOrientationUtils
 
@@ -74,9 +93,9 @@ import tss.t.tsiptv.utils.getScreenOrientationUtils
 @Composable
 fun PlayerScreen(
     mediaItem: MediaItem,
+    homeUIState: HomeUiState,
     mediaPlayer: MediaPlayer,
     playerControlState: PlayerUIState,
-    relatedMediaItems: List<Channel> = emptyList(),
     onEvent: (PlayerEvent) -> Unit,
 ) {
     val isPlaying by mediaPlayer.isPlaying.collectAsState()
@@ -129,6 +148,7 @@ fun PlayerScreen(
         ) {
             MediaPlayerView(
                 mediaItem = mediaItem,
+                currentProgram = homeUIState.currentProgram,
                 player = mediaPlayer,
                 modifier = Modifier.fillMaxWidth()
                     .padding(
@@ -147,6 +167,8 @@ fun PlayerScreen(
     }
 
     Scaffold(
+        modifier = Modifier.fillMaxSize()
+            .background(TSColors.DeepBlue),
         topBar = {
             Column(modifier = Modifier) {
                 Spacer(
@@ -168,7 +190,8 @@ fun PlayerScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = paddingValues,
-            state = scrollState
+            state = scrollState,
+            userScrollEnabled = !showDetailsScreen
         ) {
             item("ItemTitle") {
                 val degrees by animateFloatAsState(targetValue = if (showDetailsScreen) 180f else 0f)
@@ -179,7 +202,8 @@ fun PlayerScreen(
                         }
                         .clickable {
                             showDetailsScreen = !showDetailsScreen
-                        },
+                        }
+                        .padding(vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(
@@ -187,25 +211,23 @@ fun PlayerScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            modifier = Modifier.padding(top = 16.dp, start = 16.dp),
+                            modifier = Modifier.padding(start = 16.dp),
                             text = mediaItem.title,
-                            color = TSColors.TextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
+                            style = TSTextStyles.bold17
+                                .copy(TSColors.TextPrimary)
                         )
                         Text(
                             modifier = Modifier.padding(top = 1.dp, start = 16.dp),
-                            text = mediaItem.artist,
-                            color = TSColors.TextSecondary,
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 13.sp
+                            text = homeUIState.currentProgram?.title ?: mediaItem.artist,
+                            style = TSTextStyles.normal13
+                                .copy(TSColors.TextSecondary)
                         )
                     }
 
                     Image(
                         modifier = Modifier
                             .padding(end = 8.dp)
-                            .size(32.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
                             .rotate(degrees)
                             .clickable {
@@ -217,24 +239,125 @@ fun PlayerScreen(
                         colorFilter = ColorFilter.tint(TSColors.TextSecondary)
                     )
                 }
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                        .padding(vertical = 16.dp)
+                        .height(1.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    TSColors.GradientGreen.copy(0.08f),
+                                    TSColors.GradientBlue.copy(0.1f),
+                                    TSColors.GradientGreen.copy(0.08f),
+                                )
+                            )
+                        ),
+                )
             }
 
             item("BannerAdSpace") {
-
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(TSShapes.roundedShape16)
+                        .background(TSColors.SecondaryBackgroundColor, TSShapes.roundedShape16)
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        "Banner Ads Here"
+                    )
+                }
             }
 
             item("Interaction") {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.Center,
+                        .clip(TSShapes.roundedShape16)
+                        .background(TSColors.SecondaryBackgroundColor, TSShapes.roundedShape16)
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .clickable {
+
+                            },
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.ic_like),
+                            contentDescription = stringResource(Res.string.player_like),
+                            colorFilter = ColorFilter.tint(TSColors.White.copy(0.8f))
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            modifier = Modifier,
+                            text = stringResource(Res.string.player_like),
+                            style = TSTextStyles.normal13.copy(TSColors.White.copy(0.8f))
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.ic_dislike),
+                            contentDescription = stringResource(Res.string.player_dislike),
+                            colorFilter = ColorFilter.tint(TSColors.White.copy(0.8f))
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            modifier = Modifier,
+                            text = stringResource(Res.string.player_dislike),
+                            style = TSTextStyles.normal13.copy(TSColors.White.copy(0.8f))
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.ic_share),
+                            contentDescription = stringResource(Res.string.player_share),
+                            colorFilter = ColorFilter.tint(TSColors.White.copy(0.8f))
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            modifier = Modifier,
+                            text = stringResource(Res.string.player_share),
+                            style = TSTextStyles.normal13.copy(TSColors.White.copy(0.8f))
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.ic_report),
+                            contentDescription = stringResource(Res.string.player_report),
+                            modifier = Modifier.size(20.dp),
+                            colorFilter = ColorFilter.tint(TSColors.White.copy(0.8f))
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            modifier = Modifier,
+                            text = stringResource(Res.string.player_report),
+                            style = TSTextStyles.normal13.copy(TSColors.White.copy(0.8f))
+                        )
+                    }
                 }
             }
 
-            items(relatedMediaItems) {
+            items(homeUIState.relatedChannels) {
                 HomeChannelItem(
                     it,
                     modifier = Modifier.fillMaxWidth()
@@ -273,9 +396,20 @@ fun PlayerScreen(
                     )
                     .fillMaxSize(),
             ) {
-                items(relatedMediaItems) {
+                if (!homeUIState.currentProgramList.isNullOrEmpty()) {
+                    items(homeUIState.currentProgramList) {
+                        ProgramItem(
+                            program = it,
+                            isCurrentProgram = homeUIState.currentProgram?.id == it.id,
+                            paddingValues = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+                        )
+                    }
+                    return@LazyColumn
+                }
+
+                items(homeUIState.relatedChannels) {
                     HomeChannelItem(
-                        it,
+                        channel = it,
                         modifier = Modifier.fillMaxWidth()
                             .padding(top = 16.dp)
                             .padding(horizontal = 16.dp),
@@ -307,7 +441,17 @@ fun PlayerScreen(
                     .fillMaxSize(),
                 contentPadding = PaddingValues(top = paddingValues.calculateTopPadding() + detailsScreenPaddingTop)
             ) {
-                items(relatedMediaItems) {
+                if (!homeUIState.currentProgramList.isNullOrEmpty()) {
+                    items(homeUIState.currentProgramList) {
+                        ProgramItem(
+                            program = it,
+                            isCurrentProgram = homeUIState.currentProgram?.id == it.id,
+                            paddingValues = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+                        )
+                    }
+                    return@LazyColumn
+                }
+                items(homeUIState.relatedChannels) {
                     HomeChannelItem(
                         it,
                         modifier = Modifier.fillMaxWidth()

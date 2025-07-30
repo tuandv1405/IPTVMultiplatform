@@ -23,6 +23,18 @@ class DesktopPermissionChecker : PermissionChecker {
         // Since permissions are implicitly granted, we just return GRANTED for all
         return flowOf(permissions.associateWith { PermissionResult.GRANTED })
     }
+
+    override fun showPermissionRationaleDialog(
+        permission: Permission,
+        onPositiveClick: () -> Unit,
+        onNegativeClick: () -> Unit,
+    ) {
+
+    }
+
+    override fun openAppSettings(): Boolean {
+        return true
+    }
 }
 
 /**

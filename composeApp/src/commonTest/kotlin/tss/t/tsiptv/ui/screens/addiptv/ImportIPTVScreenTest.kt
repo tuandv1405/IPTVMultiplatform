@@ -74,7 +74,7 @@ class ImportIPTVScreenTest {
     @Test
     fun testLoadingState() {
         // Test the behavior when in loading state
-        val loadingState = HomeUiState(isLoading = true)
+        val loadingState = HomeUiState()
         val normalState = HomeUiState(isLoading = false)
 
         // Verify loading state is correctly detected
@@ -87,7 +87,7 @@ class ImportIPTVScreenTest {
         // Test the behavior when in error state
         val errorMessage = "Error message"
         val errorState = HomeUiState(error = Exception(errorMessage))
-        val normalState = HomeUiState(error = null)
+        val normalState = HomeUiState()
 
         // Verify error state is correctly detected
         assertTrue(errorState.error != null)

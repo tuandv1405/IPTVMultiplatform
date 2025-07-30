@@ -22,15 +22,15 @@ class JSONParserTestWithRealData {
         assertNotNull(playlist)
         assertEquals("TV PHIM", playlist.name)
 
-        // Verify that channels were extracted
-        assertTrue(playlist.channels.isNotEmpty(), "Playlist should have channels")
-        println("[DEBUG_LOG] Found ${playlist.channels.size} channels")
+        // Verify that channel were extracted
+        assertTrue(playlist.channels.isNotEmpty(), "Playlist should have channel")
+        println("[DEBUG_LOG] Found ${playlist.channels.size} channel")
 
         // Verify that groups were extracted
         assertTrue(playlist.groups.isNotEmpty(), "Playlist should have groups")
         println("[DEBUG_LOG] Found ${playlist.groups.size} groups")
 
-        // Verify specific channels were extracted correctly
+        // Verify specific channel were extracted correctly
         val channel1 = playlist.channels.find { it.id == "NWV22PrWLY" }
         assertNotNull(channel1, "Channel with ID NWV22PrWLY should exist")
         assertEquals("Phim Đảo Hải Tặc", channel1.name)
@@ -46,7 +46,7 @@ class JSONParserTestWithRealData {
         assertNotNull(group, "Group with ID POPULAR should exist")
         assertEquals("Phim thịnh hành", group.title)
 
-        // Verify channels from groups were extracted correctly
+        // Verify channel from groups were extracted correctly
         val groupChannel = playlist.channels.find { it.id == "76c270Eujb" }
         assertNotNull(groupChannel, "Channel with ID 76c270Eujb from group should exist")
         assertEquals("Phim Cõng Anh Mà Chạy", groupChannel.name)
@@ -104,7 +104,7 @@ class JSONParserTestWithRealData {
         val content = """
         {
             "name": "Remote Data Test",
-            "channels": [
+            "channel": [
                 {
                     "id": "remote1",
                     "name": "Remote Channel",
@@ -141,7 +141,7 @@ class JSONParserTestWithRealData {
           "name": "TV PHIM",
           "id": "tvphim-pvd",
           "url": "https://tv-pvd.moviedb.dev",
-          "channels": [
+          "channel": [
             {
               "id": "NWV22PrWLY",
               "name": "Phim Đảo Hải Tặc",
@@ -169,7 +169,7 @@ class JSONParserTestWithRealData {
             {
               "id": "POPULAR",
               "name": "Phim thịnh hành",
-              "channels": [
+              "channel": [
                 {
                   "id": "76c270Eujb",
                   "name": "Phim Cõng Anh Mà Chạy",

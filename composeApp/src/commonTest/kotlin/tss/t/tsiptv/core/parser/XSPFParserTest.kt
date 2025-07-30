@@ -49,7 +49,7 @@ class XSPFParserTest {
         // Verify playlist name
         assertEquals("Test XSPF Playlist", playlist.name)
 
-        // Verify channels
+        // Verify channel
         assertEquals(2, playlist.channels.size)
         
         val channel1 = playlist.channels.find { it.name == "Channel 1" }
@@ -101,7 +101,7 @@ class XSPFParserTest {
         // Verify playlist name
         assertEquals("Test XSPF Playlist", playlist.name)
 
-        // Verify channels
+        // Verify channel
         assertEquals(2, playlist.channels.size)
         
         val channel1 = playlist.channels.find { it.name == "Channel 1" }
@@ -139,7 +139,7 @@ class XSPFParserTest {
         val parser = XSPFParser()
         val playlist = parser.parse(content)
 
-        // Verify channels
+        // Verify channel
         assertEquals(2, playlist.channels.size)
         
         val channel1 = playlist.channels.find { it.name == "Channel 1" }

@@ -33,7 +33,7 @@ data class JSONPlaylist(
         val allChannels = mutableListOf<IPTVChannel>()
         val allGroups = mutableSetOf<IPTVGroup>()
         
-        // Add channels from the root level
+        // Add channel from the root level
         channels?.forEach { jsonChannel ->
             val channel = jsonChannel.toIPTVChannel()
             allChannels.add(channel)
@@ -45,7 +45,7 @@ data class JSONPlaylist(
             }
         }
         
-        // Add channels from groups
+        // Add channel from groups
         groups?.forEach { jsonGroup ->
             val groupId = jsonGroup.id ?: jsonGroup.name.replace(" ", "_").lowercase()
             allGroups.add(IPTVGroup(id = groupId, title = jsonGroup.name))
@@ -130,7 +130,7 @@ data class JSONGroup(
 )
 
 /**
- * Remote data model for channels that use remote_data.url instead of direct url
+ * Remote data model for channel that use remote_data.url instead of direct url
  */
 @Serializable
 data class JSONRemoteData(
@@ -139,7 +139,7 @@ data class JSONRemoteData(
 )
 
 /**
- * Image model for channels that use image.url instead of direct logoUrl
+ * Image model for channel that use image.url instead of direct logoUrl
  */
 @Serializable
 data class JSONImage(
@@ -150,7 +150,7 @@ data class JSONImage(
 )
 
 /**
- * Array of channels format
+ * Array of channel format
  */
 @Serializable
 data class JSONChannelArray(

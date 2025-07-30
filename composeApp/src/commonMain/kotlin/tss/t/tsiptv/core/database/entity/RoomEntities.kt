@@ -20,7 +20,7 @@ data class PlaylistEntity(
     val name: String,
     val url: String,
     val lastUpdated: Long,
-    val format: String
+    val format: String,
 )
 
 /**
@@ -36,7 +36,7 @@ data class PlaylistEntity(
  * @property lastWatched The timestamp when the channel was last watched, or null if never watched
  */
 @Entity(
-    tableName = "channels",
+    tableName = "channel",
     foreignKeys = [
         ForeignKey(
             entity = PlaylistEntity::class,
@@ -59,7 +59,7 @@ data class ChannelEntity(
     val categoryId: String?,
     val playlistId: String,
     val isFavorite: Boolean = false,
-    val lastWatched: Long? = null
+    val lastWatched: Long? = null,
 )
 
 /**
@@ -87,7 +87,7 @@ data class CategoryEntity(
     @PrimaryKey
     val id: String,
     val name: String,
-    val playlistId: String
+    val playlistId: String,
 )
 
 /**
@@ -117,7 +117,7 @@ data class ChannelAttributeEntity(
     val id: Long = 0,
     val channelId: String,
     val attrKey: String,
-    val attrValue: String
+    val attrValue: String,
 )
 
 /**
@@ -135,12 +135,6 @@ data class ChannelAttributeEntity(
 @Entity(
     tableName = "programs",
     foreignKeys = [
-        ForeignKey(
-            entity = ChannelEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["channelId"],
-            onDelete = ForeignKey.CASCADE
-        ),
         ForeignKey(
             entity = PlaylistEntity::class,
             parentColumns = ["id"],
@@ -162,7 +156,10 @@ data class ProgramEntity(
     val startTime: Long,
     val endTime: Long,
     val category: String?,
-    val playlistId: String
+    val playlistId: String,
+    val logo: String?,
+    val credits: String?, // JSON string representation of Credits
+    val attributes: String?, // JSON string representation of Map<String, String>
 )
 
 /**
@@ -209,7 +206,7 @@ data class ChannelHistoryEntity(
     val totalPlayedTimeMs: Long = 0,
     val playCount: Int = 1,
     val currentPositionMs: Long = 0,
-    val totalDurationMs: Long = 0
+    val totalDurationMs: Long = 0,
 )
 
 // Conversion functions for ChannelHistory

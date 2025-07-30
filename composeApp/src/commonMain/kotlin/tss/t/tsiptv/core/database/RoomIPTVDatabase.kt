@@ -18,13 +18,13 @@ import tss.t.tsiptv.core.database.entity.toChannelHistory
 import tss.t.tsiptv.core.database.entity.toChannelHistoryEntity
 import tss.t.tsiptv.core.database.entity.toPlaylist
 import tss.t.tsiptv.core.database.entity.toPlaylistEntity
-import tss.t.tsiptv.core.database.entity.toProgram
+import tss.t.tsiptv.core.database.entity.toIPTVProgram
 import tss.t.tsiptv.core.database.entity.toProgramEntity
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.ChannelHistory
 import tss.t.tsiptv.core.model.Playlist
-import tss.t.tsiptv.core.model.Program
+import tss.t.tsiptv.core.parser.IPTVProgram
 import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.parser.IPTVFormat
 import tss.t.tsiptv.core.parser.IPTVParserFactory
@@ -151,7 +151,7 @@ class RoomIPTVDatabase(
                 val parser = IPTVParserFactory.createParser(format)
                 val parsedPlaylist = parser.parse(content)
 
-                // Delete old channels and categories
+                // Delete old channel and categories
                 channelDao.deleteChannelsByPlaylist(playlist.id)
                 categoryDao.deleteCategoriesByPlaylist(playlist.id)
 
@@ -169,7 +169,7 @@ class RoomIPTVDatabase(
                 }
                 insertCategories(categories)
 
-                // Insert new channels
+                // Insert new channel
                 val channels = parsedPlaylist.channels.map { channel ->
                     Channel(
                         id = channel.id,
@@ -233,54 +233,54 @@ class RoomIPTVDatabase(
     }
 
     // Program-related methods
-    override fun getAllPrograms(): Flow<List<Program>> {
+    override fun getAllPrograms(): Flow<List<IPTVProgram>> {
         return programDao.getAllPrograms().map { programEntities ->
-            programEntities.map { it.toProgram() }
+            programEntities.map { it.toIPTVProgram() }
         }
     }
 
-    override suspend fun getProgramById(id: String): Program? {
-        return programDao.getProgramById(id)?.toProgram()
+    override suspend fun getProgramById(id: String): IPTVProgram? {
+        return programDao.getProgramById(id)?.toIPTVProgram()
     }
 
-    override suspend fun getProgramsForChannel(channelId: String): List<Program> {
-        return programDao.getProgramsForChannel(channelId).map { it.toProgram() }
+    override suspend fun getProgramsForChannel(channelId: String): List<IPTVProgram> {
+        return programDao.getProgramsForChannel(channelId).map { it.toIPTVProgram() }
     }
 
     override suspend fun getProgramsForChannelInTimeRange(
         channelId: String,
         startTime: Long,
         endTime: Long,
-    ): List<Program> {
+    ): List<IPTVProgram> {
         return programDao.getProgramsForChannelInTimeRange(channelId, startTime, endTime)
-            .map { it.toProgram() }
+            .map { it.toIPTVProgram() }
     }
 
     override suspend fun getCurrentAndUpcomingProgramsForChannel(
         channelId: String,
         currentTime: Long,
-    ): List<Program> {
+    ): List<IPTVProgram> {
         return programDao.getCurrentAndUpcomingProgramsForChannel(channelId, currentTime)
-            .map { it.toProgram() }
+            .map { it.toIPTVProgram() }
     }
 
     override suspend fun getCurrentProgramForChannel(
         channelId: String,
         currentTime: Long,
-    ): Program? {
-        return programDao.getCurrentProgramForChannel(channelId, currentTime)?.toProgram()
+    ): IPTVProgram? {
+        return programDao.getCurrentProgramForChannel(channelId, currentTime)?.toIPTVProgram()
     }
 
-    override suspend fun insertProgram(program: Program) {
-        programDao.insertProgram(program.toProgramEntity())
+    override suspend fun insertProgram(program: IPTVProgram, playlistId: String) {
+        programDao.insertProgram(program.toProgramEntity(playlistId))
     }
 
-    override suspend fun insertPrograms(programs: List<Program>) {
-        programDao.insertPrograms(programs.map { it.toProgramEntity() })
+    override suspend fun insertPrograms(programs: List<IPTVProgram>, playlistId: String) {
+        programDao.insertPrograms(programs.map { it.toProgramEntity(playlistId) })
     }
 
-    override suspend fun deleteProgram(program: Program) {
-        programDao.deleteProgram(program.toProgramEntity())
+    override suspend fun deleteProgram(program: IPTVProgram) {
+        programDao.deleteProgramById(program.id)
     }
 
     override suspend fun deleteProgramById(id: String) {

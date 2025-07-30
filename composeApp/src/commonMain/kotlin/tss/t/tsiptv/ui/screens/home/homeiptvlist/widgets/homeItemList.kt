@@ -32,6 +32,7 @@ fun LazyListScope.homeItemList(
         item("NowWatchingCard") {
             NowPlayingCard(
                 channelWithHistory = homeUiState.nowPlayingChannel,
+                currentProgram = homeUiState.currentProgram,
                 modifier = Modifier.Companion.fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .padding(top = 20.dp),

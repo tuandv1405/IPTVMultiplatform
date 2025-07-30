@@ -66,17 +66,8 @@ fun HomeNavHost(
         )
     }
     val iptvDatabase = koinInject<IPTVDatabase>()
-    val networkClient = koinInject<NetworkClient>()
-    val historyRepository = koinInject<IHistoryRepository>()
-    val homeViewModel = viewModel<HomeViewModel>(viewModelStoreOwner = viewStoreOwner) {
-        HomeViewModel(
-            iptvDatabase = iptvDatabase,
-            networkClient = networkClient,
-            historyRepository = historyRepository
-        )
-    }
-    val mediaPlayer = koinInject<MediaPlayer>()
     val historyTracker = koinInject<ChannelHistoryTracker>()
+    val mediaPlayer = koinInject<MediaPlayer>()
     val playerViewModel = viewModel<PlayerViewModel>(viewStoreOwner) {
         PlayerViewModel(
             _mediaPlayer = mediaPlayer,
@@ -84,7 +75,6 @@ fun HomeNavHost(
             historyTracker = historyTracker
         )
     }
-    val mediaItem by playerViewModel.mediaItemState.collectAsStateWithLifecycle()
     val authState by authViewModel.uiState.collectAsState()
 
     NavHost(

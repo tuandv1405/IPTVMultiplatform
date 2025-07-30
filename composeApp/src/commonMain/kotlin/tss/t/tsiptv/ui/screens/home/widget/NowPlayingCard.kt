@@ -47,15 +47,18 @@ import tsiptv.composeapp.generated.resources.play
 import tss.t.tsiptv.core.database.entity.ChannelWithHistory
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
+import tss.t.tsiptv.core.parser.IPTVProgram
 import tss.t.tsiptv.player.models.toMediaItem
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
+import tss.t.tsiptv.ui.themes.TSTextStyles
 import tss.t.tsiptv.utils.formatToday
 
 @Composable
 fun NowPlayingCard(
     channelWithHistory: ChannelWithHistory,
+    currentProgram: IPTVProgram? = null,
     modifier: Modifier,
     isPlaying: Boolean,
     onHomeEvent: (HomeEvent) -> Unit,
@@ -83,11 +86,12 @@ fun NowPlayingCard(
                 } else {
                     onHomeEvent(HomeEvent.OnResumeMediaItem(channel.toMediaItem()))
                 }
-            })
-            .padding(20.dp),
+            }),
     ) {
         AsyncImage(
-            modifier = Modifier.align(Alignment.TopEnd)
+            modifier = Modifier
+                .padding(top = 10.dp, end = 10.dp)
+                .align(Alignment.TopEnd)
                 .width(128.dp)
                 .aspectRatio(16f / 9)
                 .clip(TSShapes.roundedShape8),
@@ -99,7 +103,8 @@ fun NowPlayingCard(
         )
         Column(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .padding(16.dp),
         ) {
             Text(
                 text = stringResource(Res.string.now_playing_title),
@@ -160,11 +165,17 @@ fun NowPlayingCard(
                 }
                 Spacer(Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
+                    currentProgram?.title?.let {
+                        Text(
+                            text = it,
+                            style = TSTextStyles.semiBold13
+                        )
+                        Spacer(Modifier.height(2.dp))
+                    }
+
                     Text(
                         text = channelWithHistory.lastPlayedTimestamp.formatToday(),
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 13.sp,
-                        color = TSColors.TextSecondaryLight
+                        style = TSTextStyles.normal13
                     )
                 }
             }
@@ -255,28 +266,6 @@ fun PlayIcon() {
             colorFilter = ColorFilter.tint(Color.White)
         )
     }
-}
-
-@Composable
-@Preview
-fun NowPlayingCardPreview() {
-    NowPlayingCard(
-        channel = Channel(
-            name = "Channel Name",
-            lastWatched = 123456789,
-            categoryId = 1.toString(),
-            playlistId = 1.toString(),
-            isFavorite = false,
-            url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            logoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            id = 1.toString()
-        ),
-        category = Category(
-            name = "Category Name",
-            id = 1.toString(),
-            playlistId = 1.toString()
-        )
-    )
 }
 
 

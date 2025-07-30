@@ -8,20 +8,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.database.entity.ChannelWithHistory
+import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.Playlist
-import tss.t.tsiptv.core.model.Program
 import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.parser.EPGParserFactory
 import tss.t.tsiptv.core.parser.IPTVParserFactory
@@ -33,25 +31,17 @@ class HomeViewModel(
     private val iptvDatabase: IPTVDatabase,
     private val networkClient: NetworkClient,
     private val historyRepository: IHistoryRepository,
+    private val historyTracker: ChannelHistoryTracker,
 ) : ViewModel() {
 
     private var _currentListChannel: List<Channel> = emptyList()
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState
 
-    val relatedChannels: StateFlow<List<Channel>> = _uiState.map {
-        it.relatedChannels
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = emptyList()
-    )
-
     private val _homeEvent by lazy {
         MutableSharedFlow<HomeEvent>()
     }
     val homeUIEvent: Flow<HomeEvent> = _homeEvent
-    val currentTime = Clock.System.now().toEpochMilliseconds()
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -104,7 +94,7 @@ class HomeViewModel(
     fun parseIptvSource(name: String, url: String) {
         viewModelScope.launch {
             _uiState.update {
-                it.copy(isLoading = true, error = null)
+                it.copy()
             }
             try {
                 val content = networkClient.get(url)
@@ -118,6 +108,10 @@ class HomeViewModel(
                     lastUpdated = Clock.System.now().toEpochMilliseconds()
                 )
                 iptvDatabase.insertPlaylist(newPlaylist)
+                parsePlaylistEpg(
+                    playListId = newPlaylist.id,
+                    playListEpgUrl = newPlaylist.epgUrl
+                )
                 iptvDatabase.insertCategories(playlist.groups.map {
                     Category(
                         id = it.id,
@@ -166,10 +160,10 @@ class HomeViewModel(
     }
 
     /**
-     * Get all channels for a specific IPTV source
+     * Get all channel for a specific IPTV source
      *
      * @param playlistId The ID of the playlist
-     * @return Flow of list of channels
+     * @return Flow of list of channel
      */
     fun getAllChannelForIptvSource(playlistId: String) {
         viewModelScope.launch {
@@ -184,9 +178,8 @@ class HomeViewModel(
                     )
                     _uiState.update {
                         it.copy(
-                            listChannels = channels,
                             isLoading = false,
-                            error = null
+                            listChannels = channels
                         )
                     }
                 }
@@ -194,68 +187,64 @@ class HomeViewModel(
     }
 
     /**
-     * Refresh the channels for a specific IPTV source
+     * Refresh the channel for a specific IPTV source
      *
      * @param playlistId The ID of the playlist to refresh
      */
     fun refreshIPTVChannel(playlistId: String) {
         viewModelScope.launch {
             _uiState.update {
-                it.copy(
-                    isLoading = true,
-                    error = null
-                )
+                it.copy()
             }
             try {
-                val playlist = iptvDatabase.getPlaylistById(playlistId)
-                if (playlist != null) {
-                    val content = networkClient.get(playlist.url)
-                    val parser = IPTVParserFactory.createParserForContent(content)
-                    val parsedPlaylist = parser.parse(content)
-                    val updatedPlaylist = playlist.copy(
-                        lastUpdated = Clock.System.now().toEpochMilliseconds(),
-                        epgUrl = parsedPlaylist.epgUrl
-                    )
-                    if (parsedPlaylist.channels.isNotEmpty()) {
-                        iptvDatabase.deletePlaylistById(playlistId)
-                    }
-                    parsePlaylistEpg(
-                        playListId = playlistId,
-                        playListEpgUrl = parsedPlaylist.epgUrl
-                    )
-                    iptvDatabase.deleteChannelsInPlaylist(playlistId)
-                    iptvDatabase.insertPlaylist(updatedPlaylist)
-
-                    val channels = parsedPlaylist.channels.map { iptvChannel ->
-                        Channel(
-                            id = iptvChannel.id,
-                            name = iptvChannel.name,
-                            url = iptvChannel.url,
-                            logoUrl = iptvChannel.logoUrl,
-                            categoryId = iptvChannel.groupTitle,
-                            playlistId = playlistId,
-                            isFavorite = false,
-                            lastWatched = null
-                        )
-                    }
-                    iptvDatabase.insertChannels(channels)
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            playListId = playlistId,
-                            playListName = playlist.name,
-                            categories = iptvDatabase.getCategoriesByPlaylist(playlistId),
-                            listChannels = channels
-                        )
-                    }
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = Throwable("Playlist not found")
-                        )
-                    }
+                val currPlaylist = iptvDatabase.getPlaylistById(playlistId)
+                if (currPlaylist == null) {
+                    return@launch
                 }
+                val content = networkClient.get(currPlaylist.url)
+                val parser = IPTVParserFactory.createParserForContent(content)
+                val playlist = parser.parse(content)
+                val newPlaylist = currPlaylist.copy(
+                    epgUrl = playlist.epgUrl,
+                    lastUpdated = Clock.System.now().toEpochMilliseconds()
+                )
+                iptvDatabase.insertPlaylist(newPlaylist)
+                iptvDatabase.insertCategories(playlist.groups.map {
+                    Category(
+                        id = it.id,
+                        name = it.title,
+                        playlistId = newPlaylist.id
+                    )
+                })
+                val channels = playlist.channels.map { iptvChannel ->
+                    Channel(
+                        id = iptvChannel.id,
+                        name = iptvChannel.name,
+                        url = iptvChannel.url,
+                        logoUrl = iptvChannel.logoUrl,
+                        categoryId = iptvChannel.groupTitle,
+                        playlistId = newPlaylist.id,
+                        isFavorite = false,
+                        lastWatched = null
+                    )
+                }
+                iptvDatabase.deleteChannelsInPlaylist(playlistId)
+                iptvDatabase.insertChannels(channels)
+                loadHistoryData(newPlaylist.id)
+                parsePlaylistEpg(
+                    playListId = newPlaylist.id,
+                    playListEpgUrl = newPlaylist.epgUrl
+                )
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        playListId = newPlaylist.id,
+                        playListName = newPlaylist.name,
+                        categories = iptvDatabase.getCategoriesByPlaylist(newPlaylist.id),
+                        listChannels = channels
+                    )
+                }
+                onEmitEvent(HomeEvent.OnParseIPTVSourceSuccess)
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(isLoading = false, error = e)
@@ -278,24 +267,11 @@ class HomeViewModel(
             val epgParser = EPGParserFactory.createParserForContent(content)
             val epg = epgParser.parse(content)
             println(epg.size)
-            iptvDatabase.insertPrograms(epg.map {
-                it.toProgram(playListId)
-            })
+            iptvDatabase.deleteProgramsForPlaylist(playListId)
+            iptvDatabase.insertPrograms(epg, playListId)
         }
     }
 
-    private fun IPTVProgram.toProgram(playListId: String): Program {
-        return Program(
-            id = this.id,
-            title = this.title,
-            description = this.description,
-            category = this.category,
-            startTime = this.startTime,
-            endTime = this.endTime,
-            playlistId = playListId,
-            channelId = this.channelId
-        )
-    }
 
     /**
      * Mark a channel as favorite or remove it from favorites
@@ -384,7 +360,6 @@ class HomeViewModel(
                 viewModelScope.launch(Dispatchers.IO) {
                     _uiState.update {
                         it.copy(
-                            selectedCategory = null,
                             listChannels = searchWithFilter(
                                 searchKey = uiState.value.searchText,
                                 category = null
@@ -394,9 +369,18 @@ class HomeViewModel(
                 }
             }
 
+            is HomeEvent.OnResumeMediaItem -> {
+                onResumeMediaItem(event)
+            }
+
+            is HomeEvent.OnPlayNowPlaying -> {
+                getRelatedChannels(event.channel)
+                loadProgramForChannel(event.channel)
+            }
+
             HomeEvent.OnDismissErrorDialog -> {
                 _uiState.update {
-                    it.copy(error = null)
+                    it.copy()
                 }
             }
 
@@ -434,6 +418,22 @@ class HomeViewModel(
             }
 
             else -> {}
+        }
+    }
+
+    private fun onResumeMediaItem(event: HomeEvent.OnResumeMediaItem) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val currentMediaItem = _uiState.value.nowPlayingChannel
+            val playlistId = _uiState.value.playListId ?: return@launch
+            var channel = currentMediaItem?.getChannel()
+            if (event.mediaItem.id != currentMediaItem?.channelId) {
+                channel = iptvDatabase.getChannelById(event.mediaItem.id) ?: return@launch
+            }
+            channel ?: return@launch
+            historyTracker.onChannelPlay(channel, playlistId)
+            getRelatedChannels(channel)
+            loadProgramForChannel(channel)
+            loadHistoryData(playlistId)
         }
     }
 
@@ -485,7 +485,6 @@ class HomeViewModel(
      */
     private fun loadHistoryData(playlistId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            // Load last played channel (now playing)
             val lastPlayedChannel = historyRepository.getLastWatchedChannelWithDetails(playlistId)
 
             if (lastPlayedChannel != null) {
@@ -495,17 +494,46 @@ class HomeViewModel(
                     )
                 }
             }
-            // Load top 3 most played channels
-            historyRepository.getLastTop3WatchedChannelsWithDetails(playlistId)
-                .collect { top3List ->
+            historyRepository.getAllWatchedChannelsWithDetails(playlistId)
+                .collect { histories ->
                     _uiState.update { currentState ->
                         currentState.copy(
-                            nowPlayingChannel = lastPlayedChannel,
-                            mostPlayedChannel = top3List.firstOrNull(),
-                            top3MostPlayedChannels = top3List
+                            top3MostPlayedChannels = histories.subList(
+                                fromIndex = 0,
+                                toIndex = histories.size.coerceAtMost(3)
+                            ),
+                            allPlayedChannels = histories
                         )
                     }
                 }
+        }
+    }
+
+    fun loadProgramForChannel(channel: Channel) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (_uiState.value.currentProgram?.channelId != channel.id) {
+                _uiState.update {
+                    it.copy(
+                        currentProgram = null,
+                        currentProgramList = null
+                    )
+                }
+            }
+
+            val currentProgram = iptvDatabase.getCurrentProgramForChannel(
+                channelId = channel.id,
+                currentTime = Clock.System.now().toEpochMilliseconds()
+            )
+            val programForChannel = iptvDatabase.getProgramsForChannel(channel.id)
+            if (currentProgram == null) {
+                return@launch
+            }
+            _uiState.update {
+                it.copy(
+                    currentProgram = currentProgram,
+                    currentProgramList = programForChannel
+                )
+            }
         }
     }
 }
@@ -518,18 +546,16 @@ data class HomeUiState(
     val isLoading: Boolean = true,
     val playListId: String? = null,
     val playListName: String? = null,
-    val nowWatching: Channel? = null,
-    val nowWatchingCategory: Category? = null,
-    val lastWatchedList: List<Channel> = emptyList(),
     val categories: List<Category> = emptyList(),
     val selectedCategory: Category? = null,
     val listChannels: List<Channel> = emptyList(),
     val relatedChannels: List<Channel> = emptyList(),
+    val currentProgram: IPTVProgram? = null,
+    val currentProgramList: List<IPTVProgram>? = null,
     val error: Throwable? = null,
-    // History-related fields
-    val nowPlayingChannel: ChannelWithHistory? = null, // Last played channel from history
-    val top3MostPlayedChannels: List<ChannelWithHistory> = emptyList(), // Top 3 most played channels
-    val mostPlayedChannel: ChannelWithHistory? = null, // Most played channel
+    val nowPlayingChannel: ChannelWithHistory? = null,
+    val top3MostPlayedChannels: List<ChannelWithHistory> = emptyList(),
+    val allPlayedChannels: List<ChannelWithHistory> = emptyList(),
 )
 
 sealed interface HomeEvent {

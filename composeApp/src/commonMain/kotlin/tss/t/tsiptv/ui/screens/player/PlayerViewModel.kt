@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.model.Channel
@@ -63,14 +64,17 @@ class PlayerViewModel(
                         // Media has stopped, save history
                         historyTracker.onPlaybackStopped()
                     }
+
                     PlaybackState.PLAYING -> {
                         // Media is playing, resume tracking if needed
                         historyTracker.onPlaybackResumed()
                     }
+
                     PlaybackState.PAUSED -> {
                         // Media is paused, pause tracking
                         historyTracker.onPlaybackPaused()
                     }
+
                     else -> {
                         // Other states (BUFFERING, READY, ERROR) - no action needed
                     }
@@ -108,17 +112,10 @@ class PlayerViewModel(
             }
 
             // Track channel play history
-            historyTracker.onChannelPlay(iptvChannel, iptvChannel.playlistId)
-
-            launch {
-                loadPrograms(iptvChannel)
-            }
-        }
-    }
-
-    fun loadPrograms(iptvChannel: Channel) {
-        viewModelScope.launch(Dispatchers.IO) {
-
+            historyTracker.onChannelPlay(
+                channel = iptvChannel,
+                playlistId = iptvChannel.playlistId
+            )
         }
     }
 
@@ -179,14 +176,17 @@ class PlayerViewModel(
                     _mediaPlayer.play()
                     historyTracker.onPlaybackResumed()
                 }
+
                 is PlayerEvent.Pause -> {
                     _mediaPlayer.pause()
                     historyTracker.onPlaybackPaused()
                 }
+
                 is PlayerEvent.Stop -> {
                     _mediaPlayer.stop()
                     historyTracker.onPlaybackStopped()
                 }
+
                 is PlayerEvent.ToggleMute -> toggleMute()
                 is PlayerEvent.SetVolume -> setVolume(event.volume)
                 else -> {}
@@ -315,5 +315,5 @@ data class PlayerUIState(
     val isFullScreen: Boolean = false,
     val isFitWidth: Boolean = false,
     val isFillScreen169: Boolean = false,
-    val isPlaying: Boolean = false
+    val isPlaying: Boolean = false,
 )

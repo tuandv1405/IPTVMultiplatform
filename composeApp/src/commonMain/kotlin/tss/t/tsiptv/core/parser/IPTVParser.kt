@@ -1,5 +1,7 @@
 package tss.t.tsiptv.core.parser
 
+import kotlin.math.min
+
 /**
  * Interface for parsing IPTV playlists.
  * This is a platform-independent interface that will have implementations for different formats.
@@ -37,7 +39,7 @@ enum class IPTVFormat {
  * Data class representing an IPTV playlist.
  *
  * @property name The name of the playlist
- * @property channels The channels in the playlist
+ * @property channels The channel in the playlist
  * @property groups The channel groups in the playlist
  * @property programs The program schedules in the playlist
  * @property epgUrl The URL of the EPG (Electronic Program Guide) for this playlist
@@ -47,7 +49,7 @@ data class IPTVPlaylist(
     val channels: List<IPTVChannel>,
     val groups: List<IPTVGroup>,
     val programs: List<IPTVProgram> = emptyList(),
-    val epgUrl: String? = null
+    val epgUrl: String? = null,
 )
 
 /**
@@ -69,7 +71,7 @@ data class IPTVChannel(
     val groupTitle: String? = null,
     val groupId: String? = null,
     val epgId: String? = null,
-    val attributes: Map<String, String> = emptyMap()
+    val attributes: Map<String, String> = emptyMap(),
 )
 
 /**
@@ -80,7 +82,7 @@ data class IPTVChannel(
  */
 data class IPTVGroup(
     val id: String,
-    val title: String
+    val title: String,
 )
 
 /**
@@ -103,8 +105,18 @@ data class IPTVProgram(
     val startTime: Long,
     val endTime: Long,
     val category: String? = null,
-    val attributes: Map<String, String> = emptyMap()
-)
+    val logo: String? = null,
+    val credits: Credits? = null,
+    val attributes: Map<String, String> = emptyMap(),
+) {
+    var startTimeStr: String? = null
+    var endTimeStr: String? = null
+
+    data class Credits(
+        val director: String? = null,
+        val actors: List<String>? = null,
+    )
+}
 
 /**
  * Exception thrown when parsing an IPTV playlist fails.
@@ -143,10 +155,13 @@ object IPTVParserFactory {
     fun detectFormat(content: String): IPTVFormat {
         return when {
             content.trimStart().startsWith("#EXTM3U") -> IPTVFormat.M3U
-            content.trimStart().startsWith("<?xml") && content.contains("<playlist") && 
-                (content.contains("xmlns=\"http://xspf.org/ns/0/\"") || 
-                 content.contains("xmlns:vlc=\"http://www.videolan.org/vlc/playlist/ns/0/\"")) -> IPTVFormat.XSPF
-            content.trimStart().startsWith("<?xml") || content.trimStart().startsWith("<tv") -> IPTVFormat.XML
+            content.trimStart().startsWith("<?xml") && content.contains("<playlist") &&
+                    (content.contains("xmlns=\"http://xspf.org/ns/0/\"") ||
+                            content.contains("xmlns:vlc=\"http://www.videolan.org/vlc/playlist/ns/0/\"")) -> IPTVFormat.XSPF
+
+            content.trimStart().startsWith("<?xml") || content.trimStart()
+                .startsWith("<tv") -> IPTVFormat.XML
+
             content.trimStart().startsWith("{") -> IPTVFormat.JSON
             else -> IPTVFormat.UNKNOWN
         }

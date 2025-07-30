@@ -24,7 +24,7 @@ class IPTVParserService(private val networkClient: NetworkClient) {
         val epgUrl = playlist.epgUrl
         if (epgUrl != null) {
             try {
-                val epgContent = networkClient.get(epgUrl)
+                val epgContent = networkClient.getManualGzipIfNeed(epgUrl)
                 return parsePlaylistWithEPG(playlist, epgContent)
             } catch (e: Exception) {
                 // Log the error but continue without program data

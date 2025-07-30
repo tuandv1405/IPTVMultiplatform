@@ -5,6 +5,7 @@ import io.ktor.client.plugins.compression.ContentEncoding
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.serialization.kotlinx.xml.xml
 import kotlinx.serialization.json.Json
 
 /**
@@ -24,6 +25,7 @@ class IosKtorNetworkClient : KtorNetworkClient() {
                 isLenient = true
                 ignoreUnknownKeys = true
             })
+            xml()
         }
 
         // Add logging for debug builds

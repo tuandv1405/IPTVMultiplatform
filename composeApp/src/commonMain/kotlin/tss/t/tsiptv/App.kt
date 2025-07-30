@@ -1,8 +1,6 @@
 package tss.t.tsiptv
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -19,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -212,11 +211,13 @@ fun App() {
                     composable<NavRoutes.Home>() {
                         val hazeState = rememberHazeState()
                         val historyRepository = koinInject<IHistoryRepository>()
+                        val historyTracker = koinInject<ChannelHistoryTracker>()
                         val homeViewModel = viewModel<HomeViewModel>(viewModelStoreOwner) {
                             HomeViewModel(
                                 iptvDatabase = database,
                                 networkClient = networkClient,
-                                historyRepository = historyRepository
+                                historyRepository = historyRepository,
+                                historyTracker = historyTracker
                             )
                         }
                         val homeUIState by homeViewModel.uiState.collectAsState()
@@ -235,15 +236,10 @@ fun App() {
                                     homeViewModel.onEmitEvent(HomeEvent.LoadHistory)
                                 }
 
-                                if (it is HomeEvent.OnResumeMediaItem) {
-                                    homeViewModel.loadProgramForChannel(it.mediaItem.id)
-                                }
-                                if (it is HomeEvent.OnPlayNowPlaying) {
-                                    homeViewModel.loadProgramForChannel(it.channel)
-                                }
 
                                 when (it) {
                                     is HomeEvent.OnPlayNowPlaying -> {
+                                        homeViewModel.onEmitEvent(it)
                                         if (playerViewModel.mediaItemState.value.id != it.channel.id) {
                                             playerViewModel.playIptv(it.channel)
                                         } else {
@@ -258,7 +254,7 @@ fun App() {
                                     is HomeEvent.OnResumeMediaItem -> {
                                         navController.navigate(NavRoutes.Player(""))
                                         playerViewModel.resumeMediaItem(it.mediaItem)
-                                        homeViewModel.onEmitEvent(HomeEvent.LoadHistory)
+                                        homeViewModel.onEmitEvent(it)
                                     }
 
                                     else -> homeViewModel.onEmitEvent(it)
@@ -267,33 +263,29 @@ fun App() {
                         )
                     }
 
-                    composable<NavRoutes.Player>(
-                        enterTransition = { slideInVertically { it / 5 } },
-                        exitTransition = { slideOutVertically { it / 5 } }
-                    ) {
+                    composable<NavRoutes.Player> {
                         val channelId = it.toRoute<NavRoutes.Player>().mediaItemId
                         val mediaItem by playerViewModel.mediaItemState.collectAsState()
                         val historyRepository = koinInject<IHistoryRepository>()
+                        val historyTracker = koinInject<ChannelHistoryTracker>()
                         val homeViewModel = viewModel<HomeViewModel>(viewModelStoreOwner) {
                             HomeViewModel(
                                 iptvDatabase = database,
                                 networkClient = networkClient,
-                                historyRepository = historyRepository
+                                historyRepository = historyRepository,
+                                historyTracker = historyTracker
                             )
                         }
-                        val relatedChannels by homeViewModel.relatedChannels.collectAsState()
-                        val currentProgram by homeViewModel.currentProgram.collectAsState()
+                        val homeUIState by homeViewModel.uiState.collectAsStateWithLifecycle()
                         val playerUIState by playerViewModel.playerUIState.collectAsState()
-                        println("TuanDv: currentProgram: $currentProgram")
                         LaunchedEffect(channelId) {
                             playerViewModel.verifyPlayingMediaItem(channelId)
                         }
 
                         PlayerScreen(
                             mediaItem = mediaItem,
-                            currentProgram = currentProgram,
+                            homeUIState = homeUIState,
                             mediaPlayer = playerViewModel.player,
-                            relatedMediaItems = relatedChannels,
                             playerControlState = playerUIState,
                         ) { event ->
                             if (event is PlayerEvent.PlayIptv) {
@@ -319,11 +311,13 @@ fun App() {
                         val database = koinInject<IPTVDatabase>()
                         val networkClient = koinInject<NetworkClient>()
                         val historyRepository = koinInject<IHistoryRepository>()
+                        val historyTracker = koinInject<ChannelHistoryTracker>()
                         val homeViewModel = viewModel<HomeViewModel>(viewModelStoreOwner) {
                             HomeViewModel(
                                 iptvDatabase = database,
                                 networkClient = networkClient,
-                                historyRepository = historyRepository
+                                historyRepository = historyRepository,
+                                historyTracker = historyTracker
                             )
                         }
                         val homeUIState by homeViewModel.uiState.collectAsState()

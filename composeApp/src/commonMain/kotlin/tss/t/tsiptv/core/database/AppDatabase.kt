@@ -4,10 +4,8 @@ import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
-import androidx.room.migration.Migration
-import androidx.sqlite.SQLiteConnection
+import androidx.room.TypeConverters
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import androidx.sqlite.execSQL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import tss.t.tsiptv.core.database.dao.CategoryDao
@@ -36,8 +34,9 @@ import tss.t.tsiptv.core.database.entity.ProgramEntity
         ChannelHistoryEntity::class
     ],
     version = 1,
-    exportSchema = false,
+    exportSchema = true
 )
+@TypeConverters(Converter::class)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
     /**
@@ -90,28 +89,10 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
 }
 
 fun getRoomDatabase(
-    builder: RoomDatabase.Builder<AppDatabase>
+    builder: RoomDatabase.Builder<AppDatabase>,
 ): AppDatabase {
     return builder
-        .addMigrations(
-            object : Migration(1, 2) {
-                override fun migrate(connection: SQLiteConnection) {
-                    connection.execSQL("CREATE TABLE IF NOT EXISTS `programs` (`id` TEXT NOT NULL, `channelId` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT, `startTime` INTEGER NOT NULL, `endTime` INTEGER NOT NULL, `category` TEXT, `playlistId` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`channelId`) REFERENCES `channels`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`playlistId`) REFERENCES `playlists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
-                    connection.execSQL("CREATE INDEX IF NOT EXISTS `index_programs_channelId` ON `programs` (`channelId`)")
-                    connection.execSQL("CREATE INDEX IF NOT EXISTS `index_programs_playlistId` ON `programs` (`playlistId`)")
-                }
-            },
-            object : Migration(2, 3) {
-                override fun migrate(connection: SQLiteConnection) {
-                    connection.execSQL("CREATE TABLE IF NOT EXISTS `channel_history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `channelId` TEXT NOT NULL, `playlistId` TEXT NOT NULL, `lastPlayedTimestamp` INTEGER NOT NULL, `totalPlayedTimeMs` INTEGER NOT NULL, `playCount` INTEGER NOT NULL, FOREIGN KEY(`channelId`) REFERENCES `channels`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`playlistId`) REFERENCES `playlists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
-                    connection.execSQL("CREATE INDEX IF NOT EXISTS `index_channel_history_channelId` ON `channel_history` (`channelId`)")
-                    connection.execSQL("CREATE INDEX IF NOT EXISTS `index_channel_history_playlistId` ON `channel_history` (`playlistId`)")
-                    connection.execSQL("CREATE INDEX IF NOT EXISTS `index_channel_history_lastPlayedTimestamp` ON `channel_history` (`lastPlayedTimestamp`)")
-                    connection.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_channel_history_channelId_playlistId` ON `channel_history` (`channelId`, `playlistId`)")
-                }
-            }
-        )
-        .fallbackToDestructiveMigrationOnDowngrade(true)
+        .fallbackToDestructiveMigration(true)
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()

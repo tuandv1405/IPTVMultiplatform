@@ -88,7 +88,7 @@ interface ChannelHistoryDao {
     )
 
     /**
-     * Gets all played channels for a specific playlist.
+     * Gets all played channel for a specific playlist.
      *
      * @param playlistId The ID of the playlist
      * @return A flow of channel history entries for the playlist
@@ -106,7 +106,7 @@ interface ChannelHistoryDao {
     suspend fun getLastPlayedChannelInPlaylist(playlistId: String): ChannelHistoryEntity?
 
     /**
-     * Gets the top 3 most played channels for a specific playlist, sorted by total played time.
+     * Gets the top 3 most played channel for a specific playlist, sorted by total played time.
      *
      * @param playlistId The ID of the playlist
      * @return A flow of the top 3 most played channel history entries
@@ -166,7 +166,7 @@ interface ChannelHistoryDao {
             ch.currentPositionMs as currentPositionMs,
             ch.totalDurationMs as totalDurationMs
         FROM channel_history ch
-        INNER JOIN channels c ON ch.channelId = c.id
+        INNER JOIN channel c ON ch.channelId = c.id
         WHERE (:playlistId IS NULL OR ch.playlistId = :playlistId)
         ORDER BY ch.lastPlayedTimestamp DESC
         LIMIT 1
@@ -174,12 +174,12 @@ interface ChannelHistoryDao {
     suspend fun getLastWatchedChannelWithDetails(playlistId: String? = null): ChannelWithHistory?
 
     /**
-     * Gets all watched channels with complete channel information using JOIN.
+     * Gets all watched channel with complete channel information using JOIN.
      * This query joins the Channel and ChannelHistory tables to get both channel details
-     * and history information for all watched channels, ordered by most recent first.
+     * and history information for all watched channel, ordered by most recent first.
      *
      * @param playlistId The ID of the playlist
-     * @return A flow of watched channels with complete information
+     * @return A flow of watched channel with complete information
      */
     @Query("""
         SELECT 
@@ -198,19 +198,19 @@ interface ChannelHistoryDao {
             ch.currentPositionMs as currentPositionMs,
             ch.totalDurationMs as totalDurationMs
         FROM channel_history ch
-        INNER JOIN channels c ON ch.channelId = c.id
+        INNER JOIN channel c ON ch.channelId = c.id
         WHERE ch.playlistId = :playlistId
         ORDER BY ch.lastPlayedTimestamp DESC
     """)
     fun getAllWatchedChannelsWithDetails(playlistId: String): Flow<List<ChannelWithHistory>>
 
     /**
-     * Gets the last top 3 watched channels with complete channel information using JOIN.
+     * Gets the last top 3 watched channel with complete channel information using JOIN.
      * This query joins the Channel and ChannelHistory tables to get both channel details
-     * and history information for the 3 most recently watched channels.
+     * and history information for the 3 most recently watched channel.
      *
      * @param playlistId The ID of the playlist (optional, if null gets from all playlists)
-     * @return A flow of the top 3 most recently watched channels with complete information
+     * @return A flow of the top 3 most recently watched channel with complete information
      */
     @Query("""
         SELECT 
@@ -229,7 +229,7 @@ interface ChannelHistoryDao {
             ch.currentPositionMs as currentPositionMs,
             ch.totalDurationMs as totalDurationMs
         FROM channel_history ch
-        INNER JOIN channels c ON ch.channelId = c.id
+        INNER JOIN channel c ON ch.channelId = c.id
         WHERE (:playlistId IS NULL OR ch.playlistId = :playlistId)
         ORDER BY ch.lastPlayedTimestamp DESC
         LIMIT 3
@@ -261,7 +261,7 @@ interface ChannelHistoryDao {
             ch.currentPositionMs as currentPositionMs,
             ch.totalDurationMs as totalDurationMs
         FROM channel_history ch
-        INNER JOIN channels c ON ch.channelId = c.id
+        INNER JOIN channel c ON ch.channelId = c.id
         WHERE ch.playlistId = :playlistId
         ORDER BY ch.lastPlayedTimestamp DESC
         LIMIT 1
@@ -269,12 +269,12 @@ interface ChannelHistoryDao {
     suspend fun getLastPlayedChannelInPlaylistWithDetails(playlistId: String): ChannelWithHistory?
 
     /**
-     * Gets the top 3 most played channels with complete channel information using JOIN.
+     * Gets the top 3 most played channel with complete channel information using JOIN.
      * This query joins the Channel and ChannelHistory tables to get both channel details
-     * and history information for the 3 most played channels, sorted by total played time.
+     * and history information for the 3 most played channel, sorted by total played time.
      *
      * @param playlistId The ID of the playlist
-     * @return A flow of the top 3 most played channels with complete information
+     * @return A flow of the top 3 most played channel with complete information
      */
     @Query("""
         SELECT 
@@ -293,7 +293,7 @@ interface ChannelHistoryDao {
             ch.currentPositionMs as currentPositionMs,
             ch.totalDurationMs as totalDurationMs
         FROM channel_history ch
-        INNER JOIN channels c ON ch.channelId = c.id
+        INNER JOIN channel c ON ch.channelId = c.id
         WHERE ch.playlistId = :playlistId
         ORDER BY ch.totalPlayedTimeMs DESC
         LIMIT 3
@@ -325,7 +325,7 @@ interface ChannelHistoryDao {
             ch.currentPositionMs as currentPositionMs,
             ch.totalDurationMs as totalDurationMs
         FROM channel_history ch
-        INNER JOIN channels c ON ch.channelId = c.id
+        INNER JOIN channel c ON ch.channelId = c.id
         WHERE ch.playlistId = :playlistId
         ORDER BY ch.totalPlayedTimeMs DESC
         LIMIT 1

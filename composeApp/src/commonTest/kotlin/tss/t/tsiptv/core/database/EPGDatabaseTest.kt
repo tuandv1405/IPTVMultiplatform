@@ -5,7 +5,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.Playlist
-import tss.t.tsiptv.core.model.Program
+import tss.t.tsiptv.core.parser.IPTVProgram
 import tss.t.tsiptv.core.parser.IPTVParserService
 import tss.t.tsiptv.core.parser.M3UParser
 import kotlin.test.Test
@@ -83,7 +83,7 @@ class EPGDatabaseTest {
         )
         database.insertPlaylist(dbPlaylist)
 
-        // 4. Store the channels in the database
+        // 4. Store the channel in the database
         val channels = playlistWithEPG.channels.map { channel ->
             Channel(
                 id = channel.id,
@@ -97,19 +97,7 @@ class EPGDatabaseTest {
         database.insertChannels(channels)
 
         // 5. Store the programs in the database
-        val programs = playlistWithEPG.programs.map { program ->
-            Program(
-                id = program.id,
-                channelId = program.channelId,
-                title = program.title,
-                description = program.description,
-                startTime = program.startTime,
-                endTime = program.endTime,
-                category = program.category,
-                playlistId = dbPlaylist.id
-            )
-        }
-        database.insertPrograms(programs)
+        database.insertPrograms(playlistWithEPG.programs, dbPlaylist.id)
 
         // Assert
         // 1. Verify that the playlist was stored correctly
@@ -117,7 +105,7 @@ class EPGDatabaseTest {
         assertNotNull(storedPlaylist)
         assertEquals(dbPlaylist.name, storedPlaylist.name)
 
-        // 2. Verify that the channels were stored correctly
+        // 2. Verify that the channel were stored correctly
         val storedChannels = database.getAllChannelsByPlayListId(dbPlaylist.id).first()
         assertEquals(2, storedChannels.size)
 
@@ -211,7 +199,7 @@ class EPGDatabaseTest {
         )
         database.insertPlaylist(dbPlaylist)
 
-        // 4. Store the channels in the database
+        // 4. Store the channel in the database
         val channels = playlistWithEmptyEPG.channels.map { channel ->
             Channel(
                 id = channel.id,
@@ -225,19 +213,7 @@ class EPGDatabaseTest {
         database.insertChannels(channels)
 
         // 5. Store the programs in the database (should be empty)
-        val programs = playlistWithEmptyEPG.programs.map { program ->
-            Program(
-                id = program.id,
-                channelId = program.channelId,
-                title = program.title,
-                description = program.description,
-                startTime = program.startTime,
-                endTime = program.endTime,
-                category = program.category,
-                playlistId = dbPlaylist.id
-            )
-        }
-        database.insertPrograms(programs)
+        database.insertPrograms(playlistWithEmptyEPG.programs, dbPlaylist.id)
 
         // Assert
         // 1. Verify that the playlist was stored correctly
@@ -245,7 +221,7 @@ class EPGDatabaseTest {
         assertNotNull(storedPlaylist)
         assertEquals(dbPlaylist.name, storedPlaylist.name)
 
-        // 2. Verify that the channels were stored correctly
+        // 2. Verify that the channel were stored correctly
         val storedChannels = database.getAllChannelsByPlayListId(dbPlaylist.id).first()
         assertEquals(1, storedChannels.size)
 
@@ -266,6 +242,13 @@ class EPGDatabaseTest {
         return object : tss.t.tsiptv.core.network.NetworkClient {
             override suspend fun get(url: String, headers: Map<String, String>): String {
                 throw UnsupportedOperationException("Not used in this test")
+            }
+
+            override suspend fun getManualGzipIfNeed(
+                url: String,
+                headers: Map<String, String>,
+            ): String {
+                TODO("Not yet implemented")
             }
 
             override suspend fun post(url: String, body: String, headers: Map<String, String>): String {

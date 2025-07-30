@@ -1,7 +1,6 @@
 package tss.t.tsiptv.ui.screens.home.homeiptvlist
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -40,9 +39,6 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
-import androidx.compose.material3.pulltorefresh.pullToRefresh
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,10 +50,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.text.font.FontWeight
@@ -71,9 +65,13 @@ import androidx.navigation.NavHostController
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.home_search_placeholder
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
+import tss.t.tsiptv.core.parser.IPTVProgram
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
@@ -93,7 +91,7 @@ import tss.t.tsiptv.ui.widgets.SearchWidget
 
 
 /**
- * Home feed screen showing the list of channels
+ * Home feed screen showing the list of channel
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -144,17 +142,8 @@ fun HomeFeedScreen(
     }
     val mediaItem by playerViewModel.mediaItemState.collectAsStateWithLifecycle()
     var showMiniPlayer by remember { mutableStateOf(false) }
-
-    var isRefreshing by remember {
-        mutableStateOf(false)
-    }
-    val state = rememberPullToRefreshState()
     var searchOffset by remember {
         mutableStateOf(0)
-    }
-
-    LaunchedEffect(homeUiState.isLoading) {
-        isRefreshing = false
     }
 
     LaunchedEffect(Unit) {
@@ -237,7 +226,7 @@ fun HomeFeedScreen(
                         .padding(horizontal = 16.dp)
                         .padding(top = 16.dp),
                     initText = homeUiState.searchText,
-                    placeholder = "Search channels, shows...",
+                    placeholder = stringResource(Res.string.home_search_placeholder),
                     onValueChange = {
                         onHomeEvent(HomeEvent.OnSearchKeyChange(it))
                     },
@@ -363,6 +352,7 @@ fun HomeFeedScreen(
                     contentPadding = contentPadding,
                     onHomeEvent = onHomeEvent,
                     mediaItem = mediaItem,
+                    program = homeUiState.currentProgram,
                     hazeState = hazeState,
                     playerViewModel = playerViewModel,
                     onHideMiniPlayer = {
@@ -393,6 +383,7 @@ private fun BoxScope.HomeMiniPlayer(
     onHomeEvent: (HomeEvent) -> Unit,
     mediaItem: MediaItem,
     hazeState: HazeState,
+    program: IPTVProgram?,
     playerViewModel: PlayerViewModel,
     onHideMiniPlayer: () -> Unit,
 ) {
@@ -456,7 +447,7 @@ private fun BoxScope.HomeMiniPlayer(
                     fontSize = 16.sp
                 )
                 Text(
-                    text = mediaItem.id,
+                    text = program?.title ?: mediaItem.id,
                     color = TSColors.TextSecondaryLight,
                     fontWeight = FontWeight.Normal,
                     fontSize = 13.sp,
@@ -479,27 +470,4 @@ private fun BoxScope.HomeMiniPlayer(
             )
         }
     }
-}
-
-private fun DrawScope.drawShimmerEffect(
-    shimmerOffset: Float,
-    canvasWidth: Float,
-) {
-    val shimmerWidth = canvasWidth * 0.3f
-    val startX = canvasWidth * shimmerOffset - shimmerWidth
-    val shimmerX = (canvasWidth + shimmerWidth) * shimmerOffset - shimmerWidth
-
-    val shimmerGradient = Brush.horizontalGradient(
-        colors = listOf(
-            TSColors.White.copy(0f),
-            TSColors.White.copy(0.1f),
-            TSColors.White.copy(0.15f),
-            TSColors.White.copy(0.1f),
-            TSColors.White.copy(0.0f),
-        ),
-        startX = startX,
-        endX = shimmerX + shimmerWidth
-    )
-
-    drawRect(brush = shimmerGradient)
 }
