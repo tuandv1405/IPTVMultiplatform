@@ -1,12 +1,20 @@
 package tss.t.tsiptv.core.parser
 
-import kotlin.math.min
+import tss.t.tsiptv.core.network.KtorNetworkClient
+import tss.t.tsiptv.core.network.NetworkClientFactory
+import tss.t.tsiptv.core.parser.iptv.iptvorg.IptvOrgParser
+import tss.t.tsiptv.core.parser.iptv.m3u.M3UParser
 
 /**
  * Interface for parsing IPTV playlists.
  * This is a platform-independent interface that will have implementations for different formats.
  */
 interface IPTVParser {
+
+    fun parseFromUrl(url: String): IPTVPlaylist {
+        throw IllegalStateException("Not implement yet")
+    }
+
     /**
      * Parses an IPTV playlist from a string.
      *
@@ -31,6 +39,7 @@ enum class IPTVFormat {
     M3U,
     XML,
     JSON,
+    JSON_IPTV_ORG,
     XSPF,
     UNKNOWN
 }
@@ -142,6 +151,11 @@ object IPTVParserFactory {
             IPTVFormat.XML -> XMLParser()
             IPTVFormat.JSON -> JSONParser()
             IPTVFormat.XSPF -> XSPFParser()
+            IPTVFormat.JSON_IPTV_ORG -> IptvOrgParser(
+                "",
+                NetworkClientFactory.get().getNetworkClient()
+            )
+
             IPTVFormat.UNKNOWN -> throw IllegalArgumentException("Unknown format")
         }
     }

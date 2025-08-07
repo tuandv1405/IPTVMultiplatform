@@ -86,9 +86,9 @@ fun SearchWidget(
             errorBorderColor = TSColors.ErrorRed,
             disabledBorderColor = Color(0xFF333333),
             focusedLabelColor = TSColors.TextPrimary,
-            disabledContainerColor = TSColors.TextGray,
-            focusedContainerColor = TSColors.BackgroundColor,
-            unfocusedContainerColor = TSColors.BackgroundColor
+            disabledContainerColor = TSColors.Transparent,
+            focusedContainerColor = TSColors.Transparent,
+            unfocusedContainerColor = TSColors.Transparent
         ),
         shape = TSShapes.roundedShape12,
         placeholder = {

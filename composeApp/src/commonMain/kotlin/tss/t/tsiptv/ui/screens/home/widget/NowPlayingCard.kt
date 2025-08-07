@@ -67,9 +67,16 @@ fun NowPlayingCard(
         channelWithHistory.getChannel()
     }
     val platformContext = LocalPlatformContext.current
-
-    Box(
+    Column(
         modifier = modifier
+            .clickable(onClick = {
+                if (!isPlaying) {
+                    onHomeEvent(HomeEvent.OnOpenVideoPlayer(channel))
+                } else {
+                    onHomeEvent(HomeEvent.OnResumeMediaItem(channel.toMediaItem()))
+                }
+            })
+            .fillMaxWidth()
             .clip(TSShapes.roundedShape16)
             .background(
                 brush = Brush.horizontalGradient(
@@ -80,104 +87,98 @@ fun NowPlayingCard(
                 ),
                 shape = TSShapes.roundedShape16
             )
-            .clickable(onClick = {
-                if (!isPlaying) {
-                    onHomeEvent(HomeEvent.OnOpenVideoPlayer(channel))
-                } else {
-                    onHomeEvent(HomeEvent.OnResumeMediaItem(channel.toMediaItem()))
-                }
-            }),
+            .padding(16.dp),
     ) {
-        AsyncImage(
-            modifier = Modifier
-                .padding(top = 10.dp, end = 10.dp)
-                .align(Alignment.TopEnd)
-                .width(128.dp)
-                .aspectRatio(16f / 9)
-                .clip(TSShapes.roundedShape8),
-            model = ImageRequest.Builder(context = platformContext)
-                .data(channel.logoUrl)
-                .crossfade(200)
-                .build(),
-            contentDescription = stringResource(Res.string.now_playing_title),
-        )
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = stringResource(Res.string.now_playing_title),
-                color = TSColors.TextPrimary,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+            Column {
+                Text(
+                    text = stringResource(Res.string.now_playing_title),
+                    color = TSColors.TextPrimary,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = channel.name,
+                    color = TSColors.TextSecondaryLight,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Normal,
+                    lineHeight = 14.sp
+                )
+
+            }
+
+            AsyncImage(
+                modifier = Modifier
+                    .width(128.dp)
+                    .aspectRatio(16f / 9)
+                    .clip(TSShapes.roundedShape8),
+                model = ImageRequest.Builder(context = platformContext)
+                    .data(channel.logoUrl)
+                    .crossfade(200)
+                    .build(),
+                contentDescription = stringResource(Res.string.now_playing_title),
             )
+        }
+        Spacer(Modifier.height(16.dp))
 
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = channel.name,
-                color = TSColors.TextSecondaryLight,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Normal,
-                lineHeight = 14.sp
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier.size(56.dp)
-                        .clip(CircleShape)
-                        .background(TSColors.White.copy(0.2f), CircleShape)
-                        .clickable(onClick = {
-                            if (!isPlaying) {
-                                onHomeEvent(HomeEvent.OnPlayNowPlaying(channel))
-                            } else {
-                                onHomeEvent(HomeEvent.OnPauseNowPlaying(channel))
-                            }
-                        }),
-                ) {
-                    AnimatedContent(isPlaying) { isPlaying ->
-                        if (isPlaying) {
-                            Icon(
-                                Icons.Rounded.Pause,
-                                contentDescription = stringResource(Res.string.play),
-                                tint = Color.White,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(14.dp)
-                            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(56.dp)
+                    .clip(CircleShape)
+                    .background(TSColors.White.copy(0.2f), CircleShape)
+                    .clickable(onClick = {
+                        if (!isPlaying) {
+                            onHomeEvent(HomeEvent.OnPlayNowPlaying(channel))
                         } else {
-                            Icon(
-                                Icons.Rounded.PlayArrow,
-                                contentDescription = stringResource(Res.string.pause),
-                                tint = Color.White,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(14.dp)
-                            )
+                            onHomeEvent(HomeEvent.OnPauseNowPlaying(channel))
                         }
-                    }
-                }
-                Spacer(Modifier.width(16.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    currentProgram?.title?.let {
-                        Text(
-                            text = it,
-                            style = TSTextStyles.semiBold13
+                    }),
+            ) {
+                AnimatedContent(isPlaying) { isPlaying ->
+                    if (isPlaying) {
+                        Icon(
+                            Icons.Rounded.Pause,
+                            contentDescription = stringResource(Res.string.play),
+                            tint = Color.White,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(14.dp)
                         )
-                        Spacer(Modifier.height(2.dp))
+                    } else {
+                        Icon(
+                            Icons.Rounded.PlayArrow,
+                            contentDescription = stringResource(Res.string.pause),
+                            tint = Color.White,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(14.dp)
+                        )
                     }
-
-                    Text(
-                        text = channelWithHistory.lastPlayedTimestamp.formatToday(),
-                        style = TSTextStyles.normal13
-                    )
                 }
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                currentProgram?.title?.let {
+                    Text(
+                        text = it,
+                        style = TSTextStyles.semiBold13
+                    )
+                    Spacer(Modifier.height(2.dp))
+                }
+
+                Text(
+                    text = channelWithHistory.lastPlayedTimestamp.formatToday(),
+                    style = TSTextStyles.normal13
+                )
             }
         }
     }

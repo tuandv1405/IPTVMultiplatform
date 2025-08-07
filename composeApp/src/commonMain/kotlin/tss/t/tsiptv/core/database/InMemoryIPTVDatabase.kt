@@ -3,6 +3,7 @@ package tss.t.tsiptv.core.database
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.model.Category
@@ -127,12 +128,19 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     override suspend fun deletePlaylistById(id: String) {
         playlists.value = playlists.value - id
     }
+
     override suspend fun deleteChannelsInPlaylist(playlistId: String) {
         channels.value = channels.value.filterNot { it.value.playlistId == playlistId }
     }
 
     override fun getAllPrograms(): Flow<List<IPTVProgram>> {
         return programs.map { it.values.toList() }
+    }
+
+    override suspend fun countValidPrograms(playlistId: String): Int {
+        return programs.map {
+            it.values.toList()
+        }.toCollection(mutableListOf()).size
     }
 
     override suspend fun getProgramById(id: String): IPTVProgram? {
@@ -148,10 +156,10 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         startTime: Long,
         endTime: Long,
     ): List<IPTVProgram> {
-        return programs.value.values.filter { 
-            it.channelId == channelId && 
-            it.startTime >= startTime && 
-            it.endTime <= endTime 
+        return programs.value.values.filter {
+            it.channelId == channelId &&
+                    it.startTime >= startTime &&
+                    it.endTime <= endTime
         }
     }
 
@@ -159,9 +167,9 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         channelId: String,
         currentTime: Long,
     ): List<IPTVProgram> {
-        return programs.value.values.filter { 
-            it.channelId == channelId && 
-            it.endTime > currentTime 
+        return programs.value.values.filter {
+            it.channelId == channelId &&
+                    it.endTime > currentTime
         }.sortedBy { it.startTime }
     }
 
@@ -169,10 +177,10 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         channelId: String,
         currentTime: Long,
     ): IPTVProgram? {
-        return programs.value.values.find { 
-            it.channelId == channelId && 
-            it.startTime <= currentTime && 
-            it.endTime > currentTime 
+        return programs.value.values.find {
+            it.channelId == channelId &&
+                    it.startTime <= currentTime &&
+                    it.endTime > currentTime
         }
     }
 
@@ -198,8 +206,10 @@ class InMemoryIPTVDatabase : IPTVDatabase {
 
     override suspend fun deleteProgramsForPlaylist(playlistId: String) {
         // Since IPTVProgram doesn't have playlistId, we need to find programs by channels in the playlist
-        val channelsInPlaylist = channels.value.values.filter { it.playlistId == playlistId }.map { it.id }
-        programs.value = programs.value.filterNot { channelsInPlaylist.contains(it.value.channelId) }
+        val channelsInPlaylist =
+            channels.value.values.filter { it.playlistId == playlistId }.map { it.id }
+        programs.value =
+            programs.value.filterNot { channelsInPlaylist.contains(it.value.channelId) }
     }
 
     override suspend fun clearAllData() {
@@ -242,7 +252,7 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         channelId: String,
         playlistId: String,
         additionalTimeMs: Long,
-        timestamp: Long
+        timestamp: Long,
     ) {
         val key = "${channelId}_${playlistId}"
         val currentHistory = channelHistory.value

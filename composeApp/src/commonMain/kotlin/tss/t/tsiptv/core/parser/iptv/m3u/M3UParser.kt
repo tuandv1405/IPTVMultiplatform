@@ -1,4 +1,11 @@
-package tss.t.tsiptv.core.parser
+package tss.t.tsiptv.core.parser.iptv.m3u
+
+import tss.t.tsiptv.core.parser.IPTVChannel
+import tss.t.tsiptv.core.parser.IPTVFormat
+import tss.t.tsiptv.core.parser.IPTVGroup
+import tss.t.tsiptv.core.parser.IPTVParser
+import tss.t.tsiptv.core.parser.IPTVParserException
+import tss.t.tsiptv.core.parser.IPTVPlaylist
 
 /**
  * Implementation of IPTVParser for M3U format.
@@ -125,5 +132,4 @@ class M3UParser : IPTVParser {
         }
         return null
     }
-
 }

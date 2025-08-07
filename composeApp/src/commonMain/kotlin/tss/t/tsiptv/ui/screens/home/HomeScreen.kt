@@ -113,6 +113,10 @@ fun HomeScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        onHomeEvent(HomeEvent.RefreshEpgIfNeed)
+    }
+
     Scaffold(
         bottomBar = {
             Box(Modifier.height(56.dp))

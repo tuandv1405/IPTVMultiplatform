@@ -5,9 +5,10 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.Playlist
-import tss.t.tsiptv.core.parser.IPTVProgram
+import tss.t.tsiptv.core.network.DownloadProgress
+import tss.t.tsiptv.core.network.UploadProgress
 import tss.t.tsiptv.core.parser.IPTVParserService
-import tss.t.tsiptv.core.parser.M3UParser
+import tss.t.tsiptv.core.parser.iptv.m3u.M3UParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -263,7 +264,7 @@ class EPGDatabaseTest {
                 throw UnsupportedOperationException("Not used in this test")
             }
 
-            override suspend fun downloadFile(url: String, headers: Map<String, String>): kotlinx.coroutines.flow.Flow<tss.t.tsiptv.core.network.DownloadProgress> {
+            override suspend fun downloadFile(url: String, headers: Map<String, String>): kotlinx.coroutines.flow.Flow<DownloadProgress> {
                 throw UnsupportedOperationException("Not used in this test")
             }
 
@@ -273,7 +274,7 @@ class EPGDatabaseTest {
                 fileName: String,
                 mimeType: String,
                 headers: Map<String, String>
-            ): kotlinx.coroutines.flow.Flow<tss.t.tsiptv.core.network.UploadProgress> {
+            ): kotlinx.coroutines.flow.Flow<UploadProgress> {
                 throw UnsupportedOperationException("Not used in this test")
             }
         }

@@ -51,15 +51,3 @@ class IosNetworkClientProvider : NetworkClientProvider {
     }
 }
 
-/**
- * iOS implementation of NetworkClientFactory.
- */
-actual object NetworkClientFactory {
-    /**
-     * Creates an iOS-specific NetworkClientProvider.
-     * @return A NetworkClientProvider instance for iOS.
-     */
-    actual fun create(): NetworkClientProvider {
-        return IosNetworkClientProvider()
-    }
-}

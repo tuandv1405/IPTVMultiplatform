@@ -3,19 +3,14 @@ package tss.t.tsiptv.core.database
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
-import tss.t.tsiptv.core.database.entity.CategoryEntity
 import tss.t.tsiptv.core.database.entity.ChannelAttributeEntity
-import tss.t.tsiptv.core.database.entity.ChannelEntity
 import tss.t.tsiptv.core.database.entity.ChannelHistoryEntity
 import tss.t.tsiptv.core.database.entity.ChannelWithHistory
-import tss.t.tsiptv.core.database.entity.PlaylistEntity
-import tss.t.tsiptv.core.database.entity.ProgramEntity
 import tss.t.tsiptv.core.database.entity.toCategory
 import tss.t.tsiptv.core.database.entity.toCategoryEntity
 import tss.t.tsiptv.core.database.entity.toChannel
 import tss.t.tsiptv.core.database.entity.toChannelEntity
 import tss.t.tsiptv.core.database.entity.toChannelHistory
-import tss.t.tsiptv.core.database.entity.toChannelHistoryEntity
 import tss.t.tsiptv.core.database.entity.toPlaylist
 import tss.t.tsiptv.core.database.entity.toPlaylistEntity
 import tss.t.tsiptv.core.database.entity.toIPTVProgram
@@ -26,7 +21,6 @@ import tss.t.tsiptv.core.model.ChannelHistory
 import tss.t.tsiptv.core.model.Playlist
 import tss.t.tsiptv.core.parser.IPTVProgram
 import tss.t.tsiptv.core.network.NetworkClient
-import tss.t.tsiptv.core.parser.IPTVFormat
 import tss.t.tsiptv.core.parser.IPTVParserFactory
 import kotlin.time.Duration.Companion.days
 
@@ -239,6 +233,11 @@ class RoomIPTVDatabase(
         }
     }
 
+    override suspend fun countValidPrograms(playlistId: String): Int {
+        val timestamp = Clock.System.now().toEpochMilliseconds()
+        return programDao.countValidPrograms(playlistId, timestamp)
+    }
+
     override suspend fun getProgramById(id: String): IPTVProgram? {
         return programDao.getProgramById(id)?.toIPTVProgram()
     }
@@ -319,7 +318,7 @@ class RoomIPTVDatabase(
         channelId: String,
         playlistId: String,
         additionalTimeMs: Long,
-        timestamp: Long
+        timestamp: Long,
     ) {
         channelHistoryDao.updatePlayedTime(channelId, playlistId, additionalTimeMs, timestamp)
     }
@@ -329,9 +328,15 @@ class RoomIPTVDatabase(
         playlistId: String,
         currentPositionMs: Long,
         totalDurationMs: Long,
-        timestamp: Long
+        timestamp: Long,
     ) {
-        channelHistoryDao.updatePositionAndDuration(channelId, playlistId, currentPositionMs, totalDurationMs, timestamp)
+        channelHistoryDao.updatePositionAndDuration(
+            channelId,
+            playlistId,
+            currentPositionMs,
+            totalDurationMs,
+            timestamp
+        )
     }
 
     override fun getAllPlayedChannelsInPlaylist(playlistId: String): Flow<List<ChannelHistory>> {

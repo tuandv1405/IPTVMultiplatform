@@ -1,6 +1,5 @@
 package tss.t.tsiptv.core.network
 
-import android.content.Context
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.compression.ContentEncoding
@@ -16,7 +15,7 @@ import java.util.concurrent.TimeUnit
  * OkHttp is a widely used HTTP client for Android that provides efficient connection pooling,
  * transparent GZIP compression, and response caching.
  */
-class OkHttpKtorNetworkClient(context: Context) : KtorNetworkClient() {
+class OkHttpKtorNetworkClient() : KtorNetworkClient() {
 
     /**
      * The Ktor HttpClient instance configured with OkHttp engine.

@@ -188,6 +188,8 @@ interface IPTVDatabase {
      */
     fun getAllPrograms(): Flow<List<IPTVProgram>>
 
+    suspend fun countValidPrograms(playlistId: String): Int
+
     /**
      * Gets a program by ID.
      *

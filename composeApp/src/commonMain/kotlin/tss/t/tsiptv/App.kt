@@ -42,6 +42,7 @@ import tss.t.tsiptv.core.language.LocalAppLocale
 import tss.t.tsiptv.core.language.LocaleManager
 import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.repository.IHistoryRepository
+import tss.t.tsiptv.core.storage.KeyValueStorage
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.navigation.navigateAndRemoveFromBackStack
@@ -212,12 +213,14 @@ fun App() {
                         val hazeState = rememberHazeState()
                         val historyRepository = koinInject<IHistoryRepository>()
                         val historyTracker = koinInject<ChannelHistoryTracker>()
+                        val keyValueStorage = koinInject<KeyValueStorage>()
                         val homeViewModel = viewModel<HomeViewModel>(viewModelStoreOwner) {
                             HomeViewModel(
                                 iptvDatabase = database,
                                 networkClient = networkClient,
                                 historyRepository = historyRepository,
-                                historyTracker = historyTracker
+                                historyTracker = historyTracker,
+                                keyValueStorage = keyValueStorage
                             )
                         }
                         val homeUIState by homeViewModel.uiState.collectAsState()
@@ -268,12 +271,14 @@ fun App() {
                         val mediaItem by playerViewModel.mediaItemState.collectAsState()
                         val historyRepository = koinInject<IHistoryRepository>()
                         val historyTracker = koinInject<ChannelHistoryTracker>()
+                        val keyValueStorage = koinInject<KeyValueStorage>()
                         val homeViewModel = viewModel<HomeViewModel>(viewModelStoreOwner) {
                             HomeViewModel(
                                 iptvDatabase = database,
                                 networkClient = networkClient,
                                 historyRepository = historyRepository,
-                                historyTracker = historyTracker
+                                historyTracker = historyTracker,
+                                keyValueStorage = keyValueStorage
                             )
                         }
                         val homeUIState by homeViewModel.uiState.collectAsStateWithLifecycle()
@@ -290,6 +295,7 @@ fun App() {
                         ) { event ->
                             if (event is PlayerEvent.PlayIptv) {
                                 homeViewModel.getRelatedChannels(event.iptvChannel)
+                                homeViewModel.loadProgramForChannel(event.iptvChannel)
                             }
 
                             if (event is PlayerEvent.PlayIptv ||
@@ -312,12 +318,14 @@ fun App() {
                         val networkClient = koinInject<NetworkClient>()
                         val historyRepository = koinInject<IHistoryRepository>()
                         val historyTracker = koinInject<ChannelHistoryTracker>()
+                        val keyValueStorage = koinInject<KeyValueStorage>()
                         val homeViewModel = viewModel<HomeViewModel>(viewModelStoreOwner) {
                             HomeViewModel(
                                 iptvDatabase = database,
                                 networkClient = networkClient,
                                 historyRepository = historyRepository,
-                                historyTracker = historyTracker
+                                historyTracker = historyTracker,
+                                keyValueStorage = keyValueStorage
                             )
                         }
                         val homeUIState by homeViewModel.uiState.collectAsState()

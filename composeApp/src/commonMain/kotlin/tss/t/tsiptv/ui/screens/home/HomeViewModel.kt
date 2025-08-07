@@ -25,13 +25,17 @@ import tss.t.tsiptv.core.parser.EPGParserFactory
 import tss.t.tsiptv.core.parser.IPTVParserFactory
 import tss.t.tsiptv.core.parser.IPTVProgram
 import tss.t.tsiptv.core.repository.IHistoryRepository
+import tss.t.tsiptv.core.storage.KeyValueStorage
 import tss.t.tsiptv.player.models.MediaItem
+import tss.t.tsiptv.utils.isToday
+import kotlin.time.ExperimentalTime
 
 class HomeViewModel(
     private val iptvDatabase: IPTVDatabase,
     private val networkClient: NetworkClient,
     private val historyRepository: IHistoryRepository,
     private val historyTracker: ChannelHistoryTracker,
+    private val keyValueStorage: KeyValueStorage,
 ) : ViewModel() {
 
     private var _currentListChannel: List<Channel> = emptyList()
@@ -186,16 +190,39 @@ class HomeViewModel(
         }
     }
 
+    @OptIn(ExperimentalTime::class)
+    fun refreshEpg() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val currentPlayList = _uiState.value.playListId ?: return@launch
+            val currPlaylist = iptvDatabase.getPlaylistById(currentPlayList)
+            if (currPlaylist == null) {
+                return@launch
+            }
+            val lastFetchEpgSuccess = keyValueStorage.getLong(
+                key = currentPlayList,
+                defaultValue = 0L
+            )
+            if (lastFetchEpgSuccess.isToday()) {
+                return@launch
+            }
+            val validCount = iptvDatabase.countValidPrograms(currentPlayList)
+            if (validCount > 0) {
+                return@launch
+            }
+            parsePlaylistEpg(
+                playListId = currPlaylist.id,
+                playListEpgUrl = currPlaylist.epgUrl
+            )
+        }
+    }
+
     /**
      * Refresh the channel for a specific IPTV source
      *
      * @param playlistId The ID of the playlist to refresh
      */
     fun refreshIPTVChannel(playlistId: String) {
-        viewModelScope.launch {
-            _uiState.update {
-                it.copy()
-            }
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val currPlaylist = iptvDatabase.getPlaylistById(playlistId)
                 if (currPlaylist == null) {
@@ -266,9 +293,9 @@ class HomeViewModel(
             )
             val epgParser = EPGParserFactory.createParserForContent(content)
             val epg = epgParser.parse(content)
-            println(epg.size)
             iptvDatabase.deleteProgramsForPlaylist(playListId)
             iptvDatabase.insertPrograms(epg, playListId)
+            keyValueStorage.putLong(playListId, Clock.System.now().toEpochMilliseconds())
         }
     }
 
@@ -363,7 +390,8 @@ class HomeViewModel(
                             listChannels = searchWithFilter(
                                 searchKey = uiState.value.searchText,
                                 category = null
-                            )
+                            ),
+                            selectedCategory = null
                         )
                     }
                 }
@@ -415,6 +443,10 @@ class HomeViewModel(
                         )
                     }
                 }
+            }
+
+            HomeEvent.RefreshEpgIfNeed -> {
+                refreshEpg()
             }
 
             else -> {}
@@ -593,4 +625,5 @@ sealed interface HomeEvent {
     data class OnPauseNowPlaying(val channel: Channel) : HomeEvent {}
 
     data object LoadHistory : HomeEvent {}
+    data object RefreshEpgIfNeed : HomeEvent
 }

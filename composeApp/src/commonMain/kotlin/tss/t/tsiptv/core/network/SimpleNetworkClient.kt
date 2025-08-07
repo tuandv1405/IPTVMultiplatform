@@ -1,5 +1,6 @@
 package tss.t.tsiptv.core.network
 
+import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -8,6 +9,7 @@ import kotlinx.coroutines.flow.flow
  * This implementation doesn't actually make network requests, but provides a basic structure
  * that can be extended by platform-specific implementations.
  */
+@VisibleForTesting
 class SimpleNetworkClient : NetworkClient {
     override suspend fun get(url: String, headers: Map<String, String>): String {
         // Placeholder implementation
@@ -36,7 +38,10 @@ class SimpleNetworkClient : NetworkClient {
         return "DELETE response from $url"
     }
 
-    override suspend fun downloadFile(url: String, headers: Map<String, String>): Flow<DownloadProgress> = flow {
+    override suspend fun downloadFile(
+        url: String,
+        headers: Map<String, String>,
+    ): Flow<DownloadProgress> = flow {
         // Simulate download progress
         val totalBytes = 1000L
 
@@ -59,7 +64,7 @@ class SimpleNetworkClient : NetworkClient {
         fileBytes: ByteArray,
         fileName: String,
         mimeType: String,
-        headers: Map<String, String>
+        headers: Map<String, String>,
     ): Flow<UploadProgress> = flow {
         // Simulate upload progress
         val totalBytes = fileBytes.size.toLong()

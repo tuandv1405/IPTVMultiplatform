@@ -15,7 +15,7 @@ import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.network.NetworkClientFactory
 import tss.t.tsiptv.core.parser.IPTVParserService
 import tss.t.tsiptv.core.parser.JSONParser
-import tss.t.tsiptv.core.parser.M3UParser
+import tss.t.tsiptv.core.parser.iptv.m3u.M3UParser
 import tss.t.tsiptv.core.parser.XMLParser
 import tss.t.tsiptv.core.parser.XMLEPGParser
 import tss.t.tsiptv.core.parser.JSONEPGParser

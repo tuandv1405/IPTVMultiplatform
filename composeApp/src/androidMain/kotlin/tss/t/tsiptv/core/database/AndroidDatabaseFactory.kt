@@ -1,12 +1,7 @@
 package tss.t.tsiptv.core.database
 
 import android.app.Application
-import android.content.Context
-import androidx.room.Room
-import tss.t.tsiptv.TSAndroidApplication
-import tss.t.tsiptv.core.network.AndroidNetworkClientProvider
 import tss.t.tsiptv.core.network.NetworkClient
-import tss.t.tsiptv.core.network.NetworkClientFactory
 
 /**
  * Android implementation of DatabaseFactory.

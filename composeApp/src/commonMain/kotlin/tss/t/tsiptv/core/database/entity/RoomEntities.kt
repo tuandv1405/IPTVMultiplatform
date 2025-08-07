@@ -178,12 +178,6 @@ data class ProgramEntity(
     tableName = "channel_history",
     foreignKeys = [
         ForeignKey(
-            entity = ChannelEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["channelId"],
-            onDelete = ForeignKey.CASCADE
-        ),
-        ForeignKey(
             entity = PlaylistEntity::class,
             parentColumns = ["id"],
             childColumns = ["playlistId"],

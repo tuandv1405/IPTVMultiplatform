@@ -27,6 +27,7 @@
     <string name="continue_watching">Continue Watching</string>
     <string name="last_hour">Last Hour</string>
     <string name="now">Now</string>
+    <string name="hello_format">Hello%1$s</string>
 
     <!-- Settings -->
     <string name="language_settings">Language Settings</string>

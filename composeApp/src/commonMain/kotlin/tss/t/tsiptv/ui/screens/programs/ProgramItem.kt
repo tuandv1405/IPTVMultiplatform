@@ -60,7 +60,7 @@ fun ProgramItem(
             BasicText(
                 text = program.startTimeStr!! + "-" + program.endTimeStr,
                 style = TSTextStyles.semiBold13.copy(TSColors.TextSecondary),
-                modifier = Modifier.width(100.dp),
+                modifier = Modifier.width(85.dp),
                 autoSize = TextAutoSize.StepBased(
                     minFontSize = 9.sp,
                     maxFontSize = 13.sp

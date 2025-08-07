@@ -21,6 +21,11 @@ interface ProgramDao {
     @Query("SELECT * FROM programs")
     fun getAllPrograms(): Flow<List<ProgramEntity>>
 
+    @Query("SELECT COUNT(*) FROM programs WHERE " +
+            "playlistId == :playListId AND " +
+            "(startTime <= :timeStamp OR endTime <= :timeStamp)")
+    suspend fun countValidPrograms(playListId: String, timeStamp: Long): Int
+
     /**
      * Gets a program by ID.
      *

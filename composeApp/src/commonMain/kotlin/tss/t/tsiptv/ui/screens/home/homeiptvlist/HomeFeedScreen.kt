@@ -1,5 +1,6 @@
 package tss.t.tsiptv.ui.screens.home.homeiptvlist
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -8,9 +9,11 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,6 +71,7 @@ import dev.chrisbanes.haze.hazeSource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.hello_format
 import tsiptv.composeapp.generated.resources.home_search_placeholder
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
@@ -107,9 +111,6 @@ fun HomeFeedScreen(
     val scrollState = rememberLazyListState()
     val authState = LocalAuthProvider.current
 
-    val helloTitle = remember(authState) {
-        "Hello${authState?.user?.displayName?.let { " $it" } ?: ""}"
-    }
     val name = remember(authState) {
         authState?.user?.email ?: ""
     }
@@ -150,7 +151,7 @@ fun HomeFeedScreen(
         snapshotFlow { scrollState.layoutInfo.visibleItemsInfo to isEmpty }
             .collect { layoutInfo ->
                 val isEmpty = layoutInfo.second
-                if (isEmpty) {
+                if (isEmpty && showStickyHeader) {
                     showStickyHeader = false
                     return@collect
                 }
@@ -166,7 +167,7 @@ fun HomeFeedScreen(
                         }?.let {
                             showStickyHeader = it
                         }
-                } else {
+                } else if (!homeUiState.isLoading) {
                     showStickyHeader = true
                 }
             }
@@ -201,7 +202,9 @@ fun HomeFeedScreen(
                         .hazeEffect(hazeState)
                         .statusBarsPadding()
                         .padding(horizontal = 20.dp, vertical = 16.dp),
-                    helloTitle = helloTitle,
+                    helloTitle = stringResource(
+                        Res.string.hello_format,
+                        authState?.user?.displayName?.let { " $it" } ?: ""),
                     name = name,
                     notificationCount = 10,
                     onSettingClick = {
@@ -224,7 +227,7 @@ fun HomeFeedScreen(
                         .background(TSColors.BackgroundColor)
                         .hazeEffect(hazeState)
                         .padding(horizontal = 16.dp)
-                        .padding(top = 16.dp),
+                        .padding(vertical = 16.dp),
                     initText = homeUiState.searchText,
                     placeholder = stringResource(Res.string.home_search_placeholder),
                     onValueChange = {
@@ -234,130 +237,146 @@ fun HomeFeedScreen(
                         onHomeEvent(HomeEvent.OnSearchKeyChange(""))
                     }
                 )
-
-                AnimatedVisibility(showStickyHeader) {
-                    if (showStickyHeader) {
-                        CategoryRow(
-                            homeUiState = homeUiState,
-                            modifier = Modifier.fillMaxWidth()
-                                .background(TSColors.BackgroundColor)
-                                .hazeEffect(hazeState)
-                                .padding(vertical = 12.dp),
-                            onHomeEvent = onHomeEvent,
-                            listState = categoryListState
-                        )
-                    }
-                }
             }
         },
         content = {
-            if (isInitLoading) {
-                val infiniteTransition = rememberInfiniteTransition(label = "liquidGlass")
-                val shimmerColor by infiniteTransition.animateFloat(
-                    initialValue = 0.1f,
-                    targetValue = 0.15f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(2_000, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "liquidFlow"
-                )
-
-                Column(
-                    modifier = Modifier
-                        .padding(top = it.calculateTopPadding())
-                        .fillMaxSize(),
-                ) {
-                    repeat(2) {
-                        Box(
-                            modifier = Modifier.padding(16.dp)
-                                .fillMaxWidth()
-                                .height(100.dp)
-                                .clip(TSShapes.roundedShape12)
-                                .background(
-                                    TSColors.White.copy(alpha = shimmerColor),
-                                    TSShapes.roundedShape12
-                                )
-                                .blur(20.dp)
+            AnimatedContent(
+                modifier = Modifier
+                    .fillMaxSize(),
+                targetState = isInitLoading,
+                transitionSpec = {
+                    fadeIn(
+                        animationSpec = tween(220, delayMillis = 90)
+                    ).togetherWith(
+                        exit = fadeOut(
+                            animationSpec = tween(90)
+                        )
+                    )
+                }
+            ) { targetState ->
+                if (targetState) {
+                    if (isInitLoading) {
+                        val infiniteTransition = rememberInfiniteTransition(label = "liquidGlass")
+                        val shimmerColor by infiniteTransition.animateFloat(
+                            initialValue = 0.1f,
+                            targetValue = 0.15f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(2_000, easing = LinearEasing),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "liquidFlow"
                         )
 
-                        Box(
-                            modifier = Modifier.padding(16.dp)
-                                .fillMaxWidth()
-                                .height(150.dp)
-                                .clip(TSShapes.roundedShape12)
-                                .blur(20.dp)
-                                .background(
-                                    TSColors.White.copy(alpha = shimmerColor),
-                                    TSShapes.roundedShape12
+                        Column(
+                            modifier = Modifier
+                                .padding(top = it.calculateTopPadding())
+                                .fillMaxSize(),
+                        ) {
+                            repeat(2) {
+                                Box(
+                                    modifier = Modifier.padding(16.dp)
+                                        .fillMaxWidth()
+                                        .height(100.dp)
+                                        .clip(TSShapes.roundedShape12)
+                                        .background(
+                                            TSColors.White.copy(alpha = shimmerColor),
+                                            TSShapes.roundedShape12
+                                        )
+                                        .blur(20.dp)
                                 )
+
+                                Box(
+                                    modifier = Modifier.padding(16.dp)
+                                        .fillMaxWidth()
+                                        .height(150.dp)
+                                        .clip(TSShapes.roundedShape12)
+                                        .blur(20.dp)
+                                        .background(
+                                            TSColors.White.copy(alpha = shimmerColor),
+                                            TSShapes.roundedShape12
+                                        )
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Box {
+                        LazyColumn(
+                            state = scrollState,
+                            modifier = Modifier.fillMaxSize()
+                                .hazeSource(hazeState),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+
+                            item("HomeSpaceTop") {
+                                Spacer(Modifier.height(it.calculateTopPadding()))
+                            }
+
+                            when {
+                                isEmpty -> {
+                                    homeEmptyIptvSource(navController, parentNavController)
+                                }
+
+                                isInitLoading -> {
+                                }
+
+                                else -> {
+                                    homeItemList(
+                                        homeUiState = homeUiState,
+                                        playerUIState = playerUIState,
+                                        onHomeEvent = onHomeEvent,
+                                        categoryListState = categoryListState
+                                    )
+                                }
+                            }
+
+                            item {
+                                Spacer(
+                                    Modifier
+                                        .navigationBarsPadding()
+                                        .height(contentPadding.calculateBottomPadding() + 12.dp)
+                                )
+                            }
+
+                            if (showMiniPlayer) {
+                                item {
+                                    Spacer(
+                                        Modifier.height(MiniPlayerHeight)
+                                    )
+                                }
+                            }
+                        }
+
+                        HomeMiniPlayer(
+                            showMiniPlayer = showMiniPlayer,
+                            contentPadding = contentPadding,
+                            onHomeEvent = onHomeEvent,
+                            mediaItem = mediaItem,
+                            program = homeUiState.currentProgram,
+                            hazeState = hazeState,
+                            playerViewModel = playerViewModel,
+                            onHideMiniPlayer = {
+                                showMiniPlayer = false
+                            }
                         )
                     }
                 }
-                return@Scaffold
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
+            AnimatedVisibility(
+                visible = showStickyHeader,
+                enter = slideInVertically { -it / 5 },
+                exit = fadeOut(tween(90))
             ) {
-                LazyColumn(
-                    state = scrollState,
-                    modifier = Modifier.fillMaxSize()
-                        .hazeSource(hazeState),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-
-                    item("HomeSpaceTop") {
-                        Spacer(Modifier.height(it.calculateTopPadding()))
-                    }
-
-                    when {
-                        isEmpty -> {
-                            homeEmptyIptvSource(navController, parentNavController)
-                        }
-
-                        isInitLoading -> {
-                        }
-
-                        else -> {
-                            homeItemList(
-                                homeUiState = homeUiState,
-                                playerUIState = playerUIState,
-                                onHomeEvent = onHomeEvent,
-                                categoryListState = categoryListState
-                            )
-                        }
-                    }
-
-                    item {
-                        Spacer(
-                            Modifier
-                                .navigationBarsPadding()
-                                .height(contentPadding.calculateBottomPadding() + 12.dp)
-                        )
-                    }
-
-                    if (showMiniPlayer) {
-                        item {
-                            Spacer(
-                                Modifier.height(MiniPlayerHeight)
-                            )
-                        }
-                    }
-                }
-
-                HomeMiniPlayer(
-                    showMiniPlayer = showMiniPlayer,
-                    contentPadding = contentPadding,
+                CategoryRow(
+                    homeUiState = homeUiState,
+                    modifier = Modifier.fillMaxWidth()
+                        .background(TSColors.BackgroundColor)
+                        .hazeEffect(hazeState)
+                        .padding(top = it.calculateTopPadding())
+                        .padding(bottom = 12.dp),
                     onHomeEvent = onHomeEvent,
-                    mediaItem = mediaItem,
-                    program = homeUiState.currentProgram,
-                    hazeState = hazeState,
-                    playerViewModel = playerViewModel,
-                    onHideMiniPlayer = {
-                        showMiniPlayer = false
-                    }
+                    listState = categoryListState
                 )
             }
         }

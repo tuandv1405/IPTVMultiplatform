@@ -18,9 +18,6 @@ class TSAndroidApplication : Application() {
         super.onCreate()
         instance = this
 
-        // Initialize NetworkClientFactory
-        NetworkClientFactory.initialize(applicationContext)
-
         // Initialize Firebase
         FirebaseApp.initializeApp(this)
 
