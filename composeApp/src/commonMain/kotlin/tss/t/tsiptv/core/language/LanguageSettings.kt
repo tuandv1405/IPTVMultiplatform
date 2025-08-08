@@ -8,7 +8,7 @@ data class LanguageSettings(
      * The language code (e.g., "en", "es", "fr", "de", "vi").
      * If null, the system default language will be used.
      */
-    val languageCode: String? = null
+    val languageCode: String? = null,
 )
 
 /**

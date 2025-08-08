@@ -1,10 +1,17 @@
 package tss.t.tsiptv
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -15,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -27,6 +35,7 @@ import androidx.navigation.toRoute
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import tsiptv.composeapp.generated.resources.Res
@@ -38,8 +47,6 @@ import tsiptv.composeapp.generated.resources.try_again
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.language.AppLocaleProvider
-import tss.t.tsiptv.core.language.LocalAppLocale
-import tss.t.tsiptv.core.language.LocaleManager
 import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.repository.IHistoryRepository
 import tss.t.tsiptv.core.storage.KeyValueStorage
@@ -71,7 +78,6 @@ import tss.t.tsiptv.utils.PlatformUtils
 fun App() {
     val networkClient = koinInject<NetworkClient>()
     val database = koinInject<IPTVDatabase>()
-    val localeManager = koinInject<LocaleManager>()
     val viewModelStoreOwner = LocalViewModelStoreOwner.current!!
     val navController = rememberNavController()
     val authRepository = koinInject<AuthRepository>()
@@ -107,11 +113,7 @@ fun App() {
         }
     }
 
-    AppLocaleProvider(
-        localeManager = localeManager,
-        authState = authState,
-        initialLanguage = LocalAppLocale.current
-    ) {
+    AppLocaleProvider {
         StreamVaultTheme {
             NavHost(
                 navController = navController,
@@ -159,7 +161,10 @@ fun App() {
                         if (isDesktop) {
                             LoginScreenDesktop2()
                         } else {
-                            LoginScreenPhone(authState) { event ->
+                            LoginScreenPhone(
+                                navController,
+                                authState
+                            ) { event ->
                                 if (event is LoginEvents.OnSignUpPressed) {
                                     navController.navigate(NavRoutes.SignUp)
                                 } else {

@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -45,6 +46,7 @@ import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.account_group_title
 import tsiptv.composeapp.generated.resources.btn_logout_cancel
 import tsiptv.composeapp.generated.resources.btn_logout_ok
+import tsiptv.composeapp.generated.resources.ic_arrow_right
 import tsiptv.composeapp.generated.resources.ic_key
 import tsiptv.composeapp.generated.resources.ic_logout
 import tsiptv.composeapp.generated.resources.ic_notification
@@ -53,15 +55,14 @@ import tsiptv.composeapp.generated.resources.ic_profile_gradient
 import tsiptv.composeapp.generated.resources.ic_settings
 import tsiptv.composeapp.generated.resources.ic_subscriptions
 import tsiptv.composeapp.generated.resources.logout_button_title
+import tsiptv.composeapp.generated.resources.logout_dialog_message
+import tsiptv.composeapp.generated.resources.logout_dialog_title
 import tsiptv.composeapp.generated.resources.preferences_group_title
 import tsiptv.composeapp.generated.resources.profile_change_password_title
 import tsiptv.composeapp.generated.resources.profile_edit_title
 import tsiptv.composeapp.generated.resources.profile_notification_title
 import tsiptv.composeapp.generated.resources.profile_subscription_title
 import tsiptv.composeapp.generated.resources.profile_title
-import tsiptv.composeapp.generated.resources.ic_arrow_right
-import tsiptv.composeapp.generated.resources.logout_dialog_message
-import tsiptv.composeapp.generated.resources.logout_dialog_title
 import tss.t.tsiptv.ui.screens.login.AuthUiState
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.themes.TSColors
@@ -96,7 +97,6 @@ fun ProfileScreen(
     val displayName = remember(authState.displayName) {
         authState.displayName ?: authState.user?.email?.uppercase() ?: ""
     }
-    var isShowLogoutButton by remember { mutableStateOf(true) }
     val listState = rememberLazyListState()
 
     val accountGroupItems = remember {
@@ -131,6 +131,17 @@ fun ProfileScreen(
     Box(
         modifier = Modifier.fillMaxSize()
             .statusBarsPadding()
+            .clickable(
+                interactionSource = remember {
+                    MutableInteractionSource()
+                },
+                indication = null,
+                onClick = {
+                    if (showLogoutDialog) {
+                        showLogoutDialog = false
+                    }
+                }
+            )
     ) {
         LazyColumn(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -289,13 +300,12 @@ fun ProfileScreen(
                 showLogoutDialog = false
             },
             onNegativeClick = {
+                showLogoutDialog = false
                 onProfileEvent(LoginEvents.OnLogoutPressed)
             }
         )
     }
 }
-
-val bgItemColor = Color(0xFF1F2937)
 
 @Composable
 fun ProfileItem(

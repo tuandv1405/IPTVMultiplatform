@@ -1,6 +1,7 @@
 package tss.t.tsiptv
 
 import android.app.Application
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -9,12 +10,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.CompositionLocalProvider
+import org.koin.core.component.KoinComponent
+import tss.t.tsiptv.core.language.LocalAppLocale
 import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
 import tss.t.tsiptv.core.permission.PermissionCheckerFactory
 import tss.t.tsiptv.ui.provider.LocalMultiPermissionProvider
 import tss.t.tsiptv.ui.provider.LocalPermissionProvider
 
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), KoinComponent {
     private val permission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {
@@ -45,6 +48,8 @@ class MainActivity : ComponentActivity() {
         NetworkConnectivityCheckerFactory.initialize(applicationContext as Application)
 
         setContent {
+            val language = LocalAppLocale.current
+
             CompositionLocalProvider(
                 LocalPermissionProvider provides permission,
                 LocalMultiPermissionProvider provides multiplePermissions,
@@ -54,9 +59,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(newBase)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        LocalPermissionProvider.provides(null)
         LocalPermissionProvider.provides(null)
     }
 }

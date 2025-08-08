@@ -37,7 +37,7 @@ object NavRoutes {
     data object SignUp : RootRoutes
 
     @Serializable
-    data class LanguageSettings(val defaultValue: String? = null) : RootRoutes
+    data object LanguageSettings : RootRoutes
 
     @Serializable
     data class WebView(

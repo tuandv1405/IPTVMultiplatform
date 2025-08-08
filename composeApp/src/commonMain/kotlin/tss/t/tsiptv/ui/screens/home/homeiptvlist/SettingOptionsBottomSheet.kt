@@ -102,7 +102,7 @@ fun SettingOptionsBottomSheet(
                 imageVector = Icons.Rounded.Language,
                 title = stringResource(Res.string.bottom_sheet_change_language),
                 onClick = {
-                    parentNavController.navigate(NavRoutes.LanguageSettings())
+                    parentNavController.navigate(NavRoutes.LanguageSettings)
                     onDismissRequest()
                 }
             )

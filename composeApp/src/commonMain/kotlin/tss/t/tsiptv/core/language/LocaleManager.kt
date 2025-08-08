@@ -2,19 +2,22 @@ package tss.t.tsiptv.core.language
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import tss.t.tsiptv.ui.screens.login.AuthUiState
 import tss.t.tsiptv.ui.screens.login.provider.LocalAuthProvider
 
-/**
- * Composition local for providing the current locale.
- */
-val LocalAppLocale = compositionLocalOf { SupportedLanguage.ENGLISH }
+var customAppLocale by mutableStateOf<String?>(null)
+expect object LocalAppLocale {
+    val current: String @Composable get
+    @Composable infix fun provides(value: String?): ProvidedValue<*>
+}
 
 /**
  * Manager for handling locale changes in the app.
@@ -39,17 +42,6 @@ class LocaleManager(private val languageRepository: LanguageRepository) {
     suspend fun setLanguage(language: SupportedLanguage) {
         languageRepository.setLanguage(language.code)
     }
-
-    /**
-     * Observe changes to the current language.
-     *
-     * @return A flow of supported languages
-     */
-    fun observeCurrentLanguage(): Flow<SupportedLanguage> {
-        return languageRepository.observeLanguageSettings().map { settings ->
-            SupportedLanguage.fromCode(settings.languageCode)
-        }
-    }
 }
 
 /**
@@ -61,20 +53,13 @@ class LocaleManager(private val languageRepository: LanguageRepository) {
  */
 @Composable
 fun AppLocaleProvider(
-    localeManager: LocaleManager,
-    authState: AuthUiState,
-    initialLanguage: SupportedLanguage,
     content: @Composable () -> Unit,
 ) {
-    // Observe the current language from the locale manager
-    val currentLanguage by remember(localeManager) {
-        localeManager.observeCurrentLanguage()
-    }.collectAsState(initial = initialLanguage)
-
     CompositionLocalProvider(
-        LocalAppLocale provides currentLanguage,
-        LocalAuthProvider provides authState
+        LocalAppLocale provides customAppLocale,
     ) {
-        content()
+        key(customAppLocale) {
+            content()
+        }
     }
 }

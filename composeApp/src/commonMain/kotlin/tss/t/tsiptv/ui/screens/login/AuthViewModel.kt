@@ -119,6 +119,17 @@ class AuthViewModel(
                 }
             }
 
+            LoginEvents.OnLogoutPressed -> {
+                _uiState.update {
+                    it.copy(
+                        isAuthenticated = false
+                    )
+                }
+                viewModelScope.launch {
+                    authRepository.signOut()
+                }
+            }
+
             else -> {
                 // Handle other events if needed
             }

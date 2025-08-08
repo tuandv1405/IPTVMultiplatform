@@ -14,9 +14,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -43,6 +48,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.InternalResourceApi
 import org.jetbrains.compose.resources.painterResource
@@ -59,11 +65,13 @@ import tsiptv.composeapp.generated.resources.login
 import tsiptv.composeapp.generated.resources.or_continue_with
 import tsiptv.composeapp.generated.resources.password
 import tsiptv.composeapp.generated.resources.sign_up
+import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.widgets.GradientButton1
 import tss.t.tsiptv.ui.widgets.GradientButton2
+import tss.t.tsiptv.ui.widgets.LanguageIcon
 import tss.t.tsiptv.ui.widgets.SocialButton
 import tss.t.tsiptv.utils.PlatformUtils
 import tss.t.tsiptv.utils.customShadow
@@ -71,6 +79,7 @@ import tss.t.tsiptv.utils.customShadow
 @OptIn(ExperimentalResourceApi::class, InternalResourceApi::class)
 @Composable
 fun LoginScreenPhone(
+    navController: NavHostController,
     authState: AuthUiState,
     onEvent: (LoginEvents) -> Unit = {},
 ) {
@@ -120,7 +129,8 @@ fun LoginScreenPhone(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth(0.85f)
+                .fillMaxWidth()
+                .padding(horizontal = 40.dp)
                 .customShadow(
                     borderRadius = 10.dp,
                     blurRadius = 20.dp,
@@ -295,6 +305,15 @@ fun LoginScreenPhone(
                     )
                 }
             }
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+        ) {
+            LanguageIcon(navController)
         }
     }
 }
