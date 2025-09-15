@@ -73,6 +73,7 @@
     <string name="quick_close_action">Quick Actions</string>
     <string name="bottom_sheet_add_iptv">Add IPTV Source</string>
     <string name="bottom_sheet_import_playlist">Import Playlist</string>
+    <string name="bottom_sheet_select_playlist">Select Playlist</string>
     <string name="bottom_sheet_refresh_channel">Refresh Channels</string>
     <string name="bottom_sheet_change_language">Change Language</string>
 
@@ -87,4 +88,6 @@
     <string name="player_dislike">Dislike</string>
     <string name="player_share">Share</string>
     <string name="player_report">Report</string>
+
+    <string name="channel_count_format">%1$d Channels</string>
 </resources>

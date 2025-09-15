@@ -3,7 +3,6 @@ package tss.t.tsiptv.ui.screens.home.homeiptvlist
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -12,36 +11,25 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,12 +42,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionOnScreen
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -75,14 +60,14 @@ import tsiptv.composeapp.generated.resources.hello_format
 import tsiptv.composeapp.generated.resources.home_search_placeholder
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
-import tss.t.tsiptv.core.parser.IPTVProgram
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
-import tss.t.tsiptv.player.ui.MediaPlayerContent
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.screens.home.HomeUiState
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.CategoryRow
+import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.HomeMiniPlayer
+import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.MiniPlayerHeight
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.homeEmptyIptvSource
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.homeItemList
 import tss.t.tsiptv.ui.screens.login.provider.LocalAuthProvider
@@ -181,9 +166,6 @@ fun HomeFeedScreen(
         }
     }
 
-    // Dialog-based bottom sheet state - BEST PRACTICE for dialog behavior
-    var showBottomSheet by remember { mutableStateOf(false) }
-
     // Main content with Scaffold
     Scaffold(
         containerColor = Color.Transparent,
@@ -208,10 +190,10 @@ fun HomeFeedScreen(
                     name = name,
                     notificationCount = 10,
                     onSettingClick = {
-                        showBottomSheet = true
+                        onHomeEvent(HomeEvent.OnHomeFeedSettingPressed)
                     },
                     onNotificationClick = {
-                        showBottomSheet = true
+                        onHomeEvent(HomeEvent.OnHomeFeedNotificationPressed)
                     },
                     onAvatarClick = {
                         navController.navigate(NavRoutes.HomeScreens.PROFILE)
@@ -255,48 +237,46 @@ fun HomeFeedScreen(
                 }
             ) { targetState ->
                 if (targetState) {
-                    if (isInitLoading) {
-                        val infiniteTransition = rememberInfiniteTransition(label = "liquidGlass")
-                        val shimmerColor by infiniteTransition.animateFloat(
-                            initialValue = 0.1f,
-                            targetValue = 0.15f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(2_000, easing = LinearEasing),
-                                repeatMode = RepeatMode.Reverse
-                            ),
-                            label = "liquidFlow"
-                        )
+                    val infiniteTransition = rememberInfiniteTransition(label = "liquidGlass")
+                    val shimmerColor by infiniteTransition.animateFloat(
+                        initialValue = 0.1f,
+                        targetValue = 0.15f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(2_000, easing = LinearEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "liquidFlow"
+                    )
 
-                        Column(
-                            modifier = Modifier
-                                .padding(top = it.calculateTopPadding())
-                                .fillMaxSize(),
-                        ) {
-                            repeat(2) {
-                                Box(
-                                    modifier = Modifier.padding(16.dp)
-                                        .fillMaxWidth()
-                                        .height(100.dp)
-                                        .clip(TSShapes.roundedShape12)
-                                        .background(
-                                            TSColors.White.copy(alpha = shimmerColor),
-                                            TSShapes.roundedShape12
-                                        )
-                                        .blur(20.dp)
-                                )
+                    Column(
+                        modifier = Modifier
+                            .padding(top = it.calculateTopPadding())
+                            .fillMaxSize(),
+                    ) {
+                        repeat(2) {
+                            Box(
+                                modifier = Modifier.padding(16.dp)
+                                    .fillMaxWidth()
+                                    .height(100.dp)
+                                    .clip(TSShapes.roundedShape12)
+                                    .background(
+                                        TSColors.White.copy(alpha = shimmerColor),
+                                        TSShapes.roundedShape12
+                                    )
+                                    .blur(20.dp)
+                            )
 
-                                Box(
-                                    modifier = Modifier.padding(16.dp)
-                                        .fillMaxWidth()
-                                        .height(150.dp)
-                                        .clip(TSShapes.roundedShape12)
-                                        .blur(20.dp)
-                                        .background(
-                                            TSColors.White.copy(alpha = shimmerColor),
-                                            TSShapes.roundedShape12
-                                        )
-                                )
-                            }
+                            Box(
+                                modifier = Modifier.padding(16.dp)
+                                    .fillMaxWidth()
+                                    .height(150.dp)
+                                    .clip(TSShapes.roundedShape12)
+                                    .blur(20.dp)
+                                    .background(
+                                        TSColors.White.copy(alpha = shimmerColor),
+                                        TSShapes.roundedShape12
+                                    )
+                            )
                         }
                     }
                 } else {
@@ -381,112 +361,4 @@ fun HomeFeedScreen(
             }
         }
     )
-
-    if (showBottomSheet) {
-        SettingOptionsBottomSheet(
-            parentNavController = parentNavController,
-            onDismissRequest = {
-                showBottomSheet = false
-            },
-            onHomeEvent = onHomeEvent
-        )
-    }
-}
-
-private val MiniPlayerHeight = 90.dp
-
-@Composable
-private fun BoxScope.HomeMiniPlayer(
-    showMiniPlayer: Boolean,
-    contentPadding: PaddingValues,
-    onHomeEvent: (HomeEvent) -> Unit,
-    mediaItem: MediaItem,
-    hazeState: HazeState,
-    program: IPTVProgram?,
-    playerViewModel: PlayerViewModel,
-    onHideMiniPlayer: () -> Unit,
-) {
-    AnimatedVisibility(
-        visible = showMiniPlayer,
-        modifier = Modifier
-            .align(Alignment.BottomCenter),
-        enter = slideInVertically(
-            initialOffsetY = { it },
-            animationSpec = tween(
-                durationMillis = 300,
-                easing = LinearOutSlowInEasing
-            )
-        ),
-        exit = slideOutVertically(
-            targetOffsetY = { it },
-            animationSpec = tween(
-                durationMillis = 300,
-                easing = LinearOutSlowInEasing
-            )
-        ) + fadeOut(
-            targetAlpha = 0.5f,
-            animationSpec = tween(
-                durationMillis = 300,
-                easing = LinearOutSlowInEasing
-            )
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .navigationBarsPadding()
-                .padding(bottom = contentPadding.calculateBottomPadding() + 12.dp)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(TSShapes.roundedShape8)
-                .clickable {
-                    onHomeEvent(HomeEvent.OnResumeMediaItem(mediaItem))
-                }
-                .hazeEffect(hazeState),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            MediaPlayerContent(
-                player = playerViewModel.player,
-                modifier = Modifier
-                    .size(160.dp, MiniPlayerHeight)
-                    .clip(TSShapes.roundedShape8)
-                    .background(
-                        color = TSColors.PlayerBackgroundColor,
-                        shape = TSShapes.roundedShape8
-                    )
-            )
-            Spacer(Modifier.width(12.dp))
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = mediaItem.title,
-                    color = TSColors.TextPrimary,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp
-                )
-                Text(
-                    text = program?.title ?: mediaItem.id,
-                    color = TSColors.TextSecondaryLight,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 13.sp,
-                    lineHeight = 14.sp
-                )
-            }
-            Image(
-                imageVector = Icons.Rounded.Close,
-                contentDescription = "Close",
-                modifier = Modifier.size(32.dp)
-                    .clip(CircleShape)
-                    .padding(4.dp)
-                    .clickable {
-                        if (showMiniPlayer) {
-                            onHideMiniPlayer()
-                            playerViewModel.stopMedia()
-                        }
-                    },
-                colorFilter = ColorFilter.tint(TSColors.TextPrimary)
-            )
-        }
-    }
 }

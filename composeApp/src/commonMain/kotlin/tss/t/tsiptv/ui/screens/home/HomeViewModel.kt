@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.database.entity.ChannelWithHistory
+import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
@@ -46,6 +47,10 @@ class HomeViewModel(
         MutableSharedFlow<HomeEvent>()
     }
     val homeUIEvent: Flow<HomeEvent> = _homeEvent
+
+    private val _totalChannelList = MutableStateFlow<List<PlaylistWithChannelCount>>(emptyList())
+    val totalChannelList: StateFlow<List<PlaylistWithChannelCount>>
+        get() = _totalChannelList
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -87,7 +92,9 @@ class HomeViewModel(
                 onHandleEvent(event)
             }
         }
+        loadAddChannelPlaylist()
     }
+
 
     /**
      * Parse an IPTV source from a URL and save it to the database
@@ -154,13 +161,23 @@ class HomeViewModel(
         }
     }
 
+
     /**
-     * Get all IPTV sources from the database
-     *
-     * @return Flow of list of playlists
+     * Loads all playlists from the database and updates the total channel list state.
+     * This method is called during initialization to populate the list of available playlists.
+     * The loading is performed on the IO dispatcher to avoid blocking the main thread.
      */
-    fun getAllIptvSource(): Flow<List<Playlist>> {
-        return iptvDatabase.getAllPlaylists()
+    private fun loadAddChannelPlaylist() {
+        viewModelScope.launch(Dispatchers.IO) {
+            iptvDatabase.playlistDao
+                .getAllPlaylistsWithCount()
+                .collect { rs ->
+                    _totalChannelList.update {
+                        rs
+                    }
+                    println("TotalPlayList: ${rs.size} ")
+                }
+        }
     }
 
     /**
@@ -379,7 +396,6 @@ class HomeViewModel(
                 )
             }
 
-            HomeEvent.OnChangeIPTVChannelPressed -> {}
             HomeEvent.OnSettingsPressed -> {}
             HomeEvent.OnAboutPressed -> {}
             HomeEvent.OnSearchPressed -> {}
@@ -447,6 +463,25 @@ class HomeViewModel(
 
             HomeEvent.RefreshEpgIfNeed -> {
                 refreshEpg()
+            }
+
+            is HomeEvent.OnRequestChangePlaylist -> {
+                val currentPlaylist = event.playlist
+                viewModelScope.launch {
+                    val category = iptvDatabase.getCategoriesByPlaylist(
+                        currentPlaylist.id
+                    )
+                    _uiState.update {
+                        it.copy(
+                            playListId = currentPlaylist.id,
+                            playListName = currentPlaylist.name,
+                            categories = category,
+                            selectedCategory = null
+                        )
+                    }
+                    getAllChannelForIptvSource(playlistId = currentPlaylist.id)
+                    loadHistoryData(playlistId = currentPlaylist.id)
+                }
             }
 
             else -> {}
@@ -598,7 +633,10 @@ sealed interface HomeEvent {
         val channel: Channel,
     ) : HomeEvent
 
-    data object OnChangeIPTVChannelPressed : HomeEvent
+    data object OnHomeFeedSettingPressed : HomeEvent
+    data object OnHomeFeedNotificationPressed : HomeEvent
+    data object OnChangeIPTVSourcePressed : HomeEvent
+    data class OnRequestChangePlaylist(val playlist: Playlist) : HomeEvent
     data object OnSettingsPressed : HomeEvent
     data object OnAboutPressed : HomeEvent
 

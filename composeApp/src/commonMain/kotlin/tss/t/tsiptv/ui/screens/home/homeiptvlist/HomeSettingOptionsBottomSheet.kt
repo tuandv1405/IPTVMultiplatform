@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ChangeCircle
 import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Refresh
@@ -16,16 +16,18 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
-import tsiptv.composeapp.generated.resources.bottom_sheet_add_iptv
 import tsiptv.composeapp.generated.resources.bottom_sheet_change_language
 import tsiptv.composeapp.generated.resources.bottom_sheet_import_playlist
 import tsiptv.composeapp.generated.resources.bottom_sheet_refresh_channel
+import tsiptv.composeapp.generated.resources.bottom_sheet_select_playlist
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.themes.TSColors
@@ -34,16 +36,18 @@ import tss.t.tsiptv.ui.widgets.IconTitleActionItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingOptionsBottomSheet(
+fun HomeSettingOptionsBottomSheet(
     parentNavController: NavHostController,
     onDismissRequest: () -> Unit = {},
     onHomeEvent: (HomeEvent) -> Unit,
 ) {
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+    val coroutineScope = rememberCoroutineScope()
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = rememberModalBottomSheetState(
-            skipPartiallyExpanded = true
-        ),
+        sheetState = sheetState,
         shape = TSShapes.roundShapeTop16,
         containerColor = TSColors.SecondaryBackgroundColor,
         dragHandle = {
@@ -63,11 +67,15 @@ fun SettingOptionsBottomSheet(
                 .padding(bottom = 16.dp)
         ) {
             IconTitleActionItem(
-                imageVector = Icons.Rounded.Add,
-                title = stringResource(Res.string.bottom_sheet_add_iptv),
+                imageVector = Icons.Rounded.ChangeCircle,
+                title = stringResource(Res.string.bottom_sheet_select_playlist),
                 onClick = {
-                    parentNavController.navigate(NavRoutes.ImportIptv)
-                    onDismissRequest()
+                    coroutineScope.launch {
+                        sheetState.hide()
+                    }.invokeOnCompletion {
+                        onDismissRequest()
+                        onHomeEvent(HomeEvent.OnChangeIPTVSourcePressed)
+                    }
                 }
             )
             HorizontalDivider(

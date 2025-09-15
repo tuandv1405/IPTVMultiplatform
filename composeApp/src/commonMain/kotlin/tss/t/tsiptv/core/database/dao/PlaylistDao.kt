@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 import tss.t.tsiptv.core.database.entity.PlaylistEntity
+import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
 
 /**
  * DAO for accessing playlist data in the database.
@@ -20,6 +21,21 @@ interface PlaylistDao {
      */
     @Query("SELECT * FROM playlists")
     fun getAllPlaylists(): Flow<List<PlaylistEntity>>
+
+    /**
+     * Gets all playlists with their channel counts.
+     *
+     * @return A flow of all playlists with channel counts
+     */
+    @Query(
+        """
+        SELECT p.*, COUNT(c.id) as channelCount 
+        FROM playlists p 
+        LEFT JOIN channel c ON c.playlistId = p.id 
+        GROUP BY p.id
+    """
+    )
+    fun getAllPlaylistsWithCount(): Flow<List<PlaylistWithChannelCount>>
 
     /**
      * Gets a playlist by ID.

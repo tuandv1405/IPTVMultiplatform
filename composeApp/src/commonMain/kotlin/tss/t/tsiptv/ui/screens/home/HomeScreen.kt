@@ -51,6 +51,7 @@ import tsiptv.composeapp.generated.resources.home_nav_history
 import tsiptv.composeapp.generated.resources.home_nav_main
 import tsiptv.composeapp.generated.resources.home_nav_profile
 import tsiptv.composeapp.generated.resources.home_nav_settings
+import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.ui.screens.home.models.BottomNavItem
 import tss.t.tsiptv.ui.screens.login.AuthUiState
@@ -91,6 +92,7 @@ internal val defNavItems = listOf(
 fun HomeScreen(
     hazeState: HazeState,
     parentNavController: NavHostController,
+    totalPlaylist: List<PlaylistWithChannelCount>,
     authState: AuthUiState,
     homeUiState: HomeUiState,
     playerUIState: PlayerUIState,
@@ -133,6 +135,7 @@ fun HomeScreen(
             parentNavController = parentNavController,
             modifier = Modifier
                 .fillMaxSize(),
+            totalPlaylist = totalPlaylist,
             hazeState = hazeState,
             contentPadding = paddingValues,
             authState = authState,

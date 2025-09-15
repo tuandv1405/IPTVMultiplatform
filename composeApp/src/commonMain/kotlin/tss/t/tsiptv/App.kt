@@ -229,11 +229,13 @@ fun App() {
                             )
                         }
                         val homeUIState by homeViewModel.uiState.collectAsState()
+                        val totalPlaylist by homeViewModel.totalChannelList.collectAsState()
                         HomeScreen(
                             hazeState = hazeState,
                             parentNavController = navController,
                             authState = authState,
                             homeUiState = homeUIState,
+                            totalPlaylist = totalPlaylist,
                             playerUIState = playerUIState,
                             onHomeEvent = {
                                 if (it is HomeEvent.OnOpenVideoPlayer) {

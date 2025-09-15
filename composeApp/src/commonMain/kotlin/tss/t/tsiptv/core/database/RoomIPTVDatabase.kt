@@ -35,12 +35,19 @@ class RoomIPTVDatabase(
     private val database: AppDatabase,
     private val networkClient: NetworkClient,
 ) : IPTVDatabase {
-    private val playlistDao = database.playlistDao()
-    private val channelDao = database.channelDao()
-    private val categoryDao = database.categoryDao()
-    private val channelAttributeDao = database.channelAttributeDao()
-    private val programDao = database.programDao()
-    private val channelHistoryDao = database.channelHistoryDao()
+
+    override val playlistDao
+        get() = database.playlistDao()
+    override val channelDao
+        get() = database.channelDao()
+    override val categoryDao
+        get() = database.categoryDao()
+    override val channelAttributeDao
+        get() = database.channelAttributeDao()
+    override val programDao
+        get() = database.programDao()
+    override val channelHistoryDao
+        get() = database.channelHistoryDao()
 
     override fun getAllChannels(): Flow<List<Channel>> {
         return channelDao.getAllChannels().map { channelEntities ->

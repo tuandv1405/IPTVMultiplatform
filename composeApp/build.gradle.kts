@@ -126,9 +126,9 @@ kotlin {
             implementation(libs.coil.network)
             implementation(libs.haze.blur)
 
-            implementation("dev.gitlive:firebase-common:+")
-            implementation("dev.gitlive:firebase-auth:+")
-            implementation("io.ktor:ktor-serialization-kotlinx-xml:3.2.2")
+            implementation("dev.gitlive:firebase-common:2.1.0")
+            implementation("dev.gitlive:firebase-auth:2.1.0")
+            implementation(libs.ktor.serialization.kotlinx.xml)
         }
 
         commonTest.dependencies {

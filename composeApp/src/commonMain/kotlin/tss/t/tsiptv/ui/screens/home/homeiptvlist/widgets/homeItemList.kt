@@ -79,6 +79,7 @@ fun LazyListScope.homeItemList(
     }
 
     item("GroupChannelsTitle") {
+        val channelList = homeUiState.listChannels
         CategoryRow(
             homeUiState = homeUiState,
             modifier = Modifier.Companion.fillMaxWidth()

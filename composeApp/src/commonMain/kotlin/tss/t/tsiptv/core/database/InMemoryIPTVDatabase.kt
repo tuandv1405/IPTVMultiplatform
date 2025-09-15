@@ -6,6 +6,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.Clock
+import tss.t.tsiptv.core.database.dao.CategoryDao
+import tss.t.tsiptv.core.database.dao.ChannelAttributeDao
+import tss.t.tsiptv.core.database.dao.ChannelDao
+import tss.t.tsiptv.core.database.dao.ChannelHistoryDao
+import tss.t.tsiptv.core.database.dao.PlaylistDao
+import tss.t.tsiptv.core.database.dao.ProgramDao
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.ChannelHistory
@@ -24,6 +30,18 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     private val playlists = MutableStateFlow<Map<String, Playlist>>(emptyMap())
     private val programs = MutableStateFlow<Map<String, IPTVProgram>>(emptyMap())
     private val channelHistory = MutableStateFlow<Map<String, ChannelHistory>>(emptyMap())
+    override val categoryDao: CategoryDao
+        get() = TODO("Not yet implemented")
+    override val channelAttributeDao: ChannelAttributeDao
+        get() = TODO("Not yet implemented")
+    override val channelDao: ChannelDao
+        get() = TODO("Not yet implemented")
+    override val channelHistoryDao: ChannelHistoryDao
+        get() = TODO("Not yet implemented")
+    override val playlistDao: PlaylistDao
+        get() = TODO("Not yet implemented")
+    override val programDao: ProgramDao
+        get() = TODO("Not yet implemented")
 
     override fun getAllChannels(): Flow<List<Channel>> {
         return channels.map { it.values.toList() }

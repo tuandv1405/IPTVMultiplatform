@@ -32,6 +32,8 @@ object NavRoutes {
 
     @Serializable
     data object ImportIptv : RootRoutes
+    @Serializable
+    data object ChangeIPTV: RootRoutes
 
     @Serializable
     data object SignUp : RootRoutes
@@ -49,5 +51,6 @@ object NavRoutes {
         const val SETTINGS = "settings"
         const val HISTORY = "favorites"
         const val PROFILE = "profile"
+        const val PROGRAM = "program_screen"
     }
 }

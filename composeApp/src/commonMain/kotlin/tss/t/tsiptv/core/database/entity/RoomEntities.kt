@@ -1,5 +1,6 @@
 package tss.t.tsiptv.core.database.entity
 
+import androidx.compose.runtime.Stable
 import androidx.room.*
 import tss.t.tsiptv.core.model.Channel
 import kotlin.String
@@ -260,3 +261,12 @@ data class ChannelWithHistory(
         lastWatched = lastPlayedTimestamp
     )
 }
+
+/**
+ * Data class to hold playlist with channel count
+ */
+@Stable
+data class PlaylistWithChannelCount(
+    @Embedded val playlist: PlaylistEntity,
+    @ColumnInfo(name = "channelCount") val channelCount: Int,
+)

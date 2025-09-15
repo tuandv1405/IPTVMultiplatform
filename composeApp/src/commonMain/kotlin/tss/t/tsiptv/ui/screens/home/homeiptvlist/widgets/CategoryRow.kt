@@ -46,9 +46,7 @@ fun CategoryRow(
                 )
                 return@items
             }
-            val item = remember(it) {
-                homeUiState.categories[it - 1]
-            }
+            val item = homeUiState.categories[it - 1]
             HomeCategoryItem(
                 categoryName = item.name,
                 isSelected = remember(homeUiState.selectedCategory) {

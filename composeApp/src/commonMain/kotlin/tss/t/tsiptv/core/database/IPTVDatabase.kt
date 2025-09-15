@@ -1,6 +1,12 @@
 package tss.t.tsiptv.core.database
 
 import kotlinx.coroutines.flow.Flow
+import tss.t.tsiptv.core.database.dao.CategoryDao
+import tss.t.tsiptv.core.database.dao.ChannelAttributeDao
+import tss.t.tsiptv.core.database.dao.ChannelDao
+import tss.t.tsiptv.core.database.dao.ChannelHistoryDao
+import tss.t.tsiptv.core.database.dao.PlaylistDao
+import tss.t.tsiptv.core.database.dao.ProgramDao
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.ChannelHistory
@@ -13,6 +19,12 @@ import tss.t.tsiptv.core.database.entity.ChannelWithHistory
  * This is a platform-independent interface that will have platform-specific implementations.
  */
 interface IPTVDatabase {
+    val categoryDao: CategoryDao
+    val channelAttributeDao: ChannelAttributeDao
+    val channelDao :ChannelDao
+    val channelHistoryDao: ChannelHistoryDao
+    val playlistDao: PlaylistDao
+    val programDao: ProgramDao
     /**
      * Gets all channel.
      *
