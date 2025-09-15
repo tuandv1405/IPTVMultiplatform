@@ -1,7 +1,7 @@
 package tss.t.tsiptv.ui.screens.login.models
 
 import androidx.compose.runtime.Immutable
-import tss.t.tsiptv.ui.screens.ProfileScreenActions
+import tss.t.tsiptv.ui.screens.profile.ProfileScreenActions
 
 @Immutable
 sealed interface LoginEvents {

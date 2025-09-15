@@ -18,7 +18,73 @@
     <string name="success">Erfolg</string>
     <string name="loading">Laden...</string>
     <string name="or_continue_with">Oder fortfahren mit</string>
+    <string name="try_again">Anmeldung wiederholen</string>
+    <string name="error_dialog_title">Hoppla!</string>
+    <string name="iptv_import_success_msg">Kanäle erfolgreich analysiert! %1$d Kanäle gefunden</string>
+    <string name="iptv_import_success_title">Glückwunsch</string>
+    <string name="play">Abspielen</string>
+    <string name="pause">Pausieren</string>
+    <string name="continue_watching">Weiter schauen</string>
+    <string name="last_hour">Letzte Stunde</string>
+    <string name="now">Jetzt</string>
+    <string name="hello_format">Hallo%1$s</string>
 
     <!-- Settings -->
     <string name="language_settings">Spracheinstellungen</string>
+
+    <string name="profile_title">Profil</string>
+    <string name="logout_button_title">Abmelden</string>
+
+    <string name="account_group_title">Kontoeinstellungen</string>
+    <string name="preferences_group_title">Einstellungen</string>
+    <string name="profile_edit_title">Profil bearbeiten</string>
+    <string name="profile_change_password_title">Passwort ändern</string>
+    <string name="profile_subscription_title">Abonnement-Informationen</string>
+    <string name="profile_notification_title">Benachrichtigungen</string>
+
+    <string name="empty_iptv_source_title">Keine IPTV-Quelle verbunden</string>
+    <string name="btn_add_iptv_source_title">IPTV hinzufügen</string>
+    <string name="iptv_help_title">Benötigen Sie Hilfe beim Finden einer Quelle?</string>
+    <string name="what_is_iptv_title">Was ist eine IPTV-Quelle?</string>
+    <string name="what_is_iptv_desc">Eine IPTV-Quelle ist eine Playlist-Datei (.m3u oder .m3u8) mit unterstütztem XML- oder JSON-Format, die Links zu Live-TV-Kanälen enthält. Sie können diese von Ihrem IPTV-Anbieter erhalten.</string>
+
+    <string name="logout_dialog_title">Abmelden</string>
+    <string name="logout_dialog_message">Sind Sie sicher, dass Sie dieses Konto von diesem Gerät abmelden möchten?</string>
+    <string name="btn_logout_cancel">Angemeldet bleiben</string>
+    <string name="btn_logout_ok">Abmelden</string>
+
+    <string name="add_iptv_source_title">IPTV-Quelle hinzufügen</string>
+    <string name="add_iptv_source_name_label_title">Quellenname</string>
+    <string name="add_iptv_source_name_placeholder_title">z.B. SuperIPTV</string>
+    <string name="add_iptv_source_url_label_title">Quellen-Link</string>
+    <string name="add_iptv_source_url_placeholder_title">z.B. https://sampleiptv.m3u</string>
+    <string name="tips_add_iptv_source_title">Schnelle Tipps:</string>
+    <string name="tips_add_iptv_source_desc">• Verwenden Sie einen beschreibenden Namen für einfache Identifikation\n• Stellen Sie sicher, dass Ihr M3U-Link gültig und zugänglich ist\n• Testen Sie die Quelle, bevor Sie mehrere Kanäle hinzufügen</string>
+    <string name="cancel_parsing_title">Analyse läuft!</string>
+    <string name="cancel_parsing_message">Der Analyseprozess läuft derzeit. Das Abbrechen jetzt kann zu unvollständigen Daten führen. Möchten Sie trotzdem abbrechen?</string>
+    <string name="cancel_parsing_btn_ok">Ja, abbrechen</string>
+    <string name="cancel_parsing_btn_cancel">Nein, weiter analysieren</string>
+
+    <string name="now_playing_title">Wird gerade abgespielt</string>
+    <string name="all_channels_title">Alle Kanäle</string>
+
+    <string name="today_format">Heute, %1$s</string>
+    <string name="yesterday_format">Gestern, %1$s</string>
+    <string name="quick_close_action">Schnelle Aktionen</string>
+    <string name="bottom_sheet_add_iptv">IPTV-Quelle hinzufügen</string>
+    <string name="bottom_sheet_import_playlist">Playlist importieren</string>
+    <string name="bottom_sheet_refresh_channel">Kanäle aktualisieren</string>
+    <string name="bottom_sheet_change_language">Sprache ändern</string>
+
+    <string name="home_nav_main">Startseite</string>
+    <string name="home_nav_history">Verlauf</string>
+    <string name="home_nav_settings">Einstellungen</string>
+    <string name="home_nav_profile">Profil</string>
+
+    <string name="home_search_placeholder">Kanal, Sendungen suchen...</string>
+    <string name="empty_history">Keine kürzliche Aktivität</string>
+    <string name="player_like">Gefällt mir</string>
+    <string name="player_dislike">Gefällt mir nicht</string>
+    <string name="player_share">Teilen</string>
+    <string name="player_report">Melden</string>
 </resources>

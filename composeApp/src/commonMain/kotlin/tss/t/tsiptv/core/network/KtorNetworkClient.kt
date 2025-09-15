@@ -7,9 +7,13 @@ import io.ktor.client.request.forms.formData
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.utils.io.*
-import io.ktor.utils.io.core.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.io.readByteArray
+import okio.Buffer
+import okio.GzipSource
+import okio.buffer
+import okio.use
 
 /**
  * Common implementation of NetworkClient using Ktor.
@@ -30,6 +34,61 @@ abstract class KtorNetworkClient : NetworkClient {
         }
         return response.bodyAsText()
     }
+
+    override suspend fun getManualGzipIfNeed(url: String, headers: Map<String, String>): String {
+        val response = client.get(url) {
+            headers.forEach { (key, value) ->
+                header(key, value)
+            }
+        }
+        val body = response.bodyAsBytes()
+        val isGzip = isGzipCompressed(body)
+        println("Gzip: $isGzip")
+        return if (isGzip) {
+            decompressGzip(body)
+        } else {
+            body.decodeToString()
+        }
+    }
+
+    /**
+     * Checks if a ByteArray is GZIP-compressed by inspecting its magic numbers.
+     *
+     * @param data The byte array to check.
+     * @return `true` if the data starts with the GZIP magic numbers, `false` otherwise.
+     */
+    fun isGzipCompressed(data: ByteArray): Boolean {
+        // A GZIP file must be at least 2 bytes long to hold the magic number.
+        if (data.size < 2) {
+            return false
+        }
+        // The GZIP magic numbers are 0x1f and 0x8b.
+        // We must use .toByte() because hex literals in Kotlin are Ints.
+        return data[0] == 0x1f.toByte() && data[1] == 0x8b.toByte()
+    }
+
+    /**
+     * Decompresses a GZIP-compressed byte array and returns it as a UTF-8 String.
+     * This uses the Okio library and works on all platforms (JVM, Native, JS).
+     *
+     * @param data The GZIP-compressed byte array.
+     * @return The decompressed string.
+     * @throws okio.IOException if the data is not valid GZIP.
+     */
+    fun decompressGzip(data: ByteArray): String {
+        // 1. Create a Buffer, which is Okio's powerful byte string
+        val buffer = Buffer()
+        buffer.write(data)
+
+        // 2. Create a GzipSource to read from the buffer
+        val gzipSource = GzipSource(buffer)
+
+        // 3. Use .buffer() for efficient reading and read the decompressed data
+        return gzipSource.buffer().use {
+            it.readUtf8()
+        }
+    }
+
 
     override suspend fun post(url: String, body: String, headers: Map<String, String>): String {
         val response = client.post(url) {
@@ -74,7 +133,7 @@ abstract class KtorNetworkClient : NetworkClient {
 
         while (!channel.isClosedForRead) {
             val packet = channel.readRemaining(4096L)
-            val bytes = packet.readBytes()
+            val bytes = packet.readByteArray()
             val offset = bytesDownloaded.toInt()
 
             if (data.size >= offset + bytes.size) {

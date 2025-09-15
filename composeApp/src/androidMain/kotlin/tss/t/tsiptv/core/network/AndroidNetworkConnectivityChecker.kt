@@ -1,7 +1,6 @@
 package tss.t.tsiptv.core.network
 
 import android.Manifest
-import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
@@ -11,7 +10,6 @@ import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.flowOf
 
 /**
  * Enum representing different WiFi internet connection states.
@@ -104,28 +102,3 @@ class AndroidNetworkConnectivityChecker(
     }
 }
 
-/**
- * Actual implementation of NetworkConnectivityCheckerFactory for Android.
- */
-actual object NetworkConnectivityCheckerFactory {
-    private lateinit var context: Application
-
-    /**
-     * Initializes the factory with the Android application context.
-     * This must be called before using the factory.
-     */
-    fun initialize(context: Application) {
-        this.context = context
-    }
-
-    /**
-     * Creates an Android-specific NetworkConnectivityChecker.
-     * @return A NetworkConnectivityChecker instance for Android.
-     */
-    actual fun create(): NetworkConnectivityChecker {
-        if (!::context.isInitialized) {
-            throw IllegalStateException("NetworkConnectivityCheckerFactory must be initialized with a Context")
-        }
-        return AndroidNetworkConnectivityChecker(context)
-    }
-}

@@ -1,14 +1,8 @@
 package tss.t.tsiptv.ui.screens.home
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,12 +10,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,35 +45,42 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
+import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.home_nav_history
+import tsiptv.composeapp.generated.resources.home_nav_main
+import tsiptv.composeapp.generated.resources.home_nav_profile
+import tsiptv.composeapp.generated.resources.home_nav_settings
+import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.ui.screens.home.models.BottomNavItem
 import tss.t.tsiptv.ui.screens.login.AuthUiState
+import tss.t.tsiptv.ui.screens.login.models.LoginEvents
+import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
-import tss.t.tsiptv.ui.widgets.HeaderWithAvatar
 import tss.t.tsiptv.utils.customShadow
 
 internal val defNavItems = listOf(
     BottomNavItem(
         route = NavRoutes.HomeScreens.HOME_FEED,
-        icon = Icons.Default.Home,
-        label = "Home"
+        icon = Icons.Rounded.Home,
+        labelRes = Res.string.home_nav_main
     ),
     BottomNavItem(
-        route = NavRoutes.HomeScreens.FAVORITES,
-        icon = Icons.Default.Favorite,
-        label = "Favorites"
+        route = NavRoutes.HomeScreens.HISTORY,
+        icon = Icons.Rounded.History,
+        labelRes = Res.string.home_nav_history
     ),
     BottomNavItem(
         route = NavRoutes.HomeScreens.SETTINGS,
-        icon = Icons.Default.Settings,
-        label = "Settings"
+        icon = Icons.Rounded.Settings,
+        labelRes = Res.string.home_nav_settings
     ),
     BottomNavItem(
         route = NavRoutes.HomeScreens.PROFILE,
-        icon = Icons.Default.Person,
-        label = "Profile",
+        icon = Icons.Rounded.Person,
+        labelRes = Res.string.home_nav_profile
     )
 )
 
@@ -89,13 +92,16 @@ internal val defNavItems = listOf(
 fun HomeScreen(
     hazeState: HazeState,
     parentNavController: NavHostController,
+    totalPlaylist: List<PlaylistWithChannelCount>,
     authState: AuthUiState,
+    homeUiState: HomeUiState,
+    playerUIState: PlayerUIState,
+    onLoginEvent: (LoginEvents) -> Unit = {},
+    onHomeEvent: (HomeEvent) -> Unit = {},
 ) {
-    // Create a nav controller for the bottom navigation
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
 
-    // Define the bottom navigation items
     val bottomNavItems = remember {
         defNavItems
     }
@@ -109,47 +115,11 @@ fun HomeScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            AnimatedContent(
-                selectedItemIndex,
-                transitionSpec = {
-                    (fadeIn(
-                        initialAlpha = 0.3f,
-                        animationSpec = tween(
-                            durationMillis = 200,
-                            easing = FastOutLinearInEasing
-                        )
-                    ) + scaleIn(
-                        initialScale = 0.9f,
-                        animationSpec = tween(
-                            durationMillis = 200,
-                            easing = FastOutLinearInEasing
-                        )
-                    )).togetherWith(fadeOut(animationSpec = tween(90)))
-                },
-            ) {
-                HeaderWithAvatar(
-                    modifier = Modifier
-                        .background(TSColors.BackgroundColor)
-                        .hazeEffect(hazeState)
-                        .statusBarsPadding()
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
-                    helloTitle = "Hello${authState.user?.displayName?.let { " $it" } ?: ""}",
-                    name = authState.user?.email ?: "",
-                    notificationCount = 10,
-                    onSettingClick = {
-                        parentNavController.navigate(NavRoutes.LanguageSettings())
-                    },
-                    onNotificationClick = {
+    LaunchedEffect(Unit) {
+        onHomeEvent(HomeEvent.RefreshEpgIfNeed)
+    }
 
-                    },
-                    onAvatarClick = {
-                        navController.navigate(NavRoutes.HomeScreens.PROFILE)
-                    }
-                )
-            }
-        },
+    Scaffold(
         bottomBar = {
             Box(Modifier.height(56.dp))
         }
@@ -165,107 +135,133 @@ fun HomeScreen(
             parentNavController = parentNavController,
             modifier = Modifier
                 .fillMaxSize(),
+            totalPlaylist = totalPlaylist,
             hazeState = hazeState,
-            paddingValues = paddingValues
+            contentPadding = paddingValues,
+            authState = authState,
+            homeUiState = homeUiState,
+            playerUIState = playerUIState,
+            onLoginEvent = onLoginEvent,
+            onHomeEvent = onHomeEvent,
         )
     }
 
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth()
-                .customShadow(
-                    borderRadius = 5.dp,
-                    blurRadius = 30.dp,
-                    offsetX = 0.dp,
-                    offsetY = (-2).dp,
-                    color = Color(0xFF00F5FF).copy(alpha = 0.1f)
-                )
-                .clip(shape = TSShapes.roundShapeTop32)
-                .background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = TSShapes.roundShapeTop32
-                )
-                .align(Alignment.BottomCenter)
-                .hazeEffect(
-                    state = hazeState,
-                    style = remember {
-                        HazeDefaults.style(
-                            backgroundColor = TSColors.SecondaryBackgroundColor,
-                            tint = HazeTint(
-                                color = TSColors.SecondaryBackgroundColor.copy(alpha = 0.1f)
-                            ),
-                        )
-                    }
-                ),
-            color = Color.Transparent
+        BottomAppBar(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            hazeState = hazeState,
+            bottomNavItems = bottomNavItems,
+            selectedItemIndex = selectedItemIndex,
+            navController = navController
         ) {
-            Column(
-                modifier = Modifier
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Bottom navigation items
-                    bottomNavItems.forEachIndexed { index, item ->
-                        val isSelected = selectedItemIndex == index
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxSize()
-                                .padding(4.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(4.dp)
-                            ) {
-                                IconButton(
-                                    onClick = {
-                                        if (selectedItemIndex == index) return@IconButton
-                                        selectedItemIndex = index
-                                        val inBackStack = navController.currentBackStack
-                                            .value.find {
-                                                it.destination.route == item.route
-                                            }?.destination?.route
-
-                                        if (inBackStack != null) {
-                                            navController.popBackStack(
-                                                route = inBackStack,
-                                                inclusive = false
-                                            )
-                                        } else {
-                                            navController.navigate(item.route)
-                                        }
-                                    },
-                                    modifier = Modifier.height(24.dp)
-                                ) {
-                                    Icon(
-                                        item.icon,
-                                        contentDescription = item.label,
-                                        tint = if (isSelected) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme
-                                            .onSurface.copy(alpha = 0.6f)
-                                    )
-                                }
-                                Text(
-                                    item.label,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme
-                                        .onSurface.copy(alpha = 0.6f)
-                                )
-                            }
-                        }
-                    }
-                }
-                Box(modifier = Modifier.navigationBarsPadding())
-            }
+            selectedItemIndex = it
         }
     }
 }
 
+@Composable
+private fun BoxScope.BottomAppBar(
+    modifier: Modifier = Modifier,
+    hazeState: HazeState,
+    bottomNavItems: List<BottomNavItem>,
+    selectedItemIndex: Int,
+    navController: NavHostController,
+    onItemChanged: (Int) -> Unit = {},
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth()
+            .customShadow(
+                borderRadius = 5.dp,
+                blurRadius = 30.dp,
+                offsetX = 0.dp,
+                offsetY = (-2).dp,
+                color = Color(0xFF00F5FF).copy(alpha = 0.1f)
+            )
+            .clip(shape = TSShapes.roundShapeTop32)
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = TSShapes.roundShapeTop32
+            )
+            .hazeEffect(
+                state = hazeState,
+                style = remember {
+                    HazeDefaults.style(
+                        backgroundColor = TSColors.SecondaryBackgroundColor,
+                        tint = HazeTint(
+                            color = TSColors.SecondaryBackgroundColor.copy(alpha = 0.1f)
+                        ),
+                    )
+                }
+            ),
+        color = Color.Transparent
+    ) {
+        Column(
+            modifier = Modifier
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Bottom navigation items
+                bottomNavItems.forEachIndexed { index, item ->
+                    val isSelected = selectedItemIndex == index
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize()
+                            .padding(4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(4.dp)
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    if (selectedItemIndex == index) return@IconButton
+                                    onItemChanged(index)
+                                    val inBackStack = navController.currentBackStack
+                                        .value.find {
+                                            it.destination.route == item.route
+                                        }?.destination?.route
+
+                                    if (inBackStack != null) {
+                                        navController.popBackStack(
+                                            route = inBackStack,
+                                            inclusive = false
+                                        )
+                                    } else {
+                                        navController.navigate(item.route)
+                                    }
+                                },
+                                modifier = Modifier.height(24.dp)
+                            ) {
+                                Icon(
+                                    item.icon,
+                                    contentDescription = item.label,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme
+                                        .onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                            Text(
+                                item.labelRes?.let {
+                                    stringResource(it)
+                                } ?: item.label ?: "",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme
+                                    .onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                }
+            }
+            Box(modifier = Modifier.navigationBarsPadding())
+        }
+    }
+}

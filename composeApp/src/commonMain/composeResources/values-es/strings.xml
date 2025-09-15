@@ -18,7 +18,73 @@
     <string name="success">Éxito</string>
     <string name="loading">Cargando...</string>
     <string name="or_continue_with">O continuar con</string>
+    <string name="try_again">Intentar iniciar sesión</string>
+    <string name="error_dialog_title">¡Ups!</string>
+    <string name="iptv_import_success_msg">¡Análisis de canales exitoso! Se encontraron %1$d canales</string>
+    <string name="iptv_import_success_title">Felicitaciones</string>
+    <string name="play">Reproducir</string>
+    <string name="pause">Pausar</string>
+    <string name="continue_watching">Continuar viendo</string>
+    <string name="last_hour">Última hora</string>
+    <string name="now">Ahora</string>
+    <string name="hello_format">Hola%1$s</string>
 
     <!-- Settings -->
     <string name="language_settings">Configuración de idioma</string>
+
+    <string name="profile_title">Perfil</string>
+    <string name="logout_button_title">Cerrar sesión</string>
+
+    <string name="account_group_title">Configuración de cuenta</string>
+    <string name="preferences_group_title">Preferencias</string>
+    <string name="profile_edit_title">Editar perfil</string>
+    <string name="profile_change_password_title">Cambiar contraseña</string>
+    <string name="profile_subscription_title">Información de suscripción</string>
+    <string name="profile_notification_title">Notificaciones</string>
+
+    <string name="empty_iptv_source_title">No hay fuente IPTV conectada</string>
+    <string name="btn_add_iptv_source_title">Agregar IPTV</string>
+    <string name="iptv_help_title">¿Necesita ayuda para encontrar una fuente?</string>
+    <string name="what_is_iptv_title">¿Qué es una fuente IPTV?</string>
+    <string name="what_is_iptv_desc">Una fuente IPTV es un archivo de lista de reproducción (.m3u o .m3u8) con formato compatible XML o JSON que contiene enlaces a canales de televisión en vivo. Puede obtenerlos de su proveedor de IPTV.</string>
+
+    <string name="logout_dialog_title">Cerrar sesión</string>
+    <string name="logout_dialog_message">¿Está seguro de cerrar sesión de esta cuenta en este dispositivo?</string>
+    <string name="btn_logout_cancel">Mantener sesión</string>
+    <string name="btn_logout_ok">Cerrar sesión</string>
+
+    <string name="add_iptv_source_title">Agregar fuente IPTV</string>
+    <string name="add_iptv_source_name_label_title">Nombre de la fuente</string>
+    <string name="add_iptv_source_name_placeholder_title">ej. SuperIPTV</string>
+    <string name="add_iptv_source_url_label_title">Enlace de la fuente</string>
+    <string name="add_iptv_source_url_placeholder_title">ej. https://sampleiptv.m3u</string>
+    <string name="tips_add_iptv_source_title">Consejos rápidos:</string>
+    <string name="tips_add_iptv_source_desc">• Use un nombre descriptivo para fácil identificación\n• Asegúrese de que su enlace M3U sea válido y accesible\n• Pruebe la fuente antes de agregar múltiples canales</string>
+    <string name="cancel_parsing_title">¡Análisis en progreso!</string>
+    <string name="cancel_parsing_message">El proceso de análisis se está ejecutando actualmente. Cancelar ahora puede resultar en datos incompletos. ¿Aún desea cancelar?</string>
+    <string name="cancel_parsing_btn_ok">Sí, cancelar</string>
+    <string name="cancel_parsing_btn_cancel">No, continuar análisis</string>
+
+    <string name="now_playing_title">Reproduciendo ahora</string>
+    <string name="all_channels_title">Todos los canales</string>
+
+    <string name="today_format">Hoy, %1$s</string>
+    <string name="yesterday_format">Ayer, %1$s</string>
+    <string name="quick_close_action">Acciones rápidas</string>
+    <string name="bottom_sheet_add_iptv">Agregar fuente IPTV</string>
+    <string name="bottom_sheet_import_playlist">Importar lista de reproducción</string>
+    <string name="bottom_sheet_refresh_channel">Actualizar canales</string>
+    <string name="bottom_sheet_change_language">Cambiar idioma</string>
+
+    <string name="home_nav_main">Inicio</string>
+    <string name="home_nav_history">Historial</string>
+    <string name="home_nav_settings">Configuración</string>
+    <string name="home_nav_profile">Perfil</string>
+
+    <string name="home_search_placeholder">Buscar canal, programas...</string>
+    <string name="empty_history">Sin actividad reciente</string>
+    <string name="player_like">Me gusta</string>
+    <string name="player_dislike">No me gusta</string>
+    <string name="player_share">Compartir</string>
+    <string name="player_report">Reportar</string>
 </resources>

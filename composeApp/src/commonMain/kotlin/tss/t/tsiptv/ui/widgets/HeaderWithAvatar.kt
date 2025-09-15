@@ -53,7 +53,7 @@ fun HeaderWithAvatar(
                 AppLogoCircle(
                     size = 40.dp,
                     iconSize = 20.dp,
-                    blurRadius = 40.dp,
+                    blurRadius = 30.dp,
                     modifier = Modifier.clickable(onClick = onAvatarClick)
                 )
             } else {
@@ -89,11 +89,11 @@ fun HeaderWithAvatar(
                     )
             )
         }
-        Spacer(Modifier.width(16.dp))
-        NotificationDot(
-            notificationCount,
-            onClick = onNotificationClick
-        )
+//        Spacer(Modifier.width(16.dp))
+//        NotificationDot(
+//            notificationCount,
+//            onClick = onNotificationClick
+//        )
         Spacer(Modifier.width(16.dp))
         Image(
             imageVector = Icons.Rounded.Settings,

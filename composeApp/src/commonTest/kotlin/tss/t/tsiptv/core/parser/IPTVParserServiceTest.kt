@@ -1,5 +1,8 @@
 package tss.t.tsiptv.core.parser
 
+import tss.t.tsiptv.core.network.DownloadProgress
+import tss.t.tsiptv.core.network.UploadProgress
+import tss.t.tsiptv.core.parser.iptv.m3u.M3UParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -95,6 +98,13 @@ class IPTVParserServiceTest {
                 throw UnsupportedOperationException("Not used in this test")
             }
 
+            override suspend fun getManualGzipIfNeed(
+                url: String,
+                headers: Map<String, String>,
+            ): String {
+                TODO("Not yet implemented")
+            }
+
             override suspend fun post(url: String, body: String, headers: Map<String, String>): String {
                 throw UnsupportedOperationException("Not used in this test")
             }
@@ -107,7 +117,7 @@ class IPTVParserServiceTest {
                 throw UnsupportedOperationException("Not used in this test")
             }
 
-            override suspend fun downloadFile(url: String, headers: Map<String, String>): kotlinx.coroutines.flow.Flow<tss.t.tsiptv.core.network.DownloadProgress> {
+            override suspend fun downloadFile(url: String, headers: Map<String, String>): kotlinx.coroutines.flow.Flow<DownloadProgress> {
                 throw UnsupportedOperationException("Not used in this test")
             }
 
@@ -117,7 +127,7 @@ class IPTVParserServiceTest {
                 fileName: String,
                 mimeType: String,
                 headers: Map<String, String>
-            ): kotlinx.coroutines.flow.Flow<tss.t.tsiptv.core.network.UploadProgress> {
+            ): kotlinx.coroutines.flow.Flow<UploadProgress> {
                 throw UnsupportedOperationException("Not used in this test")
             }
         }

@@ -82,7 +82,7 @@ val auth = InMemoryFirebaseAuth()
 val user = auth.signInWithEmailAndPassword("user@example.com", "password")
 
 val firestore = InMemoryFirebaseFirestore()
-firestore.setDocument("channels", "channel1", mapOf("name" to "Channel 1"))
+firestore.setDocument("channel", "channel1", mapOf("name" to "Channel 1"))
 
 val storage = InMemoryFirebaseStorage()
 storage.uploadFile("images/logo.png", byteArrayOf())

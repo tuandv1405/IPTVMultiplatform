@@ -1,11 +1,12 @@
 package tss.t.tsiptv.core.network
 
-import android.content.Context
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.compression.ContentEncoding
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.serialization.kotlinx.xml.xml
 import kotlinx.serialization.json.Json
 import java.util.concurrent.TimeUnit
 
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit
  * OkHttp is a widely used HTTP client for Android that provides efficient connection pooling,
  * transparent GZIP compression, and response caching.
  */
-class OkHttpKtorNetworkClient(context: Context) : KtorNetworkClient() {
+class OkHttpKtorNetworkClient() : KtorNetworkClient() {
 
     /**
      * The Ktor HttpClient instance configured with OkHttp engine.
@@ -24,9 +25,9 @@ class OkHttpKtorNetworkClient(context: Context) : KtorNetworkClient() {
         engine {
             // Configure connection settings
             config {
-                connectTimeout(30, TimeUnit.SECONDS)
-                readTimeout(30, TimeUnit.SECONDS)
-                writeTimeout(30, TimeUnit.SECONDS)
+                connectTimeout(60, TimeUnit.SECONDS)
+                readTimeout(60, TimeUnit.SECONDS)
+                writeTimeout(120, TimeUnit.SECONDS)
             }
         }
 
@@ -37,12 +38,19 @@ class OkHttpKtorNetworkClient(context: Context) : KtorNetworkClient() {
                 isLenient = true
                 ignoreUnknownKeys = true
             })
+            xml()
         }
 
         // Add logging for debug builds
         install(Logging) {
-            logger = Logger.DEFAULT
-            level = LogLevel.INFO
+            logger = Logger.ANDROID
+            level = LogLevel.ALL
+            this.format = LoggingFormat.Default
+        }
+
+        install(ContentEncoding) {
+            gzip()
+            deflate()
         }
     }
 }

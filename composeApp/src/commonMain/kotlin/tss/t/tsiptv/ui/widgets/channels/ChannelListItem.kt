@@ -27,7 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import tss.t.tsiptv.core.database.ChannelEntity
+import tss.t.tsiptv.core.database.entity.ChannelEntity
 import tss.t.tsiptv.ui.themes.TSColors
 
 val CardDark = Color(0xFF2D3748)

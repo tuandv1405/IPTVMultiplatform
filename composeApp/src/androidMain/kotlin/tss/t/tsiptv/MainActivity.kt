@@ -1,34 +1,70 @@
 package tss.t.tsiptv
 
 import android.app.Application
+import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.CompositionLocalProvider
+import org.koin.core.component.KoinComponent
+import tss.t.tsiptv.core.language.LocalAppLocale
 import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
 import tss.t.tsiptv.core.permission.PermissionCheckerFactory
+import tss.t.tsiptv.ui.provider.LocalMultiPermissionProvider
+import tss.t.tsiptv.ui.provider.LocalPermissionProvider
 
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), KoinComponent {
+    private val permission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {
+        PermissionCheckerFactory.onSinglePermissionResult(it)
+    }
+
+    private val multiplePermissions = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        PermissionCheckerFactory.onMultiplePermissionsResult(it)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+        )
         super.onCreate(savedInstanceState)
 
-        // Initialize the application context
-        AndroidPlatformUtils.appContext = applicationContext
+        AndroidPlatformUtils.appContext = this
 
-        // Initialize the permission checker factory
-        PermissionCheckerFactory.initialize(applicationContext, this)
+        PermissionCheckerFactory.create()
+        PermissionCheckerFactory.initialize(
+            activity = this,
+            singlePermissionLauncher = permission,
+            multiplePermissionsLauncher = multiplePermissions
+        )
 
-        // Initialize the network connectivity checker factory
         NetworkConnectivityCheckerFactory.initialize(applicationContext as Application)
 
         setContent {
-            App()
+            val language = LocalAppLocale.current
+
+            CompositionLocalProvider(
+                LocalPermissionProvider provides permission,
+                LocalMultiPermissionProvider provides multiplePermissions,
+            ) {
+                App()
+            }
         }
     }
-}
 
-// Preview removed as it requires Koin initialization
-// Use the actual app for testing
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(newBase)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        LocalPermissionProvider.provides(null)
+    }
+}

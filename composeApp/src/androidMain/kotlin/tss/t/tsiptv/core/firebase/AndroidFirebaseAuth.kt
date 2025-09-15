@@ -16,13 +16,14 @@ import kotlinx.coroutines.tasks.await
  * This implementation uses the Firebase SDK for Android.
  */
 class AndroidFirebaseAuth : IFirebaseAuth {
-    private val auth = FirebaseAuth.getInstance()
+    private val auth by lazy {
+        FirebaseAuth.getInstance()
+    }
 
     override val currentUser: Flow<FirebaseUser?> = callbackFlow {
         val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
             trySend(firebaseAuth.currentUser?.toFirebaseUser())
         }
-
         auth.addAuthStateListener(authStateListener)
 
         trySend(auth.currentUser?.toFirebaseUser())
@@ -38,9 +39,9 @@ class AndroidFirebaseAuth : IFirebaseAuth {
             return result.user?.toFirebaseUser()
                 ?: throw FirebaseAuthException("auth/unknown", "Unknown error signing in")
         } catch (e: FirebaseAuthInvalidUserException) {
-            throw FirebaseAuthException("auth/user-not-found", "No user found with email $email")
+            throw FirebaseAuthException(e.errorCode, "No user found with email $email")
         } catch (e: FirebaseAuthInvalidCredentialsException) {
-            throw FirebaseAuthException("auth/wrong-password", "Wrong password")
+            throw FirebaseAuthException(e.errorCode, "Wrong password")
         } catch (e: Exception) {
             Log.e("AndroidFirebaseAuth", "Error signing in", e)
             throw FirebaseAuthException("auth/unknown", e.message ?: "Unknown error signing in")

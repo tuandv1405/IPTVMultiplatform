@@ -1,8 +1,6 @@
 package tss.t.tsiptv.core.network
 
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOf
 
 /**
@@ -25,15 +23,3 @@ class IosNetworkConnectivityChecker : NetworkConnectivityChecker {
     }
 }
 
-/**
- * Actual implementation of NetworkConnectivityCheckerFactory for iOS.
- */
-actual object NetworkConnectivityCheckerFactory {
-    /**
-     * Creates an iOS-specific NetworkConnectivityChecker.
-     * @return A NetworkConnectivityChecker instance for iOS.
-     */
-    actual fun create(): NetworkConnectivityChecker {
-        return IosNetworkConnectivityChecker()
-    }
-}

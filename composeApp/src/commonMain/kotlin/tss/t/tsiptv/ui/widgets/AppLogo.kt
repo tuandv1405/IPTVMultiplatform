@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import tss.t.tsiptv.ui.themes.TSColors
@@ -59,6 +60,7 @@ fun AppLogoCircle(
     size: Dp = 100.dp,
     iconSize: Dp = 50.dp,
     blurRadius: Dp = 20.dp,
+    shape: Shape = LogoShape,
 ) {
     Box(
         modifier = modifier
@@ -69,7 +71,7 @@ fun AppLogoCircle(
                 offsetY = 3.dp,
                 color = TSColors.GradientGreen
             )
-            .background(TSColors.baseGradient, LogoShape)
+            .background(brush = TSColors.baseGradient, shape = shape)
             .innerShadow(
                 color = TSColors.GradientGreen.copy(alpha = 0.7f),
                 blur = 8.dp,

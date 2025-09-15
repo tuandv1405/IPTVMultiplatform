@@ -68,6 +68,8 @@ kotlin {
             implementation(libs.media3.exoplayer.dash)
             implementation(libs.media3.exoplayer.hls)
             implementation(libs.media3.ui)
+            implementation(libs.media3.session)
+            implementation(libs.media3.common)
 
             // Add Firebase dependencies for Android
             implementation(project.dependencies.platform(libs.firebase.bom))
@@ -100,6 +102,7 @@ kotlin {
             implementation(libs.ktor.content.negotiation)
             implementation(libs.ktor.json)
             implementation(libs.ktor.logging)
+            implementation(libs.ktor.client.encoding)
 
             // Add Kotlin Serialization
             implementation(libs.kotlinx.serialization.json)
@@ -120,10 +123,12 @@ kotlin {
             implementation(libs.koin.compose.jb)
 
             implementation(libs.coil.compose)
+            implementation(libs.coil.network)
             implementation(libs.haze.blur)
 
-            implementation("dev.gitlive:firebase-common:+")
-            implementation("dev.gitlive:firebase-auth:+")
+            implementation("dev.gitlive:firebase-common:2.1.0")
+            implementation("dev.gitlive:firebase-auth:2.1.0")
+            implementation(libs.ktor.serialization.kotlinx.xml)
         }
 
         commonTest.dependencies {
@@ -162,7 +167,7 @@ kotlin {
 
 android {
     namespace = "tss.t.tsiptv"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdkVersion(libs.versions.android.compileSdk.get().toInt())
 
     defaultConfig {
         applicationId = "tss.t.tsiptv"
@@ -178,7 +183,8 @@ android {
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
         }
     }
     compileOptions {

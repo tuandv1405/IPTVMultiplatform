@@ -1,5 +1,6 @@
 package tss.t.tsiptv.core.parser
 
+import tss.t.tsiptv.core.parser.iptv.m3u.M3UParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

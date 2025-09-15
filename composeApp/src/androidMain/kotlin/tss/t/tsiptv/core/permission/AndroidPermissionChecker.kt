@@ -1,7 +1,6 @@
 package tss.t.tsiptv.core.permission
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -9,7 +8,6 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -18,22 +16,23 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOf
+import tss.t.tsiptv.TSAndroidApplication
 import java.lang.ref.WeakReference
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * Android implementation of PermissionChecker.
  * Uses Android's runtime permission system to check and request permissions.
  */
 class AndroidPermissionChecker(
-    private val context: Context,
-    activity: ComponentActivity? = null
+    activity: ComponentActivity? = null,
 ) : PermissionChecker, DefaultLifecycleObserver {
 
-    // Use WeakReference to prevent memory leaks
-    private val activityRef: WeakReference<ComponentActivity> = WeakReference(activity)
+    @OptIn(ExperimentalAtomicApi::class)
+    private val activityRef: AtomicReference<ComponentActivity?> = AtomicReference(activity)
 
     init {
-        // Register for lifecycle events to clean up resources
         activity?.lifecycle?.addObserver(this)
     }
 
@@ -43,8 +42,14 @@ class AndroidPermissionChecker(
     fun cleanup() {
         singlePermissionCallback = null
         multiplePermissionsCallback = null
-        // Note: We don't need to unregister the launchers as they're automatically
-        // unregistered when the activity is destroyed
+    }
+
+    fun registerPermissionCallback(
+        singlePermissionCallback: ((Boolean) -> Unit)?,
+        multiplePermissionsCallback: ((Map<String, Boolean>) -> Unit)?,
+    ) {
+        this.singlePermissionCallback = singlePermissionCallback
+        this.multiplePermissionsCallback = multiplePermissionsCallback
     }
 
     // Lifecycle methods
@@ -57,31 +62,26 @@ class AndroidPermissionChecker(
     private var singlePermissionLauncher: ActivityResultLauncher<String>? = null
     private var multiplePermissionsLauncher: ActivityResultLauncher<Array<String>>? = null
 
-    init {
-        // Initialize the launchers
-        initializeLaunchers()
+    var singlePermissionCallback: ((Boolean) -> Unit)? = null
+        private set
+    var multiplePermissionsCallback: ((Map<String, Boolean>) -> Unit)? = null
+        private set
+
+    @OptIn(ExperimentalAtomicApi::class)
+    fun initializeLaunchers(
+        activity: ComponentActivity? = null,
+        singleLauncher: ActivityResultLauncher<String>? = null,
+        multipleLauncher: ActivityResultLauncher<Array<String>>? = null,
+    ) {
+        activityRef.load()?.let {
+            activityRef.compareAndSet(it, activity)
+        } ?: run {
+            activityRef.compareAndSet(null, activity)
+        }
+        singlePermissionLauncher = singleLauncher
+        multiplePermissionsLauncher = multipleLauncher
     }
 
-    private fun initializeLaunchers() {
-        val activity = activityRef.get() ?: return
-
-        singlePermissionLauncher = activity.registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted ->
-            singlePermissionCallback?.invoke(isGranted)
-        }
-
-        multiplePermissionsLauncher = activity.registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { results ->
-            multiplePermissionsCallback?.invoke(results)
-        }
-    }
-
-    private var singlePermissionCallback: ((Boolean) -> Unit)? = null
-    private var multiplePermissionsCallback: ((Map<String, Boolean>) -> Unit)? = null
-
-    // Map of Permission enum to Android permission strings
     private val permissionMap = mapOf(
         // Network permissions
         Permission.ACCESS_NETWORK_STATE to Manifest.permission.ACCESS_NETWORK_STATE,
@@ -289,27 +289,32 @@ class AndroidPermissionChecker(
     )
 
     override fun isPermissionGranted(permission: Permission): Boolean {
-        val androidPermission = permissionMap[permission] ?: return true // If not mapped, assume granted
-        return ContextCompat.checkSelfPermission(context, androidPermission) == PackageManager.PERMISSION_GRANTED
+        val androidPermission = permissionMap[permission] ?: return true
+        return ContextCompat.checkSelfPermission(
+            /* context = */ TSAndroidApplication.instance,
+            /* permission = */ androidPermission
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
+    @OptIn(ExperimentalAtomicApi::class)
     override fun requestPermission(permission: Permission): Flow<PermissionResult> {
-        // Get the activity from WeakReference
-        val activity = activityRef.get()
-
-        // If the activity is not available, we can't request permissions
+        val activity = activityRef.load()
         if (activity == null || singlePermissionLauncher == null) {
             return flowOf(
-                if (isPermissionGranted(permission)) PermissionResult.GRANTED
-                else PermissionResult.DENIED
+                if (isPermissionGranted(permission)) {
+                    PermissionResult.GRANTED
+                } else {
+                    PermissionResult.DENIED
+                }
             )
         }
 
-        val androidPermission = permissionMap[permission] ?: return flowOf(PermissionResult.GRANTED)
+        val androidPermission = permissionMap[permission]
+            ?: return flowOf(PermissionResult.GRANTED)
 
         // If the permission is already granted, return immediately
         if (isPermissionGranted(permission)) {
-            return flowOf(PermissionResult.GRANTED)
+            return flowOf(value = PermissionResult.GRANTED)
         }
 
         return callbackFlow {
@@ -317,8 +322,8 @@ class AndroidPermissionChecker(
                 if (isGranted) {
                     trySend(PermissionResult.GRANTED)
                 } else {
-                    // Check if the user selected "Don't ask again"
-                    val isPermanentlyDenied = !activity.shouldShowRequestPermissionRationale(androidPermission)
+                    val isPermanentlyDenied =
+                        !activity.shouldShowRequestPermissionRationale(androidPermission)
                     trySend(if (isPermanentlyDenied) PermissionResult.PERMANENTLY_DENIED else PermissionResult.DENIED)
                 }
                 close()
@@ -328,19 +333,19 @@ class AndroidPermissionChecker(
             singlePermissionLauncher?.launch(androidPermission)
 
             awaitClose {
-                // Clean up
                 singlePermissionCallback = null
             }
         }
     }
 
+    @OptIn(ExperimentalAtomicApi::class)
     override fun requestPermissions(permissions: List<Permission>): Flow<Map<Permission, PermissionResult>> {
         // Get the activity from WeakReference
-        val activity = activityRef.get()
+        val activity = activityRef.load()
 
         // If the activity is not available, we can't request permissions
         if (activity == null || multiplePermissionsLauncher == null) {
-            return flowOf(permissions.associateWith { 
+            return flowOf(permissions.associateWith {
                 if (isPermissionGranted(it)) PermissionResult.GRANTED
                 else PermissionResult.DENIED
             })
@@ -355,11 +360,15 @@ class AndroidPermissionChecker(
         }
 
         // Map to Android permission strings
-        val androidPermissions = permissionsToRequest.mapNotNull { permissionMap[it] }.toTypedArray()
+        val androidPermissions = permissionsToRequest.mapNotNull {
+            permissionMap[it]
+        }.toTypedArray()
 
         // If no valid Android permissions to request, return immediately
         if (androidPermissions.isEmpty()) {
-            return flowOf(permissions.associateWith { PermissionResult.GRANTED })
+            return flowOf(permissions.associateWith {
+                PermissionResult.GRANTED
+            })
         }
 
         return callbackFlow {
@@ -375,14 +384,16 @@ class AndroidPermissionChecker(
                         resultMap[permission] = PermissionResult.GRANTED
                     } else {
                         // Check if the user selected "Don't ask again"
-                        val isPermanentlyDenied = !activity.shouldShowRequestPermissionRationale(androidPermission)
-                        resultMap[permission] = if (isPermanentlyDenied) PermissionResult.PERMANENTLY_DENIED else PermissionResult.DENIED
+                        val isPermanentlyDenied =
+                            !activity.shouldShowRequestPermissionRationale(androidPermission)
+                        resultMap[permission] =
+                            if (isPermanentlyDenied) PermissionResult.PERMANENTLY_DENIED else PermissionResult.DENIED
                     }
                 }
 
                 // Add already granted permissions
-                permissions.filter { !permissionsToRequest.contains(it) }.forEach { 
-                    resultMap[it] = PermissionResult.GRANTED 
+                permissions.filter { !permissionsToRequest.contains(it) }.forEach {
+                    resultMap[it] = PermissionResult.GRANTED
                 }
 
                 trySend(resultMap)
@@ -399,13 +410,14 @@ class AndroidPermissionChecker(
         }
     }
 
+    @OptIn(ExperimentalAtomicApi::class)
     override fun showPermissionRationaleDialog(
         permission: Permission,
         onPositiveClick: () -> Unit,
-        onNegativeClick: () -> Unit
+        onNegativeClick: () -> Unit,
     ) {
         // Get the activity from WeakReference
-        val activity = activityRef.get()
+        val activity = activityRef.load()
 
         if (activity == null) {
             onNegativeClick()
@@ -434,9 +446,10 @@ class AndroidPermissionChecker(
 
     override fun openAppSettings(): Boolean {
         return try {
+            val context = TSAndroidApplication.instance.applicationContext
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = Uri.fromParts("package", context.packageName, null)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
             true
@@ -450,34 +463,38 @@ class AndroidPermissionChecker(
  * Actual implementation of PermissionCheckerFactory for Android.
  */
 actual object PermissionCheckerFactory : DefaultLifecycleObserver {
-    private lateinit var context: Context
-    private var activityRef: WeakReference<ComponentActivity>? = null
+    @OptIn(ExperimentalAtomicApi::class)
+    private var activityRef: AtomicReference<ComponentActivity?>? = null
     private var permissionChecker: AndroidPermissionChecker? = null
 
     /**
      * Initializes the factory with the Android application context and optionally an activity.
      * This must be called before using the factory.
      */
-    fun initialize(context: Context, activity: ComponentActivity? = null) {
-        this.context = context
-        this.activityRef = activity?.let { WeakReference(it) }
+    @OptIn(ExperimentalAtomicApi::class)
+    fun initialize(
+        activity: ComponentActivity? = null,
+        singlePermissionLauncher: ActivityResultLauncher<String>? = null,
+        multiplePermissionsLauncher: ActivityResultLauncher<Array<String>>? = null,
+    ) {
+        this.activityRef = activity?.let { AtomicReference(it) }
 
-        // Register for lifecycle events to clean up resources
         activity?.lifecycle?.addObserver(this)
+        permissionChecker?.initializeLaunchers(
+            activity,
+            singleLauncher = singlePermissionLauncher,
+            multipleLauncher = multiplePermissionsLauncher,
+        )
     }
 
     /**
      * Creates an Android-specific PermissionChecker.
      * @return A PermissionChecker instance for Android.
      */
+    @OptIn(ExperimentalAtomicApi::class)
     actual fun create(): PermissionChecker {
-        if (!::context.isInitialized) {
-            throw IllegalStateException("PermissionCheckerFactory must be initialized with a Context")
-        }
-
-        // Create a new instance or return the existing one
         if (permissionChecker == null) {
-            permissionChecker = AndroidPermissionChecker(context, activityRef?.get())
+            permissionChecker = AndroidPermissionChecker(activityRef?.load())
         }
 
         return permissionChecker!!
@@ -494,9 +511,22 @@ actual object PermissionCheckerFactory : DefaultLifecycleObserver {
     /**
      * Cleans up resources to prevent memory leaks.
      */
+    @OptIn(ExperimentalAtomicApi::class)
     fun cleanup() {
         permissionChecker?.cleanup()
         permissionChecker = null
+        activityRef?.load()?.let {
+            it.lifecycle.removeObserver(this)
+            activityRef?.compareAndSet(it, null)
+        }
         activityRef = null
+    }
+
+    fun onSinglePermissionResult(result: Boolean) {
+        permissionChecker?.singlePermissionCallback?.invoke(result)
+    }
+
+    fun onMultiplePermissionsResult(results: Map<String, Boolean>) {
+        permissionChecker?.multiplePermissionsCallback?.invoke(results)
     }
 }

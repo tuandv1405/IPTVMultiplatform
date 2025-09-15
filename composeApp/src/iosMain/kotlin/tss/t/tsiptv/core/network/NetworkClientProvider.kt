@@ -1,9 +1,11 @@
 package tss.t.tsiptv.core.network
 
 import io.ktor.client.*
+import io.ktor.client.plugins.compression.ContentEncoding
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.serialization.kotlinx.xml.xml
 import kotlinx.serialization.json.Json
 
 /**
@@ -23,12 +25,19 @@ class IosKtorNetworkClient : KtorNetworkClient() {
                 isLenient = true
                 ignoreUnknownKeys = true
             })
+            xml()
         }
 
         // Add logging for debug builds
         install(Logging) {
             logger = Logger.DEFAULT
             level = LogLevel.INFO
+        }
+
+
+        install(ContentEncoding) {
+            deflate(1.0F)
+            gzip(0.9F)
         }
     }
 }
@@ -42,15 +51,3 @@ class IosNetworkClientProvider : NetworkClientProvider {
     }
 }
 
-/**
- * iOS implementation of NetworkClientFactory.
- */
-actual object NetworkClientFactory {
-    /**
-     * Creates an iOS-specific NetworkClientProvider.
-     * @return A NetworkClientProvider instance for iOS.
-     */
-    actual fun create(): NetworkClientProvider {
-        return IosNetworkClientProvider()
-    }
-}

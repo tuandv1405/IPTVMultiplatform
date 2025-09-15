@@ -4,6 +4,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 object TSColors {
+    val White: Color = Color.White
+    val Black = Color.Black
+    val Transparent = Color.Transparent
+    val PlayerBackgroundColor = Color.Black
     val SecondaryBackgroundColor = Color(0xFF161A32)
     val DeepBlue = Color(0xFF03041D)
 
@@ -17,6 +21,7 @@ object TSColors {
 
     val TextGray = Color(0xFF8E8E93)
     val TextSecondary = Color(0xFF9CA3AF)
+    val TextSecondaryLight = Color(0xFFE5E7EB)
     val TextPrimary = Color.White
     val TextTitlePrimaryDart = Color(0xFF111827)
     val TextBodyPrimaryDart = Color(0xFF4B5563)
@@ -52,20 +57,12 @@ object TSColors {
     val OnSurface = Color(0xFF161A32)
 
     val RedNotify = Color(0xFFEF4444)
-
-    val RedVibrant = Color(0xFFFF4757) //Red Orange
-    val RedVibrantDark = Color(0xFFB00020) //Red Orange Dark
-    val GreenVibrant = Color(0xFF43A047) //Green Orange
-    val GreenVibrantDark = Color(0xFF00701A) //Green Orange Dark
-    val BlueVibrant = Color(0xFF2196F3) //Blue Orange
-    val BlueVibrantDark = Color(0xFF0069C0) //Blue Orange Dark
-    val YellowVibrant = Color(0xFFFFEB3B) //Yellow Orange
-    val YellowVibrantDark = Color(0xFFC7B900) //Yellow Orange Dark
-    val PurpleVibrant = Color(0xFF9C27B0) //Purple Orange
-    val PurpleVibrantDark = Color(0xFF6A0080) //Purple Orange Dark
+    val ErrorRed = Color(0xFFF87171)
+    val ActiveGreen = Color(0xFF34D399)
+    val LoadingYellow = Color(0xFFFBBF24)
 
     val strokeWhite = Color(0xFFF3F4F6)
-
+    val strokeColor = Color(0xFF1F2937)
     val IconContainerColor = Color(0xFF4B5563)
     val IconOnlyColor = TextSecondary
 }

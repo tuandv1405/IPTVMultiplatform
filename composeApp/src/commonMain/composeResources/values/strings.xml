@@ -19,6 +19,15 @@
     <string name="loading">Loading...</string>
     <string name="or_continue_with">Or continue with</string>
     <string name="try_again">Try Login</string>
+    <string name="error_dialog_title">Oops!</string>
+    <string name="iptv_import_success_msg">Parse channel successfully! Found %1$d channels</string>
+    <string name="iptv_import_success_title">Congratulation</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="continue_watching">Continue Watching</string>
+    <string name="last_hour">Last Hour</string>
+    <string name="now">Now</string>
+    <string name="hello_format">Hello%1$s</string>
 
     <!-- Settings -->
     <string name="language_settings">Language Settings</string>
@@ -38,4 +47,47 @@
     <string name="iptv_help_title">Need help finding a source?</string>
     <string name="what_is_iptv_title">What is an IPTV Source?</string>
     <string name="what_is_iptv_desc">An IPTV source is a playlist file (.m3u or .m3u8) with supported format is XML or JSON that contains links to live TV channels. You can get these from your IPTV provider.</string>
+
+    <string name="logout_dialog_title">Log Out</string>
+    <string name="logout_dialog_message">Are you sure to log out this account from this device?</string>
+    <string name="btn_logout_cancel">Keep Log In</string>
+    <string name="btn_logout_ok">Log Out</string>
+
+    <string name="add_iptv_source_title">Add IPTV Source</string>
+    <string name="add_iptv_source_name_label_title">Source Name</string>
+    <string name="add_iptv_source_name_placeholder_title">e.g. SuperIPTV</string>
+    <string name="add_iptv_source_url_label_title">Source Link</string>
+    <string name="add_iptv_source_url_placeholder_title">e.g. https://sampleiptv.m3u</string>
+    <string name="tips_add_iptv_source_title">Quick Tips:</string>
+    <string name="tips_add_iptv_source_desc">• Use a descriptive name for easy identification\n• Ensure your M3U link is valid and accessible\n• Test the source before adding multiple channels</string>
+    <string name="cancel_parsing_title">Parsing in Progress!</string>
+    <string name="cancel_parsing_message">The parsing process is currently running. Canceling now may result in incomplete data. Do you still want to cancel?</string>
+    <string name="cancel_parsing_btn_ok">Yes, Cancel</string>
+    <string name="cancel_parsing_btn_cancel">No, Keep Parsing</string>
+
+    <string name="now_playing_title">Now Playing</string>
+    <string name="all_channels_title">All Channels</string>
+
+    <string name="today_format">Today, %1$s</string>
+    <string name="yesterday_format">Yesterday, %1$s</string>
+    <string name="quick_close_action">Quick Actions</string>
+    <string name="bottom_sheet_add_iptv">Add IPTV Source</string>
+    <string name="bottom_sheet_import_playlist">Import Playlist</string>
+    <string name="bottom_sheet_select_playlist">Select Playlist</string>
+    <string name="bottom_sheet_refresh_channel">Refresh Channels</string>
+    <string name="bottom_sheet_change_language">Change Language</string>
+
+    <string name="home_nav_main">Home</string>
+    <string name="home_nav_history">History</string>
+    <string name="home_nav_settings">Settings</string>
+    <string name="home_nav_profile">Profile</string>
+
+    <string name="home_search_placeholder">Search channel, shows...</string>
+    <string name="empty_history">No recent activity</string>
+    <string name="player_like">Like</string>
+    <string name="player_dislike">Dislike</string>
+    <string name="player_share">Share</string>
+    <string name="player_report">Report</string>
+
+    <string name="channel_count_format">%1$d Channels</string>
 </resources>

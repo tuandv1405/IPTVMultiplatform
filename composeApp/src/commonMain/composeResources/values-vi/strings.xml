@@ -18,7 +18,73 @@
     <string name="success">Thành công</string>
     <string name="loading">Đang tải...</string>
     <string name="or_continue_with">Hoặc tiếp tục với</string>
+    <string name="try_again">Thử đăng nhập lại</string>
+    <string name="error_dialog_title">Ôi!</string>
+    <string name="iptv_import_success_msg">Phân tích kênh thành công! Tìm thấy %1$d kênh</string>
+    <string name="iptv_import_success_title">Chúc mừng</string>
+    <string name="play">Phát</string>
+    <string name="pause">Tạm dừng</string>
+    <string name="continue_watching">Tiếp tục xem</string>
+    <string name="last_hour">Giờ trước</string>
+    <string name="now">Bây giờ</string>
+    <string name="hello_format">Xin chào%1$s</string>
 
     <!-- Settings -->
     <string name="language_settings">Cài đặt ngôn ngữ</string>
+
+    <string name="profile_title">Hồ sơ</string>
+    <string name="logout_button_title">Đăng xuất</string>
+
+    <string name="account_group_title">Cài đặt tài khoản</string>
+    <string name="preferences_group_title">Tùy chọn</string>
+    <string name="profile_edit_title">Chỉnh sửa hồ sơ</string>
+    <string name="profile_change_password_title">Đổi mật khẩu</string>
+    <string name="profile_subscription_title">Thông tin đăng ký</string>
+    <string name="profile_notification_title">Thông báo</string>
+
+    <string name="empty_iptv_source_title">Không có nguồn IPTV nào được kết nối</string>
+    <string name="btn_add_iptv_source_title">Thêm IPTV</string>
+    <string name="iptv_help_title">Cần giúp tìm nguồn?</string>
+    <string name="what_is_iptv_title">Nguồn IPTV là gì?</string>
+    <string name="what_is_iptv_desc">Nguồn IPTV là tệp danh sách phát (.m3u hoặc .m3u8) với định dạng được hỗ trợ XML hoặc JSON chứa các liên kết đến các kênh truyền hình trực tiếp. Bạn có thể lấy chúng từ nhà cung cấp IPTV của mình.</string>
+
+    <string name="logout_dialog_title">Đăng xuất</string>
+    <string name="logout_dialog_message">Bạn có chắc chắn muốn đăng xuất tài khoản này khỏi thiết bị này không?</string>
+    <string name="btn_logout_cancel">Tiếp tục đăng nhập</string>
+    <string name="btn_logout_ok">Đăng xuất</string>
+
+    <string name="add_iptv_source_title">Thêm nguồn IPTV</string>
+    <string name="add_iptv_source_name_label_title">Tên nguồn</string>
+    <string name="add_iptv_source_name_placeholder_title">ví dụ: SuperIPTV</string>
+    <string name="add_iptv_source_url_label_title">Liên kết nguồn</string>
+    <string name="add_iptv_source_url_placeholder_title">ví dụ: https://sampleiptv.m3u</string>
+    <string name="tips_add_iptv_source_title">Mẹo nhanh:</string>
+    <string name="tips_add_iptv_source_desc">• Sử dụng tên mô tả để dễ nhận dạng\n• Đảm bảo liên kết M3U của bạn hợp lệ và có thể truy cập\n• Kiểm tra nguồn trước khi thêm nhiều kênh</string>
+    <string name="cancel_parsing_title">Đang phân tích!</string>
+    <string name="cancel_parsing_message">Quá trình phân tích hiện đang chạy. Hủy bây giờ có thể dẫn đến dữ liệu không đầy đủ. Bạn vẫn muốn hủy?</string>
+    <string name="cancel_parsing_btn_ok">Có, hủy</string>
+    <string name="cancel_parsing_btn_cancel">Không, tiếp tục phân tích</string>
+
+    <string name="now_playing_title">Đang phát</string>
+    <string name="all_channels_title">Tất cả kênh</string>
+
+    <string name="today_format">Hôm nay, %1$s</string>
+    <string name="yesterday_format">Hôm qua, %1$s</string>
+    <string name="quick_close_action">Hành động nhanh</string>
+    <string name="bottom_sheet_add_iptv">Thêm nguồn IPTV</string>
+    <string name="bottom_sheet_import_playlist">Nhập danh sách phát</string>
+    <string name="bottom_sheet_refresh_channel">Làm mới kênh</string>
+    <string name="bottom_sheet_change_language">Đổi ngôn ngữ</string>
+
+    <string name="home_nav_main">Trang chủ</string>
+    <string name="home_nav_history">Lịch sử</string>
+    <string name="home_nav_settings">Cài đặt</string>
+    <string name="home_nav_profile">Hồ sơ</string>
+
+    <string name="home_search_placeholder">Tìm kênh, chương trình...</string>
+    <string name="empty_history">Không có hoạt động gần đây</string>
+    <string name="player_like">Thích</string>
+    <string name="player_dislike">Không thích</string>
+    <string name="player_share">Chia sẻ</string>
+    <string name="player_report">Báo cáo</string>
 </resources>

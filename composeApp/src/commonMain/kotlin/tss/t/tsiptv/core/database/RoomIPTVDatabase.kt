@@ -3,8 +3,24 @@ package tss.t.tsiptv.core.database
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
+import tss.t.tsiptv.core.database.entity.ChannelAttributeEntity
+import tss.t.tsiptv.core.database.entity.ChannelHistoryEntity
+import tss.t.tsiptv.core.database.entity.ChannelWithHistory
+import tss.t.tsiptv.core.database.entity.toCategory
+import tss.t.tsiptv.core.database.entity.toCategoryEntity
+import tss.t.tsiptv.core.database.entity.toChannel
+import tss.t.tsiptv.core.database.entity.toChannelEntity
+import tss.t.tsiptv.core.database.entity.toChannelHistory
+import tss.t.tsiptv.core.database.entity.toPlaylist
+import tss.t.tsiptv.core.database.entity.toPlaylistEntity
+import tss.t.tsiptv.core.database.entity.toIPTVProgram
+import tss.t.tsiptv.core.database.entity.toProgramEntity
+import tss.t.tsiptv.core.model.Category
+import tss.t.tsiptv.core.model.Channel
+import tss.t.tsiptv.core.model.ChannelHistory
+import tss.t.tsiptv.core.model.Playlist
+import tss.t.tsiptv.core.parser.IPTVProgram
 import tss.t.tsiptv.core.network.NetworkClient
-import tss.t.tsiptv.core.parser.IPTVFormat
 import tss.t.tsiptv.core.parser.IPTVParserFactory
 import kotlin.time.Duration.Companion.days
 
@@ -17,16 +33,37 @@ import kotlin.time.Duration.Companion.days
  */
 class RoomIPTVDatabase(
     private val database: AppDatabase,
-    private val networkClient: NetworkClient
+    private val networkClient: NetworkClient,
 ) : IPTVDatabase {
-    private val playlistDao = database.playlistDao()
-    private val channelDao = database.channelDao()
-    private val categoryDao = database.categoryDao()
-    private val channelAttributeDao = database.channelAttributeDao()
+
+    override val playlistDao
+        get() = database.playlistDao()
+    override val channelDao
+        get() = database.channelDao()
+    override val categoryDao
+        get() = database.categoryDao()
+    override val channelAttributeDao
+        get() = database.channelAttributeDao()
+    override val programDao
+        get() = database.programDao()
+    override val channelHistoryDao
+        get() = database.channelHistoryDao()
 
     override fun getAllChannels(): Flow<List<Channel>> {
         return channelDao.getAllChannels().map { channelEntities ->
             channelEntities.map { it.toChannel() }
+        }
+    }
+
+    override fun getAllChannelsByPlayListId(playListId: String): Flow<List<Channel>> {
+        return channelDao.getChannelsInPlaylist(playListId).map { channelEntities ->
+            channelEntities.map { it.toChannel() }
+        }
+    }
+
+    override suspend fun getCategoriesByPlaylist(playlistId: String): List<Category> {
+        return categoryDao.getCategoriesByPlaylist(playlistId).map {
+            it.toCategory()
         }
     }
 
@@ -65,6 +102,12 @@ class RoomIPTVDatabase(
     override fun getAllCategories(): Flow<List<Category>> {
         return categoryDao.getAllCategories().map { categoryEntities ->
             categoryEntities.map { it.toCategory() }
+        }
+    }
+
+    override suspend fun getAllCategoriesByPlayListId(playListId: String): List<Category> {
+        return categoryDao.getCategoriesByPlaylist(playListId).map {
+            it.toCategory()
         }
     }
 
@@ -109,7 +152,7 @@ class RoomIPTVDatabase(
                 val parser = IPTVParserFactory.createParser(format)
                 val parsedPlaylist = parser.parse(content)
 
-                // Delete old channels and categories
+                // Delete old channel and categories
                 channelDao.deleteChannelsByPlaylist(playlist.id)
                 categoryDao.deleteCategoriesByPlaylist(playlist.id)
 
@@ -127,7 +170,7 @@ class RoomIPTVDatabase(
                 }
                 insertCategories(categories)
 
-                // Insert new channels
+                // Insert new channel
                 val channels = parsedPlaylist.channels.map { channel ->
                     Channel(
                         id = channel.id,
@@ -182,69 +225,154 @@ class RoomIPTVDatabase(
         playlistDao.deletePlaylistById(id)
     }
 
+    override suspend fun deleteChannelsInPlaylist(playlistId: String) {
+        channelDao.deleteChannelsByPlaylist(playlistId)
+    }
+
     override suspend fun clearAllData() {
 
     }
 
-    // Extension functions to convert between domain models and entities
-    private fun PlaylistEntity.toPlaylist(): Playlist {
-        return Playlist(
-            id = id,
-            name = name,
-            url = url,
-            lastUpdated = lastUpdated
+    // Program-related methods
+    override fun getAllPrograms(): Flow<List<IPTVProgram>> {
+        return programDao.getAllPrograms().map { programEntities ->
+            programEntities.map { it.toIPTVProgram() }
+        }
+    }
+
+    override suspend fun countValidPrograms(playlistId: String): Int {
+        val timestamp = Clock.System.now().toEpochMilliseconds()
+        return programDao.countValidPrograms(playlistId, timestamp)
+    }
+
+    override suspend fun getProgramById(id: String): IPTVProgram? {
+        return programDao.getProgramById(id)?.toIPTVProgram()
+    }
+
+    override suspend fun getProgramsForChannel(channelId: String): List<IPTVProgram> {
+        return programDao.getProgramsForChannel(channelId).map { it.toIPTVProgram() }
+    }
+
+    override suspend fun getProgramsForChannelInTimeRange(
+        channelId: String,
+        startTime: Long,
+        endTime: Long,
+    ): List<IPTVProgram> {
+        return programDao.getProgramsForChannelInTimeRange(channelId, startTime, endTime)
+            .map { it.toIPTVProgram() }
+    }
+
+    override suspend fun getCurrentAndUpcomingProgramsForChannel(
+        channelId: String,
+        currentTime: Long,
+    ): List<IPTVProgram> {
+        return programDao.getCurrentAndUpcomingProgramsForChannel(channelId, currentTime)
+            .map { it.toIPTVProgram() }
+    }
+
+    override suspend fun getCurrentProgramForChannel(
+        channelId: String,
+        currentTime: Long,
+    ): IPTVProgram? {
+        return programDao.getCurrentProgramForChannel(channelId, currentTime)?.toIPTVProgram()
+    }
+
+    override suspend fun insertProgram(program: IPTVProgram, playlistId: String) {
+        programDao.insertProgram(program.toProgramEntity(playlistId))
+    }
+
+    override suspend fun insertPrograms(programs: List<IPTVProgram>, playlistId: String) {
+        programDao.insertPrograms(programs.map { it.toProgramEntity(playlistId) })
+    }
+
+    override suspend fun deleteProgram(program: IPTVProgram) {
+        programDao.deleteProgramById(program.id)
+    }
+
+    override suspend fun deleteProgramById(id: String) {
+        programDao.deleteProgramById(id)
+    }
+
+    override suspend fun deleteProgramsForChannel(channelId: String) {
+        programDao.deleteProgramsForChannel(channelId)
+    }
+
+    override suspend fun deleteProgramsForPlaylist(playlistId: String) {
+        programDao.deleteProgramsForPlaylist(playlistId)
+    }
+
+    // Channel History methods implementation
+
+    override suspend fun recordChannelPlay(channelId: String, playlistId: String, timestamp: Long) {
+        val existingHistory = channelHistoryDao.getChannelHistory(channelId, playlistId)
+        if (existingHistory != null) {
+            // Update existing record - increment play count and update timestamp
+            channelHistoryDao.incrementPlayCount(channelId, playlistId, timestamp)
+        } else {
+            // Create new record
+            val newHistory = ChannelHistoryEntity(
+                channelId = channelId,
+                playlistId = playlistId,
+                lastPlayedTimestamp = timestamp,
+                totalPlayedTimeMs = 0,
+                playCount = 1
+            )
+            channelHistoryDao.insertOrUpdateChannelHistory(newHistory)
+        }
+    }
+
+    override suspend fun updateChannelPlayTime(
+        channelId: String,
+        playlistId: String,
+        additionalTimeMs: Long,
+        timestamp: Long,
+    ) {
+        channelHistoryDao.updatePlayedTime(channelId, playlistId, additionalTimeMs, timestamp)
+    }
+
+    override suspend fun updateChannelPositionAndDuration(
+        channelId: String,
+        playlistId: String,
+        currentPositionMs: Long,
+        totalDurationMs: Long,
+        timestamp: Long,
+    ) {
+        channelHistoryDao.updatePositionAndDuration(
+            channelId,
+            playlistId,
+            currentPositionMs,
+            totalDurationMs,
+            timestamp
         )
     }
 
-    private fun Playlist.toPlaylistEntity(): PlaylistEntity {
-        return PlaylistEntity(
-            id = id,
-            name = name,
-            url = url,
-            lastUpdated = lastUpdated,
-            format = IPTVFormat.UNKNOWN.name // This will be updated when the playlist is parsed
-        )
+    override fun getAllPlayedChannelsInPlaylist(playlistId: String): Flow<List<ChannelHistory>> {
+        return channelHistoryDao.getAllPlayedChannelsInPlaylist(playlistId).map { historyEntities ->
+            historyEntities.map { it.toChannelHistory() }
+        }
     }
 
-    private fun ChannelEntity.toChannel(): Channel {
-        return Channel(
-            id = id,
-            name = name,
-            url = url,
-            logoUrl = logoUrl,
-            categoryId = categoryId,
-            playlistId = playlistId,
-            isFavorite = isFavorite,
-            lastWatched = lastWatched
-        )
+    override suspend fun getLastPlayedChannelInPlaylist(playlistId: String): ChannelWithHistory? {
+        return channelHistoryDao.getLastPlayedChannelInPlaylistWithDetails(playlistId)
     }
 
-    private fun Channel.toChannelEntity(): ChannelEntity {
-        return ChannelEntity(
-            id = id,
-            name = name,
-            url = url,
-            logoUrl = logoUrl,
-            categoryId = categoryId,
-            playlistId = playlistId,
-            isFavorite = isFavorite,
-            lastWatched = lastWatched
-        )
+    override fun getTop3MostPlayedChannelsInPlaylist(playlistId: String): Flow<List<ChannelWithHistory>> {
+        return channelHistoryDao.getTop3MostPlayedChannelsInPlaylistWithDetails(playlistId)
     }
 
-    private fun CategoryEntity.toCategory(): Category {
-        return Category(
-            id = id,
-            name = name,
-            playlistId = playlistId
-        )
+    override suspend fun getMostPlayedChannelInPlaylist(playlistId: String): ChannelWithHistory? {
+        return channelHistoryDao.getMostPlayedChannelInPlaylistWithDetails(playlistId)
     }
 
-    private fun Category.toCategoryEntity(): CategoryEntity {
-        return CategoryEntity(
-            id = id,
-            name = name,
-            playlistId = playlistId
-        )
+    override suspend fun getLastWatchedChannelWithDetails(playlistId: String?): ChannelWithHistory? {
+        return channelHistoryDao.getLastWatchedChannelWithDetails(playlistId)
+    }
+
+    override fun getAllWatchedChannelsWithDetails(playlistId: String): Flow<List<ChannelWithHistory>> {
+        return channelHistoryDao.getAllWatchedChannelsWithDetails(playlistId)
+    }
+
+    override fun getLastTop3WatchedChannelsWithDetails(playlistId: String?): Flow<List<ChannelWithHistory>> {
+        return channelHistoryDao.getLastTop3WatchedChannelsWithDetails(playlistId)
     }
 }

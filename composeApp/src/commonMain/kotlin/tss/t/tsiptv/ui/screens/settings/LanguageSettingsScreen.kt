@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -23,26 +24,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.hazeEffect
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.home_nav_history
 import tsiptv.composeapp.generated.resources.language_settings
 import tss.t.tsiptv.core.language.LocaleManager
 import tss.t.tsiptv.core.language.SupportedLanguage
+import tss.t.tsiptv.core.language.customAppLocale
 import tss.t.tsiptv.ui.themes.TSColors
+import tss.t.tsiptv.ui.themes.TSTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
 @Composable
@@ -51,16 +53,24 @@ fun LanguageSettingsScreen(
     localeManager: LocaleManager = koinInject(),
 ) {
     val coroutineScope = rememberCoroutineScope()
-    var selectedLanguage by remember { mutableStateOf<SupportedLanguage?>(null) }
-
     LaunchedEffect(Unit) {
-        selectedLanguage = localeManager.getCurrentLanguage()
+        customAppLocale = localeManager.getCurrentLanguage().code
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(Res.string.language_settings)) },
+            CenterAlignedTopAppBar(
+                modifier = Modifier.fillMaxWidth(),
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = TSColors.Transparent,
+                    scrolledContainerColor = TSColors.Transparent
+                ),
+                title = {
+                    Text(
+                        text = stringResource(resource = Res.string.language_settings),
+                        style = TSTextStyles.primaryToolbarTitle
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackPressed) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -87,9 +97,9 @@ fun LanguageSettingsScreen(
                     items(SupportedLanguage.entries.toTypedArray()) { language ->
                         LanguageItem(
                             language = language,
-                            isSelected = language == selectedLanguage,
+                            isSelected = language.code == customAppLocale,
                             onClick = {
-                                selectedLanguage = language
+                                customAppLocale = language.code
                                 coroutineScope.launch {
                                     localeManager.setLanguage(language)
                                 }

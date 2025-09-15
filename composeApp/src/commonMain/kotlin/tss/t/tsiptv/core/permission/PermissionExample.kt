@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.firstOrNull
 @Composable
 fun PermissionExample(
     permissionChecker: PermissionChecker,
-    permission: Permission
+    permission: Permission,
 ) {
     var permissionResult by remember { mutableStateOf<PermissionResult?>(null) }
     var showPermissionDialog by remember { mutableStateOf(false) }
@@ -44,18 +44,21 @@ fun PermissionExample(
                 description = "This app needs access to your camera to take photos.",
                 settingsDescription = "Please enable camera access in your device settings to use this feature."
             )
+
             Permission.RECORD_AUDIO -> PermissionInfo(
                 permission = Permission.RECORD_AUDIO,
                 title = "Microphone Permission",
                 description = "This app needs access to your microphone to record audio.",
                 settingsDescription = "Please enable microphone access in your device settings to use this feature."
             )
+
             Permission.ACCESS_FINE_LOCATION -> PermissionInfo(
                 permission = Permission.ACCESS_FINE_LOCATION,
                 title = "Location Permission",
                 description = "This app needs access to your location to show nearby places.",
                 settingsDescription = "Please enable location access in your device settings to use this feature."
             )
+
             else -> PermissionInfo(
                 permission = permission,
                 title = "${permission.name} Permission",
@@ -72,8 +75,11 @@ fun PermissionExample(
     var shouldRequestPermission by remember { mutableStateOf(false) }
 
     LaunchedEffect(shouldRequestPermission) {
+        println("PermissionExample: shouldRequestPermission = $shouldRequestPermission")
         if (shouldRequestPermission) {
-            val result = permissionChecker.requestPermission(permission).firstOrNull()
+            val result = permissionChecker
+                .requestPermission(permission)
+                .firstOrNull()
             permissionResult = result
             isPermanentlyDenied = result == PermissionResult.PERMANENTLY_DENIED
             shouldRequestPermission = false
@@ -149,7 +155,7 @@ fun PermissionExample(
 @Composable
 fun MultiPermissionExample(
     permissionChecker: PermissionChecker,
-    permissions: List<Permission>
+    permissions: List<Permission>,
 ) {
     var permissionResults by remember { mutableStateOf<Map<Permission, PermissionResult>>(emptyMap()) }
     var showPermissionDialog by remember { mutableStateOf(false) }
@@ -164,18 +170,21 @@ fun MultiPermissionExample(
                     description = "This app needs access to your camera to take photos.",
                     settingsDescription = "Please enable camera access in your device settings to use this feature."
                 )
+
                 Permission.RECORD_AUDIO -> PermissionInfo(
                     permission = Permission.RECORD_AUDIO,
                     title = "Microphone Permission",
                     description = "This app needs access to your microphone to record audio.",
                     settingsDescription = "Please enable microphone access in your device settings to use this feature."
                 )
+
                 Permission.ACCESS_FINE_LOCATION -> PermissionInfo(
                     permission = Permission.ACCESS_FINE_LOCATION,
                     title = "Location Permission",
                     description = "This app needs access to your location to show nearby places.",
                     settingsDescription = "Please enable location access in your device settings to use this feature."
                 )
+
                 else -> PermissionInfo(
                     permission = permission,
                     title = "${permission.name} Permission",

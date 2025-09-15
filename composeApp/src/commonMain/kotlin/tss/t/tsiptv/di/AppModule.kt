@@ -11,14 +11,17 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.database.createDatabaseFactory
+import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.network.NetworkClientFactory
 import tss.t.tsiptv.core.parser.IPTVParserService
 import tss.t.tsiptv.core.parser.JSONParser
-import tss.t.tsiptv.core.parser.M3UParser
+import tss.t.tsiptv.core.parser.iptv.m3u.M3UParser
 import tss.t.tsiptv.core.parser.XMLParser
 import tss.t.tsiptv.core.parser.XMLEPGParser
 import tss.t.tsiptv.core.parser.JSONEPGParser
 import tss.t.tsiptv.core.parser.XMLTVEPGParser
+import tss.t.tsiptv.core.repository.HistoryRepositoryImpl
+import tss.t.tsiptv.core.repository.IHistoryRepository
 import tss.t.tsiptv.core.storage.KeyValueStorage
 import tss.t.tsiptv.core.storage.MultiplatformSettingsKeyValueStorage
 import tss.t.tsiptv.core.language.LanguageRepository
@@ -86,6 +89,16 @@ val commonModule = module {
 
     single<MediaPlayer> {
         MediaPlayerFactory.createPlayer(get(named("MediaCoroutine")))
+    }
+
+    // History Repository
+    single<IHistoryRepository> {
+        HistoryRepositoryImpl(get())
+    }
+
+    // Channel History Tracker
+    single {
+        ChannelHistoryTracker(get(), get(named("MediaCoroutine")), get())
     }
 
 }

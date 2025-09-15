@@ -38,7 +38,7 @@ class AuthRepositoryImpl(
     override val authState: Flow<AuthState> = _authState
 
     init {
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(Dispatchers.Main).launch {
             firebaseAuth.currentUser.collect { user ->
                 println(user)
                 if (user != null) {

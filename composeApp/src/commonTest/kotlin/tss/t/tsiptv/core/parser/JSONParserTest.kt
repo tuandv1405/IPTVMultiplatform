@@ -10,7 +10,7 @@ class JSONParserTest {
 
     @Test
     fun testParseValidJSONContentFormat1() {
-        // Arrange - Format 1: Array of channels
+        // Arrange - Format 1: Array of channel
         val content = """
             [
                 {
@@ -69,11 +69,11 @@ class JSONParserTest {
 
     @Test
     fun testParseValidJSONContentFormat2() {
-        // Arrange - Format 2: Object with channels property
+        // Arrange - Format 2: Object with channel property
         val content = """
             {
                 "name": "My JSON Playlist",
-                "channels": [
+                "channel": [
                     {
                         "id": "channel1",
                         "name": "Channel 1",
@@ -121,14 +121,14 @@ class JSONParserTest {
 
     @Test
     fun testParseValidJSONContentFormat3() {
-        // Arrange - Format 3: Object with groups property containing channels
+        // Arrange - Format 3: Object with groups property containing channel
         val content = """
             {
                 "name": "Grouped JSON Playlist",
                 "groups": [
                     {
                         "name": "Sports",
-                        "channels": [
+                        "channel": [
                             {
                                 "id": "channel1",
                                 "name": "Sports Channel 1",
@@ -144,7 +144,7 @@ class JSONParserTest {
                     },
                     {
                         "name": "News",
-                        "channels": [
+                        "channel": [
                             {
                                 "id": "channel3",
                                 "name": "News Channel",
@@ -166,7 +166,7 @@ class JSONParserTest {
         assertEquals(3, playlist.channels.size)
         assertEquals(2, playlist.groups.size)
 
-        // Check Sports group channels
+        // Check Sports group channel
         val sportsChannels = playlist.channels.filter { it.groupTitle == "Sports" }
         assertEquals(2, sportsChannels.size)
 
@@ -177,7 +177,7 @@ class JSONParserTest {
         assertEquals("http://example.com/logo1.png", channel1.logoUrl)
         assertEquals("Sports", channel1.groupTitle)
 
-        // Check News group channels
+        // Check News group channel
         val newsChannels = playlist.channels.filter { it.groupTitle == "News" }
         assertEquals(1, newsChannels.size)
 
@@ -220,7 +220,7 @@ class JSONParserTest {
         val content = """
             {
                 "name": "Empty Playlist",
-                "description": "This playlist has no channels"
+                "description": "This playlist has no channel"
             }
         """.trimIndent()
 
