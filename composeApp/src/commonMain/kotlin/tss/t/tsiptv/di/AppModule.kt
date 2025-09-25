@@ -1,11 +1,14 @@
 package tss.t.tsiptv.di
 
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.plus
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -26,10 +29,18 @@ import tss.t.tsiptv.core.storage.KeyValueStorage
 import tss.t.tsiptv.core.storage.MultiplatformSettingsKeyValueStorage
 import tss.t.tsiptv.core.language.LanguageRepository
 import tss.t.tsiptv.core.language.LocaleManager
+import tss.t.tsiptv.core.network.NetworkClientFactory.get
+import tss.t.tsiptv.core.network.NetworkConnectivityChecker
+import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
 import tss.t.tsiptv.core.parser.IPTVParser
+import tss.t.tsiptv.core.storage.InMemoryKeyValueStorage
 import tss.t.tsiptv.feature.auth.di.authModule
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.MediaPlayerFactory
+import tss.t.tsiptv.ui.screens.home.HomeViewModel
+import tss.t.tsiptv.ui.screens.player.PlayerViewModel
+import tss.t.tsiptv.ui.screens.programs.ProgramViewModel
+import tss.t.tsiptv.usecase.di.useCaseModule
 
 /**
  * Common module for shared dependencies
@@ -74,6 +85,10 @@ val commonModule = module {
         )
     }
 
+    single<InMemoryKeyValueStorage> {
+        InMemoryKeyValueStorage()
+    }
+
     // Language
     single { LanguageRepository(get()) }
     single { LocaleManager(get()) }
@@ -87,9 +102,6 @@ val commonModule = module {
         CoroutineScope(Dispatchers.Main) + SupervisorJob()
     }
 
-    single<MediaPlayer> {
-        MediaPlayerFactory.createPlayer(get(named("MediaCoroutine")))
-    }
 
     // History Repository
     single<IHistoryRepository> {
@@ -101,6 +113,13 @@ val commonModule = module {
         ChannelHistoryTracker(get(), get(named("MediaCoroutine")), get())
     }
 
+    single<NetworkConnectivityChecker> {
+        NetworkConnectivityCheckerFactory.create()
+    }
+
+    viewModelOf(::HomeViewModel)
+    viewModelOf(::PlayerViewModel)
+    viewModelOf(::ProgramViewModel)
 }
 
 /**
@@ -109,4 +128,5 @@ val commonModule = module {
 fun getCommonModules(): List<Module> = listOf(
     commonModule,
     authModule,
+    useCaseModule
 )

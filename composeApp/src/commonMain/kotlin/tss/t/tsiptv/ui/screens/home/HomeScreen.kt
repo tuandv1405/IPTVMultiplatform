@@ -11,13 +11,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,8 +51,6 @@ import tsiptv.composeapp.generated.resources.home_nav_settings
 import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.ui.screens.home.models.BottomNavItem
-import tss.t.tsiptv.ui.screens.login.AuthUiState
-import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
@@ -73,8 +68,8 @@ internal val defNavItems = listOf(
         labelRes = Res.string.home_nav_history
     ),
     BottomNavItem(
-        route = NavRoutes.HomeScreens.SETTINGS,
-        icon = Icons.Rounded.Settings,
+        route = NavRoutes.HomeScreens.PROGRAM,
+        icon = Icons.Rounded.Schedule,
         labelRes = Res.string.home_nav_settings
     ),
     BottomNavItem(
@@ -89,14 +84,12 @@ internal val defNavItems = listOf(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
+fun HomeBottomNavigationScreen(
     hazeState: HazeState,
     parentNavController: NavHostController,
     totalPlaylist: List<PlaylistWithChannelCount>,
-    authState: AuthUiState,
     homeUiState: HomeUiState,
     playerUIState: PlayerUIState,
-    onLoginEvent: (LoginEvents) -> Unit = {},
     onHomeEvent: (HomeEvent) -> Unit = {},
 ) {
     val navController = rememberNavController()
@@ -130,7 +123,8 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-        HomeNavHost(
+
+        HomeBottomNavigationNavHost(
             navController = navController,
             parentNavController = parentNavController,
             modifier = Modifier
@@ -138,10 +132,8 @@ fun HomeScreen(
             totalPlaylist = totalPlaylist,
             hazeState = hazeState,
             contentPadding = paddingValues,
-            authState = authState,
             homeUiState = homeUiState,
             playerUIState = playerUIState,
-            onLoginEvent = onLoginEvent,
             onHomeEvent = onHomeEvent,
         )
     }

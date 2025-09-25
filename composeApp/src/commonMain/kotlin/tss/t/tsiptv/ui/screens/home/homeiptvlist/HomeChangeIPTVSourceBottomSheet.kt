@@ -44,7 +44,7 @@ import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.themes.TSTextStyles
 import tss.t.tsiptv.ui.widgets.HorizontalDividersGradient
-import tss.t.tsiptv.ui.widgets.IPTVAppBar
+import tss.t.tsiptv.ui.widgets.TSAppBarXBackIcon
 import tss.t.tsiptv.utils.TimeStampFormat
 import tss.t.tsiptv.utils.formatDynamic
 
@@ -73,7 +73,7 @@ fun HomeChangeIPTVSourceBottomSheet(
                         .clip(TSShapes.roundedShape4),
                     color = TSColors.White.copy(alpha = 0.4f)
                 ) {}
-                IPTVAppBar(
+                TSAppBarXBackIcon(
                     modifier = Modifier.hazeEffect(hazeState),
                     title = stringResource(Res.string.bottom_sheet_select_playlist),
                     windowInsets = WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal),

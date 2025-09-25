@@ -51,7 +51,7 @@ import tss.t.tsiptv.ui.screens.home.HomeUiState
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.widgets.AppLogoCircle
-import tss.t.tsiptv.ui.widgets.IPTVAppBar
+import tss.t.tsiptv.ui.widgets.TSAppBarXBackIcon
 import tss.t.tsiptv.ui.widgets.PositiveButton
 import tss.t.tsiptv.ui.widgets.TSDialog
 import tss.t.tsiptv.ui.widgets.TSTextField
@@ -132,7 +132,7 @@ fun ImportIPTVScreen(
     Scaffold(
         topBar = {
             Column {
-                IPTVAppBar(
+                TSAppBarXBackIcon(
                     modifier = Modifier.hazeEffect(hazeState),
                     title = stringResource(Res.string.add_iptv_source_title),
                     onBackClick = {

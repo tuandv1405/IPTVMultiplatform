@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
+import org.koin.compose.viewmodel.koinViewModel
 import tss.t.tsiptv.core.parser.IPTVProgram
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.ui.MediaPlayerContent
@@ -41,6 +42,7 @@ import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
+import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
 
 
 internal val MiniPlayerHeight = 90.dp
@@ -53,9 +55,11 @@ fun BoxScope.HomeMiniPlayer(
     mediaItem: MediaItem,
     hazeState: HazeState,
     program: IPTVProgram?,
-    playerViewModel: PlayerViewModel,
     onHideMiniPlayer: () -> Unit,
 ) {
+    val viewModelStoreOwner = LocalAppViewModelStoreOwner.current!!
+    val playerViewModel = koinViewModel<PlayerViewModel>(viewModelStoreOwner = viewModelStoreOwner)
+
     AnimatedVisibility(
         visible = showMiniPlayer,
         modifier = Modifier.Companion

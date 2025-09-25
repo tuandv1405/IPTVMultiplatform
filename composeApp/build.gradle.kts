@@ -121,6 +121,9 @@ kotlin {
             // Add Koin for dependency injection
             implementation(libs.koin.core)
             implementation(libs.koin.compose.jb)
+            implementation(libs.androidx.lifecycle.viewmodel)
+            implementation(libs.koin.compose.viewmodel)
+            implementation(libs.koin.compose.viewmodel.navigation)
 
             implementation(libs.coil.compose)
             implementation(libs.coil.network)

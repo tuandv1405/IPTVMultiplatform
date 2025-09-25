@@ -21,10 +21,19 @@ interface ProgramDao {
     @Query("SELECT * FROM programs")
     fun getAllPrograms(): Flow<List<ProgramEntity>>
 
-    @Query("SELECT COUNT(*) FROM programs WHERE " +
-            "playlistId == :playListId AND " +
-            "(startTime <= :timeStamp OR endTime <= :timeStamp)")
+    @Query(
+        "SELECT COUNT(*) FROM programs WHERE " +
+                "playlistId == :playListId AND " +
+                "(startTime <= :timeStamp OR endTime <= :timeStamp)"
+    )
     suspend fun countValidPrograms(playListId: String, timeStamp: Long): Int
+
+    @Query(
+        "SELECT * FROM programs WHERE " +
+                "playlistId == :playListId AND " +
+                "(startTime <= :timeStamp OR endTime <= :timeStamp) LIMIT :limit OFFSET :offset"
+    )
+    suspend fun getValidPrograms(playListId: String, timeStamp: Long, offset: Int, limit: Int): List<ProgramEntity>
 
     /**
      * Gets a program by ID.
@@ -53,7 +62,11 @@ interface ProgramDao {
      * @return A flow of programs for the channel within the time range
      */
     @Query("SELECT * FROM programs WHERE channelId = :channelId AND startTime >= :startTime AND endTime <= :endTime ORDER BY startTime ASC")
-    suspend fun getProgramsForChannelInTimeRange(channelId: String, startTime: Long, endTime: Long): List<ProgramEntity>
+    suspend fun getProgramsForChannelInTimeRange(
+        channelId: String,
+        startTime: Long,
+        endTime: Long,
+    ): List<ProgramEntity>
 
     /**
      * Gets current and upcoming programs for a channel.
@@ -63,7 +76,10 @@ interface ProgramDao {
      * @return A flow of current and upcoming programs for the channel
      */
     @Query("SELECT * FROM programs WHERE channelId = :channelId AND endTime > :currentTime ORDER BY startTime ASC")
-    suspend fun getCurrentAndUpcomingProgramsForChannel(channelId: String, currentTime: Long): List<ProgramEntity>
+    suspend fun getCurrentAndUpcomingProgramsForChannel(
+        channelId: String,
+        currentTime: Long,
+    ): List<ProgramEntity>
 
     /**
      * Gets the current program for a channel.

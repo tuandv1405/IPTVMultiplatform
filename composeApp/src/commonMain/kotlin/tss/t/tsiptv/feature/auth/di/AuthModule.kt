@@ -1,5 +1,6 @@
 package tss.t.tsiptv.feature.auth.di
 
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import tss.t.tsiptv.feature.auth.data.repository.AuthRepositoryImpl
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
@@ -22,16 +23,12 @@ val authModule = module {
         )
     }
 
-    // ViewModels
-    factory {
-        AuthViewModel(
-            authRepository = get()
-        )
-    }
-
     factory {
         GoogleSignInViewModel(
             googleSignIn = get()
         )
     }
+
+    // ViewModels
+    viewModelOf(::AuthViewModel)
 }
