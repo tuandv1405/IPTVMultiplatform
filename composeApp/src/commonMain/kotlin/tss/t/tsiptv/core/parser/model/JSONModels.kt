@@ -3,9 +3,6 @@ package tss.t.tsiptv.core.parser.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
-import tss.t.tsiptv.core.parser.IPTVChannel
-import tss.t.tsiptv.core.parser.IPTVGroup
-import tss.t.tsiptv.core.parser.IPTVPlaylist
 
 /**
  * Serializable models for JSON IPTV playlists.

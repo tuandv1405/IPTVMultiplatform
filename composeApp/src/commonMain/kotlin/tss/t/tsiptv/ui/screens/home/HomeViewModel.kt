@@ -24,10 +24,12 @@ import tss.t.tsiptv.core.model.Playlist
 import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.parser.EPGParserFactory
 import tss.t.tsiptv.core.parser.IPTVParserFactory
-import tss.t.tsiptv.core.parser.IPTVProgram
+import tss.t.tsiptv.core.parser.model.IPTVProgram
 import tss.t.tsiptv.core.repository.IHistoryRepository
 import tss.t.tsiptv.core.storage.KeyValueStorage
 import tss.t.tsiptv.player.models.MediaItem
+import tss.t.tsiptv.usecase.playlist.GetCurrentPlaylistUseCase
+import tss.t.tsiptv.usecase.playlist.SetCurrentPlaylistUseCase
 import tss.t.tsiptv.utils.isToday
 import kotlin.time.ExperimentalTime
 
@@ -37,6 +39,8 @@ class HomeViewModel(
     private val historyRepository: IHistoryRepository,
     private val historyTracker: ChannelHistoryTracker,
     private val keyValueStorage: KeyValueStorage,
+    private val getCurrentPlaylistUC: GetCurrentPlaylistUseCase,
+    private val setCurrentPlaylistUC: SetCurrentPlaylistUseCase,
 ) : ViewModel() {
 
     private var _currentListChannel: List<Channel> = emptyList()
@@ -55,27 +59,25 @@ class HomeViewModel(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val playlists = iptvDatabase.getAllPlaylists()
-                playlists.collect { playlistList ->
-                    if (playlistList.isNotEmpty()) {
-                        val currentPlaylist = playlistList.first()
-                        onHandleEvent(HomeEvent.LoadHistory)
-                        _uiState.update {
-                            it.copy(
-                                playListId = currentPlaylist.id,
-                                playListName = currentPlaylist.name,
-                                categories = iptvDatabase.getCategoriesByPlaylist(
-                                    currentPlaylist.id
-                                ),
-                            )
-                        }
-                        getAllChannelForIptvSource(playlistId = currentPlaylist.id)
-                    } else {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                            )
-                        }
+                val playlistId = getCurrentPlaylistUC() ?: return@launch
+                val currentPlaylist = iptvDatabase.getPlaylistById(playlistId)
+                if (currentPlaylist != null) {
+                    onHandleEvent(HomeEvent.LoadHistory)
+                    _uiState.update {
+                        it.copy(
+                            playListId = playlistId,
+                            playListName = currentPlaylist.name,
+                            categories = iptvDatabase.getCategoriesByPlaylist(
+                                currentPlaylist.id
+                            ),
+                        )
+                    }
+                    getAllChannelForIptvSource(playlistId = currentPlaylist.id)
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                        )
                     }
                 }
             } catch (e: Exception) {
@@ -105,7 +107,7 @@ class HomeViewModel(
     fun parseIptvSource(name: String, url: String) {
         viewModelScope.launch {
             _uiState.update {
-                it.copy()
+                it.copy(isLoading = true)
             }
             try {
                 val content = networkClient.get(url)
@@ -152,6 +154,7 @@ class HomeViewModel(
                         listChannels = channels
                     )
                 }
+                setCurrentPlaylistUC(newPlaylist.id)
                 onEmitEvent(HomeEvent.OnParseIPTVSourceSuccess)
             } catch (e: Exception) {
                 _uiState.update {
@@ -479,6 +482,7 @@ class HomeViewModel(
                             selectedCategory = null
                         )
                     }
+                    setCurrentPlaylistUC(currentPlaylist.id)
                     getAllChannelForIptvSource(playlistId = currentPlaylist.id)
                     loadHistoryData(playlistId = currentPlaylist.id)
                 }

@@ -2,7 +2,7 @@ package tss.t.tsiptv.core.database
 
 import androidx.room.TypeConverter
 import kotlinx.serialization.json.Json
-import tss.t.tsiptv.core.parser.IPTVProgram
+import tss.t.tsiptv.core.parser.model.IPTVProgram
 
 class Converter {
 

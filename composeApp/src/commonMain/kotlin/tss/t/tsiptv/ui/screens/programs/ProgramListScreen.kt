@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.home_nav_programs
-import tss.t.tsiptv.core.parser.IPTVChannel
+import tss.t.tsiptv.core.parser.model.IPTVChannel
 import tss.t.tsiptv.ui.widgets.TSAppBar
 
 @OptIn(ExperimentalMaterial3Api::class)

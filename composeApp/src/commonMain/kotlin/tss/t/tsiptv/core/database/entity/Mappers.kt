@@ -3,14 +3,13 @@ package tss.t.tsiptv.core.database.entity
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.format.Padding
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.Playlist
-import tss.t.tsiptv.core.parser.IPTVFormat
-import tss.t.tsiptv.core.parser.IPTVProgram
+import tss.t.tsiptv.core.parser.model.IPTVFormat
+import tss.t.tsiptv.core.parser.model.IPTVProgram
 
 
 fun PlaylistEntity.toPlaylist(): Playlist {

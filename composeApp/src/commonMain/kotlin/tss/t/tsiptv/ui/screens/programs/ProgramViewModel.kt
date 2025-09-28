@@ -7,17 +7,25 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import tss.t.tsiptv.core.database.IPTVDatabase
-import tss.t.tsiptv.core.parser.IPTVProgram
+import tss.t.tsiptv.core.parser.model.IPTVProgram
+import tss.t.tsiptv.usecase.playlist.GetCurrentPlaylistUseCase
+import tss.t.tsiptv.usecase.playlist.SetCurrentPlaylistUseCase
 
 class ProgramViewModel(
-    private val iptvDatabase: IPTVDatabase,
+    private val getCurrentPlaylistUC: GetCurrentPlaylistUseCase,
+    private val setCurrentPlaylistUC: SetCurrentPlaylistUseCase,
 ) : ViewModel() {
     private val _listProgramUIState by lazy {
         MutableStateFlow(UIState())
     }
     val listProgramUIState: StateFlow<UIState>
         get() = _listProgramUIState
+
+    fun getListProgram() {
+        viewModelScope.launch(Dispatchers.IO) {
+
+        }
+    }
 
     data class UIState(
         val programList: List<IPTVProgram> = emptyList(),
@@ -26,12 +34,4 @@ class ProgramViewModel(
         val isLoading: Boolean = false,
     )
 
-    fun getListProgram() {
-        viewModelScope.launch(Dispatchers.IO) {
-            iptvDatabase.programDao.getAllPrograms()
-                .collect {
-
-                }
-        }
-    }
 }

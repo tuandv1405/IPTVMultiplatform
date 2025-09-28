@@ -1,7 +1,5 @@
 package tss.t.tsiptv.di
 
-import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -15,28 +13,24 @@ import org.koin.dsl.module
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.database.createDatabaseFactory
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
-import tss.t.tsiptv.core.network.NetworkClientFactory
-import tss.t.tsiptv.core.parser.IPTVParserService
-import tss.t.tsiptv.core.parser.JSONParser
-import tss.t.tsiptv.core.parser.iptv.m3u.M3UParser
-import tss.t.tsiptv.core.parser.XMLParser
-import tss.t.tsiptv.core.parser.XMLEPGParser
-import tss.t.tsiptv.core.parser.JSONEPGParser
-import tss.t.tsiptv.core.parser.XMLTVEPGParser
-import tss.t.tsiptv.core.repository.HistoryRepositoryImpl
-import tss.t.tsiptv.core.repository.IHistoryRepository
-import tss.t.tsiptv.core.storage.KeyValueStorage
-import tss.t.tsiptv.core.storage.MultiplatformSettingsKeyValueStorage
 import tss.t.tsiptv.core.language.LanguageRepository
 import tss.t.tsiptv.core.language.LocaleManager
-import tss.t.tsiptv.core.network.NetworkClientFactory.get
+import tss.t.tsiptv.core.network.NetworkClientFactory
 import tss.t.tsiptv.core.network.NetworkConnectivityChecker
 import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
 import tss.t.tsiptv.core.parser.IPTVParser
+import tss.t.tsiptv.core.parser.IPTVParserService
+import tss.t.tsiptv.core.parser.epg.JSONEPGParser
+import tss.t.tsiptv.core.parser.JSONParser
+import tss.t.tsiptv.core.parser.XMLParser
+import tss.t.tsiptv.core.parser.epg.XMLTVEPGParser
+import tss.t.tsiptv.core.parser.iptv.m3u.M3UParser
+import tss.t.tsiptv.core.repository.HistoryRepositoryImpl
+import tss.t.tsiptv.core.repository.IHistoryRepository
 import tss.t.tsiptv.core.storage.InMemoryKeyValueStorage
+import tss.t.tsiptv.core.storage.KeyValueStorage
+import tss.t.tsiptv.core.storage.MultiplatformSettingsKeyValueStorage
 import tss.t.tsiptv.feature.auth.di.authModule
-import tss.t.tsiptv.player.MediaPlayer
-import tss.t.tsiptv.player.MediaPlayerFactory
 import tss.t.tsiptv.ui.screens.home.HomeViewModel
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
 import tss.t.tsiptv.ui.screens.programs.ProgramViewModel
@@ -72,7 +66,6 @@ val commonModule = module {
         get<JSONParser>()
     }
 
-    single { XMLEPGParser() }
     single { JSONEPGParser() }
     single { XMLTVEPGParser() }
 

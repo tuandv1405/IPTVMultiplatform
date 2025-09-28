@@ -11,7 +11,7 @@ import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.ChannelHistory
 import tss.t.tsiptv.core.model.Playlist
-import tss.t.tsiptv.core.parser.IPTVProgram
+import tss.t.tsiptv.core.parser.model.IPTVProgram
 import tss.t.tsiptv.core.database.entity.ChannelWithHistory
 
 /**

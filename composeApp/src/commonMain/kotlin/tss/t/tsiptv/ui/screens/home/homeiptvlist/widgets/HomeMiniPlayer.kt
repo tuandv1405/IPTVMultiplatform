@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.sp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import org.koin.compose.viewmodel.koinViewModel
-import tss.t.tsiptv.core.parser.IPTVProgram
+import tss.t.tsiptv.core.parser.model.IPTVProgram
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.ui.MediaPlayerContent
 import tss.t.tsiptv.ui.screens.home.HomeEvent

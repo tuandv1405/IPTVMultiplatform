@@ -2,6 +2,7 @@ package tss.t.tsiptv.core.parser
 
 import kotlinx.serialization.json.*
 import tss.t.tsiptv.core.parser.model.*
+import tss.t.tsiptv.core.parser.model.exception.IPTVParserException
 
 /**
  * Implementation of IPTVParser for JSON format using Kotlin Serialization.

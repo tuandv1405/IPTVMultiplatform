@@ -4,6 +4,14 @@ import nl.adaptivity.xmlutil.serialization.XML
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.SYSTEM
+import tss.t.tsiptv.core.parser.epg.model.XMLTVCategory
+import tss.t.tsiptv.core.parser.epg.model.XMLTVChannel
+import tss.t.tsiptv.core.parser.epg.model.XMLTVDesc
+import tss.t.tsiptv.core.parser.epg.model.XMLTVDisplayName
+import tss.t.tsiptv.core.parser.epg.model.XMLTVDocument
+import tss.t.tsiptv.core.parser.epg.model.XMLTVIcon
+import tss.t.tsiptv.core.parser.epg.model.XMLTVProgramme
+import tss.t.tsiptv.core.parser.epg.model.XMLTVTitle
 import tss.t.tsiptv.core.parser.model.*
 import kotlin.test.BeforeTest
 import kotlin.test.Test

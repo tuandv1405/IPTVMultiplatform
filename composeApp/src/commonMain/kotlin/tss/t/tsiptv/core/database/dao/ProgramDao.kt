@@ -54,6 +54,29 @@ interface ProgramDao {
     suspend fun getProgramsForChannel(channelId: String): List<ProgramEntity>
 
     /**
+     * Gets distinct channel IDs from programs for a playlist.
+     *
+     * @param playlistId The ID of the playlist
+     * @return A list of programs with distinct channel IDs
+     */
+    @Query("SELECT DISTINCT channelId FROM programs WHERE playlistId = :playlistId")
+    suspend fun getDistinctChannelIds(playlistId: String): List<String>
+
+    /**
+     * Gets all channels with the count of their valid programs for a playlist.
+     *
+     * @param playlistId The ID of the playlist
+     * @param timeStamp The current timestamp to filter valid programs
+     * @return A list of pairs, where each pair contains a channel ID and the count of its valid programs
+     */
+    @Query("""
+        SELECT p.channelId, COUNT(p.id) as programCount
+        FROM programs p
+        WHERE p.playlistId = :playlistId AND (p.startTime <= :timeStamp OR p.endTime <= :timeStamp)
+        GROUP BY p.channelId
+    """)
+    suspend fun getChannelsWithValidProgramCounts(playlistId: String, timeStamp: Long): List<ChannelWithProgramCount>
+    /**
      * Gets programs for a channel within a time range.
      *
      * @param channelId The ID of the channel
@@ -139,3 +162,11 @@ interface ProgramDao {
     @Query("DELETE FROM programs WHERE playlistId = :playlistId")
     suspend fun deleteProgramsForPlaylist(playlistId: String)
 }
+
+/**
+ * Data class to hold the result of the query for channels with their valid program counts.
+ */
+data class ChannelWithProgramCount(
+    val channelId: String,
+    val programCount: Int
+)
