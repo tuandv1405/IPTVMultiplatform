@@ -12,6 +12,8 @@
 
     <!-- Common -->
     <string name="ok">OK</string>
+    <string name="accept">Xác nhận</string>
+    <string name="allow">Cho phép</string>
     <string name="cancel">Hủy</string>
     <string name="error">Lỗi</string>
     <string name="error_occurred">Đã xảy ra lỗi</string>
@@ -73,6 +75,7 @@
     <string name="quick_close_action">Hành động nhanh</string>
     <string name="bottom_sheet_add_iptv">Thêm nguồn IPTV</string>
     <string name="bottom_sheet_import_playlist">Nhập danh sách phát</string>
+    <string name="bottom_sheet_select_playlist">Chọn danh sách phát</string>
     <string name="bottom_sheet_refresh_channel">Làm mới kênh</string>
     <string name="bottom_sheet_change_language">Đổi ngôn ngữ</string>
 
@@ -80,6 +83,7 @@
     <string name="home_nav_history">Lịch sử</string>
     <string name="home_nav_settings">Cài đặt</string>
     <string name="home_nav_profile">Hồ sơ</string>
+    <string name="home_nav_programs">Lịch phát sóng</string>
 
     <string name="home_search_placeholder">Tìm kênh, chương trình...</string>
     <string name="empty_history">Không có hoạt động gần đây</string>
@@ -87,4 +91,9 @@
     <string name="player_dislike">Không thích</string>
     <string name="player_share">Chia sẻ</string>
     <string name="player_report">Báo cáo</string>
+    <string name="channel_count_format">%1$d Kênh</string>
+    <string name="programs_today_format">%1$d Chương trình</string>
+
+    <string name="popup_refresh_program_title">Cập nhật lịch phát sóng</string>
+    <string name="popup_refresh_program_description">Bạn có muốn cập nhật lịch phát sóng hôm nay?</string>
 </resources>

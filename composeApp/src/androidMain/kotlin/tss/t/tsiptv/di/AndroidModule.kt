@@ -1,6 +1,7 @@
 package tss.t.tsiptv.di
 
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import tss.t.tsiptv.core.firebase.AndroidFirebaseAuth
@@ -9,6 +10,8 @@ import tss.t.tsiptv.core.googlesignin.AndroidGoogleSignInImplementation
 import tss.t.tsiptv.core.googlesignin.GoogleSignIn
 import tss.t.tsiptv.core.storage.AndroidSettingsFactory
 import tss.t.tsiptv.core.storage.SettingsFactory
+import tss.t.tsiptv.player.MediaPlayer
+import tss.t.tsiptv.player.MediaPlayerFactory
 
 /**
  * Android-specific module for dependencies
@@ -26,6 +29,14 @@ val androidModule = module {
     single {
         AndroidGoogleSignInImplementation()
     } bind GoogleSignIn::class
+
+    // MediaPlayer for Android
+    single<MediaPlayer> {
+        MediaPlayerFactory.createPlayer(
+            context = get(),
+            coroutineScope = get(named("MediaCoroutine"))
+        )
+    }
 }
 
 /**

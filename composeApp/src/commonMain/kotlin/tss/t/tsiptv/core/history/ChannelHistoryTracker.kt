@@ -4,11 +4,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.database.entity.ProgramEntity
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.player.MediaPlayer
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /**
  * Service to track channel play history and calculate accurate play time.
@@ -30,6 +31,7 @@ class ChannelHistoryTracker(
     /**
      * Called when a channel starts playing.
      */
+    @OptIn(ExperimentalTime::class)
     suspend fun onChannelPlay(
         channel: Channel,
         playlistId: String,
@@ -67,6 +69,7 @@ class ChannelHistoryTracker(
     /**
      * Called when playback is resumed.
      */
+    @OptIn(ExperimentalTime::class)
     suspend fun onPlaybackResumed() {
         if (!isPlaying && currentChannel != null) {
             playStartTime = Clock.System.now().toEpochMilliseconds()
@@ -91,6 +94,7 @@ class ChannelHistoryTracker(
     /**
      * Called when screen state changes.
      */
+    @OptIn(ExperimentalTime::class)
     suspend fun onScreenStateChanged(isScreenOn: Boolean) {
         if (this.isScreenOn != isScreenOn) {
             if (isPlaying) {
@@ -109,6 +113,7 @@ class ChannelHistoryTracker(
     /**
      * Saves the current play time to the database.
      */
+    @OptIn(ExperimentalTime::class)
     private suspend fun saveCurrentPlayTime() {
         val channel = currentChannel
         val playlistId = currentPlaylistId
@@ -144,6 +149,7 @@ class ChannelHistoryTracker(
     /**
      * Starts the play time tracking coroutine.
      */
+    @OptIn(ExperimentalTime::class)
     private fun startPlayTimeTracking() {
         stopPlayTimeTracking() // Stop any existing tracking
 

@@ -22,6 +22,7 @@ data class PlaylistEntity(
     val url: String,
     val lastUpdated: Long,
     val format: String,
+    val epgUrl: String?
 )
 
 /**

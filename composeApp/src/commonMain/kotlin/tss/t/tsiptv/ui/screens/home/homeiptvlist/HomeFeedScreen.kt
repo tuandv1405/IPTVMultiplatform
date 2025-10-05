@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,21 +48,16 @@ import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.hello_format
 import tsiptv.composeapp.generated.resources.home_search_placeholder
-import tss.t.tsiptv.core.database.IPTVDatabase
-import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.navigation.NavRoutes
-import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.screens.home.HomeUiState
@@ -70,6 +66,7 @@ import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.HomeMiniPlayer
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.MiniPlayerHeight
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.homeEmptyIptvSource
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.homeItemList
+import tss.t.tsiptv.ui.screens.login.AuthUiState
 import tss.t.tsiptv.ui.screens.login.provider.LocalAuthProvider
 import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
@@ -77,6 +74,7 @@ import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.widgets.HeaderWithAvatar
 import tss.t.tsiptv.ui.widgets.SearchWidget
+import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
 
 
 /**
@@ -84,7 +82,7 @@ import tss.t.tsiptv.ui.widgets.SearchWidget
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeFeedScreen(
+fun HomeIPTVPlaylistScreen(
     navController: NavHostController,
     parentNavController: NavHostController,
     hazeState: HazeState,
@@ -103,7 +101,6 @@ fun HomeFeedScreen(
     val isInitLoading = remember(homeUiState) {
         homeUiState.isLoading
     }
-
     val isEmpty = remember(
         homeUiState.listChannels,
         homeUiState.isLoading
@@ -115,17 +112,9 @@ fun HomeFeedScreen(
 
     var showStickyHeader by remember { mutableStateOf(false) }
     val categoryListState: LazyListState = rememberLazyListState()
-    val mediaPlayer = koinInject<MediaPlayer>()
-    val iptvDatabase = koinInject<IPTVDatabase>()
-    val historyTracker = koinInject<ChannelHistoryTracker>()
-    val viewStoreOwner = LocalViewModelStoreOwner.current!!
-    val playerViewModel = viewModel<PlayerViewModel>(viewStoreOwner) {
-        PlayerViewModel(
-            _mediaPlayer = mediaPlayer,
-            _iptvDatabase = iptvDatabase,
-            historyTracker = historyTracker
-        )
-    }
+    val viewModelStoreOwner = LocalAppViewModelStoreOwner.current!!
+    val playerViewModel = koinViewModel<PlayerViewModel>(viewModelStoreOwner = viewModelStoreOwner)
+
     val mediaItem by playerViewModel.mediaItemState.collectAsStateWithLifecycle()
     var showMiniPlayer by remember { mutableStateOf(false) }
     var searchOffset by remember {
@@ -166,59 +155,31 @@ fun HomeFeedScreen(
         }
     }
 
+    val infiniteTransition = rememberInfiniteTransition(label = "liquidGlass")
+    val shimmerColor by infiniteTransition.animateFloat(
+        initialValue = 0.1f,
+        targetValue = 0.15f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2_000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "liquidFlow"
+    )
+
     // Main content with Scaffold
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
-            Column {
-                HeaderWithAvatar(
-                    modifier = Modifier
-                        .background(TSColors.BackgroundColor)
-                        .clickable(
-                            indication = null,
-                            onClick = {},
-                            interactionSource = remember {
-                                MutableInteractionSource()
-                            }
-                        )
-                        .hazeEffect(hazeState)
-                        .statusBarsPadding()
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
-                    helloTitle = stringResource(
-                        Res.string.hello_format,
-                        authState?.user?.displayName?.let { " $it" } ?: ""),
-                    name = name,
-                    notificationCount = 10,
-                    onSettingClick = {
-                        onHomeEvent(HomeEvent.OnHomeFeedSettingPressed)
-                    },
-                    onNotificationClick = {
-                        onHomeEvent(HomeEvent.OnHomeFeedNotificationPressed)
-                    },
-                    onAvatarClick = {
-                        navController.navigate(NavRoutes.HomeScreens.PROFILE)
-                    }
-                )
-
-                SearchWidget(
-                    modifier = Modifier.fillMaxWidth()
-                        .onGloballyPositioned {
-                            searchOffset = it.positionOnScreen().y.toInt()
-                                .coerceAtLeast(searchOffset)
-                        }
-                        .background(TSColors.BackgroundColor)
-                        .hazeEffect(hazeState)
-                        .padding(horizontal = 16.dp)
-                        .padding(vertical = 16.dp),
-                    initText = homeUiState.searchText,
-                    placeholder = stringResource(Res.string.home_search_placeholder),
-                    onValueChange = {
-                        onHomeEvent(HomeEvent.OnSearchKeyChange(it))
-                    },
-                    onClear = {
-                        onHomeEvent(HomeEvent.OnSearchKeyChange(""))
-                    }
-                )
+            HomeFeedTopAppBar(
+                hazeState,
+                authState,
+                name,
+                onHomeEvent,
+                navController,
+                homeUiState,
+                searchOffset
+            ) {
+                searchOffset = it
             }
         },
         content = {
@@ -236,109 +197,63 @@ fun HomeFeedScreen(
                     )
                 }
             ) { targetState ->
-                if (targetState) {
-                    val infiniteTransition = rememberInfiniteTransition(label = "liquidGlass")
-                    val shimmerColor by infiniteTransition.animateFloat(
-                        initialValue = 0.1f,
-                        targetValue = 0.15f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(2_000, easing = LinearEasing),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "liquidFlow"
-                    )
-
-                    Column(
-                        modifier = Modifier
-                            .padding(top = it.calculateTopPadding())
-                            .fillMaxSize(),
+                Box {
+                    LazyColumn(
+                        state = scrollState,
+                        modifier = Modifier.fillMaxSize()
+                            .hazeSource(hazeState),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        repeat(2) {
-                            Box(
-                                modifier = Modifier.padding(16.dp)
-                                    .fillMaxWidth()
-                                    .height(100.dp)
-                                    .clip(TSShapes.roundedShape12)
-                                    .background(
-                                        TSColors.White.copy(alpha = shimmerColor),
-                                        TSShapes.roundedShape12
-                                    )
-                                    .blur(20.dp)
-                            )
 
-                            Box(
-                                modifier = Modifier.padding(16.dp)
-                                    .fillMaxWidth()
-                                    .height(150.dp)
-                                    .clip(TSShapes.roundedShape12)
-                                    .blur(20.dp)
-                                    .background(
-                                        TSColors.White.copy(alpha = shimmerColor),
-                                        TSShapes.roundedShape12
-                                    )
-                            )
+                        item("HomeSpaceTop") {
+                            Spacer(Modifier.height(it.calculateTopPadding()))
                         }
-                    }
-                } else {
-                    Box {
-                        LazyColumn(
-                            state = scrollState,
-                            modifier = Modifier.fillMaxSize()
-                                .hazeSource(hazeState),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
 
-                            item("HomeSpaceTop") {
-                                Spacer(Modifier.height(it.calculateTopPadding()))
+                        when {
+                            isEmpty -> {
+                                homeEmptyIptvSource(navController, parentNavController)
                             }
 
-                            when {
-                                isEmpty -> {
-                                    homeEmptyIptvSource(navController, parentNavController)
-                                }
-
-                                isInitLoading -> {
-                                }
-
-                                else -> {
-                                    homeItemList(
-                                        homeUiState = homeUiState,
-                                        playerUIState = playerUIState,
-                                        onHomeEvent = onHomeEvent,
-                                        categoryListState = categoryListState
-                                    )
-                                }
+                            isInitLoading -> {
+                                homeLoadingItemList(shimmerColor)
                             }
 
-                            item {
-                                Spacer(
-                                    Modifier
-                                        .navigationBarsPadding()
-                                        .height(contentPadding.calculateBottomPadding() + 12.dp)
+                            else -> {
+                                homeItemList(
+                                    homeUiState = homeUiState,
+                                    playerUIState = playerUIState,
+                                    onHomeEvent = onHomeEvent,
+                                    categoryListState = categoryListState
                                 )
                             }
-
-                            if (showMiniPlayer) {
-                                item {
-                                    Spacer(
-                                        Modifier.height(MiniPlayerHeight)
-                                    )
-                                }
-                            }
                         }
 
-                        HomeMiniPlayer(
-                            showMiniPlayer = showMiniPlayer,
-                            contentPadding = contentPadding,
-                            onHomeEvent = onHomeEvent,
-                            mediaItem = mediaItem,
-                            program = homeUiState.currentProgram,
-                            hazeState = hazeState,
-                            playerViewModel = playerViewModel,
-                            onHideMiniPlayer = {
-                                showMiniPlayer = false
+                        item {
+                            Spacer(
+                                Modifier
+                                    .navigationBarsPadding()
+                                    .height(contentPadding.calculateBottomPadding() + 12.dp)
+                            )
+                        }
+
+                        if (showMiniPlayer) {
+                            item {
+                                Spacer(
+                                    Modifier.height(MiniPlayerHeight)
+                                )
                             }
-                        )
+                        }
+                    }
+
+                    HomeMiniPlayer(
+                        showMiniPlayer = showMiniPlayer,
+                        contentPadding = contentPadding,
+                        onHomeEvent = onHomeEvent,
+                        mediaItem = mediaItem,
+                        hazeState = hazeState,
+                        program = homeUiState.currentProgram
+                    ) {
+                        showMiniPlayer = false
                     }
                 }
             }
@@ -361,4 +276,99 @@ fun HomeFeedScreen(
             }
         }
     )
+}
+
+private fun LazyListScope.homeLoadingItemList(shimmerColor: Float) {
+    items(10) { size ->
+        if (size % 3 == 0) {
+            Box(
+                modifier = Modifier.padding(16.dp)
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .clip(TSShapes.roundedShape12)
+                    .background(
+                        TSColors.White.copy(alpha = shimmerColor),
+                        TSShapes.roundedShape12
+                    )
+                    .blur(20.dp)
+            )
+        } else {
+            Box(
+                modifier = Modifier.padding(16.dp)
+                    .fillMaxWidth()
+                    .height(150.dp)
+                    .clip(TSShapes.roundedShape12)
+                    .blur(20.dp)
+                    .background(
+                        TSColors.White.copy(alpha = shimmerColor),
+                        TSShapes.roundedShape12
+                    )
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeFeedTopAppBar(
+    hazeState: HazeState,
+    authState: AuthUiState?,
+    name: String,
+    onHomeEvent: (HomeEvent) -> Unit,
+    navController: NavHostController,
+    homeUiState: HomeUiState,
+    searchOffset: Int,
+    onSearchOffsetChange: (Int) -> Unit,
+) {
+    Column {
+        HeaderWithAvatar(
+            modifier = Modifier
+                .background(TSColors.BackgroundColor)
+                .clickable(
+                    indication = null,
+                    onClick = {},
+                    interactionSource = remember {
+                        MutableInteractionSource()
+                    }
+                )
+                .hazeEffect(hazeState)
+                .statusBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            helloTitle = stringResource(
+                Res.string.hello_format,
+                authState?.user?.displayName?.let { " $it" } ?: ""),
+            name = name,
+            notificationCount = 10,
+            onSettingClick = {
+                onHomeEvent(HomeEvent.OnHomeFeedSettingPressed)
+            },
+            onNotificationClick = {
+                onHomeEvent(HomeEvent.OnHomeFeedNotificationPressed)
+            },
+            onAvatarClick = {
+                navController.navigate(NavRoutes.HomeScreens.PROFILE)
+            }
+        )
+
+        SearchWidget(
+            modifier = Modifier.fillMaxWidth()
+                .onGloballyPositioned {
+                    onSearchOffsetChange(
+                        it.positionOnScreen().y.toInt()
+                            .coerceAtLeast(searchOffset)
+                    )
+                }
+                .background(TSColors.BackgroundColor)
+                .hazeEffect(hazeState)
+                .padding(horizontal = 16.dp)
+                .padding(vertical = 16.dp),
+            initText = homeUiState.searchText,
+            placeholder = stringResource(Res.string.home_search_placeholder),
+            onValueChange = {
+                onHomeEvent(HomeEvent.OnSearchKeyChange(it))
+            },
+            onClear = {
+                onHomeEvent(HomeEvent.OnSearchKeyChange(""))
+            }
+        )
+    }
 }

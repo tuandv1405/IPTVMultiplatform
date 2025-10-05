@@ -1,6 +1,7 @@
 package tss.t.tsiptv.core.parser
 
 import tss.t.tsiptv.core.network.NetworkClient
+import tss.t.tsiptv.core.parser.model.IPTVPlaylist
 
 /**
  * Service for parsing IPTV playlists and program schedules.
@@ -12,7 +13,7 @@ class IPTVParserService(private val networkClient: NetworkClient) {
      *
      * @param content The playlist content as a string
      * @return The parsed playlist with program schedules
-     * @throws IPTVParserException if parsing fails
+     * @throws tss.t.tsiptv.core.parser.model.exception.IPTVParserException if parsing fails
      */
     suspend fun parsePlaylist(content: String): IPTVPlaylist {
         // Parse the M3U file
@@ -40,7 +41,7 @@ class IPTVParserService(private val networkClient: NetworkClient) {
      *
      * @param url The URL of the playlist
      * @return The parsed playlist with program schedules
-     * @throws IPTVParserException if parsing fails
+     * @throws tss.t.tsiptv.core.parser.model.exception.IPTVParserException if parsing fails
      */
     suspend fun parsePlaylistFromUrl(url: String): IPTVPlaylist {
         val content = networkClient.get(url)
@@ -54,7 +55,7 @@ class IPTVParserService(private val networkClient: NetworkClient) {
      * @param playlist The playlist to add program schedules to
      * @param epgContent The EPG content as a string
      * @return The parsed playlist with program schedules
-     * @throws EPGParserException if parsing fails
+     * @throws tss.t.tsiptv.core.parser.model.exception.EPGParserException if parsing fails
      */
     fun parsePlaylistWithEPG(playlist: IPTVPlaylist, epgContent: String): IPTVPlaylist {
         val epgParser = EPGParserFactory.createParserForContent(epgContent)

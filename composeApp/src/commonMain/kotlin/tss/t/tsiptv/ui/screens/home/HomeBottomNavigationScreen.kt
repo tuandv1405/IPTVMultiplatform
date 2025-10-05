@@ -11,13 +11,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -50,16 +48,15 @@ import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.home_nav_history
 import tsiptv.composeapp.generated.resources.home_nav_main
 import tsiptv.composeapp.generated.resources.home_nav_profile
-import tsiptv.composeapp.generated.resources.home_nav_settings
+import tsiptv.composeapp.generated.resources.home_nav_programs
 import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.ui.screens.home.models.BottomNavItem
-import tss.t.tsiptv.ui.screens.login.AuthUiState
-import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.utils.customShadow
+import kotlin.time.ExperimentalTime
 
 internal val defNavItems = listOf(
     BottomNavItem(
@@ -73,9 +70,9 @@ internal val defNavItems = listOf(
         labelRes = Res.string.home_nav_history
     ),
     BottomNavItem(
-        route = NavRoutes.HomeScreens.SETTINGS,
-        icon = Icons.Rounded.Settings,
-        labelRes = Res.string.home_nav_settings
+        route = NavRoutes.HomeScreens.PROGRAM,
+        icon = Icons.Rounded.Schedule,
+        labelRes = Res.string.home_nav_programs
     ),
     BottomNavItem(
         route = NavRoutes.HomeScreens.PROFILE,
@@ -87,16 +84,14 @@ internal val defNavItems = listOf(
 /**
  * Home screen of the application with bottom navigation bar.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
-fun HomeScreen(
+fun HomeBottomNavigationScreen(
     hazeState: HazeState,
     parentNavController: NavHostController,
     totalPlaylist: List<PlaylistWithChannelCount>,
-    authState: AuthUiState,
     homeUiState: HomeUiState,
     playerUIState: PlayerUIState,
-    onLoginEvent: (LoginEvents) -> Unit = {},
     onHomeEvent: (HomeEvent) -> Unit = {},
 ) {
     val navController = rememberNavController()
@@ -115,8 +110,10 @@ fun HomeScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LifecycleResumeEffect(Unit) {
         onHomeEvent(HomeEvent.RefreshEpgIfNeed)
+        onPauseOrDispose {
+        }
     }
 
     Scaffold(
@@ -130,18 +127,17 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-        HomeNavHost(
+
+        HomeBottomNavigationNavHost(
             navController = navController,
-            parentNavController = parentNavController,
+            rootNavController = parentNavController,
             modifier = Modifier
                 .fillMaxSize(),
             totalPlaylist = totalPlaylist,
             hazeState = hazeState,
             contentPadding = paddingValues,
-            authState = authState,
             homeUiState = homeUiState,
             playerUIState = playerUIState,
-            onLoginEvent = onLoginEvent,
             onHomeEvent = onHomeEvent,
         )
     }

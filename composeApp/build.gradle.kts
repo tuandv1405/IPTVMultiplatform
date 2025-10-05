@@ -7,7 +7,6 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.composeHotReload)
     kotlin("plugin.serialization") version libs.versions.kotlin.get()
     alias(libs.plugins.googleServices)
     alias(libs.plugins.firebaseCrashlytics)
@@ -121,6 +120,9 @@ kotlin {
             // Add Koin for dependency injection
             implementation(libs.koin.core)
             implementation(libs.koin.compose.jb)
+            implementation(libs.androidx.lifecycle.viewmodel)
+            implementation(libs.koin.compose.viewmodel)
+            implementation(libs.koin.compose.viewmodel.navigation)
 
             implementation(libs.coil.compose)
             implementation(libs.coil.network)

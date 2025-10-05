@@ -1,6 +1,8 @@
 package tss.t.tsiptv.core.parser
 
 import tss.t.tsiptv.core.parser.iptv.m3u.M3UParser
+import tss.t.tsiptv.core.parser.model.IPTVFormat
+import tss.t.tsiptv.core.parser.model.exception.IPTVParserException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

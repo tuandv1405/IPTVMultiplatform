@@ -1,6 +1,8 @@
 package tss.t.tsiptv.feature.auth.domain.model
 
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+
 
 /**
  * Data class representing an authentication token.
@@ -10,17 +12,19 @@ import kotlinx.datetime.Clock
  * @property expiresIn The number of seconds until the access token expires
  * @property createdAt The timestamp when the token was created (in milliseconds since epoch)
  */
+@OptIn(ExperimentalTime::class)
 data class AuthToken(
     val accessToken: String,
     val refreshToken: String,
     val expiresIn: Long,
-    val createdAt: Long = Clock.System.now().toEpochMilliseconds()
+    val createdAt: Long = Clock.System.now().toEpochMilliseconds(),
 ) {
     /**
      * Checks if the access token is expired.
      *
      * @return True if the token is expired, false otherwise
      */
+    @OptIn(ExperimentalTime::class)
     fun isExpired(): Boolean {
         val expirationTime = createdAt + (expiresIn * 1000)
         return Clock.System.now().toEpochMilliseconds() >= expirationTime

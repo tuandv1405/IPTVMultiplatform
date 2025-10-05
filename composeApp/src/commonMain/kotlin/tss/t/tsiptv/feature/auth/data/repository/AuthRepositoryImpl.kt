@@ -2,19 +2,19 @@ package tss.t.tsiptv.feature.auth.data.repository
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import tss.t.tsiptv.core.firebase.IFirebaseAuth
 import tss.t.tsiptv.core.firebase.FirebaseAuthException
 import tss.t.tsiptv.core.firebase.FirebaseUser
+import tss.t.tsiptv.core.firebase.IFirebaseAuth
 import tss.t.tsiptv.core.storage.KeyValueStorage
 import tss.t.tsiptv.feature.auth.domain.model.AuthResult
 import tss.t.tsiptv.feature.auth.domain.model.AuthState
 import tss.t.tsiptv.feature.auth.domain.model.AuthToken
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /**
  * Implementation of the AuthRepository interface.
@@ -61,6 +61,7 @@ class AuthRepositoryImpl(
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     override suspend fun signInWithEmailAndPassword(email: String, password: String): AuthResult {
         return try {
             _authState.value = _authState.value.copy(isLoading = true, error = null)
@@ -100,6 +101,7 @@ class AuthRepositoryImpl(
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     override suspend fun createUserWithEmailAndPassword(email: String, password: String): AuthResult {
         return try {
             _authState.value = _authState.value.copy(isLoading = true, error = null)
@@ -183,6 +185,7 @@ class AuthRepositoryImpl(
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     override suspend fun refreshTokenIfNeeded(): AuthResult {
         val token = getAuthToken() ?: return AuthResult.Error("No token to refresh")
 

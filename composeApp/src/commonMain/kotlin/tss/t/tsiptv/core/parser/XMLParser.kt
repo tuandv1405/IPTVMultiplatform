@@ -1,5 +1,11 @@
 package tss.t.tsiptv.core.parser
 
+import tss.t.tsiptv.core.parser.model.IPTVChannel
+import tss.t.tsiptv.core.parser.model.IPTVFormat
+import tss.t.tsiptv.core.parser.model.IPTVGroup
+import tss.t.tsiptv.core.parser.model.IPTVPlaylist
+import tss.t.tsiptv.core.parser.model.exception.IPTVParserException
+
 /**
  * Implementation of IPTVParser for XML format.
  * This is a simple implementation that doesn't use a proper XML parser.

@@ -1,16 +1,15 @@
 package tss.t.tsiptv.utils
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
-import tsiptv.composeapp.generated.resources.now_playing_title
 import tsiptv.composeapp.generated.resources.today_format
 import tsiptv.composeapp.generated.resources.yesterday_format
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 enum class TimeStampFormat(val formatStr: String) {
     yyyyMMdd("yyyy-MM-dd"),
@@ -23,22 +22,18 @@ enum class TimeStampFormat(val formatStr: String) {
 }
 
 fun Long.formatMinuteSecond(): String {
-    val timeMs = this
-    val totalSeconds = timeMs / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
+    return formatDynamic(
+        TimeStampFormat.mmss.formatStr
+    )
 }
 
 fun Long.formatHourMinute(): String {
-    val timeMs = this
-    val totalMinutes = timeMs / 1000 / 60
-    val hours = totalMinutes / 60
-    val minutes = totalMinutes % 60
-    return "${hours.toString().padStart(2, '0')}:" +
-            minutes.toString().padStart(2, '0')
+    return formatDynamic(
+        TimeStampFormat.HHmm.formatStr
+    )
 }
 
+@OptIn(ExperimentalTime::class)
 fun Long.formatDate(): String {
     val instant = Instant.fromEpochMilliseconds(this)
     val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
@@ -48,6 +43,7 @@ fun Long.formatDate(): String {
 }
 
 
+@OptIn(ExperimentalTime::class)
 fun Long.formatDateTime(): String {
     val instant = Instant.fromEpochMilliseconds(this)
     val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
@@ -59,6 +55,7 @@ fun Long.formatDateTime(): String {
             }:${localDateTime.second.toString().padStart(2, '0')}"
 }
 
+@OptIn(ExperimentalTime::class)
 fun Long.isToday(): Boolean {
     val instant = Instant.fromEpochMilliseconds(this)
     val now = Clock.System.now()
@@ -66,14 +63,14 @@ fun Long.isToday(): Boolean {
     val thisDate = instant.toLocalDateTime(timeZone)
     val currentDate = now.toLocalDateTime(timeZone)
     return thisDate.year == currentDate.year &&
-            thisDate.monthNumber == currentDate.monthNumber &&
-            thisDate.dayOfMonth == currentDate.dayOfMonth
+            thisDate.dayOfYear == currentDate.dayOfYear
 }
 
 /**
  * Checks if the timestamp is from yesterday
  * @return true if the timestamp is from yesterday, false otherwise
  */
+@OptIn(ExperimentalTime::class)
 fun Long.isYesterday(): Boolean {
     val instant = Instant.fromEpochMilliseconds(this)
     val now = Clock.System.now()
@@ -82,8 +79,8 @@ fun Long.isYesterday(): Boolean {
     val currentDate = now.toLocalDateTime(timeZone)
 
     return thisDate.year == currentDate.year &&
-            thisDate.monthNumber == currentDate.monthNumber &&
-            thisDate.dayOfMonth == currentDate.dayOfMonth - 1
+            thisDate.month == currentDate.month &&
+            thisDate.day == currentDate.day - 1
 }
 
 /**
@@ -96,6 +93,7 @@ fun Long.isYesterday(): Boolean {
  * - "HH:mm" for hour:minute
  * - Custom patterns using y(year), M(month), d(day), H(hour), m(minute), s(second)
  */
+@OptIn(ExperimentalTime::class)
 fun Long.formatDynamic(pattern: String): String {
     val instant = Instant.fromEpochMilliseconds(this)
     val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
@@ -109,7 +107,6 @@ fun Long.formatDynamic(pattern: String): String {
         }"
 
         "yyyy-MM-dd HH:mm:ss" -> formatDateTime()
-        "mm:ss" -> formatMinuteSecond()
         else -> {
             // Custom pattern parsing
             var result = pattern

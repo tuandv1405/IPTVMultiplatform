@@ -1,5 +1,6 @@
 package tss.t.tsiptv.core.database
 
+import androidx.room.AutoMigration
 import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
@@ -33,8 +34,14 @@ import tss.t.tsiptv.core.database.entity.ProgramEntity
         ProgramEntity::class,
         ChannelHistoryEntity::class
     ],
-    version = 1,
-    exportSchema = true
+    version = 3,
+    exportSchema = true,
+    autoMigrations = [
+        AutoMigration(
+            from = 2,
+            to = 3
+        )
+    ]
 )
 @TypeConverters(Converter::class)
 @ConstructedBy(AppDatabaseConstructor::class)

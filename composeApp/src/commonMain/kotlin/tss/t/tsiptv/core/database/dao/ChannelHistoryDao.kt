@@ -236,6 +236,30 @@ interface ChannelHistoryDao {
     """)
     fun getLastTop3WatchedChannelsWithDetails(playlistId: String? = null): Flow<List<ChannelWithHistory>>
 
+    @Query("""
+        SELECT 
+            c.id as channelId,
+            c.name as channelName,
+            c.url as channelUrl,
+            c.logoUrl as logoUrl,
+            c.categoryId as categoryId,
+            c.playlistId as playlistId,
+            c.isFavorite as isFavorite,
+            c.lastWatched as lastWatched,
+            ch.id as historyId,
+            ch.lastPlayedTimestamp as lastPlayedTimestamp,
+            ch.totalPlayedTimeMs as totalPlayedTimeMs,
+            ch.playCount as playCount,
+            ch.currentPositionMs as currentPositionMs,
+            ch.totalDurationMs as totalDurationMs
+        FROM channel_history ch
+        INNER JOIN channel c ON ch.channelId = c.id
+        WHERE (:playlistId IS NULL OR ch.playlistId = :playlistId)
+        ORDER BY ch.lastPlayedTimestamp DESC
+        LIMIT 3
+    """)
+    suspend fun getLastTop3WatchedChannelsWithDetailsSync(playlistId: String? = null): List<ChannelWithHistory>
+
     /**
      * Gets the last played channel with complete channel information using JOIN.
      * This query joins the Channel and ChannelHistory tables to get both channel details

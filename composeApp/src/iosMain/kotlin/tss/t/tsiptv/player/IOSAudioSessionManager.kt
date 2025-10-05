@@ -24,19 +24,9 @@ class IOSAudioSessionManager {
         fun configureAudioSessionForBackgroundPlayback() {
             try {
                 NSLog("Configuring audio session for playback during silence mode")
-
-                // Log the required configuration
-                NSLog("Audio session should be configured with:")
-                NSLog("- Category: AVAudioSessionCategoryPlayback")
-                NSLog("- This allows audio to play even when device is in silence mode")
-                NSLog("- Similar to how music apps and YouTube work")
-
-                // For now, we'll use a basic approach that should work with most setups
-                // The key is that the app needs to declare audio background mode in Info.plist
-                // and the AVPlayer should be configured properly
-
-                NSLog("Background audio playback configured via Info.plist UIBackgroundModes")
-                NSLog("Audio session configuration completed")
+                
+                // Call the actual cinterop function to configure audio session
+//                platform.AVFoundation.configureAudioSessionForPlayback()
 
             } catch (e: Exception) {
                 NSLog("Error configuring audio session: ${e.message}")
@@ -47,9 +37,11 @@ class IOSAudioSessionManager {
          * Deactivates the audio session when playback is stopped.
          * This is good practice to free up audio resources.
          */
+        @OptIn(ExperimentalForeignApi::class)
         fun deactivateAudioSession() {
             try {
-                NSLog("Audio session deactivated")
+                // Call the actual cinterop function to deactivate audio session
+//                platform.AVFoundation.deactivateAudioSession()
             } catch (e: Exception) {
                 NSLog("Error deactivating audio session: ${e.message}")
             }

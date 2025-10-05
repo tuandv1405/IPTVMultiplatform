@@ -1,11 +1,11 @@
 package tss.t.tsiptv.core.parser.iptv.m3u
 
-import tss.t.tsiptv.core.parser.IPTVChannel
-import tss.t.tsiptv.core.parser.IPTVFormat
-import tss.t.tsiptv.core.parser.IPTVGroup
+import tss.t.tsiptv.core.parser.model.IPTVChannel
+import tss.t.tsiptv.core.parser.model.IPTVFormat
+import tss.t.tsiptv.core.parser.model.IPTVGroup
 import tss.t.tsiptv.core.parser.IPTVParser
-import tss.t.tsiptv.core.parser.IPTVParserException
-import tss.t.tsiptv.core.parser.IPTVPlaylist
+import tss.t.tsiptv.core.parser.model.exception.IPTVParserException
+import tss.t.tsiptv.core.parser.model.IPTVPlaylist
 
 /**
  * Implementation of IPTVParser for M3U format.

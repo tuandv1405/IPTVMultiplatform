@@ -2,7 +2,6 @@ package tss.t.tsiptv.core.database
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.database.entity.ChannelAttributeEntity
 import tss.t.tsiptv.core.database.entity.ChannelHistoryEntity
 import tss.t.tsiptv.core.database.entity.ChannelWithHistory
@@ -11,18 +10,20 @@ import tss.t.tsiptv.core.database.entity.toCategoryEntity
 import tss.t.tsiptv.core.database.entity.toChannel
 import tss.t.tsiptv.core.database.entity.toChannelEntity
 import tss.t.tsiptv.core.database.entity.toChannelHistory
+import tss.t.tsiptv.core.database.entity.toIPTVProgram
 import tss.t.tsiptv.core.database.entity.toPlaylist
 import tss.t.tsiptv.core.database.entity.toPlaylistEntity
-import tss.t.tsiptv.core.database.entity.toIPTVProgram
 import tss.t.tsiptv.core.database.entity.toProgramEntity
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.ChannelHistory
 import tss.t.tsiptv.core.model.Playlist
-import tss.t.tsiptv.core.parser.IPTVProgram
 import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.parser.IPTVParserFactory
+import tss.t.tsiptv.core.parser.model.IPTVProgram
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
+import kotlin.time.ExperimentalTime
 
 /**
  * Room implementation of IPTVDatabase.
@@ -137,6 +138,7 @@ class RoomIPTVDatabase(
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     override suspend fun getPlaylistById(id: String): Playlist? {
         val playlist = playlistDao.getPlaylistById(id)?.toPlaylist() ?: return null
 
@@ -240,6 +242,7 @@ class RoomIPTVDatabase(
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     override suspend fun countValidPrograms(playlistId: String): Int {
         val timestamp = Clock.System.now().toEpochMilliseconds()
         return programDao.countValidPrograms(playlistId, timestamp)

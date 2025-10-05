@@ -10,46 +10,37 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import dev.chrisbanes.haze.HazeState
-import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
-import tss.t.tsiptv.core.database.IPTVDatabase
+import org.koin.compose.viewmodel.koinViewModel
 import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
 import tss.t.tsiptv.core.database.entity.toPlaylist
-import tss.t.tsiptv.core.history.ChannelHistoryTracker
-import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.permission.Permission
 import tss.t.tsiptv.core.permission.PermissionCheckerFactory
 import tss.t.tsiptv.core.permission.PermissionExample
-import tss.t.tsiptv.core.repository.IHistoryRepository
-import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.navigation.NavRoutes
-import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.ui.screens.history.HistoryScreen
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.HomeChangeIPTVSourceBottomSheet
-import tss.t.tsiptv.ui.screens.home.homeiptvlist.HomeFeedScreen
+import tss.t.tsiptv.ui.screens.home.homeiptvlist.HomeIPTVPlaylistScreen
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.HomeSettingOptionsBottomSheet
-import tss.t.tsiptv.ui.screens.login.AuthUiState
 import tss.t.tsiptv.ui.screens.login.AuthViewModel
-import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
 import tss.t.tsiptv.ui.screens.profile.ProfileScreen
+import tss.t.tsiptv.ui.screens.programs.ChannelXProgramListScreen
+import tss.t.tsiptv.ui.screens.programs.ProgramViewModel
+import tss.t.tsiptv.ui.screens.programs.uimodel.ProgramEvent
+import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
 
 /**
  * Navigation host for the Home screen sections.
@@ -57,37 +48,21 @@ import tss.t.tsiptv.ui.screens.profile.ProfileScreen
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeNavHost(
+fun HomeBottomNavigationNavHost(
     navController: NavHostController,
-    parentNavController: NavHostController,
+    rootNavController: NavHostController,
     modifier: Modifier = Modifier,
     totalPlaylist: List<PlaylistWithChannelCount>,
     hazeState: HazeState,
     contentPadding: PaddingValues,
     homeUiState: HomeUiState,
     playerUIState: PlayerUIState,
-    authState: AuthUiState,
-    onLoginEvent: (LoginEvents) -> Unit = {},
     onHomeEvent: (HomeEvent) -> Unit = {},
 ) {
-    val viewStoreOwner = LocalViewModelStoreOwner.current!!
-    val authRepository = koinInject<AuthRepository>()
-    val authViewModel: AuthViewModel = viewModel(viewModelStoreOwner = viewStoreOwner) {
-        AuthViewModel(
-            authRepository = authRepository,
-        )
-    }
-    val iptvDatabase = koinInject<IPTVDatabase>()
-    val historyTracker = koinInject<ChannelHistoryTracker>()
-    val mediaPlayer = koinInject<MediaPlayer>()
-    val playerViewModel = viewModel<PlayerViewModel>(viewStoreOwner) {
-        PlayerViewModel(
-            _mediaPlayer = mediaPlayer,
-            _iptvDatabase = iptvDatabase,
-            historyTracker = historyTracker
-        )
-    }
-    val authState by authViewModel.uiState.collectAsState()
+    val viewModelStoreOwner = LocalAppViewModelStoreOwner.current!!
+    val authViewModel: AuthViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner)
+    val playerViewModel = koinViewModel<PlayerViewModel>(viewModelStoreOwner = viewModelStoreOwner)
+    val authState by authViewModel.uiState.collectAsStateWithLifecycle()
 
     NavHost(
         navController = navController,
@@ -99,13 +74,12 @@ fun HomeNavHost(
         popEnterTransition = { defaultEnterTransition }
     ) {
         composable(route = NavRoutes.HomeScreens.HOME_FEED) {
-            // Dialog-based bottom sheet state - BEST PRACTICE for dialog behavior
             var showBottomSheet by remember { mutableStateOf(false) }
             var showChangeBottomSheet by remember { mutableStateOf(false) }
 
-            HomeFeedScreen(
+            HomeIPTVPlaylistScreen(
                 navController = navController,
-                parentNavController = parentNavController,
+                parentNavController = rootNavController,
                 hazeState = hazeState,
                 homeUiState = homeUiState,
                 onHomeEvent = {
@@ -127,7 +101,7 @@ fun HomeNavHost(
 
             if (showBottomSheet) {
                 HomeSettingOptionsBottomSheet(
-                    parentNavController = parentNavController,
+                    parentNavController = rootNavController,
                     onDismissRequest = {
                         showBottomSheet = false
                     },
@@ -176,7 +150,7 @@ fun HomeNavHost(
                 hazeState = hazeState,
                 homeUiState = homeUiState,
                 navController = navController,
-                parentNavController = parentNavController,
+                parentNavController = rootNavController,
                 playerUIState = playerUIState,
                 mediaItem = mediaItem,
                 contentPadding = contentPadding,
@@ -199,6 +173,27 @@ fun HomeNavHost(
             ) {
                 authViewModel.onEvent(it)
             }
+        }
+
+        composable(
+            route = NavRoutes.HomeScreens.PROGRAM
+        ) {
+            val programViewModel: ProgramViewModel =
+                koinViewModel(viewModelStoreOwner = viewModelStoreOwner)
+            val uiState by programViewModel.listProgramUIState.collectAsStateWithLifecycle()
+            LaunchedEffect(Unit) {
+                programViewModel.event.collect {
+                    if (it is ProgramEvent.NavigateToDetail) {
+                        val program = it.channel
+                        rootNavController.navigate(
+                            route = NavRoutes.ProgramDetail(program)
+                        )
+                    }
+                }
+            }
+            ChannelXProgramListScreen(
+                uiState = uiState
+            )
         }
     }
 }

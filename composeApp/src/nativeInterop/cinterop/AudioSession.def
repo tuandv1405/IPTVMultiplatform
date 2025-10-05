@@ -1,0 +1,46 @@
+language = Objective-C
+headers = AVFoundation/AVFoundation.h
+package = platform.AVFoundation
+
+---
+
+#import <AVFoundation/AVFoundation.h>
+
+void configureAudioSessionForPlayback() {
+    NSError *error = nil;
+    AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+    
+    // Set category to playback to allow audio during silent mode
+    BOOL success = [audioSession setCategory:AVAudioSessionCategoryPlayback 
+                                 withOptions:0 
+                                       error:&error];
+    
+    if (!success || error) {
+        NSLog(@"Error setting audio session category: %@", error.localizedDescription);
+        return;
+    }
+    
+    // Activate the audio session
+    success = [audioSession setActive:YES error:&error];
+    
+    if (!success || error) {
+        NSLog(@"Error activating audio session: %@", error.localizedDescription);
+        return;
+    }
+    
+    NSLog(@"Audio session configured for playback during silent mode");
+}
+
+void deactivateAudioSession() {
+    NSError *error = nil;
+    AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+    
+    BOOL success = [audioSession setActive:NO error:&error];
+    
+    if (!success || error) {
+        NSLog(@"Error deactivating audio session: %@", error.localizedDescription);
+        return;
+    }
+    
+    NSLog(@"Audio session deactivated");
+}

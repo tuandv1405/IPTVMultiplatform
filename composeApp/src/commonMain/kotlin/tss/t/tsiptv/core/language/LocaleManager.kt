@@ -3,20 +3,19 @@ package tss.t.tsiptv.core.language
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidedValue
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import tss.t.tsiptv.ui.screens.login.provider.LocalAuthProvider
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
 
 var customAppLocale by mutableStateOf<String?>(null)
+
 expect object LocalAppLocale {
     val current: String @Composable get
-    @Composable infix fun provides(value: String?): ProvidedValue<*>
+    @Composable
+    infix fun provides(value: String?): ProvidedValue<*>
 }
 
 /**
@@ -55,8 +54,12 @@ class LocaleManager(private val languageRepository: LanguageRepository) {
 fun AppLocaleProvider(
     content: @Composable () -> Unit,
 ) {
+
+    val globalVMStore = LocalViewModelStoreOwner.current!!
+
     CompositionLocalProvider(
         LocalAppLocale provides customAppLocale,
+        LocalAppViewModelStoreOwner provides globalVMStore
     ) {
         key(customAppLocale) {
             content()

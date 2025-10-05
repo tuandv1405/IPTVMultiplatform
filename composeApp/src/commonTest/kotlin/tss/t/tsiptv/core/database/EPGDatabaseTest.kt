@@ -2,7 +2,6 @@ package tss.t.tsiptv.core.database
 
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.Playlist
 import tss.t.tsiptv.core.network.DownloadProgress
@@ -13,6 +12,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /**
  * Test for the EPG parser and database flow.
@@ -23,6 +24,7 @@ class EPGDatabaseTest {
     /**
      * Test the full flow from parsing EPG data to storing it in the database and retrieving it.
      */
+    @OptIn(ExperimentalTime::class)
     @Test
     fun testEPGParserAndDatabaseFlow() = runBlocking {
         // Arrange
@@ -125,12 +127,12 @@ class EPGDatabaseTest {
         val program1 = channel1Programs.find { it.title == "Program 1" }
         assertNotNull(program1)
         assertEquals("Description 1", program1.description)
-        assertEquals("Movie", program1.category)
+        assertEquals(listOf("Movie"), program1.category)
 
         val program2 = channel1Programs.find { it.title == "Program 2" }
         assertNotNull(program2)
         assertEquals("Description 2", program2.description)
-        assertEquals("News", program2.category)
+        assertEquals(listOf("News"), program2.category)
 
         val channel2Programs = database.getProgramsForChannel(channel2.id)
         assertEquals(1, channel2Programs.size)
@@ -138,7 +140,7 @@ class EPGDatabaseTest {
         val program3 = channel2Programs[0]
         assertEquals("Program 3", program3.title)
         assertEquals("Description 3", program3.description)
-        assertEquals("Sports", program3.category)
+        assertEquals(listOf("Sports"), program3.category)
 
         // 4. Test time-based queries
         val currentTime = program1.startTime + (program1.endTime - program1.startTime) / 2
@@ -162,6 +164,7 @@ class EPGDatabaseTest {
     /**
      * Test edge cases for the EPG parser and database flow.
      */
+    @OptIn(ExperimentalTime::class)
     @Test
     fun testEPGParserAndDatabaseFlowEdgeCases() = runBlocking {
         // Arrange

@@ -4,6 +4,14 @@ import nl.adaptivity.xmlutil.serialization.XML
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.SYSTEM
+import tss.t.tsiptv.core.parser.epg.model.XMLTVCategory
+import tss.t.tsiptv.core.parser.epg.model.XMLTVChannel
+import tss.t.tsiptv.core.parser.epg.model.XMLTVDesc
+import tss.t.tsiptv.core.parser.epg.model.XMLTVDisplayName
+import tss.t.tsiptv.core.parser.epg.model.XMLTVDocument
+import tss.t.tsiptv.core.parser.epg.model.XMLTVIcon
+import tss.t.tsiptv.core.parser.epg.model.XMLTVProgramme
+import tss.t.tsiptv.core.parser.epg.model.XMLTVTitle
 import tss.t.tsiptv.core.parser.model.*
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -17,7 +25,7 @@ class XMLTVEPGParserTest {
 
     @BeforeTest
     fun setup() {
-        epgParser = EPGParserFactory.createParser(EPGFormat.XMLTV)
+        epgParser = EPGParserFactory.createParser(EPGFormat.XML)
         fileSystem = FileSystem.SYSTEM
         content = fileSystem.read("/Users/tun/Tun/ComposeMultiPlatform/TSIPTV/composeApp/src/commonTest/kotlin/assests/epg.xml".toPath()) {
             readUtf8()
@@ -69,10 +77,10 @@ class XMLTVEPGParserTest {
                     value = "This is a test program description.",
                     lang = "vi"
                 ),
-                category = XMLTVCategory(
+                category = listOf(XMLTVCategory(
                     value = "Entertainment",
                     lang = "vi"
-                ),
+                )),
                 icon = XMLTVIcon(
                     src = "http://img.lichphatsong.xyz/schedule/vtv1hd/test.webp"
                 )
@@ -90,10 +98,10 @@ class XMLTVEPGParserTest {
                     value = "This is another test program description.",
                     lang = "vi"
                 ),
-                category = XMLTVCategory(
+                category = listOf(XMLTVCategory(
                     value = "News",
                     lang = "vi"
-                )
+                ))
             )
         )
 
@@ -239,6 +247,37 @@ class XMLTVEPGParserTest {
     fun `XMLTV with invalid characters in optional timezone part`() {
         // Test `parseXMLTVDateTime` with date-time strings like 'YYYYMMDDHHMMSS +ABCD' to ensure the `optional` block for timezone does not incorrectly parse invalid offsets and fails gracefully.
 
+    }
+
+    @Test
+    fun `XMLTV with unescaped ampersand in icon URL`() {
+        // Test parsing XML content with unescaped '&' characters in icon URLs
+        // This should now work after the fix is implemented
+        val xmlContentWithUnescapedAmpersand = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <tv>
+                <channel id="test-channel">
+                    <display-name>Test Channel</display-name>
+                </channel>
+                <programme start="20250101120000 +0700" stop="20250101130000 +0700" channel="test-channel">
+                    <title>Test Program</title>
+                    <desc>Test Description</desc>
+                    <icon src="https://img.kplus.vn/images?filename=Media/HDVN/2025_09/PAD_TOU1678_b6bf3fd6-8451-4ece-8e15-33ebf4b76083.jpg&orientation=landscape" />
+                </programme>
+            </tv>
+        """.trimIndent()
+
+        val result = epgParser.parse(xmlContentWithUnescapedAmpersand)
+        println("[DEBUG_LOG] Parsing successful! Found ${result.size} programs")
+        assertTrue { result.isNotEmpty() }
+        
+        // Verify the program was parsed correctly
+        val program = result.first()
+        assertTrue { program.title == "Test Program" }
+        assertTrue { program.description == "Test Description" }
+        assertTrue { program.logo != null }
+        assertTrue { program.logo!!.contains("orientation=landscape") }
+        println("[DEBUG_LOG] Program logo URL: ${program.logo}")
     }
 
 }

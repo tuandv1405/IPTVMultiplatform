@@ -1,12 +1,11 @@
 package tss.t.tsiptv.core.parser.iptv.iptvorg
 
 import kotlinx.serialization.json.Json
-import tss.t.tsiptv.core.network.KtorNetworkClient
 import tss.t.tsiptv.core.network.NetworkClient
-import tss.t.tsiptv.core.parser.IPTVChannel
-import tss.t.tsiptv.core.parser.IPTVFormat
+import tss.t.tsiptv.core.parser.model.IPTVChannel
+import tss.t.tsiptv.core.parser.model.IPTVFormat
 import tss.t.tsiptv.core.parser.IPTVParser
-import tss.t.tsiptv.core.parser.IPTVPlaylist
+import tss.t.tsiptv.core.parser.model.IPTVPlaylist
 import tss.t.tsiptv.core.parser.iptv.iptvorg.models.IptvOrgRawDTO
 
 class IptvOrgParser(

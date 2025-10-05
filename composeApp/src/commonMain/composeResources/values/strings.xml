@@ -12,6 +12,8 @@
 
     <!-- Common -->
     <string name="ok">OK</string>
+    <string name="accept">Accept</string>
+    <string name="allow">Allow</string>
     <string name="cancel">Cancel</string>
     <string name="error">Error</string>
     <string name="error_occurred">An error occurred</string>
@@ -81,6 +83,7 @@
     <string name="home_nav_history">History</string>
     <string name="home_nav_settings">Settings</string>
     <string name="home_nav_profile">Profile</string>
+    <string name="home_nav_programs">Programs</string>
 
     <string name="home_search_placeholder">Search channel, shows...</string>
     <string name="empty_history">No recent activity</string>
@@ -90,4 +93,8 @@
     <string name="player_report">Report</string>
 
     <string name="channel_count_format">%1$d Channels</string>
+    <string name="programs_today_format">%1$d Programs</string>
+
+    <string name="popup_refresh_program_title">Refresh EPG</string>
+    <string name="popup_refresh_program_description">Refresh all EPG today?</string>
 </resources>

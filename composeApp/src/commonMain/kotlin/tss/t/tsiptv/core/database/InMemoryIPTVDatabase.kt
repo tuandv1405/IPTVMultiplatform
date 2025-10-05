@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.flow.toList
-import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.database.dao.CategoryDao
 import tss.t.tsiptv.core.database.dao.ChannelAttributeDao
 import tss.t.tsiptv.core.database.dao.ChannelDao
@@ -16,8 +15,10 @@ import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.ChannelHistory
 import tss.t.tsiptv.core.model.Playlist
-import tss.t.tsiptv.core.parser.IPTVProgram
+import tss.t.tsiptv.core.parser.model.IPTVProgram
 import tss.t.tsiptv.core.database.entity.ChannelWithHistory
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /**
  * A simple in-memory implementation of IPTVDatabase.
@@ -240,6 +241,7 @@ class InMemoryIPTVDatabase : IPTVDatabase {
 
     // Channel History methods implementation
 
+    @OptIn(ExperimentalTime::class)
     override suspend fun recordChannelPlay(channelId: String, playlistId: String, timestamp: Long) {
         val key = "${channelId}_${playlistId}"
         val currentHistory = channelHistory.value
