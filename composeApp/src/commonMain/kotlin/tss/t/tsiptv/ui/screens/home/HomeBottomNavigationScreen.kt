@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -47,7 +48,7 @@ import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.home_nav_history
 import tsiptv.composeapp.generated.resources.home_nav_main
 import tsiptv.composeapp.generated.resources.home_nav_profile
-import tsiptv.composeapp.generated.resources.home_nav_settings
+import tsiptv.composeapp.generated.resources.home_nav_programs
 import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.ui.screens.home.models.BottomNavItem
@@ -55,6 +56,7 @@ import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.utils.customShadow
+import kotlin.time.ExperimentalTime
 
 internal val defNavItems = listOf(
     BottomNavItem(
@@ -70,7 +72,7 @@ internal val defNavItems = listOf(
     BottomNavItem(
         route = NavRoutes.HomeScreens.PROGRAM,
         icon = Icons.Rounded.Schedule,
-        labelRes = Res.string.home_nav_settings
+        labelRes = Res.string.home_nav_programs
     ),
     BottomNavItem(
         route = NavRoutes.HomeScreens.PROFILE,
@@ -82,7 +84,7 @@ internal val defNavItems = listOf(
 /**
  * Home screen of the application with bottom navigation bar.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun HomeBottomNavigationScreen(
     hazeState: HazeState,
@@ -108,8 +110,10 @@ fun HomeBottomNavigationScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LifecycleResumeEffect(Unit) {
         onHomeEvent(HomeEvent.RefreshEpgIfNeed)
+        onPauseOrDispose {
+        }
     }
 
     Scaffold(
@@ -126,7 +130,7 @@ fun HomeBottomNavigationScreen(
 
         HomeBottomNavigationNavHost(
             navController = navController,
-            parentNavController = parentNavController,
+            rootNavController = parentNavController,
             modifier = Modifier
                 .fillMaxSize(),
             totalPlaylist = totalPlaylist,

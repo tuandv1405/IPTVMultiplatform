@@ -33,9 +33,11 @@ import tsiptv.composeapp.generated.resources.iptv_import_success_msg
 import tsiptv.composeapp.generated.resources.iptv_import_success_title
 import tsiptv.composeapp.generated.resources.ok
 import tsiptv.composeapp.generated.resources.try_again
+import tss.t.tsiptv.core.database.entity.ChannelWithProgramCount
 import tss.t.tsiptv.core.language.AppLocaleProvider
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.navigation.navigateAndRemoveFromBackStack
+import tss.t.tsiptv.navigation.navtype.ChannelWithProgramCountNavType
 import tss.t.tsiptv.ui.screens.addiptv.ImportIPTVScreen
 import tss.t.tsiptv.ui.screens.home.HomeBottomNavigationScreen
 import tss.t.tsiptv.ui.screens.home.HomeEvent
@@ -48,6 +50,7 @@ import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.screens.player.PlayerEvent
 import tss.t.tsiptv.ui.screens.player.PlayerScreen
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
+import tss.t.tsiptv.ui.screens.programs.details.ProgramForChannelScreen
 import tss.t.tsiptv.ui.screens.settings.LanguageSettingsScreen
 import tss.t.tsiptv.ui.screens.splash.SplashScreen
 import tss.t.tsiptv.ui.screens.webview.WebViewInApp
@@ -55,6 +58,7 @@ import tss.t.tsiptv.ui.themes.StreamVaultTheme
 import tss.t.tsiptv.ui.widgets.TSDialog
 import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
 import tss.t.tsiptv.utils.PlatformUtils
+import kotlin.reflect.typeOf
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
 @Composable
@@ -356,6 +360,15 @@ fun App() {
                             pageUrl = webView.url,
                             navController = navController
                         )
+                    }
+
+                    composable<NavRoutes.ProgramDetail>(
+                        typeMap = mapOf(
+                            typeOf<ChannelWithProgramCount>() to ChannelWithProgramCountNavType
+                        )
+                    ) { backStack ->
+                        val item = backStack.toRoute<NavRoutes.ProgramDetail>()
+                        ProgramForChannelScreen(item.program)
                     }
                 }
             )

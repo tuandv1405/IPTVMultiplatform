@@ -2,6 +2,7 @@ package tss.t.tsiptv.ui.widgets
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,7 +34,7 @@ import tss.t.tsiptv.ui.themes.TSTextStyles
 fun TSAppBarXBackIcon(
     modifier: Modifier = Modifier,
     title: String = "Add IPTV Source",
-    backIcon: DrawableResource = Res.drawable.ic_back_navigation,
+    backIcon: DrawableResource? = Res.drawable.ic_back_navigation,
     expandedHeight: Dp = TopAppBarDefaults.TopAppBarExpandedHeight,
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     onBackClick: () -> Unit = {},
@@ -42,17 +43,19 @@ fun TSAppBarXBackIcon(
         modifier = modifier,
         expandedHeight = expandedHeight,
         windowInsets = windowInsets,
-        navigationIcon = {
-            Image(
-                modifier = Modifier.padding(start = 8.dp)
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onBackClick)
-                    .padding(16.dp),
-                contentDescription = "Back button",
-                painter = painterResource(backIcon),
-            )
-        },
+        navigationIcon = backIcon?.let {
+            {
+                Image(
+                    modifier = Modifier.padding(start = 8.dp)
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = onBackClick)
+                        .padding(16.dp),
+                    contentDescription = "Back button",
+                    painter = painterResource(backIcon),
+                )
+            }
+        } ?: {},
         title = {
             Text(
                 text = title,
@@ -75,6 +78,7 @@ fun TSAppBar(
         scrolledContainerColor = TSColors.Transparent
     ),
     scrollBehavior: TopAppBarScrollBehavior? = null,
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
     CenterAlignedTopAppBar(
         modifier = modifier,
@@ -85,6 +89,7 @@ fun TSAppBar(
                 style = TSTextStyles.primaryToolbarTitle
             )
         },
-        scrollBehavior = scrollBehavior
+        scrollBehavior = scrollBehavior,
+        actions = actions
     )
 }

@@ -1,6 +1,7 @@
 package tss.t.tsiptv.navigation
 
 import kotlinx.serialization.Serializable
+import tss.t.tsiptv.core.database.entity.ChannelWithProgramCount
 
 /**
  * Navigation routes for the app.
@@ -32,14 +33,20 @@ object NavRoutes {
 
     @Serializable
     data object ImportIptv : RootRoutes
+
     @Serializable
-    data object ChangeIPTV: RootRoutes
+    data object ChangeIPTV : RootRoutes
 
     @Serializable
     data object SignUp : RootRoutes
 
     @Serializable
     data object LanguageSettings : RootRoutes
+
+    @Serializable
+    data class ProgramDetail(
+        val program: ChannelWithProgramCount,
+    ) : RootRoutes
 
     @Serializable
     data class WebView(

@@ -15,6 +15,7 @@ import tss.t.tsiptv.core.database.createDatabaseFactory
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.language.LanguageRepository
 import tss.t.tsiptv.core.language.LocaleManager
+import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.network.NetworkClientFactory
 import tss.t.tsiptv.core.network.NetworkConnectivityChecker
 import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
@@ -34,6 +35,7 @@ import tss.t.tsiptv.feature.auth.di.authModule
 import tss.t.tsiptv.ui.screens.home.HomeViewModel
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
 import tss.t.tsiptv.ui.screens.programs.ProgramViewModel
+import tss.t.tsiptv.ui.screens.programs.details.ProgramDetailViewModel
 import tss.t.tsiptv.usecase.di.useCaseModule
 
 /**
@@ -41,7 +43,9 @@ import tss.t.tsiptv.usecase.di.useCaseModule
  */
 val commonModule = module {
     // Network
-    single { NetworkClientFactory.create().getNetworkClient() }
+    single<NetworkClient> {
+        NetworkClientFactory.create().getNetworkClient()
+    }
 
     // Database
     single {
@@ -113,6 +117,7 @@ val commonModule = module {
     viewModelOf(::HomeViewModel)
     viewModelOf(::PlayerViewModel)
     viewModelOf(::ProgramViewModel)
+    viewModelOf(::ProgramDetailViewModel)
 }
 
 /**

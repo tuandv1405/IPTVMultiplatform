@@ -73,12 +73,12 @@ class IPTVParserServiceTest {
         val program1 = channel1Programs.find { it.title == "Program 1" }
         assertNotNull(program1)
         assertEquals("Description 1", program1.description)
-        assertEquals("Movie", program1.category)
+        assertEquals(listOf("Movie"), program1.category)
 
         val program2 = channel1Programs.find { it.title == "Program 2" }
         assertNotNull(program2)
         assertEquals("Description 2", program2.description)
-        assertEquals("News", program2.category)
+        assertEquals(listOf("News"), program2.category)
 
         // Check programs for channel2
         val channel2Programs = playlistWithEPG.programs.filter { it.channelId == "channel2" }
@@ -87,7 +87,7 @@ class IPTVParserServiceTest {
         val program3 = channel2Programs[0]
         assertEquals("Program 3", program3.title)
         assertEquals("Description 3", program3.description)
-        assertEquals("Sports", program3.category)
+        assertEquals(listOf("Sports"), program3.category)
     }
 
     // Helper function to create a mock NetworkClient

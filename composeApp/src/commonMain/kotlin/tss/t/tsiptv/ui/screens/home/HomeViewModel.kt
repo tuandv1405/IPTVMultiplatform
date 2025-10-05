@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package tss.t.tsiptv.ui.screens.home
 
 import androidx.lifecycle.ViewModel
@@ -13,10 +15,10 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.database.entity.ChannelWithHistory
 import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
+import tss.t.tsiptv.core.database.entity.toPlaylistEntity
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
@@ -31,6 +33,7 @@ import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.usecase.playlist.GetCurrentPlaylistUseCase
 import tss.t.tsiptv.usecase.playlist.SetCurrentPlaylistUseCase
 import tss.t.tsiptv.utils.isToday
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class HomeViewModel(
@@ -104,6 +107,7 @@ class HomeViewModel(
      * @param name The name of the IPTV source
      * @param url The URL of the IPTV source
      */
+    @OptIn(ExperimentalTime::class)
     fun parseIptvSource(name: String, url: String) {
         viewModelScope.launch {
             _uiState.update {
@@ -178,7 +182,6 @@ class HomeViewModel(
                     _totalChannelList.update {
                         rs
                     }
-                    println("TotalPlayList: ${rs.size} ")
                 }
         }
     }
@@ -255,7 +258,7 @@ class HomeViewModel(
                     epgUrl = playlist.epgUrl,
                     lastUpdated = Clock.System.now().toEpochMilliseconds()
                 )
-                iptvDatabase.insertPlaylist(newPlaylist)
+                iptvDatabase.playlistDao.updatePlaylist(newPlaylist.toPlaylistEntity())
                 iptvDatabase.insertCategories(playlist.groups.map {
                     Category(
                         id = it.id,
@@ -277,7 +280,8 @@ class HomeViewModel(
                 }
                 iptvDatabase.deleteChannelsInPlaylist(playlistId)
                 iptvDatabase.insertChannels(channels)
-                loadHistoryData(newPlaylist.id)
+                val top3Watched = iptvDatabase.channelHistoryDao
+                    .getLastTop3WatchedChannelsWithDetailsSync(playlistId)
                 parsePlaylistEpg(
                     playListId = newPlaylist.id,
                     playListEpgUrl = newPlaylist.epgUrl
@@ -288,7 +292,8 @@ class HomeViewModel(
                         playListId = newPlaylist.id,
                         playListName = newPlaylist.name,
                         categories = iptvDatabase.getCategoriesByPlaylist(newPlaylist.id),
-                        listChannels = channels
+                        listChannels = channels,
+                        top3MostPlayedChannels = top3Watched
                     )
                 }
                 onEmitEvent(HomeEvent.OnParseIPTVSourceSuccess)
@@ -316,6 +321,10 @@ class HomeViewModel(
             iptvDatabase.deleteProgramsForPlaylist(playListId)
             iptvDatabase.insertPrograms(epg, playListId)
             keyValueStorage.putLong(playListId, Clock.System.now().toEpochMilliseconds())
+            val channel = uiState.value.nowPlayingChannel
+            channel?.getChannel()?.let {
+                loadProgramForChannel(it)
+            }
         }
     }
 
@@ -338,44 +347,6 @@ class HomeViewModel(
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(isLoading = false, error = e)
-                }
-            }
-        }
-    }
-
-    /**
-     * Change the current IPTV source
-     *
-     * @param playlistId The ID of the playlist to switch to
-     */
-    fun changeIPTVChannelList(playlistId: String) {
-        viewModelScope.launch {
-            try {
-                val playlist = iptvDatabase.getPlaylistById(playlistId)
-                if (playlist != null) {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            playListId = playlistId,
-                            playListName = playlist.name
-                        )
-                    }
-                    getAllChannelForIptvSource(playlistId = playlistId)
-                    loadHistoryData(playlistId)
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = Throwable("Playlist not found")
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = e
-                    )
                 }
             }
         }
@@ -427,7 +398,9 @@ class HomeViewModel(
 
             HomeEvent.OnDismissErrorDialog -> {
                 _uiState.update {
-                    it.copy()
+                    it.copy(
+                        error = null
+                    )
                 }
             }
 

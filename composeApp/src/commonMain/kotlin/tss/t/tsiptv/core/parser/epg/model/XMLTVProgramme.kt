@@ -9,6 +9,7 @@ import nl.adaptivity.xmlutil.serialization.XmlElement
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
 import tss.t.tsiptv.core.parser.epg.XMLTVEPGParser
 import tss.t.tsiptv.core.parser.model.IPTVProgram
+import kotlin.time.ExperimentalTime
 
 /**
  * XMLTV Programme
@@ -26,10 +27,10 @@ data class XMLTVProgramme(
     @XmlElement(true)
     val desc: XMLTVDesc? = null,
     @XmlElement(true)
-    val category: XMLTVCategory? = null,
+    val category: List<XMLTVCategory>? = null,
     @XmlElement(true)
     val icon: XMLTVIcon? = null,
-    @SerialName("credits")
+    @XmlElement(true)
     val credits: XMLTVCredits? = null,
 ) {
     /**
@@ -51,7 +52,9 @@ data class XMLTVProgramme(
             description = desc?.value,
             startTime = startTime,
             endTime = endTime,
-            category = category?.value,
+            category = category?.map {
+                it.value
+            },
             logo = icon?.src,
             credits = credits?.let {
                 IPTVProgram.Credits(
@@ -66,6 +69,7 @@ data class XMLTVProgramme(
      * Parses a date-time string in XMLTV format into a timestamp.
      * XMLTV format is typically YYYYMMDDHHMMSS +/-HHMM
      */
+    @OptIn(ExperimentalTime::class)
     private fun parseXMLTVDateTime(dateTime: String): Long? {
         return try {
             // Handle different timezone formats

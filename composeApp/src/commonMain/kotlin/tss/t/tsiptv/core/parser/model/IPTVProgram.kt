@@ -1,5 +1,8 @@
 package tss.t.tsiptv.core.parser.model
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /**
  * Data class representing a program in an IPTV program schedule.
  *
@@ -19,7 +22,7 @@ data class IPTVProgram(
     val description: String? = null,
     val startTime: Long,
     val endTime: Long,
-    val category: String? = null,
+    val category: List<String>? = null,
     val logo: String? = null,
     val credits: Credits? = null,
     val attributes: Map<String, String> = emptyMap(),
@@ -27,8 +30,11 @@ data class IPTVProgram(
     var startTimeStr: String? = null
     var endTimeStr: String? = null
 
+    @Serializable
     data class Credits(
+        @SerialName("director")
         val director: String? = null,
+        @SerialName("actors")
         val actors: List<String>? = null,
     )
 }

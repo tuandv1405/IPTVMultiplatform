@@ -5,6 +5,8 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import tss.t.tsiptv.core.database.entity.PlaylistEntity
 import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
@@ -51,15 +53,20 @@ interface PlaylistDao {
      *
      * @param playlist The playlist to insert or update
      */
-    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Transaction
     suspend fun insertPlaylist(playlist: PlaylistEntity)
+
+    @Update(onConflict = OnConflictStrategy.REPLACE)
+    @Transaction
+    suspend fun updatePlaylist(playlist: PlaylistEntity)
 
     /**
      * Inserts or updates multiple playlists.
      *
      * @param playlists The playlists to insert or update
      */
-    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlaylists(playlists: List<PlaylistEntity>)
 
     /**

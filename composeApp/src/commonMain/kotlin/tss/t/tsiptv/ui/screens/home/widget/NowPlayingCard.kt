@@ -37,7 +37,6 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import tsiptv.composeapp.generated.resources.Res
@@ -54,6 +53,8 @@ import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.themes.TSTextStyles
 import tss.t.tsiptv.utils.formatToday
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 @Composable
 fun NowPlayingCard(
@@ -270,6 +271,7 @@ fun PlayIcon() {
 }
 
 
+@OptIn(ExperimentalTime::class)
 @Composable
 @Preview
 fun NowPlayingCardHistoryPreview() {

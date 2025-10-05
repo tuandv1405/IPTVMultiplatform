@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
+import tss.t.tsiptv.core.database.entity.ChannelWithProgramCount
 import tss.t.tsiptv.core.database.entity.ProgramEntity
 
 /**
@@ -33,7 +34,12 @@ interface ProgramDao {
                 "playlistId == :playListId AND " +
                 "(startTime <= :timeStamp OR endTime <= :timeStamp) LIMIT :limit OFFSET :offset"
     )
-    suspend fun getValidPrograms(playListId: String, timeStamp: Long, offset: Int, limit: Int): List<ProgramEntity>
+    suspend fun getValidPrograms(
+        playListId: String,
+        timeStamp: Long,
+        offset: Int,
+        limit: Int,
+    ): List<ProgramEntity>
 
     /**
      * Gets a program by ID.
@@ -50,7 +56,7 @@ interface ProgramDao {
      * @param channelId The ID of the channel
      * @return A flow of programs for the channel
      */
-    @Query("SELECT * FROM programs WHERE channelId = :channelId ORDER BY startTime ASC")
+    @Query("SELECT DISTINCT title, startTime, * FROM programs WHERE channelId = :channelId ORDER BY startTime ASC")
     suspend fun getProgramsForChannel(channelId: String): List<ProgramEntity>
 
     /**
@@ -69,13 +75,20 @@ interface ProgramDao {
      * @param timeStamp The current timestamp to filter valid programs
      * @return A list of pairs, where each pair contains a channel ID and the count of its valid programs
      */
-    @Query("""
-        SELECT p.channelId, COUNT(p.id) as programCount
+    @Query(
+        """
+        SELECT p.channelId, c.name, c.categoryId, c.logoUrl, c.isFavorite, COUNT(p.id) as programCount
         FROM programs p
-        WHERE p.playlistId = :playlistId AND (p.startTime <= :timeStamp OR p.endTime <= :timeStamp)
-        GROUP BY p.channelId
-    """)
-    suspend fun getChannelsWithValidProgramCounts(playlistId: String, timeStamp: Long): List<ChannelWithProgramCount>
+        LEFT JOIN channel c ON p.channelId = c.id
+        WHERE p.playlistId = :playlistId AND (p.startTime <= :timeStamp OR p.endTime >= :timeStamp)
+        GROUP BY  p.channelId, c.name, c.categoryId, c.logoUrl
+    """
+    )
+    suspend fun getChannelsWithValidProgramCounts(
+        playlistId: String,
+        timeStamp: Long,
+    ): List<ChannelWithProgramCount>
+
     /**
      * Gets programs for a channel within a time range.
      *
@@ -162,11 +175,3 @@ interface ProgramDao {
     @Query("DELETE FROM programs WHERE playlistId = :playlistId")
     suspend fun deleteProgramsForPlaylist(playlistId: String)
 }
-
-/**
- * Data class to hold the result of the query for channels with their valid program counts.
- */
-data class ChannelWithProgramCount(
-    val channelId: String,
-    val programCount: Int
-)

@@ -1,20 +1,22 @@
 package tss.t.tsiptv.usecase.programs
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 import tss.t.tsiptv.core.database.IPTVDatabase
-import tss.t.tsiptv.core.storage.InMemoryKeyValueStorage
-import tss.t.tsiptv.core.storage.MultiplatformSettingsKeyValueStorage
-import tss.t.tsiptv.core.storage.ext.getCurrentPlayListId
+import tss.t.tsiptv.core.database.entity.toIPTVProgram
+import tss.t.tsiptv.core.parser.model.IPTVProgram
 
 class GetCurrentProgramChannelList(
-    private val keyValueStorage: MultiplatformSettingsKeyValueStorage,
-    private val inMemoryKeyValueStorage: InMemoryKeyValueStorage,
-    private val iptvDatabase: IPTVDatabase
+    private val iptvDatabase: IPTVDatabase,
 ) {
-    suspend operator fun invoke(): String? {
-        iptvDatabase.programDao
-            .getProgramsForChannel()
-        return inMemoryKeyValueStorage.getCurrentPlayListId().takeIf {
-            !it.isNullOrEmpty()
-        } ?: keyValueStorage.getCurrentPlayListId()
+    suspend operator fun invoke(channelId: String): List<IPTVProgram> {
+        return withContext(Dispatchers.IO) {
+            iptvDatabase.programDao
+                .getProgramsForChannel(channelId)
+                .map {
+                    it.toIPTVProgram()
+                }
+        }
     }
 }

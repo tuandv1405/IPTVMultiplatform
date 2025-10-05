@@ -32,7 +32,10 @@ val androidModule = module {
 
     // MediaPlayer for Android
     single<MediaPlayer> {
-        MediaPlayerFactory.createPlayer(get(), get(named("MediaCoroutine")))
+        MediaPlayerFactory.createPlayer(
+            context = get(),
+            coroutineScope = get(named("MediaCoroutine"))
+        )
     }
 }
 

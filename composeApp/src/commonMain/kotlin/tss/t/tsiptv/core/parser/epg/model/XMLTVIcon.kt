@@ -9,6 +9,9 @@ import nl.adaptivity.xmlutil.serialization.XmlSerialName
 @Serializable
 @XmlSerialName("icon")
 data class XMLTVIcon(
+    @XmlSerialName(
+        value = "src",
+    )
     val src: String,
     val width: String? = null,
     val height: String? = null,

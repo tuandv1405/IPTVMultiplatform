@@ -10,6 +10,7 @@ import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.Playlist
 import tss.t.tsiptv.core.parser.model.IPTVFormat
 import tss.t.tsiptv.core.parser.model.IPTVProgram
+import kotlin.time.ExperimentalTime
 
 
 fun PlaylistEntity.toPlaylist(): Playlist {
@@ -17,7 +18,8 @@ fun PlaylistEntity.toPlaylist(): Playlist {
         id = id,
         name = name,
         url = url,
-        lastUpdated = lastUpdated
+        lastUpdated = lastUpdated,
+        epgUrl = epgUrl
     )
 }
 
@@ -27,7 +29,8 @@ fun Playlist.toPlaylistEntity(): PlaylistEntity {
         name = name,
         url = url,
         lastUpdated = lastUpdated,
-        format = IPTVFormat.UNKNOWN.name // This will be updated when the playlist is parsed
+        format = IPTVFormat.UNKNOWN.name, // This will be updated when the playlist is parsed,
+        epgUrl = epgUrl ?: ""
     )
 }
 
@@ -73,6 +76,7 @@ fun Category.toCategoryEntity(): CategoryEntity {
     )
 }
 
+@OptIn(ExperimentalTime::class)
 fun ProgramEntity.toIPTVProgram(): IPTVProgram {
     val creditsObj = credits?.let {
         try {
@@ -88,6 +92,13 @@ fun ProgramEntity.toIPTVProgram(): IPTVProgram {
             emptyMap()
         }
     } ?: emptyMap()
+    val cateList = category?.let {
+        try {
+            Json.decodeFromString<List<String>>(it)
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     return IPTVProgram(
         id = id,
@@ -96,7 +107,7 @@ fun ProgramEntity.toIPTVProgram(): IPTVProgram {
         description = description,
         startTime = startTime,
         endTime = endTime,
-        category = category,
+        category = cateList,
         logo = logo,
         credits = creditsObj,
         attributes = attributesMap
@@ -119,7 +130,7 @@ private val format = LocalDateTime.Format {
 fun IPTVProgram.toProgramEntity(playlistId: String): ProgramEntity {
     val creditsJson = credits?.let { Json.encodeToString(it) }
     val attributesJson = if (attributes.isNotEmpty()) Json.encodeToString(attributes) else null
-
+    val cateList = Json.encodeToString(category)
     return ProgramEntity(
         id = id,
         channelId = channelId,
@@ -127,7 +138,7 @@ fun IPTVProgram.toProgramEntity(playlistId: String): ProgramEntity {
         description = description,
         startTime = startTime,
         endTime = endTime,
-        category = category,
+        category = cateList,
         playlistId = playlistId,
         logo = logo,
         credits = creditsJson,

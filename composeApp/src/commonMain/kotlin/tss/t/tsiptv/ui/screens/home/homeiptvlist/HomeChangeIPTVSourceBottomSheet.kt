@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import tsiptv.composeapp.generated.resources.Res
@@ -47,6 +46,8 @@ import tss.t.tsiptv.ui.widgets.HorizontalDividersGradient
 import tss.t.tsiptv.ui.widgets.TSAppBarXBackIcon
 import tss.t.tsiptv.utils.TimeStampFormat
 import tss.t.tsiptv.utils.formatDynamic
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -185,7 +186,7 @@ private fun PlaylistItem(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 @Preview
 fun HomeChangeIPTVSourceBottomSheet_Preview() {
@@ -198,7 +199,8 @@ fun HomeChangeIPTVSourceBottomSheet_Preview() {
                         name = "Test",
                         url = "https://test",
                         lastUpdated = Clock.System.now().toEpochMilliseconds(),
-                        format = "XML"
+                        format = "XML",
+                        epgUrl = ""
                     ),
                     channelCount = 266
                 ),
@@ -208,7 +210,8 @@ fun HomeChangeIPTVSourceBottomSheet_Preview() {
                         name = "Test",
                         url = "https://test",
                         lastUpdated = Clock.System.now().toEpochMilliseconds(),
-                        format = "XML"
+                        format = "XML",
+                        epgUrl = ""
                     ),
                     channelCount = 266
                 )

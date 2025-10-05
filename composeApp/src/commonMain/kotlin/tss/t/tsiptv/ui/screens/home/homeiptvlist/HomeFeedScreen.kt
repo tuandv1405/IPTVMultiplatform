@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,14 +48,12 @@ import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavHostController
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
-import org.koin.compose.viewmodel.sharedKoinViewModel
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.hello_format
 import tsiptv.composeapp.generated.resources.home_search_placeholder
@@ -216,33 +215,7 @@ fun HomeIPTVPlaylistScreen(
                             }
 
                             isInitLoading -> {
-                                items(10) {
-                                    if (it % 3 == 0) {
-                                        Box(
-                                            modifier = Modifier.padding(16.dp)
-                                                .fillMaxWidth()
-                                                .height(100.dp)
-                                                .clip(TSShapes.roundedShape12)
-                                                .background(
-                                                    TSColors.White.copy(alpha = shimmerColor),
-                                                    TSShapes.roundedShape12
-                                                )
-                                                .blur(20.dp)
-                                        )
-                                    } else {
-                                        Box(
-                                            modifier = Modifier.padding(16.dp)
-                                                .fillMaxWidth()
-                                                .height(150.dp)
-                                                .clip(TSShapes.roundedShape12)
-                                                .blur(20.dp)
-                                                .background(
-                                                    TSColors.White.copy(alpha = shimmerColor),
-                                                    TSShapes.roundedShape12
-                                                )
-                                        )
-                                    }
-                                }
+                                homeLoadingItemList(shimmerColor)
                             }
 
                             else -> {
@@ -303,6 +276,36 @@ fun HomeIPTVPlaylistScreen(
             }
         }
     )
+}
+
+private fun LazyListScope.homeLoadingItemList(shimmerColor: Float) {
+    items(10) { size ->
+        if (size % 3 == 0) {
+            Box(
+                modifier = Modifier.padding(16.dp)
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .clip(TSShapes.roundedShape12)
+                    .background(
+                        TSColors.White.copy(alpha = shimmerColor),
+                        TSShapes.roundedShape12
+                    )
+                    .blur(20.dp)
+            )
+        } else {
+            Box(
+                modifier = Modifier.padding(16.dp)
+                    .fillMaxWidth()
+                    .height(150.dp)
+                    .clip(TSShapes.roundedShape12)
+                    .blur(20.dp)
+                    .background(
+                        TSColors.White.copy(alpha = shimmerColor),
+                        TSShapes.roundedShape12
+                    )
+            )
+        }
+    }
 }
 
 @Composable

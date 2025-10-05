@@ -11,7 +11,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,7 +37,9 @@ import tss.t.tsiptv.ui.screens.login.AuthViewModel
 import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
 import tss.t.tsiptv.ui.screens.profile.ProfileScreen
-import tss.t.tsiptv.ui.screens.programs.ProgramListScreen
+import tss.t.tsiptv.ui.screens.programs.ChannelXProgramListScreen
+import tss.t.tsiptv.ui.screens.programs.ProgramViewModel
+import tss.t.tsiptv.ui.screens.programs.uimodel.ProgramEvent
 import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
 
 /**
@@ -48,7 +50,7 @@ import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
 @Composable
 fun HomeBottomNavigationNavHost(
     navController: NavHostController,
-    parentNavController: NavHostController,
+    rootNavController: NavHostController,
     modifier: Modifier = Modifier,
     totalPlaylist: List<PlaylistWithChannelCount>,
     hazeState: HazeState,
@@ -77,7 +79,7 @@ fun HomeBottomNavigationNavHost(
 
             HomeIPTVPlaylistScreen(
                 navController = navController,
-                parentNavController = parentNavController,
+                parentNavController = rootNavController,
                 hazeState = hazeState,
                 homeUiState = homeUiState,
                 onHomeEvent = {
@@ -99,7 +101,7 @@ fun HomeBottomNavigationNavHost(
 
             if (showBottomSheet) {
                 HomeSettingOptionsBottomSheet(
-                    parentNavController = parentNavController,
+                    parentNavController = rootNavController,
                     onDismissRequest = {
                         showBottomSheet = false
                     },
@@ -148,7 +150,7 @@ fun HomeBottomNavigationNavHost(
                 hazeState = hazeState,
                 homeUiState = homeUiState,
                 navController = navController,
-                parentNavController = parentNavController,
+                parentNavController = rootNavController,
                 playerUIState = playerUIState,
                 mediaItem = mediaItem,
                 contentPadding = contentPadding,
@@ -176,8 +178,21 @@ fun HomeBottomNavigationNavHost(
         composable(
             route = NavRoutes.HomeScreens.PROGRAM
         ) {
-            ProgramListScreen(
-
+            val programViewModel: ProgramViewModel =
+                koinViewModel(viewModelStoreOwner = viewModelStoreOwner)
+            val uiState by programViewModel.listProgramUIState.collectAsStateWithLifecycle()
+            LaunchedEffect(Unit) {
+                programViewModel.event.collect {
+                    if (it is ProgramEvent.NavigateToDetail) {
+                        val program = it.channel
+                        rootNavController.navigate(
+                            route = NavRoutes.ProgramDetail(program)
+                        )
+                    }
+                }
+            }
+            ChannelXProgramListScreen(
+                uiState = uiState
             )
         }
     }
