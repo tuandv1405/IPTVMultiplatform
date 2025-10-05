@@ -12,6 +12,8 @@
 
     <!-- Common -->
     <string name="ok">Aceptar</string>
+    <string name="accept">Aceptar</string>
+    <string name="allow">Permitir</string>
     <string name="cancel">Cancelar</string>
     <string name="error">Error</string>
     <string name="error_occurred">Ha ocurrido un error</string>
@@ -73,6 +75,7 @@
     <string name="quick_close_action">Acciones rápidas</string>
     <string name="bottom_sheet_add_iptv">Agregar fuente IPTV</string>
     <string name="bottom_sheet_import_playlist">Importar lista de reproducción</string>
+    <string name="bottom_sheet_select_playlist">Seleccionar lista de reproducción</string>
     <string name="bottom_sheet_refresh_channel">Actualizar canales</string>
     <string name="bottom_sheet_change_language">Cambiar idioma</string>
 
@@ -80,6 +83,7 @@
     <string name="home_nav_history">Historial</string>
     <string name="home_nav_settings">Configuración</string>
     <string name="home_nav_profile">Perfil</string>
+    <string name="home_nav_programs">Programas</string>
 
     <string name="home_search_placeholder">Buscar canal, programas...</string>
     <string name="empty_history">Sin actividad reciente</string>
@@ -87,4 +91,10 @@
     <string name="player_dislike">No me gusta</string>
     <string name="player_share">Compartir</string>
     <string name="player_report">Reportar</string>
+
+    <string name="channel_count_format">%1$d Canales</string>
+    <string name="programs_today_format">%1$d Programas</string>
+
+    <string name="popup_refresh_program_title">Actualizar EPG</string>
+    <string name="popup_refresh_program_description">¿Actualizar todos los EPG hoy?</string>
 </resources>
