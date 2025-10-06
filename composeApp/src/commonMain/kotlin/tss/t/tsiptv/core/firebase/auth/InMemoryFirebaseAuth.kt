@@ -1,9 +1,11 @@
-package tss.t.tsiptv.core.firebase
+package tss.t.tsiptv.core.firebase.auth
 
 import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-
+import tss.t.tsiptv.core.firebase.IFirebaseAuth
+import tss.t.tsiptv.core.firebase.exceptions.FirebaseAuthException
+import tss.t.tsiptv.core.firebase.models.FirebaseUser
 
 /**
  * A simple in-memory implementation of IFirebaseAuth.

@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import tss.t.tsiptv.core.firebase.FirebaseUser
+import tss.t.tsiptv.core.firebase.models.FirebaseUser
 import tss.t.tsiptv.core.network.NetworkConnectivityChecker
 import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
 import tss.t.tsiptv.feature.auth.domain.model.AuthResult

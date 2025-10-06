@@ -1,5 +1,9 @@
 package tss.t.tsiptv.core.firebase
 
+import tss.t.tsiptv.core.firebase.auth.InMemoryFirebaseAuth
+import tss.t.tsiptv.core.firebase.firestore.InMemoryFirebaseFirestore
+import tss.t.tsiptv.core.firebase.storage.InMemoryFirebaseStorage
+
 /**
  * Desktop (macOS) Firebase initializer.
  * 
@@ -34,19 +38,19 @@ class DesktopFirebaseInitializer {
         }
         
         /**
-         * Provides an in-memory implementation of FirebaseFirestore.
+         * Provides an in-memory implementation of IFirebaseFirestore.
          * In a real app, this would return a desktop-specific implementation.
          */
-        fun provideFirebaseFirestore(): FirebaseFirestore {
+        fun provideFirebaseFirestore(): IFirebaseFirestore {
             // For now, return an in-memory implementation
             return InMemoryFirebaseFirestore()
         }
         
         /**
-         * Provides an in-memory implementation of FirebaseStorage.
+         * Provides an in-memory implementation of IFirebaseStorage.
          * In a real app, this would return a desktop-specific implementation.
          */
-        fun provideFirebaseStorage(): FirebaseStorage {
+        fun provideFirebaseStorage(): IFirebaseStorage {
             // For now, return an in-memory implementation
             return InMemoryFirebaseStorage()
         }

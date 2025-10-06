@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.Foundation.NSError
+import tss.t.tsiptv.core.firebase.auth.InMemoryFirebaseAuth
+import tss.t.tsiptv.core.firebase.exceptions.FirebaseAuthException
+import tss.t.tsiptv.core.firebase.models.FirebaseUser
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
