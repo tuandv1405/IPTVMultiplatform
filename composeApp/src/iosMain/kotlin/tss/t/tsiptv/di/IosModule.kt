@@ -22,9 +22,17 @@ val iosModule = module {
         IosSettingsFactory()
     }
 
+    // Firebase implementations
     single {
         IosFirebaseAuthImplementation()
     } bind IFirebaseAuth::class
+
+//    single<IosRemoteConfigImpl> {
+//        IosRemoteConfigImpl(
+//            keyValueStorage = get<KeyValueStorage>(),
+//            coroutineScope = CoroutineScope(Dispatchers.IO)
+//        )
+//    } bind IRemoteConfig::class
 
     single<MediaPlayer> {
         MediaPlayerFactory.createPlayer(

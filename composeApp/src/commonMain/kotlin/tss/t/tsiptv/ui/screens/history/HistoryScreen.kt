@@ -26,6 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,11 +38,13 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.btn_add_iptv_source_title
 import tsiptv.composeapp.generated.resources.empty_history
@@ -48,6 +52,7 @@ import tsiptv.composeapp.generated.resources.home_nav_history
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.player.models.MediaItem
+import tss.t.tsiptv.ui.screens.ads.AdsViewModel
 import tss.t.tsiptv.ui.screens.history.widgets.HistoryItems
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.screens.home.HomeUiState
@@ -55,6 +60,7 @@ import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.themes.TSTextStyles
+import tss.t.tsiptv.ui.widgets.AdsItem
 import tss.t.tsiptv.ui.widgets.GradientButton1
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,6 +83,10 @@ fun HistoryScreen(
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
         state = rememberTopAppBarState(),
     )
+    val adsViewModel = koinViewModel<AdsViewModel>()
+    LaunchedEffect(Unit) {
+        adsViewModel.loadAds()
+    }
     Scaffold(
         modifier = Modifier.fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -149,6 +159,13 @@ fun HistoryScreen(
                             }
                         }
                     }
+                }
+            }
+
+            item("Ads") {
+                val ads by adsViewModel.displayAd.collectAsStateWithLifecycle()
+                ads?.let {
+                    AdsItem(it)
                 }
             }
 

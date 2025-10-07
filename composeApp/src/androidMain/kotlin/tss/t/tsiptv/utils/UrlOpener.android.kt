@@ -10,7 +10,7 @@ import tss.t.tsiptv.TSAndroidApplication
  */
 class AndroidUrlOpener : UrlOpener {
     
-    override fun openUrl(url: String): Boolean {
+    override suspend fun openUrl(url: String): Boolean {
         return try {
             val context = TSAndroidApplication.instance.applicationContext
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
@@ -23,7 +23,7 @@ class AndroidUrlOpener : UrlOpener {
         }
     }
     
-    override fun canHandleUrl(url: String): Boolean {
+    override suspend fun canHandleUrl(url: String): Boolean {
         return try {
             val context = TSAndroidApplication.instance.applicationContext
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))

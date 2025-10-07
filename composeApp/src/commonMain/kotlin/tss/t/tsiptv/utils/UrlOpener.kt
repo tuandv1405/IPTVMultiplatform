@@ -9,14 +9,14 @@ interface UrlOpener {
      * @param url The URL to open
      * @return true if the URL was successfully opened, false otherwise
      */
-    fun openUrl(url: String): Boolean
+    suspend fun openUrl(url: String): Boolean
     
     /**
      * Checks if the given URL can be handled by an installed app.
      * @param url The URL to check
      * @return true if an app can handle the URL, false otherwise
      */
-    fun canHandleUrl(url: String): Boolean
+    suspend fun canHandleUrl(url: String): Boolean
 }
 
 /**

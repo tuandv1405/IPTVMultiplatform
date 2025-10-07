@@ -8,7 +8,7 @@ import java.net.URI
  */
 class DesktopUrlOpener : UrlOpener {
     
-    override fun openUrl(url: String): Boolean {
+    override suspend fun openUrl(url: String): Boolean {
         return try {
             if (Desktop.isDesktopSupported()) {
                 val desktop = Desktop.getDesktop()
@@ -23,7 +23,7 @@ class DesktopUrlOpener : UrlOpener {
         }
     }
     
-    override fun canHandleUrl(url: String): Boolean {
+    override suspend fun canHandleUrl(url: String): Boolean {
         return try {
             URI(url) // Just check if URL is valid
             Desktop.isDesktopSupported() && 

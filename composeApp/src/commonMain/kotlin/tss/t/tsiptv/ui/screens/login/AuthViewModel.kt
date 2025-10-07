@@ -1,6 +1,8 @@
 package tss.t.tsiptv.ui.screens.login
 
 import androidx.lifecycle.ViewModel
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.analytics.analytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,6 +57,10 @@ class AuthViewModel(
                                 ?.uppercase()
                             ?: "Anonymous"
                     )
+                }
+                if (authState.isAuthenticated) {
+                    Firebase.analytics.setUserId(authState.user?.email ?: authState.user?.uid)
+                    Firebase.analytics.setUserProperty("Email", authState.user?.email ?: "")
                 }
             }
         }
