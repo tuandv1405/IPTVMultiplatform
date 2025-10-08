@@ -121,7 +121,9 @@ fun HomeIPTVPlaylistScreen(
     var searchOffset by remember {
         mutableStateOf(0)
     }
-    val adsViewModel = koinViewModel<AdsViewModel>()
+    val adsViewModel = koinViewModel<AdsViewModel>(
+        viewModelStoreOwner = viewModelStoreOwner
+    )
 
     LaunchedEffect(Unit) {
         adsViewModel.loadAds()

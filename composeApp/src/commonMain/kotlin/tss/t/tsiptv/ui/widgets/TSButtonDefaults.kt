@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
@@ -41,6 +43,7 @@ import tsiptv.composeapp.generated.resources.ic_logout
 import tss.t.tsiptv.ui.screens.addiptv.GlowBlue
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
+import tss.t.tsiptv.ui.themes.TSTextStyles
 import tss.t.tsiptv.utils.customShadow
 
 object TSButtonDefaults {
@@ -213,11 +216,18 @@ fun CommonButton(
                 it()
                 Spacer(Modifier.width(12.dp))
             }
-            Text(
+            BasicText(
                 text = text,
-                color = Color.White,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp
+                style = TSTextStyles.semiBold13.copy(
+                    color = TSColors.White,
+                    fontSize = 14.sp,
+                    lineHeight = 16.sp
+                ),
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = 9.sp,
+                    maxFontSize = 14.sp
+                )
             )
         }
     }
@@ -245,11 +255,18 @@ fun ColoredButton(
             .padding(vertical = 14.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        BasicText(
             text = text,
-            color = Color.White,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 14.sp
+            style = TSTextStyles.semiBold13.copy(
+                color = TSColors.White,
+                fontSize = 14.sp,
+                lineHeight = 16.sp
+            ),
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(
+                minFontSize = 9.sp,
+                maxFontSize = 14.sp
+            )
         )
     }
 }
@@ -409,11 +426,18 @@ fun GrayButton(
             .padding(vertical = 14.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        BasicText(
             text = text,
-            color = TSColors.TextTitlePrimaryDart,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 14.sp
+            style = TSTextStyles.semiBold13.copy(
+                color = TSColors.TextTitlePrimaryDart,
+                fontSize = 14.sp,
+                lineHeight = 16.sp
+            ),
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(
+                minFontSize = 9.sp,
+                maxFontSize = 14.sp
+            )
         )
     }
 }

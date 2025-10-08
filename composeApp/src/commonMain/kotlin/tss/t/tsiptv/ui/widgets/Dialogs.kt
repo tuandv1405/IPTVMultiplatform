@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,6 +56,7 @@ private val contentRow: @Composable RowScope.(
             text = negativeButtonText,
             onClick = onNegativeClick,
             modifier = Modifier.weight(1f)
+                .defaultMinSize(minHeight = 52.dp)
         )
         Spacer(modifier = Modifier.width(12.dp))
     }
@@ -64,6 +66,7 @@ private val contentRow: @Composable RowScope.(
             text = positiveButtonText,
             onClick = onPositiveClick,
             modifier = Modifier.weight(1f)
+                .defaultMinSize(minHeight = 52.dp)
         )
     }
 }
@@ -84,6 +87,7 @@ private val contentColumn: @Composable ColumnScope.(
             text = positiveButtonText,
             onClick = onPositiveClick,
             modifier = Modifier.fillMaxWidth()
+                .defaultMinSize(minHeight = 52.dp)
         )
     }
 
@@ -92,6 +96,7 @@ private val contentColumn: @Composable ColumnScope.(
             text = negativeButtonText,
             onClick = onNegativeClick,
             modifier = Modifier.fillMaxWidth()
+                .defaultMinSize(minHeight = 52.dp)
         )
     }
 }
