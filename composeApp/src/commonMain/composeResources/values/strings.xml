@@ -97,4 +97,30 @@
 
     <string name="popup_refresh_program_title">Refresh EPG</string>
     <string name="popup_refresh_program_description">Refresh all EPG today?</string>
+
+    <!-- Settings Bottom Sheet -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_deactivate_account">Deactivate Account</string>
+
+    <!-- Deactivation Dialog -->
+    <string name="deactivate_dialog_title">Deactivate Account</string>
+    <string name="deactivate_dialog_message">Are you sure you want to deactivate your account?\n\n⚠️ WARNING: Your account will be permanently removed and all your data will be deleted after admin review. This action cannot be undone.\n\nProcessing time: About 1 working day</string>
+    <string name="btn_deactivate_cancel">Keep Account</string>
+    <string name="btn_deactivate_ok">Yes, Deactivate</string>
+
+    <!-- Deactivation Success -->
+    <string name="deactivation_success_title">Request Submitted</string>
+    <string name="deactivation_success_message">Your deactivation request has been submitted. You will be notified when the admin reviews your request. Processing time is about 1 working day.</string>
+    
+    <!-- Error Messages -->
+    <string name="error_network">Network error occurred. Please check your internet connection and try again.</string>
+    <string name="error_authentication">Authentication failed. Please check your credentials and try again.</string>
+    <string name="error_firebase">A server error occurred. Please try again later.</string>
+    <string name="error_parsing">Failed to parse data. Please check the source and try again.</string>
+    <string name="error_registration">Registration failed. Please try again.</string>
+    <string name="error_general">An unexpected error occurred. Please try again.</string>
+    <string name="error_timeout">Request timed out. Please check your connection and try again.</string>
+    <string name="error_invalid_data">Invalid data format. Please check your input.</string>
+    <string name="error_permission_denied">Permission denied. Please check your access rights.</string>
+    <string name="error_service_unavailable">Service is currently unavailable. Please try again later.</string>
 </resources>

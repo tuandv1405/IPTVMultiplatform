@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import tss.t.tsiptv.core.firebase.models.DeactivationRequest
 import tss.t.tsiptv.core.firebase.models.FirebaseUser
 import tss.t.tsiptv.core.network.NetworkConnectivityChecker
 import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
@@ -17,6 +18,7 @@ import tss.t.tsiptv.core.tracking.UserTrackingService
 import tss.t.tsiptv.feature.auth.domain.model.AuthResult
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
+import tss.t.tsiptv.ui.screens.profile.ProfileScreenActions
 
 /**
  * ViewModel for authentication operations.
@@ -138,6 +140,28 @@ class AuthViewModel(
                 viewModelScope.launch {
                     authRepository.signOut()
                 }
+            }
+
+            LoginEvents.OnConfirmDeactivation -> {
+                createDeactivationRequest()
+            }
+
+            is LoginEvents.OnProfileActionEvent -> {
+                when (event.action) {
+                    ProfileScreenActions.Settings -> {
+                        // Settings action handled in UI
+                    }
+                    else -> {
+                        // Handle other profile actions
+                    }
+                }
+            }
+
+            LoginEvents.OnShowSettingsBottomSheet,
+            LoginEvents.OnDismissSettingsBottomSheet,
+            LoginEvents.OnShowDeactivationDialog,
+            LoginEvents.OnDismissDeactivationDialog -> {
+                // These events are handled in UI state
             }
 
             else -> {
@@ -415,6 +439,138 @@ class AuthViewModel(
             }
         }
     }
+
+    /**
+     * Creates a deactivation request for the current user.
+     */
+    fun createDeactivationRequest(reason: String? = null) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isDeactivationLoading = true, deactivationError = null) }
+
+            // Check network connectivity
+            if (!networkConnectivityChecker.isNetworkAvailable()) {
+                _uiState.update {
+                    it.copy(
+                        isDeactivationLoading = false,
+                        deactivationError = "No internet connection. Please check your network settings and try again."
+                    )
+                }
+                return@launch
+            }
+
+            val result = authRepository.createDeactivationRequest(reason)
+
+            when (result) {
+                is AuthResult.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            isDeactivationLoading = false,
+                            deactivationError = null
+                        )
+                    }
+                    // Refresh the deactivation request to show the newly created one
+                    loadDeactivationRequest()
+                }
+
+                is AuthResult.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isDeactivationLoading = false,
+                            deactivationError = result.message
+                        )
+                    }
+                }
+
+                else -> {
+                    // Handle other result types if needed
+                }
+            }
+        }
+    }
+
+    /**
+     * Loads the current user's deactivation request.
+     */
+    fun loadDeactivationRequest() {
+        viewModelScope.launch {
+            try {
+                val deactivationRequest = authRepository.getDeactivationRequest()
+                _uiState.update {
+                    it.copy(
+                        deactivationRequest = deactivationRequest,
+                        deactivationError = null
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        deactivationRequest = null,
+                        deactivationError = e.message ?: "Failed to load deactivation request"
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Cancels the current user's deactivation request.
+     */
+    fun cancelDeactivationRequest() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isDeactivationLoading = true, deactivationError = null) }
+
+            // Check network connectivity
+            if (!networkConnectivityChecker.isNetworkAvailable()) {
+                _uiState.update {
+                    it.copy(
+                        isDeactivationLoading = false,
+                        deactivationError = "No internet connection. Please check your network settings and try again."
+                    )
+                }
+                return@launch
+            }
+
+            val result = authRepository.cancelDeactivationRequest()
+
+            when (result) {
+                is AuthResult.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            isDeactivationLoading = false,
+                            deactivationRequest = null,
+                            deactivationError = null
+                        )
+                    }
+                }
+
+                is AuthResult.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isDeactivationLoading = false,
+                            deactivationError = result.message
+                        )
+                    }
+                }
+
+                else -> {
+                    // Handle other result types if needed
+                }
+            }
+        }
+    }
+
+    /**
+     * Observes the current user's deactivation request for real-time updates.
+     */
+    fun observeDeactivationRequest() {
+        viewModelScope.launch {
+            authRepository.observeDeactivationRequest().collect { deactivationRequest ->
+                _uiState.update {
+                    it.copy(deactivationRequest = deactivationRequest)
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -423,6 +579,9 @@ class AuthViewModel(
  * @property isAuthenticated Whether the user is authenticated
  * @property isLoading Whether an authentication operation is in progress
  * @property error The error message from the last authentication operation, or null if no error
+ * @property deactivationRequest The current user's deactivation request, or null if none exists
+ * @property isDeactivationLoading Whether a deactivation operation is in progress
+ * @property deactivationError The error message from the last deactivation operation, or null if no error
  */
 data class AuthUiState(
     val user: FirebaseUser? = null,
@@ -434,4 +593,7 @@ data class AuthUiState(
     val isEmailEmpty: Boolean = false,
     val isPasswordValid: Boolean = true,
     val isNetworkAvailable: Boolean = true,
+    val deactivationRequest: DeactivationRequest? = null,
+    val isDeactivationLoading: Boolean = false,
+    val deactivationError: String? = null,
 )

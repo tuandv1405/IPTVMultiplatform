@@ -2,6 +2,7 @@ package tss.t.tsiptv.utils
 
 import androidx.compose.runtime.Composable
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
@@ -48,8 +49,8 @@ fun Long.formatDateTime(): String {
     val instant = Instant.fromEpochMilliseconds(this)
     val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
     return "${localDateTime.year}-${
-        localDateTime.monthNumber.toString().padStart(2, '0')
-    }-${localDateTime.dayOfMonth.toString().padStart(2, '0')} " +
+        localDateTime.month.number.toString().padStart(2, '0')
+    }-${localDateTime.day.toString().padStart(2, '0')} " +
             "${localDateTime.hour.toString().padStart(2, '0')}:${
                 localDateTime.minute.toString().padStart(2, '0')
             }:${localDateTime.second.toString().padStart(2, '0')}"
@@ -99,14 +100,14 @@ fun Long.formatDynamic(pattern: String): String {
     val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
 
     return when (pattern) {
-        "yyyy-MM-dd" -> formatDate()
-        "HH:mm:ss" -> "${
+        TimeStampFormat.yyyyMMdd.formatStr -> formatDate()
+        TimeStampFormat.HHmmss.formatStr -> "${
             localDateTime.hour.toString().padStart(2, '0')
         }:${localDateTime.minute.toString().padStart(2, '0')}:${
             localDateTime.second.toString().padStart(2, '0')
         }"
 
-        "yyyy-MM-dd HH:mm:ss" -> formatDateTime()
+        TimeStampFormat.yyyyMMdd_HHmmss.formatStr -> formatDateTime()
         else -> {
             // Custom pattern parsing
             var result = pattern

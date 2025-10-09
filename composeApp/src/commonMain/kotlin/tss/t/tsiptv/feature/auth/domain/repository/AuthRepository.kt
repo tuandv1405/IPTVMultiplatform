@@ -1,6 +1,7 @@
 package tss.t.tsiptv.feature.auth.domain.repository
 
 import kotlinx.coroutines.flow.Flow
+import tss.t.tsiptv.core.firebase.models.DeactivationRequest
 import tss.t.tsiptv.core.firebase.models.FirebaseUser
 import tss.t.tsiptv.feature.auth.domain.model.AuthResult
 import tss.t.tsiptv.feature.auth.domain.model.AuthState
@@ -89,4 +90,33 @@ interface AuthRepository {
      * @return True if the token is expired, false otherwise
      */
     suspend fun isTokenExpired(): Boolean
+
+    /**
+     * Creates a deactivation request for the current user.
+     *
+     * @param reason Optional reason for deactivation
+     * @return The result of the deactivation request operation
+     */
+    suspend fun createDeactivationRequest(reason: String? = null): AuthResult
+
+    /**
+     * Gets the current user's deactivation request.
+     *
+     * @return The deactivation request or null if not found
+     */
+    suspend fun getDeactivationRequest(): DeactivationRequest?
+
+    /**
+     * Observes the current user's deactivation request.
+     *
+     * @return Flow of deactivation request or null if not found
+     */
+    fun observeDeactivationRequest(): Flow<DeactivationRequest?>
+
+    /**
+     * Cancels the current user's deactivation request.
+     *
+     * @return The result of the cancellation operation
+     */
+    suspend fun cancelDeactivationRequest(): AuthResult
 }

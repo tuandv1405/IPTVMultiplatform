@@ -97,4 +97,18 @@
 
     <string name="popup_refresh_program_title">EPG aktualisieren</string>
     <string name="popup_refresh_program_description">Alle EPG heute aktualisieren?</string>
+
+    <!-- Settings Bottom Sheet -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_deactivate_account">Konto deaktivieren</string>
+
+    <!-- Deactivation Dialog -->
+    <string name="deactivate_dialog_title">Konto deaktivieren</string>
+    <string name="deactivate_dialog_message">Sind Sie sicher, dass Sie Ihr Konto deaktivieren möchten?\n\n⚠️ WARNUNG: Ihr Konto wird dauerhaft entfernt und alle Ihre Daten werden nach der Administrator-Überprüfung gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.\n\nBearbeitungszeit: Etwa 1 Arbeitstag</string>
+    <string name="btn_deactivate_cancel">Konto behalten</string>
+    <string name="btn_deactivate_ok">Ja, deaktivieren</string>
+
+    <!-- Deactivation Success -->
+    <string name="deactivation_success_title">Anfrage gesendet</string>
+    <string name="deactivation_success_message">Ihre Deaktivierungsanfrage wurde gesendet. Sie werden benachrichtigt, wenn der Administrator Ihre Anfrage überprüft. Die Bearbeitungszeit beträgt etwa 1 Arbeitstag.</string>
 </resources>

@@ -18,12 +18,11 @@ kotlin {
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
@@ -32,6 +31,13 @@ kotlin {
             isStatic = true
             // Required when using NativeSQLiteDriver
             linkerOpts.add("-lsqlite3")
+            
+            // Firebase framework linker options for iOS
+//            linkerOpts.addAll(listOf("-framework", "FirebaseCore"))
+//            linkerOpts.addAll(listOf("-framework", "FirebaseFirestore"))
+//            linkerOpts.addAll(listOf("-framework", "FirebaseAuth"))
+//            linkerOpts.addAll(listOf("-framework", "FirebaseAnalytics"))
+//            linkerOpts.addAll(listOf("-framework", "FirebaseCrashlytics"))
         }
     }
 
@@ -39,7 +45,6 @@ kotlin {
 
     sourceSets {
         val desktopMain by getting
-        val iosX64Main by getting
         val iosArm64Main by getting
         val iosSimulatorArm64Main by getting
 
@@ -128,9 +133,11 @@ kotlin {
             implementation(libs.coil.network)
             implementation(libs.haze.blur)
 
-            implementation("dev.gitlive:firebase-common:2.1.0")
-            implementation("dev.gitlive:firebase-auth:2.1.0")
-            implementation("dev.gitlive:firebase-analytics:2.1.0")
+            implementation(libs.firebase.common)
+            implementation(libs.gitlive.firebase.auth)
+            implementation(libs.gitlive.firebase.analytics)
+            implementation(libs.gitlive.firebase.firestore)
+
             implementation(libs.ktor.serialization.kotlinx.xml)
         }
 
@@ -138,20 +145,12 @@ kotlin {
             implementation(libs.kotlin.test)
         }
 
-        // Add iOS-specific dependencies to each iOS target
-        iosX64Main.dependencies {
-            implementation(libs.ktor.ios)
-            // Room for iOS
-        }
-
         iosArm64Main.dependencies {
             implementation(libs.ktor.ios)
-            // Room for iOS
         }
 
         iosSimulatorArm64Main.dependencies {
             implementation(libs.ktor.ios)
-            // Room for iOS
         }
 
         desktopMain.dependencies {
@@ -191,8 +190,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
     }
 }
@@ -201,7 +200,6 @@ dependencies {
     debugImplementation(compose.uiTooling)
     add("kspAndroid", libs.room.compiler)
     add("kspIosSimulatorArm64", libs.room.compiler)
-    add("kspIosX64", libs.room.compiler)
     add("kspIosArm64", libs.room.compiler)
     add("kspDesktop", libs.room.compiler)
 

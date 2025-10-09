@@ -23,7 +23,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,8 +46,12 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.account_group_title
+import tsiptv.composeapp.generated.resources.btn_deactivate_cancel
+import tsiptv.composeapp.generated.resources.btn_deactivate_ok
 import tsiptv.composeapp.generated.resources.btn_logout_cancel
 import tsiptv.composeapp.generated.resources.btn_logout_ok
+import tsiptv.composeapp.generated.resources.deactivate_dialog_message
+import tsiptv.composeapp.generated.resources.deactivate_dialog_title
 import tsiptv.composeapp.generated.resources.ic_arrow_right
 import tsiptv.composeapp.generated.resources.ic_key
 import tsiptv.composeapp.generated.resources.ic_logout
@@ -63,6 +69,8 @@ import tsiptv.composeapp.generated.resources.profile_edit_title
 import tsiptv.composeapp.generated.resources.profile_notification_title
 import tsiptv.composeapp.generated.resources.profile_subscription_title
 import tsiptv.composeapp.generated.resources.profile_title
+import tsiptv.composeapp.generated.resources.settings_deactivate_account
+import tsiptv.composeapp.generated.resources.settings_title
 import tss.t.tsiptv.ui.screens.login.AuthUiState
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.themes.TSColors
@@ -82,6 +90,7 @@ enum class ProfileScreenActions(val value: Int) {
     Help(2),
     Subscription(3),
     Notification(4),
+    Settings(5),
     Logout(10);
 
 }
@@ -94,6 +103,8 @@ fun ProfileScreen(
     onProfileEvent: (LoginEvents) -> Unit = {},
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showSettingsBottomSheet by remember { mutableStateOf(false) }
+    var showDeactivationDialog by remember { mutableStateOf(false) }
     val displayName = remember(authState.displayName) {
         authState.displayName ?: authState.user?.email?.uppercase() ?: ""
     }
@@ -167,6 +178,7 @@ fun ProfileScreen(
                         modifier = Modifier.clip(CircleShape)
                             .size(40.dp)
                             .background(TSColors.SecondaryBackgroundColor)
+                            .clickable { showSettingsBottomSheet = true }
                             .padding(8.dp)
                             .clip(CircleShape)
                     )
@@ -305,6 +317,36 @@ fun ProfileScreen(
             }
         )
     }
+
+    if (showSettingsBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showSettingsBottomSheet = false },
+        ) {
+            SettingsBottomSheetContent(
+                onDeactivateClick = {
+                    showSettingsBottomSheet = false
+                    showDeactivationDialog = true
+                },
+                onDismiss = { showSettingsBottomSheet = false }
+            )
+        }
+    }
+
+    if (showDeactivationDialog) {
+        TSDialog(
+            title = stringResource(Res.string.deactivate_dialog_title),
+            message = stringResource(Res.string.deactivate_dialog_message),
+            positiveButtonText = stringResource(Res.string.btn_deactivate_cancel),
+            negativeButtonText = stringResource(Res.string.btn_deactivate_ok),
+            onPositiveClick = {
+                showDeactivationDialog = false
+            },
+            onNegativeClick = {
+                showDeactivationDialog = false
+                onProfileEvent(LoginEvents.OnConfirmDeactivation)
+            }
+        )
+    }
 }
 
 @Composable
@@ -375,4 +417,68 @@ fun ProfileItem(
 
     }
 
+}
+
+@Composable
+private fun SettingsBottomSheetContent(
+    onDeactivateClick: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+    ) {
+        item("SettingsTitle") {
+            Text(
+                text = stringResource(Res.string.settings_title),
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
+        
+        item("DeactivateAccount") {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(shape = TSShapes.roundedShape12)
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            listOf(
+                                Color(0xFFDC2626).copy(0.1f),
+                                Color(0xFFEF4444).copy(0.1f),
+                            )
+                        ),
+                        shape = TSShapes.roundedShape12
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = Color(0xFFEF4444).copy(0.3f),
+                        shape = TSShapes.roundedShape12
+                    )
+                    .clickable(onClick = onDeactivateClick)
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(Res.string.settings_deactivate_account),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFFEF4444),
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.weight(1f))
+                Image(
+                    painter = painterResource(Res.drawable.ic_arrow_right),
+                    contentDescription = null,
+                    modifier = Modifier.size(10.dp, 24.dp)
+                )
+            }
+        }
+        
+        item("SpacerBottom") {
+            Spacer(Modifier.height(32.dp))
+        }
+    }
 }

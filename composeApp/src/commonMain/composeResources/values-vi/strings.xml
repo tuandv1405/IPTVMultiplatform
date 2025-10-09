@@ -96,4 +96,18 @@
 
     <string name="popup_refresh_program_title">Cập nhật lịch phát sóng</string>
     <string name="popup_refresh_program_description">Bạn có muốn cập nhật lịch phát sóng hôm nay?</string>
+
+    <!-- Settings Bottom Sheet -->
+    <string name="settings_title">Cài đặt</string>
+    <string name="settings_deactivate_account">Vô hiệu hóa tài khoản</string>
+
+    <!-- Deactivation Dialog -->
+    <string name="deactivate_dialog_title">Vô hiệu hóa tài khoản</string>
+    <string name="deactivate_dialog_message">Bạn có chắc chắn muốn vô hiệu hóa tài khoản của mình không?\n\n⚠️ CẢNH BÁO: Tài khoản của bạn sẽ bị xóa vĩnh viễn và tất cả dữ liệu của bạn sẽ bị xóa sau khi quản trị viên xem xét. Hành động này không thể hoàn tác.\n\nThời gian xử lý: Khoảng 1 ngày làm việc</string>
+    <string name="btn_deactivate_cancel">Giữ tài khoản</string>
+    <string name="btn_deactivate_ok">Có, vô hiệu hóa</string>
+
+    <!-- Deactivation Success -->
+    <string name="deactivation_success_title">Yêu cầu đã gửi</string>
+    <string name="deactivation_success_message">Yêu cầu vô hiệu hóa của bạn đã được gửi. Bạn sẽ được thông báo khi quản trị viên xem xét yêu cầu của bạn. Thời gian xử lý khoảng 1 ngày làm việc.</string>
 </resources>

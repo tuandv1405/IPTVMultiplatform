@@ -56,6 +56,7 @@ import tsiptv.composeapp.generated.resources.password
 import tsiptv.composeapp.generated.resources.sign_up
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.themes.TSColors
+import tss.t.tsiptv.ui.widgets.ErrorDialog
 import tss.t.tsiptv.ui.widgets.SocialButton
 import tss.t.tsiptv.utils.PlatformUtils
 import tss.t.tsiptv.utils.customShadow
@@ -343,5 +344,15 @@ fun SignUpScreen(
                 }
             }
         }
+    }
+    
+    // Error Dialog for Registration Failures
+    if (!authState.error.isNullOrEmpty() && !authState.isAuthenticated) {
+        ErrorDialog(
+            errorMessage = authState.error,
+            onDismiss = {
+                onEvent(LoginEvents.OnDismissErrorDialog)
+            }
+        )
     }
 }

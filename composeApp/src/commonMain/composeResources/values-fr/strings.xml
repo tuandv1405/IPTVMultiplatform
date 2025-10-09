@@ -97,4 +97,30 @@
 
     <string name="popup_refresh_program_title">Actualiser EPG</string>
     <string name="popup_refresh_program_description">Actualiser tous les EPG aujourd\'hui?</string>
+
+    <!-- Settings Bottom Sheet -->
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_deactivate_account">Désactiver le compte</string>
+
+    <!-- Deactivation Dialog -->
+    <string name="deactivate_dialog_title">Désactiver le compte</string>
+    <string name="deactivate_dialog_message">Êtes-vous sûr de vouloir désactiver votre compte?\n\n⚠️ AVERTISSEMENT: Votre compte sera définitivement supprimé et toutes vos données seront supprimées après examen par l\'administrateur. Cette action ne peut pas être annulée.\n\nTemps de traitement: Environ 1 jour ouvrable</string>
+    <string name="btn_deactivate_cancel">Garder le compte</string>
+    <string name="btn_deactivate_ok">Oui, désactiver</string>
+
+    <!-- Deactivation Success -->
+    <string name="deactivation_success_title">Demande soumise</string>
+    <string name="deactivation_success_message">Votre demande de désactivation a été soumise. Vous serez notifié lorsque l\'administrateur examinera votre demande. Le temps de traitement est d\'environ 1 jour ouvrable.</string>
+    
+    <!-- Error Messages -->
+    <string name="error_network">Erreur réseau. Veuillez vérifier votre connexion internet et réessayer.</string>
+    <string name="error_authentication">Échec de l\'authentification. Veuillez vérifier vos identifiants et réessayer.</string>
+    <string name="error_firebase">Erreur serveur. Veuillez réessayer plus tard.</string>
+    <string name="error_parsing">Échec de l\'analyse des données. Veuillez vérifier la source et réessayer.</string>
+    <string name="error_registration">Échec de l\'inscription. Veuillez réessayer.</string>
+    <string name="error_general">Erreur inattendue. Veuillez réessayer.</string>
+    <string name="error_timeout">Délai d\'attente dépassé. Veuillez vérifier votre connexion et réessayer.</string>
+    <string name="error_invalid_data">Format de données invalide. Veuillez vérifier votre saisie.</string>
+    <string name="error_permission_denied">Permission refusée. Veuillez vérifier vos droits d\'accès.</string>
+    <string name="error_service_unavailable">Service actuellement indisponible. Veuillez réessayer plus tard.</string>
 </resources>

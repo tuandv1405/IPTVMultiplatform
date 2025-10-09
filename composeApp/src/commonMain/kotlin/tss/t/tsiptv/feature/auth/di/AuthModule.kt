@@ -10,15 +10,16 @@ import tss.t.tsiptv.feature.auth.presentation.viewmodel.GoogleSignInViewModel
 /**
  * Koin module for authentication components.
  *
- * Note: IFirebaseAuth is provided by platform-specific modules:
- * - AndroidFirebaseAuth for Android
- * - IosFirebaseAuth for iOS
+ * Note: IFirebaseAuth and IFirestore are provided by platform-specific modules:
+ * - AndroidFirebaseAuth and AndroidFirestore for Android
+ * - IosFirebaseAuth and IosFirestore for iOS
  */
 val authModule = module {
     // Repository
     single<AuthRepository> {
         AuthRepositoryImpl(
             firebaseAuth = get(),
+            firestore = get(),
             keyValueStorage = get()
         )
     }

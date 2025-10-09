@@ -1,6 +1,9 @@
 package tss.t.tsiptv.feature.auth.presentation.viewmodel
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
+import tss.t.tsiptv.core.firebase.models.DeactivationRequest
 import tss.t.tsiptv.core.firebase.models.FirebaseUser
 import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
 import tss.t.tsiptv.core.permission.PermissionCheckerFactory
@@ -51,6 +54,16 @@ class AuthViewModelTest {
             override suspend fun isAuthenticated() = false
 
             override suspend fun isTokenExpired() = true
+            override suspend fun createDeactivationRequest(reason: String?): AuthResult = 
+                AuthResult.Error("Not implemented for test")
+
+            override suspend fun getDeactivationRequest(): DeactivationRequest? = null
+
+            override fun observeDeactivationRequest(): Flow<DeactivationRequest?> = 
+                flowOf(null)
+
+            override suspend fun cancelDeactivationRequest(): AuthResult = 
+                AuthResult.Error("Not implemented for test")
 
             override suspend fun refreshTokenIfNeeded() = 
                 AuthResult.Error("Not implemented for test")
