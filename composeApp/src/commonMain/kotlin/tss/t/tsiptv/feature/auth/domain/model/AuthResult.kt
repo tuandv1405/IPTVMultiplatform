@@ -1,6 +1,6 @@
 package tss.t.tsiptv.feature.auth.domain.model
 
-import tss.t.tsiptv.core.firebase.FirebaseUser
+import tss.t.tsiptv.core.firebase.models.FirebaseUser
 
 /**
  * Sealed class representing the result of an authentication operation.

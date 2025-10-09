@@ -59,6 +59,7 @@ import tsiptv.composeapp.generated.resources.hello_format
 import tsiptv.composeapp.generated.resources.home_search_placeholder
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.player.models.MediaItem
+import tss.t.tsiptv.ui.screens.ads.AdsViewModel
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.screens.home.HomeUiState
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.CategoryRow
@@ -119,6 +120,13 @@ fun HomeIPTVPlaylistScreen(
     var showMiniPlayer by remember { mutableStateOf(false) }
     var searchOffset by remember {
         mutableStateOf(0)
+    }
+    val adsViewModel = koinViewModel<AdsViewModel>(
+        viewModelStoreOwner = viewModelStoreOwner
+    )
+
+    LaunchedEffect(Unit) {
+        adsViewModel.loadAds()
     }
 
     LaunchedEffect(Unit) {
@@ -220,6 +228,7 @@ fun HomeIPTVPlaylistScreen(
 
                             else -> {
                                 homeItemList(
+                                    adsViewModel = adsViewModel,
                                     homeUiState = homeUiState,
                                     playerUIState = playerUIState,
                                     onHomeEvent = onHomeEvent,

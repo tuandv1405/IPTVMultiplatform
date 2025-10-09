@@ -13,7 +13,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -60,8 +59,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.ic_dislike
 import tsiptv.composeapp.generated.resources.ic_like
@@ -74,12 +75,14 @@ import tsiptv.composeapp.generated.resources.player_share
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.ui.MediaPlayerView
+import tss.t.tsiptv.ui.screens.ads.AdsViewModel
 import tss.t.tsiptv.ui.screens.home.HomeUiState
 import tss.t.tsiptv.ui.screens.home.widget.HomeChannelItem
 import tss.t.tsiptv.ui.screens.programs.ProgramItem
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.themes.TSTextStyles
+import tss.t.tsiptv.ui.widgets.AdsItem
 import tss.t.tsiptv.ui.widgets.HorizontalDividersGradient
 import tss.t.tsiptv.utils.KeepScreenOnState
 import tss.t.tsiptv.utils.getScreenOrientationUtils
@@ -101,6 +104,7 @@ fun PlayerScreen(
     onEvent: (PlayerEvent) -> Unit,
 ) {
     val isPlaying by mediaPlayer.isPlaying.collectAsState()
+    val adsViewModel = koinViewModel<AdsViewModel>()
     var showTitleUnderPlayer by remember {
         mutableStateOf(false)
     }
@@ -122,12 +126,17 @@ fun PlayerScreen(
     }
     val programListState = rememberLazyListState()
     val programListUnderStickyState = rememberLazyListState()
+    val adsUIState by adsViewModel.displayAd.collectAsState()
 
     KeepScreenOnState(rememberUpdatedState(isPlaying))
     DisposableEffect(Unit) {
         onDispose {
             onEvent(PlayerEvent.OnPictureInPicture)
         }
+    }
+
+    LaunchedEffect(Unit) {
+        adsViewModel.loadAds()
     }
 
     LaunchedEffect(Unit) {
@@ -180,6 +189,12 @@ fun PlayerScreen(
         }
         if (itemIndex > 0) {
             programListUnderStickyState.scrollToItem(itemIndex)
+        }
+    }
+
+    LifecycleResumeEffect(Unit) {
+        adsViewModel.refreshAds()
+        onPauseOrDispose {
         }
     }
 
@@ -253,29 +268,27 @@ fun PlayerScreen(
                 )
             }
 
-            item("BannerAdSpace") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(TSShapes.roundedShape16)
-                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 16.dp)
-                        .background(TSColors.SecondaryBackgroundColor, TSShapes.roundedShape16)
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        "Banner Ads Here"
-                    )
+            adsUIState?.let {
+                item("BannerAdSpace") {
+                    AdsItem(it)
                 }
+            } ?: item("SpacerAdsBanner") {
+                Spacer(Modifier.height(16.dp))
             }
 
             item("Interaction") {
                 InteractionsSpace()
             }
 
-            items(homeUIState.relatedChannels) {
+            items(
+                count = homeUIState.relatedChannels.size,
+                key = {
+                    homeUIState.relatedChannels[it].id
+                }
+            ) { index ->
+                val channel = homeUIState.relatedChannels[index]
                 HomeChannelItem(
-                    it,
+                    channel,
                     modifier = Modifier.fillMaxWidth()
                         .padding(top = 16.dp)
                         .padding(horizontal = 16.dp),
@@ -283,6 +296,20 @@ fun PlayerScreen(
                         onEvent(PlayerEvent.PlayIptv(it))
                     }
                 )
+
+                val showAds = remember(index, channel) {
+                    if (index % 4 == 0) {
+                        channel
+                    } else {
+                        null
+                    }
+                }
+
+                if (showAds != null) {
+                    adsViewModel.RefreshAdsForKeyWithLifeCycle(showAds.id) {
+                        AdsItem(it)
+                    }
+                }
             }
         }
 
@@ -290,6 +317,7 @@ fun PlayerScreen(
             modifier = Modifier.padding(
                 top = paddingValues.calculateTopPadding() + detailsScreenPaddingTop,
             ),
+            viewModel = adsViewModel,
             visible = showDetailsScreen,
             containerColor = TSColors.BackgroundColor,
             paddingValues = paddingValues,
@@ -309,6 +337,7 @@ fun PlayerScreen(
         }
 
         DynamicStickyHeader(
+            viewModel = adsViewModel,
             showDetailsUnderStickyHeader = showDetailsUnderStickyHeader,
             paddingValues = paddingValues,
             detailsScreenPaddingTop = detailsScreenPaddingTop,
@@ -421,6 +450,7 @@ fun HeaderUnderPlayerItem(
 
 @Composable
 private fun DynamicStickyHeader(
+    viewModel: AdsViewModel,
     showDetailsUnderStickyHeader: Boolean,
     paddingValues: PaddingValues,
     detailsScreenPaddingTop: Dp,
@@ -434,6 +464,7 @@ private fun DynamicStickyHeader(
 ) {
     ProgramListVisibility(
         modifier = Modifier.padding(top = detailsScreenPaddingTop),
+        viewModel = viewModel,
         visible = showDetailsUnderStickyHeader,
         paddingValues = paddingValues,
         detailsScreenPaddingTop = detailsScreenPaddingTop,
@@ -461,6 +492,7 @@ private fun DynamicStickyHeader(
 @Composable
 private fun ProgramListVisibility(
     modifier: Modifier = Modifier,
+    viewModel: AdsViewModel,
     visible: Boolean,
     paddingValues: PaddingValues,
     detailsScreenPaddingTop: Dp,
@@ -507,9 +539,11 @@ private fun ProgramListVisibility(
                 }
                 return@LazyColumn
             }
-            items(homeUIState.relatedChannels) {
+            items(homeUIState.relatedChannels.size) { index ->
+                val channel = homeUIState.relatedChannels[index]
+
                 HomeChannelItem(
-                    it,
+                    channel,
                     modifier = Modifier.fillMaxWidth()
                         .padding(top = 16.dp)
                         .padding(horizontal = 16.dp),
@@ -517,6 +551,19 @@ private fun ProgramListVisibility(
                         onEvent(PlayerEvent.PlayIptv(channel))
                     }
                 )
+                val showAds = remember(index, channel) {
+                    if (index % 4 == 0) {
+                        channel
+                    } else {
+                        null
+                    }
+                }
+
+                if (showAds != null) {
+                    viewModel.RefreshAdsForKeyWithLifeCycle(showAds.id) {
+                        AdsItem(it)
+                    }
+                }
             }
         }
     }

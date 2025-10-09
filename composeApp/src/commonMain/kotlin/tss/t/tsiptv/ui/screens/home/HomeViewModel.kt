@@ -4,6 +4,8 @@ package tss.t.tsiptv.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.analytics.analytics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
@@ -19,6 +21,7 @@ import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.database.entity.ChannelWithHistory
 import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
 import tss.t.tsiptv.core.database.entity.toPlaylistEntity
+import tss.t.tsiptv.core.firebase.analystics.AnalyticsConstants
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
@@ -113,6 +116,15 @@ class HomeViewModel(
             _uiState.update {
                 it.copy(isLoading = true)
             }
+
+            Firebase.analytics.logEvent(
+                AnalyticsConstants.EVENT_ADD_IPTV,
+                mapOf(
+                    AnalyticsConstants.PARAMS_IPTV_NAME to name,
+                    AnalyticsConstants.PARAMS_IPTV_URL to url
+                )
+            )
+
             try {
                 val content = networkClient.get(url)
                 val parser = IPTVParserFactory.createParserForContent(content)
@@ -362,7 +374,6 @@ class HomeViewModel(
         when (event) {
             HomeEvent.RefreshIPTVSource -> refreshIPTVChannel(_uiState.value.playListId!!)
             HomeEvent.OnBackPressed -> {}
-            HomeEvent.OnAddIPTVSourcePressed -> {}
             is HomeEvent.OnFavouriteIPTVChannelPressed -> {
                 favouriteIPTVChannel(
                     channelId = event.channel.id,
@@ -605,7 +616,6 @@ data class HomeUiState(
 sealed interface HomeEvent {
     data object RefreshIPTVSource : HomeEvent
     data object OnBackPressed : HomeEvent
-    data object OnAddIPTVSourcePressed : HomeEvent
     data class OnFavouriteIPTVChannelPressed(
         val channel: Channel,
     ) : HomeEvent

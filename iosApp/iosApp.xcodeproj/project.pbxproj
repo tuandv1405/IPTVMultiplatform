@@ -7,9 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A530CC7E2E944BDD00B3E712 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = A530CC7D2E944BDD00B3E712 /* FirebaseRemoteConfig */; };
 		A537D3B42E1B7F4800DD9725 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = A537D3B32E1B7F4800DD9725 /* GoogleSignIn */; };
 		A537D3B62E1B7F4800DD9725 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = A537D3B52E1B7F4800DD9725 /* GoogleSignInSwift */; };
 		A537D3B82E1B7FB400DD9725 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = A537D3B72E1B7FB400DD9725 /* FirebaseAuth */; };
+		A5A0E7422E9648080069D76E /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = A5A0E7412E9648080069D76E /* FirebaseCrashlytics */; };
 		A5B7B1DC2E13A4A8003F7BBD /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = A5B7B1DB2E13A4A8003F7BBD /* FirebaseAnalytics */; };
 		A5B7B1DE2E13A4A8003F7BBD /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = A5B7B1DD2E13A4A8003F7BBD /* FirebaseAnalyticsCore */; };
 		A5B7B1E02E13A4A8003F7BBD /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = A5B7B1DF2E13A4A8003F7BBD /* FirebaseCore */; };
@@ -66,7 +68,9 @@
 				A537D3B62E1B7F4800DD9725 /* GoogleSignInSwift in Frameworks */,
 				A537D3B82E1B7FB400DD9725 /* FirebaseAuth in Frameworks */,
 				A5B7B1DC2E13A4A8003F7BBD /* FirebaseAnalytics in Frameworks */,
+				A530CC7E2E944BDD00B3E712 /* FirebaseRemoteConfig in Frameworks */,
 				A537D3B42E1B7F4800DD9725 /* GoogleSignIn in Frameworks */,
+				A5A0E7422E9648080069D76E /* FirebaseCrashlytics in Frameworks */,
 				A5B7B1E02E13A4A8003F7BBD /* FirebaseCore in Frameworks */,
 				A5B7B1DE2E13A4A8003F7BBD /* FirebaseAnalyticsCore in Frameworks */,
 			);
@@ -112,6 +116,7 @@
 				B9DA97AE2DC1472C00A4DA20 /* Frameworks */,
 				B9DA97AF2DC1472C00A4DA20 /* Resources */,
 				A537D3E72E1B8C5700DD9725 /* Embed Frameworks */,
+				A5A0E7402E96474C0069D76E /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -128,6 +133,8 @@
 				A537D3B32E1B7F4800DD9725 /* GoogleSignIn */,
 				A537D3B52E1B7F4800DD9725 /* GoogleSignInSwift */,
 				A537D3B72E1B7FB400DD9725 /* FirebaseAuth */,
+				A530CC7D2E944BDD00B3E712 /* FirebaseRemoteConfig */,
+				A5A0E7412E9648080069D76E /* FirebaseCrashlytics */,
 			);
 			productName = iosApp;
 			productReference = B9DA97B12DC1472C00A4DA20 /* TSIPTV.app */;
@@ -182,6 +189,29 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		A5A0E7402E96474C0069D76E /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+				"$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}.debug.dylib",
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\n";
+		};
 		B9DA97F42DC1497100A4DA20 /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -344,7 +374,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				DEVELOPMENT_TEAM = 57N5M3BU77;
 				ENABLE_PREVIEWS = YES;
@@ -380,7 +411,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -449,6 +480,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A530CC7D2E944BDD00B3E712 /* FirebaseRemoteConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A5B7B1BD2E13A39B003F7BBD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseRemoteConfig;
+		};
 		A537D3B32E1B7F4800DD9725 /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A537D3B22E1B7F4800DD9725 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
@@ -463,6 +499,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A5B7B1BD2E13A39B003F7BBD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAuth;
+		};
+		A5A0E7412E9648080069D76E /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A5B7B1BD2E13A39B003F7BBD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
 		};
 		A5B7B1DB2E13A4A8003F7BBD /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;

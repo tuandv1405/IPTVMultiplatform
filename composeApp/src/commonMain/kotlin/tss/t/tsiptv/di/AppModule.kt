@@ -12,6 +12,8 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.database.createDatabaseFactory
+import tss.t.tsiptv.core.firebase.IRemoteConfig
+import tss.t.tsiptv.core.firebase.remoteconfig.HttpRemoteConfigImpl
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.language.LanguageRepository
 import tss.t.tsiptv.core.language.LocaleManager
@@ -27,11 +29,14 @@ import tss.t.tsiptv.core.parser.XMLParser
 import tss.t.tsiptv.core.parser.epg.XMLTVEPGParser
 import tss.t.tsiptv.core.parser.iptv.m3u.M3UParser
 import tss.t.tsiptv.core.repository.HistoryRepositoryImpl
+import tss.t.tsiptv.core.repository.IAdsRepository
 import tss.t.tsiptv.core.repository.IHistoryRepository
+import tss.t.tsiptv.core.repository.ads.IAdsRepositoryImpl
 import tss.t.tsiptv.core.storage.InMemoryKeyValueStorage
 import tss.t.tsiptv.core.storage.KeyValueStorage
 import tss.t.tsiptv.core.storage.MultiplatformSettingsKeyValueStorage
 import tss.t.tsiptv.feature.auth.di.authModule
+import tss.t.tsiptv.ui.screens.ads.AdsViewModel
 import tss.t.tsiptv.ui.screens.home.HomeViewModel
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
 import tss.t.tsiptv.ui.screens.programs.ProgramViewModel
@@ -52,6 +57,20 @@ val commonModule = module {
         createDatabaseFactory(get()).createDatabase()
     } bind IPTVDatabase::class
 
+    single<HttpRemoteConfigImpl> {
+        HttpRemoteConfigImpl(
+            networkClient = get<NetworkClient>(),
+            keyValueStorage = get<KeyValueStorage>(),
+            coroutineScope = CoroutineScope(Dispatchers.IO)
+        )
+    } bind IRemoteConfig::class
+
+    single<IAdsRepositoryImpl> {
+        IAdsRepositoryImpl(
+            remoteConfig = get(),
+            networkClient = get()
+        )
+    } bind IAdsRepository::class
 
     // Parsers
     single { M3UParser() }
@@ -114,6 +133,7 @@ val commonModule = module {
         NetworkConnectivityCheckerFactory.create()
     }
 
+    viewModelOf(::AdsViewModel)
     viewModelOf(::HomeViewModel)
     viewModelOf(::PlayerViewModel)
     viewModelOf(::ProgramViewModel)

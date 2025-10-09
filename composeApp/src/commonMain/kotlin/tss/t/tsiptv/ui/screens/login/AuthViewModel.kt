@@ -1,6 +1,8 @@
 package tss.t.tsiptv.ui.screens.login
 
 import androidx.lifecycle.ViewModel
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.analytics.analytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -8,7 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import tss.t.tsiptv.core.firebase.FirebaseUser
+import tss.t.tsiptv.core.firebase.models.FirebaseUser
 import tss.t.tsiptv.core.network.NetworkConnectivityChecker
 import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
 import tss.t.tsiptv.feature.auth.domain.model.AuthResult
@@ -55,6 +57,10 @@ class AuthViewModel(
                                 ?.uppercase()
                             ?: "Anonymous"
                     )
+                }
+                if (authState.isAuthenticated) {
+                    Firebase.analytics.setUserId(authState.user?.email ?: authState.user?.uid)
+                    Firebase.analytics.setUserProperty("Email", authState.user?.email ?: "")
                 }
             }
         }

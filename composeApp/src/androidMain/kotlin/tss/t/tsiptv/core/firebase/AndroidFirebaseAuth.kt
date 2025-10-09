@@ -10,6 +10,8 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import tss.t.tsiptv.core.firebase.exceptions.FirebaseAuthException
+import tss.t.tsiptv.core.firebase.models.FirebaseUser
 
 /**
  * Android implementation of IFirebaseAuth.

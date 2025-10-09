@@ -5,8 +5,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import tss.t.tsiptv.core.firebase.FirebaseAuthException
-import tss.t.tsiptv.core.firebase.FirebaseUser
+import tss.t.tsiptv.core.firebase.exceptions.FirebaseAuthException
+import tss.t.tsiptv.core.firebase.models.FirebaseUser
 import tss.t.tsiptv.core.firebase.IFirebaseAuth
 import tss.t.tsiptv.core.storage.KeyValueStorage
 import tss.t.tsiptv.feature.auth.domain.model.AuthResult

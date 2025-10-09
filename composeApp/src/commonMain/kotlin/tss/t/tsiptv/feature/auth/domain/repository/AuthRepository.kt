@@ -1,7 +1,7 @@
 package tss.t.tsiptv.feature.auth.domain.repository
 
 import kotlinx.coroutines.flow.Flow
-import tss.t.tsiptv.core.firebase.FirebaseUser
+import tss.t.tsiptv.core.firebase.models.FirebaseUser
 import tss.t.tsiptv.feature.auth.domain.model.AuthResult
 import tss.t.tsiptv.feature.auth.domain.model.AuthState
 import tss.t.tsiptv.feature.auth.domain.model.AuthToken

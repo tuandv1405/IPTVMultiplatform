@@ -130,6 +130,7 @@ kotlin {
 
             implementation("dev.gitlive:firebase-common:2.1.0")
             implementation("dev.gitlive:firebase-auth:2.1.0")
+            implementation("dev.gitlive:firebase-analytics:2.1.0")
             implementation(libs.ktor.serialization.kotlinx.xml)
         }
 
@@ -192,6 +193,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
 }
 
@@ -202,6 +204,9 @@ dependencies {
     add("kspIosX64", libs.room.compiler)
     add("kspIosArm64", libs.room.compiler)
     add("kspDesktop", libs.room.compiler)
+
+    // Core library desugaring for Firebase compatibility
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.0")
 
     // Room is used for all platforms
 }

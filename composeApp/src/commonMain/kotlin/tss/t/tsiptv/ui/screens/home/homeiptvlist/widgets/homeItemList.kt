@@ -8,12 +8,15 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.all_channels_title
 import tsiptv.composeapp.generated.resources.continue_watching
+import tss.t.tsiptv.ui.screens.ads.AdsViewModel
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.screens.home.HomeUiState
 import tss.t.tsiptv.ui.screens.home.widget.HomeChannelHistoryItem
@@ -21,8 +24,10 @@ import tss.t.tsiptv.ui.screens.home.widget.HomeChannelItem
 import tss.t.tsiptv.ui.screens.home.widget.NowPlayingCard
 import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.themes.TSTextStyles
+import tss.t.tsiptv.ui.widgets.AdsItem
 
 fun LazyListScope.homeItemList(
+    adsViewModel: AdsViewModel,
     homeUiState: HomeUiState,
     playerUIState: PlayerUIState,
     categoryListState: LazyListState,
@@ -79,7 +84,6 @@ fun LazyListScope.homeItemList(
     }
 
     item("GroupChannelsTitle") {
-        val channelList = homeUiState.listChannels
         CategoryRow(
             homeUiState = homeUiState,
             modifier = Modifier.Companion.fillMaxWidth()
@@ -87,6 +91,13 @@ fun LazyListScope.homeItemList(
             onHomeEvent = onHomeEvent,
             listState = categoryListState
         )
+    }
+
+    item("Ads") {
+        val ads by adsViewModel.displayAd.collectAsStateWithLifecycle()
+        ads?.let {
+            AdsItem(it)
+        }
     }
 
     items(homeUiState.listChannels) { channel ->

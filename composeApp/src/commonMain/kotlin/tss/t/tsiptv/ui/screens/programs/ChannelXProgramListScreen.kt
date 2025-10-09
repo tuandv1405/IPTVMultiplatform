@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,11 +41,13 @@ import tsiptv.composeapp.generated.resources.cancel
 import tsiptv.composeapp.generated.resources.home_nav_programs
 import tsiptv.composeapp.generated.resources.popup_refresh_program_description
 import tsiptv.composeapp.generated.resources.popup_refresh_program_title
+import tss.t.tsiptv.ui.screens.ads.AdsViewModel
 import tss.t.tsiptv.ui.screens.programs.ProgramViewModel.UIState
 import tss.t.tsiptv.ui.screens.programs.uimodel.ProgramEvent
 import tss.t.tsiptv.ui.screens.programs.widgets.ChannelInProgramItem
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
+import tss.t.tsiptv.ui.widgets.AdsItem
 import tss.t.tsiptv.ui.widgets.DialogButtonFlowLayout
 import tss.t.tsiptv.ui.widgets.HorizontalDividersGradient
 import tss.t.tsiptv.ui.widgets.TSAppBar
@@ -55,6 +58,7 @@ import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
 @Composable
 fun ChannelXProgramListScreen(
     uiState: UIState,
+    adsViewModel: AdsViewModel,
 ) {
     val viewModelStoreOwner = LocalAppViewModelStoreOwner.current!!
     val viewModel = koinViewModel<ProgramViewModel>(
@@ -73,6 +77,10 @@ fun ChannelXProgramListScreen(
         ),
         label = "liquidFlow"
     )
+
+    LaunchedEffect(Unit) {
+        adsViewModel.loadAds()
+    }
 
     Scaffold(
         topBar = {
@@ -127,6 +135,19 @@ fun ChannelXProgramListScreen(
                         viewModel.navigateToSelectedProgramList(it)
                     }
                     HorizontalDividersGradient()
+
+                    val showAds = remember(it, item) {
+                        if (it % 5 == 0) {
+                            item
+                        } else {
+                            null
+                        }
+                    }
+                    showAds?.let {
+                        adsViewModel.RefreshAdsForKeyWithLifeCycle(it.channelId + it.programCount) {
+                            AdsItem(it)
+                        }
+                    }
                 }
             }
         }

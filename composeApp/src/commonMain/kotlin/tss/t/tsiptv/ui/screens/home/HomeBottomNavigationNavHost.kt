@@ -29,6 +29,7 @@ import tss.t.tsiptv.core.permission.Permission
 import tss.t.tsiptv.core.permission.PermissionCheckerFactory
 import tss.t.tsiptv.core.permission.PermissionExample
 import tss.t.tsiptv.navigation.NavRoutes
+import tss.t.tsiptv.ui.screens.ads.AdsViewModel
 import tss.t.tsiptv.ui.screens.history.HistoryScreen
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.HomeChangeIPTVSourceBottomSheet
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.HomeIPTVPlaylistScreen
@@ -63,7 +64,7 @@ fun HomeBottomNavigationNavHost(
     val authViewModel: AuthViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner)
     val playerViewModel = koinViewModel<PlayerViewModel>(viewModelStoreOwner = viewModelStoreOwner)
     val authState by authViewModel.uiState.collectAsStateWithLifecycle()
-
+    val adsViewModel = koinViewModel<AdsViewModel>()
     NavHost(
         navController = navController,
         startDestination = NavRoutes.HomeScreens.HOME_FEED,
@@ -192,7 +193,8 @@ fun HomeBottomNavigationNavHost(
                 }
             }
             ChannelXProgramListScreen(
-                uiState = uiState
+                uiState = uiState,
+                adsViewModel = adsViewModel
             )
         }
     }

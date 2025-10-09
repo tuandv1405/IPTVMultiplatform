@@ -3,6 +3,8 @@ package tss.t.tsiptv.ui.screens.player
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.analytics.analytics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,13 +16,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import tss.t.tsiptv.core.database.IPTVDatabase
+import tss.t.tsiptv.core.firebase.analystics.AnalyticsConstants
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackState
 import tss.t.tsiptv.player.models.toMediaItem
+import tss.t.tsiptv.utils.formatDynamic
 import tss.t.tsiptv.utils.getScreenOrientationUtils
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 class PlayerViewModel(
     private val _mediaPlayer: MediaPlayer,
@@ -98,8 +105,20 @@ class PlayerViewModel(
     val isMuted: StateFlow<Boolean> = _mediaPlayer.isMuted
     val player: MediaPlayer = _mediaPlayer
 
+    @OptIn(ExperimentalTime::class)
     fun playMedia(mediaItem: MediaItem) {
         verifyPlayingMediaItem(mediaItem.id)
+
+        Firebase.analytics.logEvent(
+            AnalyticsConstants.EVENT_PLAY_IPTV_CHANNEL,
+            mapOf(
+                AnalyticsConstants.PARAMS_IPTV_NAME to mediaItem.title,
+                AnalyticsConstants.PARAMS_IPTV_URL to mediaItem.uri,
+                AnalyticsConstants.PARAMS_IPTV_CHANNEL_PLAY_HOUR to Clock.System.now()
+                    .toEpochMilliseconds()
+                    .formatDynamic("HH"),
+            )
+        )
     }
 
     fun playIptv(iptvChannel: Channel) {
