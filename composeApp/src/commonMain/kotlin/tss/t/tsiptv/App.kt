@@ -26,6 +26,7 @@ import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.error_occurred
@@ -35,6 +36,7 @@ import tsiptv.composeapp.generated.resources.ok
 import tsiptv.composeapp.generated.resources.try_again
 import tss.t.tsiptv.core.database.entity.ChannelWithProgramCount
 import tss.t.tsiptv.core.language.AppLocaleProvider
+import tss.t.tsiptv.core.tracking.UserTrackingService
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.navigation.navigateAndRemoveFromBackStack
 import tss.t.tsiptv.navigation.navtype.ChannelWithProgramCountNavType
@@ -65,7 +67,9 @@ import kotlin.reflect.typeOf
 fun App() {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = koinViewModel()
+    val userTrackingService: UserTrackingService = koinInject()
     val authState by authViewModel.uiState.collectAsState()
+    
     LaunchedEffect(
         key1 = authState.isAuthenticated,
         key2 = authState.isLoading
@@ -74,6 +78,8 @@ fun App() {
             return@LaunchedEffect
         }
         if (authState.isAuthenticated) {
+            // Request App Tracking Transparency permission and set up analytics
+            userTrackingService.requestTrackingPermissionAndSetupAnalytics(authState.user)
             navController.navigateAndRemoveFromBackStack(NavRoutes.Home())
         } else if (!authState.isAuthenticated && authState.isNetworkAvailable) {
             navController.navigateAndRemoveFromBackStack(NavRoutes.Login)

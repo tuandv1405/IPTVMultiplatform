@@ -1,14 +1,19 @@
 package tss.t.tsiptv.feature.auth.presentation.viewmodel
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import tss.t.tsiptv.core.firebase.models.FirebaseUser
+import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
+import tss.t.tsiptv.core.permission.PermissionCheckerFactory
+import tss.t.tsiptv.core.tracking.DefaultUserTrackingService
+import tss.t.tsiptv.feature.auth.domain.model.AuthResult
+import tss.t.tsiptv.feature.auth.domain.model.AuthState
+import tss.t.tsiptv.feature.auth.domain.model.AuthToken
+import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
+import tss.t.tsiptv.ui.screens.login.AuthViewModel
+import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
-import tss.t.tsiptv.ui.screens.login.models.LoginEvents
-import tss.t.tsiptv.core.firebase.models.FirebaseUser
-import tss.t.tsiptv.feature.auth.domain.model.AuthResult
-import tss.t.tsiptv.feature.auth.domain.model.AuthToken
-import tss.t.tsiptv.ui.screens.login.AuthViewModel
 
 class AuthViewModelTest {
 
@@ -16,8 +21,8 @@ class AuthViewModelTest {
     fun testEmailValidation() {
         // Create a mock repository
         val mockRepository = object : AuthRepository {
-            override val authState = kotlinx.coroutines.flow.MutableStateFlow(
-                tss.t.tsiptv.feature.auth.domain.model.AuthState(
+            override val authState = MutableStateFlow(
+                AuthState(
                     isAuthenticated = false,
                     isLoading = false,
                     error = null
@@ -25,7 +30,7 @@ class AuthViewModelTest {
             )
 
             override suspend fun signInWithEmailAndPassword(email: String, password: String) = 
-                tss.t.tsiptv.feature.auth.domain.model.AuthResult.Error("Not implemented for test")
+                AuthResult.Error("Not implemented for test")
 
             override suspend fun createUserWithEmailAndPassword(
                 email: String,
@@ -35,20 +40,20 @@ class AuthViewModelTest {
             }
 
             override suspend fun signInWithGoogle() = 
-                tss.t.tsiptv.feature.auth.domain.model.AuthResult.Error("Not implemented for test")
+                AuthResult.Error("Not implemented for test")
 
             override suspend fun signInWithApple() = 
-                tss.t.tsiptv.feature.auth.domain.model.AuthResult.Error("Not implemented for test")
+                AuthResult.Error("Not implemented for test")
 
             override suspend fun signOut() = 
-                tss.t.tsiptv.feature.auth.domain.model.AuthResult.Error("Not implemented for test")
+                AuthResult.Error("Not implemented for test")
 
             override suspend fun isAuthenticated() = false
 
             override suspend fun isTokenExpired() = true
 
             override suspend fun refreshTokenIfNeeded() = 
-                tss.t.tsiptv.feature.auth.domain.model.AuthResult.Error("Not implemented for test")
+                AuthResult.Error("Not implemented for test")
 
             override suspend fun getAuthToken(): AuthToken? = null
 
@@ -56,7 +61,11 @@ class AuthViewModelTest {
         }
 
         // Create the view model with the mock repository
-        val viewModel = AuthViewModel(mockRepository)
+        val viewModel = AuthViewModel(
+            authRepository = mockRepository,
+            userTrackingService = DefaultUserTrackingService(PermissionCheckerFactory.create()),
+            networkConnectivityChecker = NetworkConnectivityCheckerFactory.create()
+        )
 
         // Test valid email addresses
         viewModel.onEvent(LoginEvents.EmailChanged("user@example.com"))

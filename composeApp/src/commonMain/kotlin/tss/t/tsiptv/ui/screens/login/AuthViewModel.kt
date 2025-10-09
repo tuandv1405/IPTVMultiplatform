@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import tss.t.tsiptv.core.firebase.models.FirebaseUser
 import tss.t.tsiptv.core.network.NetworkConnectivityChecker
 import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
+import tss.t.tsiptv.core.tracking.UserTrackingService
 import tss.t.tsiptv.feature.auth.domain.model.AuthResult
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
@@ -25,6 +26,7 @@ import tss.t.tsiptv.ui.screens.login.models.LoginEvents
  */
 class AuthViewModel(
     private val authRepository: AuthRepository,
+    private val userTrackingService: UserTrackingService,
     private val networkConnectivityChecker: NetworkConnectivityChecker = NetworkConnectivityCheckerFactory.create(),
 ) : ViewModel() {
     private val viewModelScope = CoroutineScope(Dispatchers.Main)
@@ -59,8 +61,10 @@ class AuthViewModel(
                     )
                 }
                 if (authState.isAuthenticated) {
-                    Firebase.analytics.setUserId(authState.user?.email ?: authState.user?.uid)
-                    Firebase.analytics.setUserProperty("Email", authState.user?.email ?: "")
+                    // Use UserTrackingService to set user ID only when ATT permission is granted
+                    viewModelScope.launch {
+                        userTrackingService.updateAnalyticsUserIdIfAllowed(authState.user)
+                    }
                 }
             }
         }

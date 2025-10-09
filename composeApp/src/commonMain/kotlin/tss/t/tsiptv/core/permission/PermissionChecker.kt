@@ -112,7 +112,8 @@ enum class Permission {
     HEALTH,
     SPEECH_RECOGNITION,
     SIRI,
-    FACE_ID
+    FACE_ID,
+    APP_TRACKING_TRANSPARENCY
 }
 
 /**
