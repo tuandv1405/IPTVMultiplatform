@@ -1,5 +1,8 @@
 package tss.t.tsiptv.di
 
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.firestore.FirebaseFirestore
+import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -145,6 +148,10 @@ val commonModule = module {
     // User Tracking Service
     single<UserTrackingService> {
         DefaultUserTrackingService(get())
+    }
+
+    single<FirebaseFirestore> {
+        Firebase.firestore
     }
 
     viewModelOf(::AdsViewModel)
