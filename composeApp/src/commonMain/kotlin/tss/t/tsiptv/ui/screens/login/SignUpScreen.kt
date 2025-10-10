@@ -35,10 +35,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.style.LineBreak
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -46,6 +51,7 @@ import org.jetbrains.compose.resources.InternalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.back_to_login_account
 import tsiptv.composeapp.generated.resources.email
 import tsiptv.composeapp.generated.resources.email_invalid
 import tsiptv.composeapp.generated.resources.ic_apple
@@ -56,6 +62,7 @@ import tsiptv.composeapp.generated.resources.password
 import tsiptv.composeapp.generated.resources.sign_up
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.themes.TSColors
+import tss.t.tsiptv.ui.themes.TSTextStyles
 import tss.t.tsiptv.ui.widgets.ErrorDialog
 import tss.t.tsiptv.ui.widgets.SocialButton
 import tss.t.tsiptv.utils.PlatformUtils
@@ -296,56 +303,61 @@ fun SignUpScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "Already have an account? Login",
-                    fontWeight = FontWeight.Normal,
-                    color = TSColors.TextSecondary
+                    stringResource(Res.string.back_to_login_account),
+                    style = TSTextStyles.secondaryBody.copy(
+                        color = TSColors.TextSecondary,
+                        textDecoration = TextDecoration.Underline,
+                        lineBreak = LineBreak.Simple,
+                        lineHeight = 16.sp,
+                        baselineShift = BaselineShift.Superscript
+                    )
                 )
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
-                )
-                Text(
-                    stringResource(Res.string.or_continue_with),
-                    color = TSColors.TextSecondary,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center
-                )
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
-                )
-            }
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                verticalAlignment = Alignment.CenterVertically,
+//                horizontalArrangement = Arrangement.spacedBy(8.dp)
+//            ) {
+//                HorizontalDivider(
+//                    modifier = Modifier.weight(1f),
+//                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
+//                )
+//                Text(
+//                    stringResource(Res.string.or_continue_with),
+//                    color = TSColors.TextSecondary,
+//                    fontSize = 12.sp,
+//                    textAlign = TextAlign.Center
+//                )
+//                HorizontalDivider(
+//                    modifier = Modifier.weight(1f),
+//                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
+//                )
+//            }
 
             // Social Logins
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                SocialButton(
-                    iconRes = Res.drawable.ic_google,
-                    contentDescription = "Google",
-                    modifier = Modifier.weight(1f),
-                    onClick = { onEvent(LoginEvents.OnSignInWithGooglePressed) }
-                )
-                if (remember { PlatformUtils.platform.isIOS }) {
-                    SocialButton(
-                        iconRes = Res.drawable.ic_apple,
-                        contentDescription = "Apple",
-                        modifier = Modifier.weight(1f),
-                        onClick = { onEvent(LoginEvents.OnSignInWithApplePressed) }
-                    )
-                }
-            }
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.spacedBy(16.dp)
+//            ) {
+//                SocialButton(
+//                    iconRes = Res.drawable.ic_google,
+//                    contentDescription = "Google",
+//                    modifier = Modifier.weight(1f),
+//                    onClick = { onEvent(LoginEvents.OnSignInWithGooglePressed) }
+//                )
+//                if (remember { PlatformUtils.platform.isIOS }) {
+//                    SocialButton(
+//                        iconRes = Res.drawable.ic_apple,
+//                        contentDescription = "Apple",
+//                        modifier = Modifier.weight(1f),
+//                        onClick = { onEvent(LoginEvents.OnSignInWithApplePressed) }
+//                    )
+//                }
+//            }
         }
     }
-    
+
     // Error Dialog for Registration Failures
     if (!authState.error.isNullOrEmpty() && !authState.isAuthenticated) {
         ErrorDialog(

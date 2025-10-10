@@ -112,6 +112,11 @@
     <string name="deactivation_success_title">リクエスト送信済み</string>
     <string name="deactivation_success_message">無効化リクエストが送信されました。管理者がリクエストを審査すると通知されます。処理時間は約1営業日です。</string>
     
+    <!-- Deactivation Waiting Status -->
+    <string name="deactivation_waiting_title">管理者審査待ち</string>
+    <string name="deactivation_waiting_message">無効化リクエストは管理者によって審査されています。審査の完了をお待ちください。</string>
+    <string name="back_to_login_account">既にアカウントをお持ちですか？ログイン</string>
+    
     <!-- Error Messages -->
     <string name="error_network">ネットワークエラーが発生しました。インターネット接続を確認して再試行してください。</string>
     <string name="error_authentication">認証に失敗しました。認証情報を確認して再試行してください。</string>

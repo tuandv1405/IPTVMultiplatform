@@ -111,4 +111,21 @@
     <!-- Deactivation Success -->
     <string name="deactivation_success_title">Anfrage gesendet</string>
     <string name="deactivation_success_message">Ihre Deaktivierungsanfrage wurde gesendet. Sie werden benachrichtigt, wenn der Administrator Ihre Anfrage überprüft. Die Bearbeitungszeit beträgt etwa 1 Arbeitstag.</string>
+    
+    <!-- Deactivation Waiting Status -->
+    <string name="deactivation_waiting_title">Warten auf Administrator-Überprüfung</string>
+    <string name="deactivation_waiting_message">Ihre Deaktivierungsanfrage wird vom Administrator überprüft. Bitte warten Sie, bis die Überprüfung abgeschlossen ist.</string>
+    <string name="back_to_login_account">Sie haben bereits ein Konto? Anmelden</string>
+    
+    <!-- Error Messages -->
+    <string name="error_network">Netzwerkfehler aufgetreten. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.</string>
+    <string name="error_authentication">Authentifizierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es erneut.</string>
+    <string name="error_firebase">Ein Serverfehler ist aufgetreten. Bitte versuchen Sie es später erneut.</string>
+    <string name="error_parsing">Fehler beim Analysieren der Daten. Bitte überprüfen Sie die Quelle und versuchen Sie es erneut.</string>
+    <string name="error_registration">Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.</string>
+    <string name="error_general">Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.</string>
+    <string name="error_timeout">Anfrage ist abgelaufen. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.</string>
+    <string name="error_invalid_data">Ungültiges Datenformat. Bitte überprüfen Sie Ihre Eingabe.</string>
+    <string name="error_permission_denied">Berechtigung verweigert. Bitte überprüfen Sie Ihre Zugriffsrechte.</string>
+    <string name="error_service_unavailable">Service ist derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.</string>
 </resources>

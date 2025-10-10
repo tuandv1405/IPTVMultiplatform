@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -71,6 +72,9 @@ import tsiptv.composeapp.generated.resources.profile_subscription_title
 import tsiptv.composeapp.generated.resources.profile_title
 import tsiptv.composeapp.generated.resources.settings_deactivate_account
 import tsiptv.composeapp.generated.resources.settings_title
+import tsiptv.composeapp.generated.resources.deactivation_waiting_title
+import tsiptv.composeapp.generated.resources.deactivation_waiting_message
+import tss.t.tsiptv.core.firebase.models.DeactivationStatus
 import tss.t.tsiptv.ui.screens.login.AuthUiState
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.themes.TSColors
@@ -323,6 +327,7 @@ fun ProfileScreen(
             onDismissRequest = { showSettingsBottomSheet = false },
         ) {
             SettingsBottomSheetContent(
+                deactivationRequest = authState.deactivationRequest,
                 onDeactivateClick = {
                     showSettingsBottomSheet = false
                     showDeactivationDialog = true
@@ -421,6 +426,7 @@ fun ProfileItem(
 
 @Composable
 private fun SettingsBottomSheetContent(
+    deactivationRequest: tss.t.tsiptv.core.firebase.models.DeactivationRequest? = null,
     onDeactivateClick: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -440,40 +446,84 @@ private fun SettingsBottomSheetContent(
         }
         
         item("DeactivateAccount") {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(shape = TSShapes.roundedShape12)
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            listOf(
-                                Color(0xFFDC2626).copy(0.1f),
-                                Color(0xFFEF4444).copy(0.1f),
-                            )
-                        ),
-                        shape = TSShapes.roundedShape12
+            val isPendingDeactivation = deactivationRequest?.status == DeactivationStatus.PENDING
+            
+            if (isPendingDeactivation) {
+                // Show waiting status when deactivation is pending
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(shape = TSShapes.roundedShape12)
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                listOf(
+                                    Color(0xFFFB923C).copy(0.1f),
+                                    Color(0xFFF59E0B).copy(0.1f),
+                                )
+                            ),
+                            shape = TSShapes.roundedShape12
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = Color(0xFFF59E0B).copy(0.3f),
+                            shape = TSShapes.roundedShape12
+                        )
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(Res.string.deactivation_waiting_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color(0xFFF59E0B),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(Res.string.deactivation_waiting_message),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFFF59E0B).copy(0.8f),
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
+                }
+            } else {
+                // Show normal deactivate option when no pending request
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(shape = TSShapes.roundedShape12)
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                listOf(
+                                    Color(0xFFDC2626).copy(0.1f),
+                                    Color(0xFFEF4444).copy(0.1f),
+                                )
+                            ),
+                            shape = TSShapes.roundedShape12
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = Color(0xFFEF4444).copy(0.3f),
+                            shape = TSShapes.roundedShape12
+                        )
+                        .clickable(onClick = onDeactivateClick)
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(Res.string.settings_deactivate_account),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(0xFFEF4444),
+                        fontWeight = FontWeight.SemiBold
                     )
-                    .border(
-                        width = 1.dp,
-                        color = Color(0xFFEF4444).copy(0.3f),
-                        shape = TSShapes.roundedShape12
+                    Spacer(Modifier.weight(1f))
+                    Image(
+                        painter = painterResource(Res.drawable.ic_arrow_right),
+                        contentDescription = null,
+                        modifier = Modifier.size(10.dp, 24.dp)
                     )
-                    .clickable(onClick = onDeactivateClick)
-                    .padding(horizontal = 20.dp, vertical = 20.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(Res.string.settings_deactivate_account),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFFEF4444),
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.weight(1f))
-                Image(
-                    painter = painterResource(Res.drawable.ic_arrow_right),
-                    contentDescription = null,
-                    modifier = Modifier.size(10.dp, 24.dp)
-                )
+                }
             }
         }
         

@@ -5,6 +5,7 @@ import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -51,11 +52,12 @@ class AuthRepositoryImpl(
     override val authState: Flow<AuthState> = _authState
 
     init {
-        CoroutineScope(Dispatchers.Main).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             firebaseAuth.currentUser.collect { user ->
-                println(user)
+                println("User: $user")
                 if (user != null) {
                     val token = getAuthToken()
+                    println("Token: $token")
                     _authState.value = AuthState(
                         isAuthenticated = true,
                         user = user,

@@ -112,6 +112,11 @@
     <string name="deactivation_success_title">申请已提交</string>
     <string name="deactivation_success_message">您的停用申请已提交。管理员审核您的申请后，您将收到通知。处理时间约为1个工作日。</string>
     
+    <!-- Deactivation Waiting Status -->
+    <string name="deactivation_waiting_title">等待管理员审核</string>
+    <string name="deactivation_waiting_message">您的停用申请正在等待管理员审核。请等待审核完成。</string>
+    <string name="back_to_login_account">已有账户？登录</string>
+    
     <!-- Error Messages -->
     <string name="error_network">网络错误。请检查您的互联网连接并重试。</string>
     <string name="error_authentication">身份验证失败。请检查您的凭据并重试。</string>

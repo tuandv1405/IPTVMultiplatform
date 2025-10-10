@@ -214,6 +214,8 @@ class AuthViewModel(
                 }
 
                 is AuthResult.Error -> {
+                    println(result.message)
+                    println(result.exception?.message)
                     _uiState.update {
                         it.copy(
                             isLoading = false,

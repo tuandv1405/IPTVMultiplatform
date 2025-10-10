@@ -110,4 +110,21 @@
     <!-- Deactivation Success -->
     <string name="deactivation_success_title">Yêu cầu đã gửi</string>
     <string name="deactivation_success_message">Yêu cầu vô hiệu hóa của bạn đã được gửi. Bạn sẽ được thông báo khi quản trị viên xem xét yêu cầu của bạn. Thời gian xử lý khoảng 1 ngày làm việc.</string>
+    
+    <!-- Deactivation Waiting Status -->
+    <string name="deactivation_waiting_title">Đang chờ quản trị viên xem xét</string>
+    <string name="deactivation_waiting_message">Yêu cầu vô hiệu hóa của bạn đang được quản trị viên xem xét. Vui lòng đợi quá trình xem xét hoàn tất.</string>
+    <string name="back_to_login_account">Đã có tài khoản? Đăng nhập</string>
+    
+    <!-- Error Messages -->
+    <string name="error_network">Lỗi mạng xảy ra. Vui lòng kiểm tra kết nối internet và thử lại.</string>
+    <string name="error_authentication">Xác thực thất bại. Vui lòng kiểm tra thông tin đăng nhập và thử lại.</string>
+    <string name="error_firebase">Lỗi máy chủ xảy ra. Vui lòng thử lại sau.</string>
+    <string name="error_parsing">Không thể phân tích dữ liệu. Vui lòng kiểm tra nguồn và thử lại.</string>
+    <string name="error_registration">Đăng ký thất bại. Vui lòng thử lại.</string>
+    <string name="error_general">Lỗi bất ngờ xảy ra. Vui lòng thử lại.</string>
+    <string name="error_timeout">Yêu cầu hết thời gian chờ. Vui lòng kiểm tra kết nối và thử lại.</string>
+    <string name="error_invalid_data">Định dạng dữ liệu không hợp lệ. Vui lòng kiểm tra đầu vào của bạn.</string>
+    <string name="error_permission_denied">Quyền truy cập bị từ chối. Vui lòng kiểm tra quyền truy cập của bạn.</string>
+    <string name="error_service_unavailable">Dịch vụ hiện tại không khả dụng. Vui lòng thử lại sau.</string>
 </resources>

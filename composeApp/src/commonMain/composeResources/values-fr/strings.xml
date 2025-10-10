@@ -112,6 +112,11 @@
     <string name="deactivation_success_title">Demande soumise</string>
     <string name="deactivation_success_message">Votre demande de désactivation a été soumise. Vous serez notifié lorsque l\'administrateur examinera votre demande. Le temps de traitement est d\'environ 1 jour ouvrable.</string>
     
+    <!-- Deactivation Waiting Status -->
+    <string name="deactivation_waiting_title">En attente d\'examen administrateur</string>
+    <string name="deactivation_waiting_message">Votre demande de désactivation est en cours d\'examen par l\'administrateur. Veuillez attendre que l\'examen soit terminé.</string>
+    <string name="back_to_login_account">Vous avez déjà un compte? Se connecter</string>
+    
     <!-- Error Messages -->
     <string name="error_network">Erreur réseau. Veuillez vérifier votre connexion internet et réessayer.</string>
     <string name="error_authentication">Échec de l\'authentification. Veuillez vérifier vos identifiants et réessayer.</string>

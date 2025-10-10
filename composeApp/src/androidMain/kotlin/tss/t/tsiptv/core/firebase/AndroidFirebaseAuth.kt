@@ -1,14 +1,20 @@
 package tss.t.tsiptv.core.firebase
 
 import android.util.Log
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import com.google.firebase.auth.FirebaseUser as AndroidFirebaseUser
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import tss.t.tsiptv.core.firebase.exceptions.FirebaseAuthException
 import tss.t.tsiptv.core.firebase.models.FirebaseUser
@@ -21,19 +27,33 @@ class AndroidFirebaseAuth : IFirebaseAuth {
     private val auth by lazy {
         FirebaseAuth.getInstance()
     }
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
-    override val currentUser: Flow<FirebaseUser?> = callbackFlow {
-        val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
-            trySend(firebaseAuth.currentUser?.toFirebaseUser())
-        }
-        auth.addAuthStateListener(authStateListener)
-
-        trySend(auth.currentUser?.toFirebaseUser())
-
-        awaitClose {
-            auth.removeAuthStateListener(authStateListener)
-        }
+    private val _userShareFlow by lazy {
+        MutableSharedFlow<FirebaseUser?>()
     }
+
+    init {
+
+        val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+            coroutineScope.launch {
+                _userShareFlow.emit(firebaseAuth.currentUser?.toFirebaseUser())
+                runCatching {
+                    firebaseAuth.getAccessToken(true).await()
+                }.onFailure {
+                    when (it) {
+                        is FirebaseAuthInvalidUserException -> {
+                            signOut()
+                        }
+                    }
+                }
+            }
+        }
+
+        auth.addAuthStateListener(authStateListener)
+    }
+
+    override val currentUser: Flow<FirebaseUser?> = _userShareFlow.asSharedFlow()
 
     override suspend fun signInWithEmailAndPassword(email: String, password: String): FirebaseUser {
         try {
@@ -41,12 +61,18 @@ class AndroidFirebaseAuth : IFirebaseAuth {
             return result.user?.toFirebaseUser()
                 ?: throw FirebaseAuthException("auth/unknown", "Unknown error signing in")
         } catch (e: FirebaseAuthInvalidUserException) {
-            throw FirebaseAuthException(e.errorCode, "No user found with email $email")
+            throw FirebaseAuthException(
+                e.errorCode,
+                e.localizedMessage ?: "No user found with email $email"
+            )
         } catch (e: FirebaseAuthInvalidCredentialsException) {
-            throw FirebaseAuthException(e.errorCode, "Wrong password")
+            throw FirebaseAuthException(e.errorCode, e.localizedMessage ?: "Invalid Credentials")
         } catch (e: Exception) {
             Log.e("AndroidFirebaseAuth", "Error signing in", e)
-            throw FirebaseAuthException("auth/unknown", e.message ?: "Unknown error signing in")
+            throw FirebaseAuthException(
+                "auth/unknown",
+                e.localizedMessage ?: "Unknown error signing in"
+            )
         }
     }
 
@@ -71,10 +97,16 @@ class AndroidFirebaseAuth : IFirebaseAuth {
             return result.user?.toFirebaseUser()
                 ?: throw FirebaseAuthException("auth/unknown", "Unknown error creating user")
         } catch (e: FirebaseAuthUserCollisionException) {
-            throw FirebaseAuthException("auth/email-already-in-use", "Email already in use")
+            throw FirebaseAuthException(
+                "auth/email-already-in-use",
+                e.localizedMessage ?: "Email already in use"
+            )
         } catch (e: Exception) {
             Log.e("AndroidFirebaseAuth", "Error creating user", e)
-            throw FirebaseAuthException("auth/unknown", e.message ?: "Unknown error creating user")
+            throw FirebaseAuthException(
+                "auth/unknown",
+                e.localizedMessage ?: "Unknown error creating user"
+            )
         }
     }
 

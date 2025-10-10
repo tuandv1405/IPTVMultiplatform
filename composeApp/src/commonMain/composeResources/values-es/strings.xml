@@ -112,6 +112,11 @@
     <string name="deactivation_success_title">Solicitud enviada</string>
     <string name="deactivation_success_message">Su solicitud de desactivación ha sido enviada. Será notificado cuando el administrador revise su solicitud. El tiempo de procesamiento es de aproximadamente 1 día laborable.</string>
     
+    <!-- Deactivation Waiting Status -->
+    <string name="deactivation_waiting_title">Esperando revisión del administrador</string>
+    <string name="deactivation_waiting_message">Su solicitud de desactivación está siendo revisada por el administrador. Por favor espere a que se complete la revisión.</string>
+    <string name="back_to_login_account">¿Ya tienes una cuenta? Iniciar sesión</string>
+    
     <!-- Error Messages -->
     <string name="error_network">Error de red. Por favor verifique su conexión a internet e intente nuevamente.</string>
     <string name="error_authentication">Autenticación fallida. Por favor verifique sus credenciales e intente nuevamente.</string>
