@@ -119,4 +119,21 @@ interface AuthRepository {
      * @return The result of the cancellation operation
      */
     suspend fun cancelDeactivationRequest(): AuthResult
+
+    /**
+     * Updates the display name for the current user.
+     *
+     * @param displayName The new display name
+     * @return The result of the update operation
+     */
+    suspend fun updateDisplayName(displayName: String): AuthResult
+
+    /**
+     * Changes the password for the current user.
+     *
+     * @param currentPassword The current password
+     * @param newPassword The new password
+     * @return The result of the password change operation
+     */
+    suspend fun changePassword(currentPassword: String, newPassword: String): AuthResult
 }

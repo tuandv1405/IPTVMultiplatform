@@ -15,6 +15,7 @@
     <string name="accept">承認</string>
     <string name="allow">許可</string>
     <string name="cancel">キャンセル</string>
+    <string name="save">保存</string>
     <string name="error">エラー</string>
     <string name="error_occurred">エラーが発生しました</string>
     <string name="success">成功</string>
@@ -128,4 +129,13 @@
     <string name="error_invalid_data">無効なデータ形式です。入力を確認してください。</string>
     <string name="error_permission_denied">アクセス権限が拒否されました。アクセス権限を確認してください。</string>
     <string name="error_service_unavailable">サービスは現在利用できません。後でもう一度お試しください。</string>
+
+    <string name="user_name">ユーザー名</string>
+    <string name="change_password_guide">現在のパスワードと新しいパスワードを入力してください</string>
+    <string name="current_password">現在のパスワード</string>
+    <string name="new_password">新しいパスワード</string>
+    <string name="confirm_new_password">新しいパスワードを確認</string>
+    <string name="is_changing_password">変更中...</string>
+    <string name="change_password_title">パスワード変更</string>
+    <string name="feature_coming_soon">この機能は今後のアップデートで利用可能になります。お楽しみに！</string>
 </resources>

@@ -15,6 +15,7 @@
     <string name="accept">Accepter</string>
     <string name="allow">Autoriser</string>
     <string name="cancel">Annuler</string>
+    <string name="save">Enregistrer</string>
     <string name="error">Erreur</string>
     <string name="error_occurred">Une erreur s\'est produite</string>
     <string name="success">Succès</string>
@@ -128,4 +129,13 @@
     <string name="error_invalid_data">Format de données invalide. Veuillez vérifier votre saisie.</string>
     <string name="error_permission_denied">Permission refusée. Veuillez vérifier vos droits d\'accès.</string>
     <string name="error_service_unavailable">Service actuellement indisponible. Veuillez réessayer plus tard.</string>
+
+    <string name="user_name">Nom d'utilisateur</string>
+    <string name="change_password_guide">Entrez votre mot de passe actuel et nouveau</string>
+    <string name="current_password">Mot de passe actuel</string>
+    <string name="new_password">Nouveau mot de passe</string>
+    <string name="confirm_new_password">Confirmer le nouveau mot de passe</string>
+    <string name="is_changing_password">Changement en cours...</string>
+    <string name="change_password_title">Changer le mot de passe</string>
+    <string name="feature_coming_soon">Cette fonctionnalité sera disponible prochainement dans une future mise à jour. Restez à l'écoute!</string>
 </resources>

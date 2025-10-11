@@ -1,6 +1,7 @@
 package tss.t.tsiptv.ui.screens.login
 
 import androidx.lifecycle.ViewModel
+import coil3.PlatformContext
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.analytics.analytics
 import kotlinx.coroutines.CoroutineScope
@@ -148,9 +149,38 @@ class AuthViewModel(
 
             is LoginEvents.OnProfileActionEvent -> {
                 when (event.action) {
+                    ProfileScreenActions.EditProfile -> {
+                        _uiState.update {
+                            it.copy(
+                                showEditUsernameDialog = true,
+                                editUsernameValue = it.displayName ?: it.user?.email?.split("@")
+                                    ?.firstOrNull() ?: ""
+                            )
+                        }
+                    }
+
+                    ProfileScreenActions.ChangePassword -> {
+                        _uiState.update {
+                            it.copy(showChangePasswordDialog = true)
+                        }
+                    }
+
+                    ProfileScreenActions.Subscription -> {
+                        _uiState.update {
+                            it.copy(showSubscriptionPopup = true)
+                        }
+                    }
+
+                    ProfileScreenActions.Notification -> {
+                        _uiState.update {
+                            it.copy(showNotificationDialog = true)
+                        }
+                    }
+
                     ProfileScreenActions.Settings -> {
                         // Settings action handled in UI
                     }
+
                     else -> {
                         // Handle other profile actions
                     }
@@ -160,8 +190,85 @@ class AuthViewModel(
             LoginEvents.OnShowSettingsBottomSheet,
             LoginEvents.OnDismissSettingsBottomSheet,
             LoginEvents.OnShowDeactivationDialog,
-            LoginEvents.OnDismissDeactivationDialog -> {
+            LoginEvents.OnDismissDeactivationDialog,
+                -> {
                 // These events are handled in UI state
+            }
+
+            // Edit username dialog events
+            is LoginEvents.OnEditUsernameChanged -> {
+                _uiState.update {
+                    it.copy(editUsernameValue = event.username, editUsernameError = null)
+                }
+            }
+
+            LoginEvents.OnSaveUsername -> {
+                saveUsername()
+            }
+
+            LoginEvents.OnDismissEditUsernameDialog -> {
+                _uiState.update {
+                    it.copy(
+                        showEditUsernameDialog = false,
+                        editUsernameValue = "",
+                        editUsernameError = null,
+                        isEditUsernameLoading = false
+                    )
+                }
+            }
+
+            // Change password dialog events
+            is LoginEvents.OnCurrentPasswordChanged -> {
+                _uiState.update {
+                    it.copy(currentPasswordValue = event.password, changePasswordError = null)
+                }
+            }
+
+            is LoginEvents.OnNewPasswordChanged -> {
+                _uiState.update {
+                    it.copy(newPasswordValue = event.password, changePasswordError = null)
+                }
+            }
+
+            is LoginEvents.OnConfirmPasswordChanged -> {
+                _uiState.update {
+                    it.copy(confirmPasswordValue = event.password, changePasswordError = null)
+                }
+            }
+
+            LoginEvents.OnSavePassword -> {
+                changePassword()
+            }
+
+            LoginEvents.OnDismissChangePasswordDialog -> {
+                _uiState.update {
+                    it.copy(
+                        showChangePasswordDialog = false,
+                        currentPasswordValue = "",
+                        newPasswordValue = "",
+                        confirmPasswordValue = "",
+                        changePasswordError = null,
+                        isChangePasswordLoading = false
+                    )
+                }
+            }
+
+            // Subscription popup
+            LoginEvents.OnDismissSubscriptionPopup -> {
+                _uiState.update {
+                    it.copy(showSubscriptionPopup = false)
+                }
+            }
+
+            // Notification dialog events
+            LoginEvents.OnRequestNotificationPermission -> {
+                requestNotificationPermission()
+            }
+
+            LoginEvents.OnDismissNotificationDialog -> {
+                _uiState.update {
+                    it.copy(showNotificationDialog = false)
+                }
             }
 
             else -> {
@@ -573,6 +680,215 @@ class AuthViewModel(
             }
         }
     }
+
+    /**
+     * Saves the updated username/display name for the current user.
+     */
+    private fun saveUsername() {
+        val currentState = _uiState.value
+        val newDisplayName = currentState.editUsernameValue.trim()
+
+        if (newDisplayName.isEmpty()) {
+            _uiState.update {
+                it.copy(editUsernameError = "Username cannot be empty")
+            }
+            return
+        }
+
+        if (newDisplayName == currentState.displayName) {
+            _uiState.update {
+                it.copy(showEditUsernameDialog = false, editUsernameValue = "")
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isEditUsernameLoading = true, editUsernameError = null) }
+
+            // Check network connectivity
+            if (!networkConnectivityChecker.isNetworkAvailable()) {
+                _uiState.update {
+                    it.copy(
+                        isEditUsernameLoading = false,
+                        editUsernameError = "No internet connection. Please check your network settings and try again."
+                    )
+                }
+                return@launch
+            }
+
+            try {
+                val result = authRepository.updateDisplayName(newDisplayName)
+                when (result) {
+                    is AuthResult.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                isEditUsernameLoading = false,
+                                showEditUsernameDialog = false,
+                                displayName = newDisplayName,
+                                editUsernameValue = "",
+                                editUsernameError = null
+                            )
+                        }
+                    }
+
+                    is AuthResult.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                isEditUsernameLoading = false,
+                                editUsernameError = result.message
+                            )
+                        }
+                    }
+
+                    AuthResult.Loading -> {
+                        // Loading state is already handled
+                    }
+
+                    AuthResult.SignedOut -> {
+                        // User signed out during operation
+                        _uiState.update {
+                            it.copy(
+                                isEditUsernameLoading = false,
+                                editUsernameError = "User session expired. Please sign in again."
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isEditUsernameLoading = false,
+                        editUsernameError = e.message ?: "Failed to update username"
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Changes the password for the current user.
+     */
+    private fun changePassword() {
+        val currentState = _uiState.value
+        val currentPassword = currentState.currentPasswordValue.trim()
+        val newPassword = currentState.newPasswordValue.trim()
+        val confirmPassword = currentState.confirmPasswordValue.trim()
+
+        // Validate inputs
+        if (currentPassword.isEmpty()) {
+            _uiState.update {
+                it.copy(changePasswordError = "Current password is required")
+            }
+            return
+        }
+
+        if (newPassword.isEmpty()) {
+            _uiState.update {
+                it.copy(changePasswordError = "New password is required")
+            }
+            return
+        }
+
+        if (newPassword.length < 6) {
+            _uiState.update {
+                it.copy(changePasswordError = "New password must be at least 6 characters")
+            }
+            return
+        }
+
+        if (newPassword != confirmPassword) {
+            _uiState.update {
+                it.copy(changePasswordError = "New passwords do not match")
+            }
+            return
+        }
+
+        if (currentPassword == newPassword) {
+            _uiState.update {
+                it.copy(changePasswordError = "New password must be different from current password")
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isChangePasswordLoading = true, changePasswordError = null) }
+
+            // Check network connectivity
+            if (!networkConnectivityChecker.isNetworkAvailable()) {
+                _uiState.update {
+                    it.copy(
+                        isChangePasswordLoading = false,
+                        changePasswordError = "No internet connection. Please check your network settings and try again."
+                    )
+                }
+                return@launch
+            }
+
+            try {
+                val result = authRepository.changePassword(currentPassword, newPassword)
+                when (result) {
+                    is AuthResult.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                isChangePasswordLoading = false,
+                                showChangePasswordDialog = false,
+                                currentPasswordValue = "",
+                                newPasswordValue = "",
+                                confirmPasswordValue = "",
+                                changePasswordError = null
+                            )
+                        }
+                    }
+
+                    is AuthResult.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                isChangePasswordLoading = false,
+                                changePasswordError = result.message
+                            )
+                        }
+                    }
+
+                    AuthResult.Loading -> {
+                        // Loading state is already handled
+                    }
+
+                    AuthResult.SignedOut -> {
+                        // User signed out during operation
+                        _uiState.update {
+                            it.copy(
+                                isChangePasswordLoading = false,
+                                changePasswordError = "User session expired. Please sign in again."
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isChangePasswordLoading = false,
+                        changePasswordError = e.message ?: "Failed to change password"
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Requests notification permission from the user.
+     * For now, this is a placeholder that simply toggles the permission state.
+     * In a real implementation, this would trigger the system permission dialog.
+     */
+    private fun requestNotificationPermission() {
+        // For now, just toggle the state to simulate permission request
+        // In a real implementation, this would check platform-specific permissions
+        _uiState.update {
+            it.copy(
+                notificationPermissionGranted = !it.notificationPermissionGranted,
+                showNotificationDialog = false
+            )
+        }
+    }
 }
 
 /**
@@ -598,4 +914,22 @@ data class AuthUiState(
     val deactivationRequest: DeactivationRequest? = null,
     val isDeactivationLoading: Boolean = false,
     val deactivationError: String? = null,
+
+    // Profile screen states
+    val showEditUsernameDialog: Boolean = false,
+    val editUsernameValue: String = "",
+    val isEditUsernameLoading: Boolean = false,
+    val editUsernameError: String? = null,
+
+    val showChangePasswordDialog: Boolean = false,
+    val currentPasswordValue: String = "",
+    val newPasswordValue: String = "",
+    val confirmPasswordValue: String = "",
+    val isChangePasswordLoading: Boolean = false,
+    val changePasswordError: String? = null,
+
+    val showSubscriptionPopup: Boolean = false,
+
+    val showNotificationDialog: Boolean = false,
+    val notificationPermissionGranted: Boolean = false,
 )
