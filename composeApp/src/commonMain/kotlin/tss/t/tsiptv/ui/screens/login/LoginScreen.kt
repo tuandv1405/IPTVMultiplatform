@@ -263,48 +263,48 @@ fun LoginScreenPhone(
                 text = stringResource(Res.string.sign_up),
                 onClick = { onEvent(LoginEvents.OnSignUpPressed) },
             )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
-                )
-                Text(
-                    stringResource(Res.string.or_continue_with),
-                    color = TSColors.TextSecondary,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center
-                )
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
-                )
-            }
+//
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                verticalAlignment = Alignment.CenterVertically,
+//                horizontalArrangement = Arrangement.spacedBy(8.dp)
+//            ) {
+//                HorizontalDivider(
+//                    modifier = Modifier.weight(1f),
+//                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
+//                )
+//                Text(
+//                    stringResource(Res.string.or_continue_with),
+//                    color = TSColors.TextSecondary,
+//                    fontSize = 12.sp,
+//                    textAlign = TextAlign.Center
+//                )
+//                HorizontalDivider(
+//                    modifier = Modifier.weight(1f),
+//                    color = TSColors.TextSecondary.copy(alpha = 0.3f)
+//                )
+//            }
 
             // Social Logins
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                SocialButton(
-                    iconRes = Res.drawable.ic_google,
-                    contentDescription = "Google",
-                    modifier = Modifier.weight(1f),
-                    onClick = { onEvent(LoginEvents.OnSignInWithGooglePressed) }
-                )
-                if (remember { PlatformUtils.platform.isIOS }) {
-                    SocialButton(
-                        iconRes = Res.drawable.ic_apple,
-                        contentDescription = stringResource(Res.string.app_name),
-                        modifier = Modifier.weight(1f),
-                        onClick = { onEvent(LoginEvents.OnSignInWithApplePressed) }
-                    )
-                }
-            }
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.spacedBy(16.dp)
+//            ) {
+//                SocialButton(
+//                    iconRes = Res.drawable.ic_google,
+//                    contentDescription = "Google",
+//                    modifier = Modifier.weight(1f),
+//                    onClick = { onEvent(LoginEvents.OnSignInWithGooglePressed) }
+//                )
+//                if (remember { PlatformUtils.platform.isIOS }) {
+//                    SocialButton(
+//                        iconRes = Res.drawable.ic_apple,
+//                        contentDescription = stringResource(Res.string.app_name),
+//                        modifier = Modifier.weight(1f),
+//                        onClick = { onEvent(LoginEvents.OnSignInWithApplePressed) }
+//                    )
+//                }
+//            }
         }
 
         Box(

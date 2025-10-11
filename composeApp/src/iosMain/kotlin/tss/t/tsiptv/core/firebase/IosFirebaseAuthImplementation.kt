@@ -4,10 +4,18 @@ import cocoapods.FirebaseAuth.FIRAuth
 import cocoapods.FirebaseAuth.FIRGoogleAuthProvider
 import cocoapods.FirebaseAuth.FIRUser
 import cocoapods.FirebaseCore.FIRApp
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.auth.FirebaseAuthInvalidUserException
+import dev.gitlive.firebase.auth.auth
+import dev.gitlive.firebase.auth.ios
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.Foundation.NSError
 import tss.t.tsiptv.core.firebase.auth.InMemoryFirebaseAuth
@@ -34,16 +42,29 @@ class IosFirebaseAuthImplementation : IFirebaseAuth {
     override val currentUser: Flow<FirebaseUser?> = _currentUser
 
     init {
-        FIRAuth.auth()
-            .addAuthStateDidChangeListener { auth, currentUser ->
-                if (currentUser != null) {
-                    _currentUser.update {
-                        currentUser.toFirebaseUser()
+        CoroutineScope(Dispatchers.IO).launch {
+            Firebase.auth
+                .authStateChanged
+                .collect { firebaseUser ->
+                    if (firebaseUser != null) {
+                        _currentUser.update {
+                            firebaseUser.toFirebaseUser()
+                        }
+
+                        runCatching {
+                            firebaseUser.getIdTokenResult(true).ios
+                        }.onFailure {
+                            if (it is FirebaseAuthInvalidUserException) {
+                                _currentUser.update {
+                                    null
+                                }
+                            }
+                        }
+                    } else {
+                        _currentUser.update { null }
                     }
-                } else {
-                    _currentUser.update { null }
                 }
-            }
+        }
     }
 
     override suspend fun signInWithEmailAndPassword(email: String, password: String): FirebaseUser {
@@ -319,6 +340,16 @@ class IosFirebaseAuthImplementation : IFirebaseAuth {
             displayName = displayName(),
             photoUrl = photoURL()?.toString(),
             isEmailVerified = isEmailVerified()
+        )
+    }
+
+    fun dev.gitlive.firebase.auth.FirebaseUser.toFirebaseUser(): FirebaseUser {
+        return FirebaseUser(
+            uid = uid,
+            email = email,
+            displayName = displayName,
+            photoUrl = photoURL,
+            isEmailVerified = isEmailVerified
         )
     }
 }

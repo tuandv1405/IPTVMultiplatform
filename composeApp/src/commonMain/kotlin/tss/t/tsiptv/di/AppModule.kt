@@ -1,5 +1,8 @@
 package tss.t.tsiptv.di
 
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.firestore.FirebaseFirestore
+import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -21,6 +24,10 @@ import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.network.NetworkClientFactory
 import tss.t.tsiptv.core.network.NetworkConnectivityChecker
 import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
+import tss.t.tsiptv.core.permission.PermissionChecker
+import tss.t.tsiptv.core.permission.PermissionCheckerFactory
+import tss.t.tsiptv.core.tracking.DefaultUserTrackingService
+import tss.t.tsiptv.core.tracking.UserTrackingService
 import tss.t.tsiptv.core.parser.IPTVParser
 import tss.t.tsiptv.core.parser.IPTVParserService
 import tss.t.tsiptv.core.parser.epg.JSONEPGParser
@@ -131,6 +138,20 @@ val commonModule = module {
 
     single<NetworkConnectivityChecker> {
         NetworkConnectivityCheckerFactory.create()
+    }
+
+    // Permission Checker
+    single<PermissionChecker> {
+        PermissionCheckerFactory.create()
+    }
+
+    // User Tracking Service
+    single<UserTrackingService> {
+        DefaultUserTrackingService(get())
+    }
+
+    single<FirebaseFirestore> {
+        Firebase.firestore
     }
 
     viewModelOf(::AdsViewModel)

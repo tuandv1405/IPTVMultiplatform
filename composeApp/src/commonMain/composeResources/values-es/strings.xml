@@ -15,6 +15,7 @@
     <string name="accept">Aceptar</string>
     <string name="allow">Permitir</string>
     <string name="cancel">Cancelar</string>
+    <string name="save">Guardar</string>
     <string name="error">Error</string>
     <string name="error_occurred">Ha ocurrido un error</string>
     <string name="success">Éxito</string>
@@ -97,4 +98,44 @@
 
     <string name="popup_refresh_program_title">Actualizar EPG</string>
     <string name="popup_refresh_program_description">¿Actualizar todos los EPG hoy?</string>
+
+    <!-- Settings Bottom Sheet -->
+    <string name="settings_title">Configuración</string>
+    <string name="settings_deactivate_account">Desactivar cuenta</string>
+
+    <!-- Deactivation Dialog -->
+    <string name="deactivate_dialog_title">Desactivar cuenta</string>
+    <string name="deactivate_dialog_message">¿Está seguro de que desea desactivar su cuenta?\n\n⚠️ ADVERTENCIA: Su cuenta será eliminada permanentemente y todos sus datos serán borrados después de la revisión del administrador. Esta acción no se puede deshacer.\n\nTiempo de procesamiento: Aproximadamente 1 día laborable</string>
+    <string name="btn_deactivate_cancel">Mantener cuenta</string>
+    <string name="btn_deactivate_ok">Sí, desactivar</string>
+
+    <!-- Deactivation Success -->
+    <string name="deactivation_success_title">Solicitud enviada</string>
+    <string name="deactivation_success_message">Su solicitud de desactivación ha sido enviada. Será notificado cuando el administrador revise su solicitud. El tiempo de procesamiento es de aproximadamente 1 día laborable.</string>
+    
+    <!-- Deactivation Waiting Status -->
+    <string name="deactivation_waiting_title">Esperando revisión del administrador</string>
+    <string name="deactivation_waiting_message">Su solicitud de desactivación está siendo revisada por el administrador. Por favor espere a que se complete la revisión.</string>
+    <string name="back_to_login_account">¿Ya tienes una cuenta? Iniciar sesión</string>
+    
+    <!-- Error Messages -->
+    <string name="error_network">Error de red. Por favor verifique su conexión a internet e intente nuevamente.</string>
+    <string name="error_authentication">Autenticación fallida. Por favor verifique sus credenciales e intente nuevamente.</string>
+    <string name="error_firebase">Error del servidor. Por favor intente nuevamente más tarde.</string>
+    <string name="error_parsing">Error al analizar datos. Por favor verifique la fuente e intente nuevamente.</string>
+    <string name="error_registration">Registro fallido. Por favor intente nuevamente.</string>
+    <string name="error_general">Error inesperado. Por favor intente nuevamente.</string>
+    <string name="error_timeout">Tiempo de espera agotado. Por favor verifique su conexión e intente nuevamente.</string>
+    <string name="error_invalid_data">Formato de datos inválido. Por favor verifique su entrada.</string>
+    <string name="error_permission_denied">Permiso denegado. Por favor verifique sus derechos de acceso.</string>
+    <string name="error_service_unavailable">Servicio actualmente no disponible. Por favor intente nuevamente más tarde.</string>
+
+    <string name="user_name">Nombre de usuario</string>
+    <string name="change_password_guide">Ingrese su contraseña actual y nueva contraseña</string>
+    <string name="current_password">Contraseña actual</string>
+    <string name="new_password">Nueva contraseña</string>
+    <string name="confirm_new_password">Confirmar nueva contraseña</string>
+    <string name="is_changing_password">Cambiando...</string>
+    <string name="change_password_title">Cambiar contraseña</string>
+    <string name="feature_coming_soon">¡Esta función estará disponible pronto en una futura actualización. ¡Manténgase atento!</string>
 </resources>

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TSIPTV</string>
+
+    <!-- Login Screen -->
+    <string name="login">ログイン</string>
+    <string name="email">メールアドレス</string>
+    <string name="password">パスワード</string>
+    <string name="forgot_password">パスワードを忘れましたか？</string>
+    <string name="sign_up">サインアップ</string>
+    <string name="email_invalid">無効なメールアドレス</string>
+
+    <!-- Common -->
+    <string name="ok">OK</string>
+    <string name="accept">承認</string>
+    <string name="allow">許可</string>
+    <string name="cancel">キャンセル</string>
+    <string name="save">保存</string>
+    <string name="error">エラー</string>
+    <string name="error_occurred">エラーが発生しました</string>
+    <string name="success">成功</string>
+    <string name="loading">読み込み中...</string>
+    <string name="or_continue_with">または次で続行</string>
+    <string name="try_again">ログインを再試行</string>
+    <string name="error_dialog_title">おっと！</string>
+    <string name="iptv_import_success_msg">チャンネル解析成功！%1$d個のチャンネルが見つかりました</string>
+    <string name="iptv_import_success_title">おめでとうございます</string>
+    <string name="play">再生</string>
+    <string name="pause">一時停止</string>
+    <string name="continue_watching">視聴を続ける</string>
+    <string name="last_hour">前の時間</string>
+    <string name="now">今すぐ</string>
+    <string name="hello_format">こんにちは%1$s</string>
+
+    <!-- Settings -->
+    <string name="language_settings">言語設定</string>
+
+    <string name="profile_title">プロフィール</string>
+    <string name="logout_button_title">ログアウト</string>
+
+    <string name="account_group_title">アカウント設定</string>
+    <string name="preferences_group_title">設定</string>
+    <string name="profile_edit_title">プロフィール編集</string>
+    <string name="profile_change_password_title">パスワード変更</string>
+    <string name="profile_subscription_title">サブスクリプション情報</string>
+    <string name="profile_notification_title">通知</string>
+
+    <string name="empty_iptv_source_title">IPTV ソースが接続されていません</string>
+    <string name="btn_add_iptv_source_title">IPTVを追加</string>
+    <string name="iptv_help_title">ソースを見つけるのにヘルプが必要ですか？</string>
+    <string name="what_is_iptv_title">IPTVソースとは何ですか？</string>
+    <string name="what_is_iptv_desc">IPTVソースは、ライブTVチャンネルへのリンクを含む、サポートされているXMLまたはJSON形式のプレイリストファイル（.m3uまたは.m3u8）です。IPTVプロバイダーから取得できます。</string>
+
+    <string name="logout_dialog_title">ログアウト</string>
+    <string name="logout_dialog_message">このデバイスからこのアカウントをログアウトしてもよろしいですか？</string>
+    <string name="btn_logout_cancel">ログインを維持</string>
+    <string name="btn_logout_ok">ログアウト</string>
+
+    <string name="add_iptv_source_title">IPTVソースを追加</string>
+    <string name="add_iptv_source_name_label_title">ソース名</string>
+    <string name="add_iptv_source_name_placeholder_title">例：SuperIPTV</string>
+    <string name="add_iptv_source_url_label_title">ソースリンク</string>
+    <string name="add_iptv_source_url_placeholder_title">例：https://sampleiptv.m3u</string>
+    <string name="tips_add_iptv_source_title">クイックヒント：</string>
+    <string name="tips_add_iptv_source_desc">• 識別しやすい説明的な名前を使用する\n• M3Uリンクが有効でアクセス可能であることを確認する\n• 複数のチャンネルを追加する前にソースをテストする</string>
+    <string name="cancel_parsing_title">解析進行中！</string>
+    <string name="cancel_parsing_message">解析プロセスが現在実行中です。今キャンセルすると不完全なデータになる可能性があります。それでもキャンセルしますか？</string>
+    <string name="cancel_parsing_btn_ok">はい、キャンセル</string>
+    <string name="cancel_parsing_btn_cancel">いいえ、解析を続行</string>
+
+    <string name="now_playing_title">再生中</string>
+    <string name="all_channels_title">すべてのチャンネル</string>
+
+    <string name="today_format">今日、%1$s</string>
+    <string name="yesterday_format">昨日、%1$s</string>
+    <string name="quick_close_action">クイックアクション</string>
+    <string name="bottom_sheet_add_iptv">IPTVソースを追加</string>
+    <string name="bottom_sheet_import_playlist">プレイリストをインポート</string>
+    <string name="bottom_sheet_select_playlist">プレイリストを選択</string>
+    <string name="bottom_sheet_refresh_channel">チャンネルを更新</string>
+    <string name="bottom_sheet_change_language">言語を変更</string>
+
+    <string name="home_nav_main">ホーム</string>
+    <string name="home_nav_history">履歴</string>
+    <string name="home_nav_settings">設定</string>
+    <string name="home_nav_profile">プロフィール</string>
+    <string name="home_nav_programs">番組</string>
+
+    <string name="home_search_placeholder">チャンネル、番組を検索...</string>
+    <string name="empty_history">最近のアクティビティなし</string>
+    <string name="player_like">いいね</string>
+    <string name="player_dislike">よくない</string>
+    <string name="player_share">共有</string>
+    <string name="player_report">報告</string>
+
+    <string name="channel_count_format">%1$d チャンネル</string>
+    <string name="programs_today_format">%1$d 番組</string>
+
+    <string name="popup_refresh_program_title">EPGを更新</string>
+    <string name="popup_refresh_program_description">今日のすべてのEPGを更新しますか？</string>
+
+    <!-- Settings Bottom Sheet -->
+    <string name="settings_title">設定</string>
+    <string name="settings_deactivate_account">アカウントを無効化</string>
+
+    <!-- Deactivation Dialog -->
+    <string name="deactivate_dialog_title">アカウントを無効化</string>
+    <string name="deactivate_dialog_message">アカウントを無効化してもよろしいですか？\n\n⚠️ 警告：アカウントは永続的に削除され、管理者による審査後にすべてのデータが削除されます。この操作は元に戻せません。\n\n処理時間：約1営業日</string>
+    <string name="btn_deactivate_cancel">アカウントを保持</string>
+    <string name="btn_deactivate_ok">はい、無効化</string>
+
+    <!-- Deactivation Success -->
+    <string name="deactivation_success_title">リクエスト送信済み</string>
+    <string name="deactivation_success_message">無効化リクエストが送信されました。管理者がリクエストを審査すると通知されます。処理時間は約1営業日です。</string>
+    
+    <!-- Deactivation Waiting Status -->
+    <string name="deactivation_waiting_title">管理者審査待ち</string>
+    <string name="deactivation_waiting_message">無効化リクエストは管理者によって審査されています。審査の完了をお待ちください。</string>
+    <string name="back_to_login_account">既にアカウントをお持ちですか？ログイン</string>
+    
+    <!-- Error Messages -->
+    <string name="error_network">ネットワークエラーが発生しました。インターネット接続を確認して再試行してください。</string>
+    <string name="error_authentication">認証に失敗しました。認証情報を確認して再試行してください。</string>
+    <string name="error_firebase">サーバーエラーが発生しました。後でもう一度お試しください。</string>
+    <string name="error_parsing">データの解析に失敗しました。ソースを確認して再試行してください。</string>
+    <string name="error_registration">登録に失敗しました。再試行してください。</string>
+    <string name="error_general">予期しないエラーが発生しました。再試行してください。</string>
+    <string name="error_timeout">リクエストがタイムアウトしました。接続を確認して再試行してください。</string>
+    <string name="error_invalid_data">無効なデータ形式です。入力を確認してください。</string>
+    <string name="error_permission_denied">アクセス権限が拒否されました。アクセス権限を確認してください。</string>
+    <string name="error_service_unavailable">サービスは現在利用できません。後でもう一度お試しください。</string>
+
+    <string name="user_name">ユーザー名</string>
+    <string name="change_password_guide">現在のパスワードと新しいパスワードを入力してください</string>
+    <string name="current_password">現在のパスワード</string>
+    <string name="new_password">新しいパスワード</string>
+    <string name="confirm_new_password">新しいパスワードを確認</string>
+    <string name="is_changing_password">変更中...</string>
+    <string name="change_password_title">パスワード変更</string>
+    <string name="feature_coming_soon">この機能は今後のアップデートで利用可能になります。お楽しみに！</string>
+</resources>

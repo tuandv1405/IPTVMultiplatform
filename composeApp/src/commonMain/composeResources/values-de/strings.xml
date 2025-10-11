@@ -15,6 +15,7 @@
     <string name="accept">Akzeptieren</string>
     <string name="allow">Erlauben</string>
     <string name="cancel">Abbrechen</string>
+    <string name="save">Speichern</string>
     <string name="error">Fehler</string>
     <string name="error_occurred">Ein Fehler ist aufgetreten</string>
     <string name="success">Erfolg</string>
@@ -97,4 +98,44 @@
 
     <string name="popup_refresh_program_title">EPG aktualisieren</string>
     <string name="popup_refresh_program_description">Alle EPG heute aktualisieren?</string>
+
+    <!-- Settings Bottom Sheet -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_deactivate_account">Konto deaktivieren</string>
+
+    <!-- Deactivation Dialog -->
+    <string name="deactivate_dialog_title">Konto deaktivieren</string>
+    <string name="deactivate_dialog_message">Sind Sie sicher, dass Sie Ihr Konto deaktivieren möchten?\n\n⚠️ WARNUNG: Ihr Konto wird dauerhaft entfernt und alle Ihre Daten werden nach der Administrator-Überprüfung gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.\n\nBearbeitungszeit: Etwa 1 Arbeitstag</string>
+    <string name="btn_deactivate_cancel">Konto behalten</string>
+    <string name="btn_deactivate_ok">Ja, deaktivieren</string>
+
+    <!-- Deactivation Success -->
+    <string name="deactivation_success_title">Anfrage gesendet</string>
+    <string name="deactivation_success_message">Ihre Deaktivierungsanfrage wurde gesendet. Sie werden benachrichtigt, wenn der Administrator Ihre Anfrage überprüft. Die Bearbeitungszeit beträgt etwa 1 Arbeitstag.</string>
+    
+    <!-- Deactivation Waiting Status -->
+    <string name="deactivation_waiting_title">Warten auf Administrator-Überprüfung</string>
+    <string name="deactivation_waiting_message">Ihre Deaktivierungsanfrage wird vom Administrator überprüft. Bitte warten Sie, bis die Überprüfung abgeschlossen ist.</string>
+    <string name="back_to_login_account">Sie haben bereits ein Konto? Anmelden</string>
+    
+    <!-- Error Messages -->
+    <string name="error_network">Netzwerkfehler aufgetreten. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.</string>
+    <string name="error_authentication">Authentifizierung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten und versuchen Sie es erneut.</string>
+    <string name="error_firebase">Ein Serverfehler ist aufgetreten. Bitte versuchen Sie es später erneut.</string>
+    <string name="error_parsing">Fehler beim Analysieren der Daten. Bitte überprüfen Sie die Quelle und versuchen Sie es erneut.</string>
+    <string name="error_registration">Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.</string>
+    <string name="error_general">Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.</string>
+    <string name="error_timeout">Anfrage ist abgelaufen. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.</string>
+    <string name="error_invalid_data">Ungültiges Datenformat. Bitte überprüfen Sie Ihre Eingabe.</string>
+    <string name="error_permission_denied">Berechtigung verweigert. Bitte überprüfen Sie Ihre Zugriffsrechte.</string>
+    <string name="error_service_unavailable">Service ist derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.</string>
+
+    <string name="user_name">Benutzername</string>
+    <string name="change_password_guide">Geben Sie Ihr aktuelles und neues Passwort ein</string>
+    <string name="current_password">Aktuelles Passwort</string>
+    <string name="new_password">Neues Passwort</string>
+    <string name="confirm_new_password">Neues Passwort bestätigen</string>
+    <string name="is_changing_password">Ändert...</string>
+    <string name="change_password_title">Passwort ändern</string>
+    <string name="feature_coming_soon">Diese Funktion wird in einem zukünftigen Update verfügbar sein. Bleiben Sie dran!</string>
 </resources>

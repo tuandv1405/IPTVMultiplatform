@@ -28,7 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.error_occurred
+import tsiptv.composeapp.generated.resources.ok
 import tss.t.tsiptv.ui.themes.StreamVaultTheme
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
@@ -187,6 +191,27 @@ fun TSDialog(
         }
     )
 }
+
+/**
+ * A convenient error dialog that uses the existing TSDialog with pre-configured error styling.
+ * 
+ * @param errorMessage The error message to display
+ * @param onDismiss Callback when the dialog is dismissed
+ */
+@Composable
+fun ErrorDialog(
+    errorMessage: String,
+    onDismiss: () -> Unit
+) {
+    TSDialog(
+        title = stringResource(Res.string.error_occurred),
+        message = errorMessage,
+        positiveButtonText = stringResource(Res.string.ok),
+        onPositiveClick = onDismiss,
+        onDismissRequest = onDismiss
+    )
+}
+
 
 @Composable
 @Preview

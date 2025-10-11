@@ -39,6 +39,12 @@ import platform.UIKit.UIAlertControllerStyleAlert
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationOpenSettingsURLString
 import platform.UIKit.UIViewController
+import platform.AppTrackingTransparency.ATTrackingManager
+import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatus
+import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusAuthorized
+import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusDenied
+import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusNotDetermined
+import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusRestricted
 
 /**
  * iOS implementation of PermissionChecker.
@@ -103,6 +109,12 @@ class IosPermissionChecker(
             title = "Face ID Access",
             description = "This permission is needed to use Face ID for authentication.",
             settingsDescription = "Please enable Face ID Access in settings to allow the app to use Face ID for authentication."
+        ),
+        Permission.APP_TRACKING_TRANSPARENCY to PermissionInfo(
+            permission = Permission.APP_TRACKING_TRANSPARENCY,
+            title = "App Tracking Transparency",
+            description = "This permission allows the app to track your activity across other apps and websites for personalized content and better user experience.",
+            settingsDescription = "Please enable App Tracking Transparency in settings to allow the app to provide personalized content."
         )
     )
 
@@ -133,6 +145,12 @@ class IosPermissionChecker(
             Permission.PHOTO_LIBRARY, Permission.PHOTO_LIBRARY_ADD_ONLY -> {
                 val status = PHPhotoLibrary.authorizationStatus()
                 status == PHAuthorizationStatusAuthorized || status == PHAuthorizationStatusLimited
+            }
+
+            // App Tracking Transparency permission
+            Permission.APP_TRACKING_TRANSPARENCY -> {
+                val status = ATTrackingManager.trackingAuthorizationStatus
+                status == ATTrackingManagerAuthorizationStatusAuthorized
             }
 
             // For other permissions, we need to check if they're declared in Info.plist
@@ -166,6 +184,11 @@ class IosPermissionChecker(
             // Photo Library permissions
             Permission.PHOTO_LIBRARY, Permission.PHOTO_LIBRARY_ADD_ONLY -> {
                 requestPhotoLibraryPermission()
+            }
+
+            // App Tracking Transparency permission
+            Permission.APP_TRACKING_TRANSPARENCY -> {
+                requestAppTrackingPermission()
             }
 
             // For other permissions, we need to check if they're declared in Info.plist
@@ -333,6 +356,45 @@ class IosPermissionChecker(
                             trySend(PermissionResult.GRANTED)
                         } else {
                             trySend(PermissionResult.DENIED)
+                        }
+                        close()
+                    }
+
+                    awaitClose { }
+                }
+            }
+            else -> {
+                flowOf(PermissionResult.DENIED)
+            }
+        }
+    }
+
+    private fun requestAppTrackingPermission(): Flow<PermissionResult> {
+        val status = ATTrackingManager.trackingAuthorizationStatus
+        
+        return when (status) {
+            ATTrackingManagerAuthorizationStatusAuthorized -> {
+                flowOf(PermissionResult.GRANTED)
+            }
+            ATTrackingManagerAuthorizationStatusDenied, ATTrackingManagerAuthorizationStatusRestricted -> {
+                flowOf(PermissionResult.PERMANENTLY_DENIED)
+            }
+            ATTrackingManagerAuthorizationStatusNotDetermined -> {
+                callbackFlow {
+                    ATTrackingManager.requestTrackingAuthorizationWithCompletionHandler { newStatus ->
+                        when (newStatus) {
+                            ATTrackingManagerAuthorizationStatusAuthorized -> {
+                                trySend(PermissionResult.GRANTED)
+                            }
+                            ATTrackingManagerAuthorizationStatusDenied -> {
+                                trySend(PermissionResult.DENIED)
+                            }
+                            ATTrackingManagerAuthorizationStatusRestricted -> {
+                                trySend(PermissionResult.PERMANENTLY_DENIED)
+                            }
+                            else -> {
+                                trySend(PermissionResult.DENIED)
+                            }
                         }
                         close()
                     }

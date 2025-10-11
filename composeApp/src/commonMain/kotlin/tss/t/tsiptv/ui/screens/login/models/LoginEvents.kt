@@ -36,4 +36,26 @@ sealed interface LoginEvents {
     object OnDismissErrorDialog : LoginEvents
 
     data class OnProfileActionEvent(val action: ProfileScreenActions) : LoginEvents
+    
+    object OnShowSettingsBottomSheet : LoginEvents
+    object OnDismissSettingsBottomSheet : LoginEvents
+    object OnShowDeactivationDialog : LoginEvents
+    object OnDismissDeactivationDialog : LoginEvents
+    object OnConfirmDeactivation : LoginEvents
+    
+    // Profile dialog events
+    data class OnEditUsernameChanged(val username: String) : LoginEvents
+    object OnSaveUsername : LoginEvents
+    object OnDismissEditUsernameDialog : LoginEvents
+    
+    data class OnCurrentPasswordChanged(val password: String) : LoginEvents
+    data class OnNewPasswordChanged(val password: String) : LoginEvents
+    data class OnConfirmPasswordChanged(val password: String) : LoginEvents
+    object OnSavePassword : LoginEvents
+    object OnDismissChangePasswordDialog : LoginEvents
+    
+    object OnDismissSubscriptionPopup : LoginEvents
+    
+    object OnRequestNotificationPermission : LoginEvents
+    object OnDismissNotificationDialog : LoginEvents
 }

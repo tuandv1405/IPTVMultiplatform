@@ -324,10 +324,14 @@ class HomeViewModel(
         val epgUrl = playListEpgUrl ?: return
         if (epgUrl.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
-            val content = networkClient.getManualGzipIfNeed(
-                epgUrl,
-                mapOf("Content-Encoding" to "gzip")
-            )
+            val content = runCatching {
+                networkClient.getManualGzipIfNeed(
+                    epgUrl,
+                    mapOf("Content-Encoding" to "gzip")
+                )
+            }.onFailure {
+
+            }.getOrNull() ?: return@launch
             val epgParser = EPGParserFactory.createParserForContent(content)
             val epg = epgParser.parse(content)
             iptvDatabase.deleteProgramsForPlaylist(playListId)

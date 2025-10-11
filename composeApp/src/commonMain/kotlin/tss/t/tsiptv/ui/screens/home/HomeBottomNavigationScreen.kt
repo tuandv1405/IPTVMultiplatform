@@ -55,6 +55,7 @@ import tss.t.tsiptv.ui.screens.home.models.BottomNavItem
 import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
+import tss.t.tsiptv.ui.widgets.ErrorDialog
 import tss.t.tsiptv.utils.customShadow
 import kotlin.time.ExperimentalTime
 
@@ -154,6 +155,17 @@ fun HomeBottomNavigationScreen(
         ) {
             selectedItemIndex = it
         }
+    }
+    
+    // Error Dialog for HomeViewModel Errors
+    homeUiState.error?.let { error ->
+        ErrorDialog(
+            errorMessage = error.message ?: error.toString(),
+            onDismiss = {
+                // Clear the error from HomeViewModel
+                onHomeEvent(HomeEvent.OnDismissErrorDialog)
+            }
+        )
     }
 }
 
