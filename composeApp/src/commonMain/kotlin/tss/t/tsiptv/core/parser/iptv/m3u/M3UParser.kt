@@ -12,7 +12,9 @@ import tss.t.tsiptv.core.parser.model.IPTVPlaylist
  */
 class M3UParser : IPTVParser {
     override fun parse(content: String): IPTVPlaylist {
-        if (!content.trimStart().startsWith("#EXTM3U")) {
+        if (!content.trimStart().startsWith("#EXTM3U") &&
+            !content.contains("#EXTINF")
+        ) {
             throw IPTVParserException("Invalid M3U format: missing #EXTM3U header")
         }
 
