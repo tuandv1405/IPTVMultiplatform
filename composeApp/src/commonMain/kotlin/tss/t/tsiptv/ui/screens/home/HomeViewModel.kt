@@ -161,6 +161,7 @@ class HomeViewModel(
                     )
                 }
                 iptvDatabase.insertChannels(channels)
+                _currentListChannel = channels
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -290,6 +291,7 @@ class HomeViewModel(
                         lastWatched = null
                     )
                 }
+                _currentListChannel = channels
                 iptvDatabase.deleteChannelsInPlaylist(playlistId)
                 iptvDatabase.insertChannels(channels)
                 val top3Watched = iptvDatabase.channelHistoryDao
