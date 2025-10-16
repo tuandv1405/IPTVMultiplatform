@@ -175,8 +175,8 @@ android {
         applicationId = "tss.t.tsiptv"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 25401
+        versionName = "ts.iptv.v$versionCode"
     }
     packaging {
         resources {
@@ -187,6 +187,10 @@ android {
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
     compileOptions {
