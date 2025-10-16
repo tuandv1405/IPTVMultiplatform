@@ -65,6 +65,17 @@ class AuthViewModelTest {
             override suspend fun cancelDeactivationRequest(): AuthResult = 
                 AuthResult.Error("Not implemented for test")
 
+            override suspend fun updateDisplayName(displayName: String): AuthResult {
+                TODO("Not yet implemented")
+            }
+
+            override suspend fun changePassword(
+                currentPassword: String,
+                newPassword: String,
+            ): AuthResult {
+                TODO("Not yet implemented")
+            }
+
             override suspend fun refreshTokenIfNeeded() = 
                 AuthResult.Error("Not implemented for test")
 
