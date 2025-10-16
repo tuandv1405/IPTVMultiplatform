@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Home
@@ -34,6 +36,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -156,7 +160,7 @@ fun HomeBottomNavigationScreen(
             selectedItemIndex = it
         }
     }
-    
+
     // Error Dialog for HomeViewModel Errors
     homeUiState.error?.let { error ->
         ErrorDialog(
@@ -185,7 +189,9 @@ private fun BoxScope.BottomAppBar(
                 blurRadius = 30.dp,
                 offsetX = 0.dp,
                 offsetY = (-2).dp,
-                color = Color(0xFF00F5FF).copy(alpha = 0.1f)
+                color = remember {
+                    Color(0xFF00F5FF).copy(alpha = 0.1f)
+                }
             )
             .clip(shape = TSShapes.roundShapeTop32)
             .background(
@@ -256,14 +262,25 @@ private fun BoxScope.BottomAppBar(
                                         .onSurface.copy(alpha = 0.6f)
                                 )
                             }
-                            Text(
+                            BasicText(
                                 item.labelRes?.let {
                                     stringResource(it)
                                 } ?: item.label ?: "",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme
-                                    .onSurface.copy(alpha = 0.6f)
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme
+                                            .onSurface.copy(alpha = 0.6f)
+                                    }
+                                ),
+                                autoSize = remember {
+                                    TextAutoSize.StepBased(
+                                        minFontSize = 8.sp,
+                                        maxFontSize = 12.sp,
+                                        stepSize = 0.5.sp
+                                    )
+                                }
                             )
                         }
                     }
