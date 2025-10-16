@@ -1,5 +1,6 @@
 package tss.t.tsiptv.player.network
 
+import androidx.annotation.Keep
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
@@ -17,6 +18,7 @@ import javax.net.ssl.HttpsURLConnection
  * can lead to security vulnerabilities.
  */
 @UnstableApi
+@Keep
 class TrustAllHttpDataSource private constructor(
     private val delegate: DefaultHttpDataSource,
 ) : HttpDataSource by delegate {
@@ -80,17 +82,31 @@ class TrustAllHttpDataSource private constructor(
      * Overrides the open method to configure SSL trust all before delegating to the original implementation.
      */
     override fun open(dataSpec: DataSpec): Long {
-        // If the URL is HTTPS, configure the connection to trust all certificates
+        // If the URL is HTTPS, configure SSL trust all globally or attempt reflection safely
         val uri = dataSpec.uri
         if (uri.scheme?.equals("https", ignoreCase = true) == true) {
-            // Configure the connection to trust all certificates
-            val connection = delegate.javaClass.getDeclaredField("connection").apply {
-                isAccessible = true
-            }.get(delegate) as? HttpsURLConnection
+            try {
+                // Try to access the connection field safely with proper error handling
+                val connectionField = delegate.javaClass.getDeclaredField("connection")
+                connectionField.isAccessible = true
+                val connection = connectionField.get(delegate) as? HttpsURLConnection
 
-            connection?.let {
-                it.sslSocketFactory = SSLTrustAllUtils.createTrustAllSSLSocketFactory()
-                it.hostnameVerifier = SSLTrustAllUtils.trustAllHostnameVerifier
+                connection?.let {
+                    it.sslSocketFactory = SSLTrustAllUtils.createTrustAllSSLSocketFactory()
+                    it.hostnameVerifier = SSLTrustAllUtils.trustAllHostnameVerifier
+                }
+            } catch (e: NoSuchFieldException) {
+                // Field doesn't exist (likely due to obfuscation or version change)
+                // Configure SSL trust all globally as fallback
+                try {
+                    HttpsURLConnection.setDefaultSSLSocketFactory(SSLTrustAllUtils.createTrustAllSSLSocketFactory())
+                    HttpsURLConnection.setDefaultHostnameVerifier(SSLTrustAllUtils.trustAllHostnameVerifier)
+                } catch (globalException: Exception) {
+                    android.util.Log.w("TrustAllHttpDataSource", "Failed to configure global SSL trust all", globalException)
+                }
+            } catch (e: Exception) {
+                // Other reflection errors
+                android.util.Log.w("TrustAllHttpDataSource", "Failed to configure SSL trust all via reflection", e)
             }
         }
 
