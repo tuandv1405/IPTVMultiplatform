@@ -101,13 +101,13 @@
 
     <!-- Settings Bottom Sheet -->
     <string name="settings_title">設定</string>
-    <string name="settings_deactivate_account">アカウントを無効化</string>
+    <string name="settings_deactivate_account">アカウントを削除</string>
 
     <!-- Deactivation Dialog -->
-    <string name="deactivate_dialog_title">アカウントを無効化</string>
-    <string name="deactivate_dialog_message">アカウントを無効化してもよろしいですか？\n\n⚠️ 警告：アカウントは永続的に削除され、管理者による審査後にすべてのデータが削除されます。この操作は元に戻せません。\n\n処理時間：約1営業日</string>
+    <string name="deactivate_dialog_title">アカウントを削除</string>
+    <string name="deactivate_dialog_message">アカウントを削除してもよろしいですか？\n\n⚠️ 警告：アカウントは永続的に削除され、管理者による審査後にすべてのデータが削除されます。この操作は元に戻せません。\n\n処理時間：約1営業日</string>
     <string name="btn_deactivate_cancel">アカウントを保持</string>
-    <string name="btn_deactivate_ok">はい、無効化</string>
+    <string name="btn_deactivate_ok">はい、削除</string>
 
     <!-- Deactivation Success -->
     <string name="deactivation_success_title">リクエスト送信済み</string>

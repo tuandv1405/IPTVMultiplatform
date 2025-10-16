@@ -101,13 +101,13 @@
 
     <!-- Settings Bottom Sheet -->
     <string name="settings_title">Einstellungen</string>
-    <string name="settings_deactivate_account">Konto deaktivieren</string>
+    <string name="settings_deactivate_account">Konto löschen</string>
 
     <!-- Deactivation Dialog -->
-    <string name="deactivate_dialog_title">Konto deaktivieren</string>
-    <string name="deactivate_dialog_message">Sind Sie sicher, dass Sie Ihr Konto deaktivieren möchten?\n\n⚠️ WARNUNG: Ihr Konto wird dauerhaft entfernt und alle Ihre Daten werden nach der Administrator-Überprüfung gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.\n\nBearbeitungszeit: Etwa 1 Arbeitstag</string>
+    <string name="deactivate_dialog_title">Konto löschen</string>
+    <string name="deactivate_dialog_message">Sind Sie sicher, dass Sie Ihr Konto löschen möchten?\n\n⚠️ WARNUNG: Ihr Konto wird dauerhaft entfernt und alle Ihre Daten werden nach der Administrator-Überprüfung gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.\n\nBearbeitungszeit: Etwa 1 Arbeitstag</string>
     <string name="btn_deactivate_cancel">Konto behalten</string>
-    <string name="btn_deactivate_ok">Ja, deaktivieren</string>
+    <string name="btn_deactivate_ok">Ja, löschen</string>
 
     <!-- Deactivation Success -->
     <string name="deactivation_success_title">Anfrage gesendet</string>

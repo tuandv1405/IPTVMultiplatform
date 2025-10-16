@@ -101,13 +101,13 @@
 
     <!-- Settings Bottom Sheet -->
     <string name="settings_title">Settings</string>
-    <string name="settings_deactivate_account">Deactivate Account</string>
+    <string name="settings_deactivate_account">Delete Account</string>
 
     <!-- Deactivation Dialog -->
-    <string name="deactivate_dialog_title">Deactivate Account</string>
-    <string name="deactivate_dialog_message">Are you sure you want to deactivate your account?\n\n⚠️ WARNING: Your account will be permanently removed and all your data will be deleted after admin review. This action cannot be undone.\n\nProcessing time: About 1 working day</string>
+    <string name="deactivate_dialog_title">Delete Account</string>
+    <string name="deactivate_dialog_message">Are you sure you want to delete your account?\n\n⚠️ WARNING: Your account will be permanently removed and all your data will be deleted after admin review. This action cannot be undone.\n\nProcessing time: About 1 working day</string>
     <string name="btn_deactivate_cancel">Keep Account</string>
-    <string name="btn_deactivate_ok">Yes, Deactivate</string>
+    <string name="btn_deactivate_ok">Yes, Delete Account</string>
 
     <!-- Deactivation Success -->
     <string name="deactivation_success_title">Request Submitted</string>
