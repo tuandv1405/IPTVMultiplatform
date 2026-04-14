@@ -123,7 +123,12 @@ class PlayerViewModel(
 
     fun playIptv(iptvChannel: Channel) {
         viewModelScope.launch {
-            val item = iptvChannel.toMediaItem()
+            // Fetch persisted DRM attributes (set from #KODIPROP lines during playlist parse)
+            val attrs = _iptvDatabase.channelAttributeDao
+                .getAttributesForChannelSync(iptvChannel.id)
+                .associate { it.attrKey to it.attrValue }
+            val drmLicenseKey = attrs["license_key"]
+            val item = iptvChannel.toMediaItem().copy(drmLicenseKey = drmLicenseKey)
             withContext(Dispatchers.Main) {
                 _mediaPlayer.prepare(item)
                 _mediaPlayer.play()

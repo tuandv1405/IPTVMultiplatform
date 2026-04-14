@@ -18,9 +18,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import tss.t.tsiptv.core.database.IPTVDatabase
+import tss.t.tsiptv.core.database.entity.ChannelAttributeEntity
 import tss.t.tsiptv.core.database.entity.ChannelWithHistory
 import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
 import tss.t.tsiptv.core.database.entity.toPlaylistEntity
+import tss.t.tsiptv.core.parser.model.IPTVChannel
 import tss.t.tsiptv.core.firebase.analystics.AnalyticsConstants
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.model.Category
@@ -161,6 +163,7 @@ class HomeViewModel(
                     )
                 }
                 iptvDatabase.insertChannels(channels)
+                insertChannelDrmAttributes(playlist.channels)
                 _currentListChannel = channels
                 _uiState.update {
                     it.copy(
@@ -294,6 +297,7 @@ class HomeViewModel(
                 _currentListChannel = channels
                 iptvDatabase.deleteChannelsInPlaylist(playlistId)
                 iptvDatabase.insertChannels(channels)
+                insertChannelDrmAttributes(playlist.channels)
                 val top3Watched = iptvDatabase.channelHistoryDao
                     .getLastTop3WatchedChannelsWithDetailsSync(playlistId)
                 parsePlaylistEpg(
@@ -595,6 +599,25 @@ class HomeViewModel(
                     currentProgramList = programForChannel
                 )
             }
+        }
+    }
+
+    /**
+     * Persists DRM-related KODIPROP attributes (license_type, license_key, etc.)
+     * from the parsed [IPTVChannel] list into the channel_attributes table.
+     * Attributes with keys that start with "license_" are treated as DRM metadata.
+     */
+    private suspend fun insertChannelDrmAttributes(iptvChannels: List<IPTVChannel>) {
+        val drmAttrKeys = setOf("license_type", "license_key", "manifest_type")
+        val entities = iptvChannels.flatMap { ch ->
+            ch.attributes
+                .filter { (key, _) -> key in drmAttrKeys }
+                .map { (key, value) ->
+                    ChannelAttributeEntity(channelId = ch.id, attrKey = key, attrValue = value)
+                }
+        }
+        if (entities.isNotEmpty()) {
+            iptvDatabase.channelAttributeDao.insertAttributes(entities)
         }
     }
 }

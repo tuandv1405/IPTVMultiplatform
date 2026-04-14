@@ -15,6 +15,13 @@ data class MediaItem(
     val artist: String = "",
     val artworkUri: String? = null,
     val mimeType: String? = null,
+    /**
+     * DRM license key/URL from the playlist's #KODIPROP lines.
+     * - ClearKey format: "kid_hex:key_hex"  (e.g. "a7c94277...:6d54358...")
+     * - Widevine format: HTTP/HTTPS license server URL
+     * Null for streams that have no DRM or whose DRM URL is embedded in the manifest.
+     */
+    val drmLicenseKey: String? = null,
 ) {
     companion object {
         val EMPTY = MediaItem("", "")

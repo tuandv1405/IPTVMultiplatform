@@ -19,14 +19,14 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
 import androidx.media3.exoplayer.drm.DrmSessionManager
 import androidx.media3.exoplayer.drm.FrameworkMediaDrm
-import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
+import tss.t.tsiptv.player.network.SafeDrmCallback
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -69,7 +69,7 @@ class MediaPlayerService : MediaSessionService() {
 
         // DRM-related constants
         private val WIDEVINE_UUID = UUID.fromString("edef8ba9-79d6-4ace-a3c8-27dcd51d21ed")
-        private const val DRM_LICENSE_URL = "https://license.widevine.com/getlicense"
+        private val CLEARKEY_UUID = UUID.fromString("e2719d58-a985-b3c9-781a-b030af78d30e")
 
         private var instance: MediaPlayerService? = null
         private var exoPlayer: ExoPlayer? = null
@@ -87,6 +87,7 @@ class MediaPlayerService : MediaSessionService() {
                 putExtra("media_title", mediaItem.title)
                 putExtra("media_artist", mediaItem.artist)
                 putExtra("media_artwork_uri", mediaItem.artworkUri)
+                putExtra("drm_license_key", mediaItem.drmLicenseKey)
             }
             context.startService(intent)
         }
@@ -179,6 +180,9 @@ class MediaPlayerService : MediaSessionService() {
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
 
+    // Rebuilt per channel so each play gets the right SafeDrmCallback (inline key or URL)
+    private var currentDrmSessionManager: DrmSessionManager = DrmSessionManager.DRM_UNSUPPORTED
+
     private lateinit var mediaSession: MediaSession
     private lateinit var player: ExoPlayer
     private var isLiveStream = false
@@ -209,12 +213,10 @@ class MediaPlayerService : MediaSessionService() {
             .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
             .build()
 
-        // Create DRM session manager for Widevine
-        val drmSessionManager = createDrmSessionManager()
-
-        // Create media source factory with DRM support
+        // Create media source factory — DRM provider delegates to currentDrmSessionManager
+        // so we can swap it per channel without rebuilding the factory.
         val mediaSourceFactory = DefaultMediaSourceFactory(this)
-            .setDrmSessionManagerProvider { drmSessionManager }
+            .setDrmSessionManagerProvider { currentDrmSessionManager }
             .setDataSourceFactory(TrustAllHttpDataSource.Factory()
                 .setAllowCrossProtocolRedirects(true))
 
@@ -388,6 +390,7 @@ class MediaPlayerService : MediaSessionService() {
         val mediaTitle = intent.getStringExtra("media_title") ?: "Unknown Title"
         val mediaArtist = intent.getStringExtra("media_artist") ?: "Unknown Artist"
         val artworkUri = intent.getStringExtra("media_artwork_uri")
+        val drmLicenseKey = intent.getStringExtra("drm_license_key")
 
         // Store media info for notification
         currentMediaTitle = mediaTitle
@@ -412,20 +415,42 @@ class MediaPlayerService : MediaSessionService() {
             .setMediaType(MediaMetadata.MEDIA_TYPE_VIDEO)
             .build()
 
-        // Build the media item, adding DRM configuration if needed
+        // Explicitly set MIME type so ExoPlayer uses the correct parser
+        // (e.g. DASH for .mpd, HLS for .m3u8) instead of guessing from the URI
+        val mimeType = when {
+            mediaUri.contains(".mpd") -> MimeTypes.APPLICATION_MPD
+            mediaUri.contains(".m3u8") -> MimeTypes.APPLICATION_M3U8
+            else -> null
+        }
+
+        // Build the media item
         val mediaItemBuilder = MediaItem.Builder()
             .setUri(mediaUri)
             .setMediaId(mediaUri)
             .setMediaMetadata(metadata)
+            .apply { mimeType?.let { setMimeType(it) } }
 
-        // Check if this is a DRM-protected stream
-        if (isDrmProtected(mediaUri)) {
-            // Add DRM configuration
-            mediaItemBuilder.setDrmConfiguration(
-                MediaItem.DrmConfiguration.Builder(WIDEVINE_UUID)
-                    .setLicenseUri(DRM_LICENSE_URL)
-                    .build()
-            )
+        // Build a SafeDrmCallback and DrmSessionManager appropriate for this channel,
+        // then expose it through the factory's provider before calling setMediaItem.
+        currentDrmSessionManager = when {
+            // Inline ClearKey: "kid_hex:key_hex" — 32-char hex pair separated by ':'
+            !drmLicenseKey.isNullOrEmpty() && isClearKeyFormat(drmLicenseKey) -> {
+                mediaItemBuilder.setDrmConfiguration(
+                    MediaItem.DrmConfiguration.Builder(CLEARKEY_UUID).build()
+                )
+                createDrmSessionManager(clearKeyHex = drmLicenseKey, uuid = CLEARKEY_UUID)
+            }
+            // Widevine with explicit license URL
+            !drmLicenseKey.isNullOrEmpty() && drmLicenseKey.startsWith("http", ignoreCase = true) -> {
+                mediaItemBuilder.setDrmConfiguration(
+                    MediaItem.DrmConfiguration.Builder(WIDEVINE_UUID)
+                        .setLicenseUri(drmLicenseKey)
+                        .build()
+                )
+                createDrmSessionManager(overrideLicenseUrl = drmLicenseKey, uuid = WIDEVINE_UUID)
+            }
+            // No explicit key — SafeDrmCallback will use the URL from the manifest
+            else -> createDrmSessionManager(uuid = WIDEVINE_UUID)
         }
 
         val mediaItem = mediaItemBuilder.build()
@@ -534,38 +559,42 @@ class MediaPlayerService : MediaSessionService() {
     }
 
     /**
-     * Creates a DRM session manager for Widevine DRM.
-     * This is used to handle DRM-protected content.
+     * Creates a per-channel [DrmSessionManager] backed by [SafeDrmCallback].
+     *
+     * @param clearKeyHex  Inline ClearKey in "kid_hex:key_hex" format — callback returns
+     *                     the JSON license directly without a network request.
+     * @param overrideLicenseUrl  Widevine license URL when the manifest omits one.
+     * @param uuid         The DRM system UUID ([CLEARKEY_UUID] or [WIDEVINE_UUID]).
      */
-    private fun createDrmSessionManager(): DrmSessionManager {
-        // Create a data source factory for HTTP requests
-        val dataSourceFactory = DefaultHttpDataSource.Factory()
+    private fun createDrmSessionManager(
+        clearKeyHex: String? = null,
+        overrideLicenseUrl: String? = null,
+        uuid: UUID = WIDEVINE_UUID,
+    ): DrmSessionManager {
+        val dataSourceFactory = TrustAllHttpDataSource.Factory()
             .setAllowCrossProtocolRedirects(true)
 
-        // Create a callback for the DRM license server
-        val drmCallback = HttpMediaDrmCallback(DRM_LICENSE_URL, dataSourceFactory)
+        val drmCallback = SafeDrmCallback(
+            clearKeyHex = clearKeyHex,
+            overrideLicenseUrl = overrideLicenseUrl,
+            dataSourceFactory = dataSourceFactory,
+        )
 
-        // Create and return the DRM session manager
         return DefaultDrmSessionManager.Builder()
-            .setUuidAndExoMediaDrmProvider(
-                WIDEVINE_UUID,
-                FrameworkMediaDrm.DEFAULT_PROVIDER
-            )
+            .setUuidAndExoMediaDrmProvider(uuid, FrameworkMediaDrm.DEFAULT_PROVIDER)
             .setMultiSession(false)
             .build(drmCallback)
     }
 
     /**
-     * Checks if a media URI is DRM-protected.
-     * This is a simple check based on URI patterns.
-     * In a real app, you might have more sophisticated detection.
+     * Returns true when [key] looks like an inline ClearKey pair:
+     * two colon-separated hex strings of exactly 32 characters each (128-bit).
+     * Example: "a7c942778e874d43be92b8d0a0cd11b4:6d54358306571658ffdb952c6560688b"
      */
-    private fun isDrmProtected(uri: String): Boolean {
-        // Check for common DRM indicators in the URI
-        return uri.contains("drm") ||
-                uri.contains("encrypted") ||
-                uri.contains("protected") ||
-                uri.contains("widevine")
+    private fun isClearKeyFormat(key: String): Boolean {
+        val colon = key.indexOf(':')
+        if (colon != 32 || key.length != 65) return false
+        return key.replace(":", "").all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }
     }
 
     /**

@@ -23,6 +23,12 @@ interface ChannelAttributeDao {
     fun getAttributesForChannel(channelId: String): Flow<List<ChannelAttributeEntity>>
 
     /**
+     * Gets all attributes for a channel as a one-shot suspend call.
+     */
+    @Query("SELECT * FROM channel_attributes WHERE channelId = :channelId")
+    suspend fun getAttributesForChannelSync(channelId: String): List<ChannelAttributeEntity>
+
+    /**
      * Inserts or updates a channel attribute.
      *
      * @param attribute The attribute to insert or update

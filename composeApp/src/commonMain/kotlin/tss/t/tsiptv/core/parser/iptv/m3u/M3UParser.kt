@@ -48,6 +48,26 @@ class M3UParser : IPTVParser {
                 currentAttributes["group-title"] = groupTitle
             } else if (trimmedLine.startsWith("#PLAYLIST:")) {
                 playlistName = trimmedLine.substring("#PLAYLIST:".length).trim()
+            } else if (trimmedLine.startsWith("#KODIPROP:") && currentExtInf != null) {
+                // Parse Kodi properties used for DRM and stream configuration.
+                // Format: #KODIPROP:inputstream.adaptive.license_type=clearkey
+                //         #KODIPROP:inputstream.adaptive.license_key=kid:key
+                val kv = trimmedLine.substring("#KODIPROP:".length).trim()
+                val eqIdx = kv.indexOf('=')
+                if (eqIdx > 0) {
+                    val key = kv.substring(0, eqIdx).trim()
+                    val value = kv.substring(eqIdx + 1).trim()
+                    // Store with stripped prefix for easy lookup (e.g. "license_type", "license_key")
+                    val shortKey = key.removePrefix("inputstream.adaptive.")
+                    currentAttributes[shortKey] = value
+                }
+            } else if (trimmedLine.startsWith("#EXTVLCOPT:") && currentExtInf != null) {
+                // Store VLC options (e.g. http-user-agent) for potential future use
+                val kv = trimmedLine.substring("#EXTVLCOPT:".length).trim()
+                val eqIdx = kv.indexOf('=')
+                if (eqIdx > 0) {
+                    currentAttributes["vlcopt_${kv.substring(0, eqIdx).trim()}"] = kv.substring(eqIdx + 1).trim()
+                }
             } else if (!trimmedLine.startsWith("#") && currentExtInf != null) {
                 // This is a URL line
                 val url = trimmedLine
