@@ -1,5 +1,8 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package tss.t.tsiptv.core.parser.model
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
@@ -17,7 +20,9 @@ data class JSONPlaylist(
     val name: String = "IPTV Playlist",
     val id: String? = null,
     val url: String? = null,
+    @JsonNames("channel")
     val channels: List<JSONChannel>? = null,
+    @JsonNames("group")
     val groups: List<JSONGroup>? = null,
     val description: String? = null,
     val epgUrl: String? = null,
@@ -122,6 +127,7 @@ data class JSONChannel(
 data class JSONGroup(
     val id: String? = null,
     val name: String,
+    @JsonNames("channel")
     val channels: List<JSONChannel>? = null,
     val display: String? = null
 )
@@ -151,6 +157,7 @@ data class JSONImage(
  */
 @Serializable
 data class JSONChannelArray(
+    @JsonNames("channel")
     val channels: List<JSONChannel>
 )
 
@@ -159,5 +166,6 @@ data class JSONChannelArray(
  */
 @Serializable
 data class JSONGroupArray(
+    @JsonNames("group")
     val groups: List<JSONGroup>
 )

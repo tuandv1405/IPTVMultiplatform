@@ -1,15 +1,11 @@
 package tss.t.tsiptv.core.parser.epg.model
 
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import nl.adaptivity.xmlutil.serialization.XmlElement
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
 import tss.t.tsiptv.core.parser.epg.XMLTVEPGParser
 import tss.t.tsiptv.core.parser.model.IPTVProgram
-import kotlin.time.ExperimentalTime
 
 /**
  * XMLTV Programme
@@ -69,19 +65,7 @@ data class XMLTVProgramme(
      * Parses a date-time string in XMLTV format into a timestamp.
      * XMLTV format is typically YYYYMMDDHHMMSS +/-HHMM
      */
-    @OptIn(ExperimentalTime::class)
     private fun parseXMLTVDateTime(dateTime: String): Long? {
-        return try {
-            // Handle different timezone formats
-            LocalDateTime.Companion
-                .parse(
-                    input = dateTime,
-                    format = XMLTVEPGParser.Companion.localDateTimeFormat
-                )
-                .toInstant(TimeZone.Companion.currentSystemDefault())
-                .toEpochMilliseconds()
-        } catch (_: Exception) {
-            null
-        }
+        return XMLTVEPGParser.parseXMLTVDateTime(dateTime)
     }
 }

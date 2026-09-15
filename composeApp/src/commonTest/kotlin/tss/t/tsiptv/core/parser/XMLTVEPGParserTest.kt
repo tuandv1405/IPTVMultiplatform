@@ -2,8 +2,8 @@ package tss.t.tsiptv.core.parser
 
 import nl.adaptivity.xmlutil.serialization.XML
 import okio.FileSystem
-import okio.Path.Companion.toPath
 import okio.SYSTEM
+import tss.t.tsiptv.TestAssets
 import tss.t.tsiptv.core.parser.epg.model.XMLTVCategory
 import tss.t.tsiptv.core.parser.epg.model.XMLTVChannel
 import tss.t.tsiptv.core.parser.epg.model.XMLTVDesc
@@ -27,9 +27,7 @@ class XMLTVEPGParserTest {
     fun setup() {
         epgParser = EPGParserFactory.createParser(EPGFormat.XML)
         fileSystem = FileSystem.SYSTEM
-        content = fileSystem.read("/Users/tun/Tun/ComposeMultiPlatform/TSIPTV/composeApp/src/commonTest/kotlin/assests/epg.xml".toPath()) {
-            readUtf8()
-        }
+        content = TestAssets.read("epg.xml")
     }
 
     /**

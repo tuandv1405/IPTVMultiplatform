@@ -12,8 +12,16 @@ import tss.t.tsiptv.core.parser.model.IPTVPlaylist
  */
 class M3UParser : IPTVParser {
     override fun parse(content: String): IPTVPlaylist {
-        if (!content.trimStart().startsWith("#EXTM3U") &&
-            !content.contains("#EXTINF")
+        // Accept playlists that omit the #EXTM3U header but start straight at an entry,
+        // while still rejecting content that merely happens to mention #EXTINF somewhere.
+        val firstMeaningfulLine = content.lineSequence()
+            .map { it.trim() }
+            .firstOrNull { it.isNotEmpty() }
+            .orEmpty()
+            .dropWhile { it.code == 0xFEFF }
+
+        if (!firstMeaningfulLine.startsWith("#EXTM3U") &&
+            !firstMeaningfulLine.startsWith("#EXTINF")
         ) {
             throw IPTVParserException("Invalid M3U format: missing #EXTM3U header")
         }
