@@ -1,6 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -167,6 +168,30 @@ kotlin {
     }
 }
 
+// Upload-key credentials for the Play Console release build. Resolved from
+// composeApp/keystore.properties first, then from the environment so CI can
+// supply them without a file on disk. Both are untracked; see
+// play-store/RELEASE-CHECKLIST.md for how to create the key.
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("composeApp/keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+fun keystoreSetting(key: String, env: String): String? =
+    keystoreProperties.getProperty(key) ?: System.getenv(env)
+
+val releaseStoreFile = keystoreSetting("storeFile", "TSIPTV_STORE_FILE")
+val releaseStorePassword = keystoreSetting("storePassword", "TSIPTV_STORE_PASSWORD")
+val releaseKeyAlias = keystoreSetting("keyAlias", "TSIPTV_KEY_ALIAS")
+val releaseKeyPassword = keystoreSetting("keyPassword", "TSIPTV_KEY_PASSWORD")
+
+val hasReleaseSigning = listOf(
+    releaseStoreFile,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword
+).all { !it.isNullOrBlank() } && rootProject.file(releaseStoreFile!!).exists()
+
 android {
     namespace = "tss.t.tsiptv"
     compileSdkVersion(libs.versions.android.compileSdk.get().toInt())
@@ -183,6 +208,17 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
@@ -191,6 +227,16 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                // Leave the build unsigned rather than silently falling back to the
+                // debug key, which the Play Console rejects.
+                logger.warn(
+                    "composeApp: no upload key configured - the release build will be unsigned. " +
+                        "See play-store/RELEASE-CHECKLIST.md."
+                )
+            }
         }
     }
     compileOptions {

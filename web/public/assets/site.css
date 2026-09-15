@@ -1,0 +1,145 @@
+/* TS IPTV — shared styles for the public pages.
+   Palette mirrors composeApp/.../ui/themes/TSColors.kt so the site and app match. */
+
+:root {
+  --navy-900: #03041d;
+  --navy-800: #0c0d2c;
+  --navy-700: #161a32;
+  --stroke: #1f2937;
+  --accent: #00f5a0;
+  --accent-cyan: #00d9e9;
+  --text: #f3f4f6;
+  --text-dim: #9ca3af;
+  --max: 46rem;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--navy-900);
+  color: var(--text);
+  font: 16px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+a { color: var(--accent-cyan); }
+a:hover { color: var(--accent); }
+
+.wrap {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 2rem 1.25rem 5rem;
+}
+
+/* ---- header ------------------------------------------------------------ */
+
+header.site {
+  border-bottom: 1px solid var(--stroke);
+  background: linear-gradient(180deg, var(--navy-800), var(--navy-900));
+}
+
+header.site .wrap {
+  padding-block: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+header.site img { width: 40px; height: 40px; border-radius: 10px; }
+
+header.site .name { font-weight: 700; font-size: 1.05rem; letter-spacing: 0.02em; }
+
+header.site nav { margin-left: auto; display: flex; gap: 1rem; font-size: 0.9rem; }
+
+/* ---- language switch --------------------------------------------------- */
+
+.langbar {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0 0 2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.langbar button {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: var(--navy-800);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.langbar button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--navy-900);
+  background: var(--accent);
+  font-weight: 600;
+}
+
+/* ---- typography -------------------------------------------------------- */
+
+h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); line-height: 1.25; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.5rem 0 0.75rem; }
+h3 { font-size: 1rem; margin: 1.75rem 0 0.5rem; }
+
+.updated { color: var(--text-dim); font-size: 0.9rem; margin: 0 0 2rem; }
+
+ul, ol { padding-left: 1.25rem; }
+li { margin: 0.35rem 0; }
+
+/* ---- blocks ------------------------------------------------------------ */
+
+.card {
+  background: var(--navy-800);
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  padding: 1.25rem 1.4rem;
+  margin: 1.5rem 0;
+}
+
+.card.warn { border-color: #b45309; background: #1b1405; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  margin: 1rem 0;
+}
+
+.scroll-x { overflow-x: auto; }
+
+th, td {
+  text-align: left;
+  padding: 0.6rem 0.7rem;
+  border-bottom: 1px solid var(--stroke);
+  vertical-align: top;
+}
+
+th { color: var(--text-dim); font-weight: 600; }
+
+.btn {
+  display: inline-block;
+  padding: 0.7rem 1.4rem;
+  border-radius: 10px;
+  background: linear-gradient(120deg, var(--accent), var(--accent-cyan));
+  color: var(--navy-900);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+footer.site {
+  border-top: 1px solid var(--stroke);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+footer.site .wrap { padding-block: 1.75rem; }
+
+[hidden] { display: none !important; }

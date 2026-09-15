@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TS IPTV — Trình phát danh sách phát IPTV</title>
+<meta name="description" content="TS IPTV là trình phát danh sách phát IPTV cho Android, iOS và máy tính. Bạn tự thêm nguồn M3U, XSPF, JSON hoặc XMLTV.">
+<meta property="og:title" content="TS IPTV">
+<meta property="og:description" content="Your playlists. Every screen.">
+<meta property="og:image" content="/assets/og-image.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .hero { text-align: center; padding: 3rem 0 1rem; }
+  .hero img { width: 112px; height: 112px; border-radius: 26px; }
+  .hero h1 { margin-top: 1.25rem; }
+  .tagline { color: var(--accent-cyan); font-weight: 600; margin: 0 0 1.5rem; }
+  .features { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  .features .card { margin: 0; }
+  .features h3 { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <img src="/assets/app-icon.png" alt="">
+    <span class="name">TS IPTV</span>
+    <nav>
+      <a href="/privacy/">Quyền riêng tư</a>
+      <a href="/delete-account/">Xoá tài khoản</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <ul class="langbar">
+    <li><button type="button" data-lang="vi" aria-pressed="true">Tiếng Việt</button></li>
+    <li><button type="button" data-lang="en" aria-pressed="false">English</button></li>
+  </ul>
+
+  <!-- ==================== VIETNAMESE ==================== -->
+  <section data-lang-pane="vi">
+    <div class="hero">
+      <img src="/assets/app-icon.png" alt="Biểu tượng TS IPTV">
+      <h1>TS IPTV</h1>
+      <p class="tagline">Danh sách phát của bạn. Trên mọi màn hình.</p>
+    </div>
+
+    <p>TS IPTV là <strong>trình phát danh sách phát IPTV</strong> cho Android, iOS và máy tính. Ứng dụng đọc danh sách phát mà <em>bạn</em> cung cấp, sắp xếp kênh theo nhóm, hiển thị lịch phát sóng và phát nội dung từ nguồn bạn chọn.</p>
+
+    <div class="card warn">
+      <p style="margin:0"><strong>TS IPTV không cung cấp kênh truyền hình.</strong> Ứng dụng không đi kèm bất kỳ danh sách phát nào, không lưu trữ và không phát lại nội dung của bên thứ ba. Bạn chịu trách nhiệm về các nguồn mình thêm vào và phải có quyền sử dụng hợp pháp đối với chúng.</p>
+    </div>
+
+    <h2>Tính năng</h2>
+    <div class="features">
+      <div class="card">
+        <h3>Nhiều định dạng</h3>
+        <p>Nhập danh sách phát M3U / M3U8, XSPF, JSON và nguồn kiểu iptv-org — từ đường dẫn hoặc tệp trên máy.</p>
+      </div>
+      <div class="card">
+        <h3>Lịch phát sóng</h3>
+        <p>Đọc EPG định dạng XMLTV, hỗ trợ đầy đủ mọi múi giờ, hiển thị chương trình đang và sắp phát.</p>
+      </div>
+      <div class="card">
+        <h3>Đa nền tảng</h3>
+        <p>Cùng một mã nguồn Kotlin Multiplatform chạy trên Android, iOS, Windows, macOS và Linux.</p>
+      </div>
+      <div class="card">
+        <h3>Phát nền</h3>
+        <p>Tiếp tục phát khi tắt màn hình, kèm điều khiển media trên màn hình khoá.</p>
+      </div>
+    </div>
+
+    <h2>Hỗ trợ</h2>
+    <p>Gửi câu hỏi hoặc báo lỗi tới <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a>.</p>
+    <p><a href="/privacy/">Chính sách quyền riêng tư</a> · <a href="/terms/">Điều khoản sử dụng</a> · <a href="/delete-account/">Xoá tài khoản</a></p>
+  </section>
+
+  <!-- ==================== ENGLISH ==================== -->
+  <section data-lang-pane="en" hidden>
+    <div class="hero">
+      <img src="/assets/app-icon.png" alt="TS IPTV app icon">
+      <h1>TS IPTV</h1>
+      <p class="tagline">Your playlists. Every screen.</p>
+    </div>
+
+    <p>TS IPTV is an <strong>IPTV playlist player</strong> for Android, iOS and desktop. It reads the playlists <em>you</em> supply, organises channels into groups, shows the programme guide, and plays from the source you chose.</p>
+
+    <div class="card warn">
+      <p style="margin:0"><strong>TS IPTV does not provide television channels.</strong> The app ships with no playlists, hosts nothing, and rebroadcasts no third-party content. You are responsible for the sources you add and must be legally entitled to use them.</p>
+    </div>
+
+    <h2>Features</h2>
+    <div class="features">
+      <div class="card">
+        <h3>Many formats</h3>
+        <p>Import M3U / M3U8, XSPF, JSON and iptv-org style playlists, from a URL or a local file.</p>
+      </div>
+      <div class="card">
+        <h3>Programme guide</h3>
+        <p>Reads XMLTV EPG data with full time-zone support, showing what is on now and next.</p>
+      </div>
+      <div class="card">
+        <h3>Cross-platform</h3>
+        <p>One Kotlin Multiplatform codebase running on Android, iOS, Windows, macOS and Linux.</p>
+      </div>
+      <div class="card">
+        <h3>Background playback</h3>
+        <p>Keeps playing with the screen off, with media controls on the lock screen.</p>
+      </div>
+    </div>
+
+    <h2>Support</h2>
+    <p>Questions and bug reports: <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a>.</p>
+    <p><a href="/privacy/">Privacy Policy</a> · <a href="/terms/">Terms of Use</a> · <a href="/delete-account/">Delete account</a></p>
+  </section>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    TS IPTV · <a href="/privacy/">Quyền riêng tư / Privacy</a> · <a href="/terms/">Điều khoản / Terms</a> · <a href="/delete-account/">Xoá tài khoản / Delete account</a>
+  </div>
+</footer>
+
+<script src="/assets/lang.js"></script>
+</body>
+</html>

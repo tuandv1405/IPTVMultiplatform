@@ -16,3 +16,8 @@ captures
 composeApp/ts_iptv_key.jks
 composeApp/release
 /ts_iptv_android_key.jks
+
+# Android upload key (never commit)
+composeApp/keystore.properties
+*.jks
+*.keystore
