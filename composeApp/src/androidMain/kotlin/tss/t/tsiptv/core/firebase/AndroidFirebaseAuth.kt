@@ -5,6 +5,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -182,6 +183,12 @@ class AndroidFirebaseAuth : IFirebaseAuth {
                 "No current user"
             )
             user.delete().await()
+        } catch (e: FirebaseAuthRecentLoginRequiredException) {
+            // Firebase only deletes an account whose sign-in is recent.
+            throw FirebaseAuthException(
+                "auth/requires-recent-login",
+                "Please sign in again before deleting your account"
+            )
         } catch (e: Exception) {
             Log.e("AndroidFirebaseAuth", "Error deleting user", e)
             throw FirebaseAuthException("auth/unknown", e.message ?: "Unknown error deleting user")

@@ -101,17 +101,17 @@
 
     <!-- Settings Bottom Sheet -->
     <string name="settings_title">Settings</string>
-    <string name="settings_deactivate_account">Deactivate Account</string>
+    <string name="settings_deactivate_account">Delete Account</string>
 
     <!-- Deactivation Dialog -->
-    <string name="deactivate_dialog_title">Deactivate Account</string>
-    <string name="deactivate_dialog_message">Are you sure you want to deactivate your account?\n\n⚠️ WARNING: Your account will be permanently removed and all your data will be deleted after admin review. This action cannot be undone.\n\nProcessing time: About 1 working day</string>
+    <string name="deactivate_dialog_title">Delete Account</string>
+    <string name="deactivate_dialog_message">Are you sure you want to delete your account?\n\n⚠️ WARNING: Your account and the data stored against it are removed immediately and permanently. This cannot be undone.\n\nPlaylists saved on this device are not deleted — uninstall the app or clear its data to remove those.</string>
     <string name="btn_deactivate_cancel">Keep Account</string>
-    <string name="btn_deactivate_ok">Yes, Deactivate</string>
+    <string name="btn_deactivate_ok">Yes, Delete</string>
 
     <!-- Deactivation Success -->
-    <string name="deactivation_success_title">Request Submitted</string>
-    <string name="deactivation_success_message">Your deactivation request has been submitted. You will be notified when the admin reviews your request. Processing time is about 1 working day.</string>
+    <string name="deactivation_success_title">Account deleted</string>
+    <string name="deactivation_success_message">Your account has been deleted.</string>
     
     <!-- Deactivation Waiting Status -->
     <string name="deactivation_waiting_title">Waiting Admin Review</string>

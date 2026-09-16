@@ -101,17 +101,17 @@
 
     <!-- Settings Bottom Sheet -->
     <string name="settings_title">Einstellungen</string>
-    <string name="settings_deactivate_account">Konto deaktivieren</string>
+    <string name="settings_deactivate_account">Konto löschen</string>
 
     <!-- Deactivation Dialog -->
-    <string name="deactivate_dialog_title">Konto deaktivieren</string>
-    <string name="deactivate_dialog_message">Sind Sie sicher, dass Sie Ihr Konto deaktivieren möchten?\n\n⚠️ WARNUNG: Ihr Konto wird dauerhaft entfernt und alle Ihre Daten werden nach der Administrator-Überprüfung gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.\n\nBearbeitungszeit: Etwa 1 Arbeitstag</string>
+    <string name="deactivate_dialog_title">Konto löschen</string>
+    <string name="deactivate_dialog_message">Möchtest du dein Konto wirklich löschen?\n\n⚠️ WARNUNG: Dein Konto und die dazu gespeicherten Daten werden sofort und dauerhaft entfernt. Das lässt sich nicht rückgängig machen.\n\nAuf diesem Gerät gespeicherte Playlists werden nicht gelöscht — deinstalliere die App oder lösche ihre Daten.</string>
     <string name="btn_deactivate_cancel">Konto behalten</string>
-    <string name="btn_deactivate_ok">Ja, deaktivieren</string>
+    <string name="btn_deactivate_ok">Ja, löschen</string>
 
     <!-- Deactivation Success -->
-    <string name="deactivation_success_title">Anfrage gesendet</string>
-    <string name="deactivation_success_message">Ihre Deaktivierungsanfrage wurde gesendet. Sie werden benachrichtigt, wenn der Administrator Ihre Anfrage überprüft. Die Bearbeitungszeit beträgt etwa 1 Arbeitstag.</string>
+    <string name="deactivation_success_title">Konto gelöscht</string>
+    <string name="deactivation_success_message">Dein Konto wurde gelöscht.</string>
     
     <!-- Deactivation Waiting Status -->
     <string name="deactivation_waiting_title">Warten auf Administrator-Überprüfung</string>

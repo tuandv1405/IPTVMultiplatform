@@ -126,9 +126,9 @@ Full pass on a running device, not just a build:
       Android 13+ monochrome themed layer.
 - [x] `brand/play-icon-512.png` — Play Store icon, 512×512.
 - [x] `brand/feature-graphic-1024x500.png` — feature graphic.
-- [x] Privacy policy page — `https://tsiptv-76d8f.web.app/privacy/`
-- [x] Account deletion page — `https://tsiptv-76d8f.web.app/delete-account/`
-- [x] Terms of use page — `https://tsiptv-76d8f.web.app/terms/`
+- [x] Privacy policy page — `https://tsiptv-8bdd6.web.app/privacy/`
+- [x] Account deletion page — `https://tsiptv-8bdd6.web.app/delete-account/`
+- [x] Terms of use page — `https://tsiptv-8bdd6.web.app/terms/`
 - [x] Store listing copy, English and Vietnamese.
 - [x] Data safety answers mapped to the code.
 - [x] `desktopTest` green: 71/71.

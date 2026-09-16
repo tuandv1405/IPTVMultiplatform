@@ -16,10 +16,12 @@ import tss.t.tsiptv.core.firebase.models.FirebaseUser
 import tss.t.tsiptv.core.network.NetworkConnectivityChecker
 import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
 import tss.t.tsiptv.core.tracking.UserTrackingService
+import tss.t.tsiptv.core.firebase.exceptions.FirebaseAuthException
 import tss.t.tsiptv.feature.auth.domain.model.AuthResult
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.screens.profile.ProfileScreenActions
+import tss.t.tsiptv.utils.getUrlOpener
 
 /**
  * ViewModel for authentication operations.
@@ -33,6 +35,9 @@ class AuthViewModel(
     private val networkConnectivityChecker: NetworkConnectivityChecker = NetworkConnectivityCheckerFactory.create(),
 ) : ViewModel() {
     companion object {
+        /** Hosted page that confirms and performs account deletion. */
+        const val DELETE_ACCOUNT_URL = "https://tsiptv-8bdd6.web.app/delete-account/"
+
         /** Shared by login validation and the forgot-password dialog. */
         private val EMAIL_REGEX = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\$")
     }
@@ -672,13 +677,20 @@ class AuthViewModel(
     }
 
     /**
-     * Creates a deactivation request for the current user.
+     * Starts account deletion by opening the hosted confirmation page.
+     *
+     * Deletion deliberately does not happen here. It completes on
+     * [DELETE_ACCOUNT_URL], and only after the user opens a one-time link sent
+     * to the account's own address, which proves they control that inbox. That
+     * page is also what the Play listing points at, so there is one deletion
+     * path rather than two that can drift apart.
+     *
+     * Named for the UI event that triggers it.
      */
     fun createDeactivationRequest(reason: String? = null) {
         viewModelScope.launch {
             _uiState.update { it.copy(isDeactivationLoading = true, deactivationError = null) }
 
-            // Check network connectivity
             if (!networkConnectivityChecker.isNetworkAvailable()) {
                 _uiState.update {
                     it.copy(
@@ -689,35 +701,24 @@ class AuthViewModel(
                 return@launch
             }
 
-            val result = authRepository.createDeactivationRequest(reason)
+            // The address is not put in the URL: it would end up in browser
+            // history and in any referrer. The page asks for it instead.
+            val opened = runCatching { getUrlOpener().openUrl(DELETE_ACCOUNT_URL) }
+                .getOrDefault(false)
 
-            when (result) {
-                is AuthResult.Success -> {
-                    _uiState.update {
-                        it.copy(
-                            isDeactivationLoading = false,
-                            deactivationError = null
-                        )
+            _uiState.update {
+                it.copy(
+                    isDeactivationLoading = false,
+                    deactivationError = if (opened) {
+                        null
+                    } else {
+                        "Could not open the browser. Go to $DELETE_ACCOUNT_URL to delete your account."
                     }
-                    // Refresh the deactivation request to show the newly created one
-                    loadDeactivationRequest()
-                }
-
-                is AuthResult.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            isDeactivationLoading = false,
-                            deactivationError = result.message
-                        )
-                    }
-                }
-
-                else -> {
-                    // Handle other result types if needed
-                }
+                )
             }
         }
     }
+
 
     /**
      * Loads the current user's deactivation request.

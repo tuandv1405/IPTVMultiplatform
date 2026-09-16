@@ -89,8 +89,8 @@ Có câu hỏi, gặp lỗi, hay muốn chúng tôi hỗ trợ thêm một đị
 | Trường | Giá trị |
 | --- | --- |
 | Danh mục | Giải trí |
-| Website | `https://tsiptv-76d8f.web.app/` |
-| Chính sách quyền riêng tư | `https://tsiptv-76d8f.web.app/privacy/` |
+| Website | `https://tsiptv-8bdd6.web.app/` |
+| Chính sách quyền riêng tư | `https://tsiptv-8bdd6.web.app/privacy/` |
 
 ---
 

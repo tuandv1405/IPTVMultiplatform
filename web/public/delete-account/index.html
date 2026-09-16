@@ -8,6 +8,16 @@
 <link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="stylesheet" href="/assets/site.css">
+<style>
+  input[type=email] {
+    width: 100%; padding: 0.7rem 0.9rem; margin: 0.5rem 0 1rem;
+    border-radius: 10px; border: 1px solid var(--stroke);
+    background: var(--navy-800); color: var(--text); font: inherit;
+  }
+  .msg { margin: 0.9rem 0 0; }
+  .msg.ok { color: var(--accent); }
+  .msg.err { color: #f87171; }
+</style>
 </head>
 <body>
 
@@ -37,7 +47,7 @@
 
     <p>Bạn có hai cách để xoá tài khoản và dữ liệu liên quan. Cả hai đều dẫn tới cùng một kết quả.</p>
 
-    <h2>Cách 1 — Trong ứng dụng (nhanh nhất)</h2>
+    <h2>Cách 1 — Bắt đầu từ trong ứng dụng</h2>
     <ol>
       <li>Mở <strong>TS IPTV</strong> và đăng nhập vào tài khoản cần xoá.</li>
       <li>Vào tab <strong>Hồ sơ</strong>.</li>
@@ -45,16 +55,20 @@
       <li>Chọn <strong>Vô hiệu hóa tài khoản</strong>.</li>
       <li>Đọc cảnh báo rồi chọn <strong>Có, vô hiệu hóa</strong>.</li>
     </ol>
-    <p>Yêu cầu được ghi nhận ngay và chuyển sang trạng thái <em>chờ quản trị viên xem xét</em>. Quản trị viên xử lý trong khoảng <strong>1 ngày làm việc</strong>, sau đó tài khoản và dữ liệu gắn với tài khoản sẽ bị xoá vĩnh viễn. Nếu bạn đổi ý trước khi yêu cầu được xử lý, hãy gửi email cho chúng tôi theo địa chỉ bên dưới để huỷ.</p>
+    <p>Ứng dụng sẽ mở chính trang này trong trình duyệt. Tiếp tục bằng <strong>Cách 2</strong> bên dưới: nhập email, mở liên kết xác nhận trong hộp thư, và tài khoản bị xoá ngay tại đó.</p>
 
-    <h2>Cách 2 — Gửi email</h2>
-    <p>Gửi email từ <strong>chính địa chỉ email đã đăng ký tài khoản</strong> tới:</p>
+    <h2>Cách 2 — Tự xoá qua trang này</h2>
+    <p>Không cần cài ứng dụng. Nhập email của tài khoản, chúng tôi gửi một liên kết xác nhận tới hộp thư đó; mở liên kết là tài khoản bị xoá ngay.</p>
     <div class="card">
-      <p style="margin:0"><a class="btn" href="mailto:{{SUPPORT_EMAIL}}?subject=Y%C3%AAu%20c%E1%BA%A7u%20xo%C3%A1%20t%C3%A0i%20kho%E1%BA%A3n%20TS%20IPTV">{{SUPPORT_EMAIL}}</a></p>
-      <p style="margin:0.9rem 0 0">Tiêu đề: <em>Yêu cầu xoá tài khoản TS IPTV</em><br>
-        Nội dung: địa chỉ email của tài khoản. Không cần gửi mật khẩu — chúng tôi sẽ không bao giờ hỏi mật khẩu của bạn.</p>
+      <label for="vi-del-email">Email của tài khoản</label>
+      <input type="email" id="vi-del-email" autocomplete="email" inputmode="email" placeholder="ban@example.com">
+      <button type="button" class="btn" data-action="send-link">Gửi liên kết xác nhận</button>
+      <p class="msg" id="vi-del-msg"></p>
     </div>
-    <p>Chúng tôi xác nhận trong vòng <strong>7 ngày làm việc</strong> và hoàn tất việc xoá chậm nhất <strong>30 ngày</strong> kể từ khi xác minh được bạn là chủ tài khoản.</p>
+    <p>Liên kết chỉ dùng được một lần và hết hạn sau khoảng một giờ. Nếu không thấy thư, hãy kiểm tra hộp thư rác.</p>
+
+    <h2>Cách 3 — Gửi email cho chúng tôi</h2>
+    <p>Nếu hai cách trên không dùng được, gửi email từ <strong>chính địa chỉ đã đăng ký tài khoản</strong> tới <a href="mailto:chintk111999@gmail.com?subject=Y%C3%AAu%20c%E1%BA%A7u%20xo%C3%A1%20t%C3%A0i%20kho%E1%BA%A3n%20TS%20IPTV">chintk111999@gmail.com</a>. Chúng tôi xác nhận trong vòng 7 ngày làm việc và hoàn tất xoá chậm nhất 30 ngày kể từ khi xác minh được bạn là chủ tài khoản.</p>
 
     <h2>Dữ liệu sẽ bị xoá</h2>
     <ul>
@@ -81,7 +95,7 @@
     </div>
 
     <h2>Câu hỏi</h2>
-    <p>Liên hệ <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a>. Xem thêm <a href="/privacy/">Chính sách quyền riêng tư</a>.</p>
+    <p>Liên hệ <a href="mailto:chintk111999@gmail.com">chintk111999@gmail.com</a>. Xem thêm <a href="/privacy/">Chính sách quyền riêng tư</a>.</p>
   </section>
 
   <!-- ==================== ENGLISH ==================== -->
@@ -92,7 +106,7 @@
 
     <p>There are two ways to delete your account and the data attached to it. Both reach the same outcome.</p>
 
-    <h2>Option 1 — In the app (fastest)</h2>
+    <h2>Option 1 — Start from inside the app</h2>
     <ol>
       <li>Open <strong>TS IPTV</strong> and sign in to the account you want removed.</li>
       <li>Go to the <strong>Profile</strong> tab.</li>
@@ -100,16 +114,20 @@
       <li>Choose <strong>Deactivate Account</strong>.</li>
       <li>Read the warning, then choose <strong>Yes, Deactivate</strong>.</li>
     </ol>
-    <p>The request is recorded immediately and moves to <em>awaiting admin review</em>. An administrator processes it within about <strong>1 business day</strong>, after which the account and the data attached to it are permanently deleted. If you change your mind before it is processed, email us at the address below to cancel.</p>
+    <p>The app opens this page in your browser. Carry on with <strong>Option 2</strong> below: enter your email, open the confirmation link in your inbox, and the account is deleted there and then.</p>
 
-    <h2>Option 2 — By email</h2>
-    <p>Email us <strong>from the address the account is registered to</strong>:</p>
+    <h2>Option 2 — Delete it from this page</h2>
+    <p>No app needed. Enter the account's email address and we send a confirmation link to that inbox; opening the link deletes the account there and then.</p>
     <div class="card">
-      <p style="margin:0"><a class="btn" href="mailto:{{SUPPORT_EMAIL}}?subject=TS%20IPTV%20account%20deletion%20request">{{SUPPORT_EMAIL}}</a></p>
-      <p style="margin:0.9rem 0 0">Subject: <em>TS IPTV account deletion request</em><br>
-        Body: the email address of the account. Do not send your password — we will never ask for it.</p>
+      <label for="en-del-email">Account email</label>
+      <input type="email" id="en-del-email" autocomplete="email" inputmode="email" placeholder="you@example.com">
+      <button type="button" class="btn" data-action="send-link">Send confirmation link</button>
+      <p class="msg" id="en-del-msg"></p>
     </div>
-    <p>We acknowledge within <strong>7 business days</strong> and complete deletion no later than <strong>30 days</strong> after we have verified that you own the account.</p>
+    <p>The link works once and expires after about an hour. If it does not arrive, check your spam folder.</p>
+
+    <h2>Option 3 — Email us</h2>
+    <p>If neither option works, email us <strong>from the address the account is registered to</strong> at <a href="mailto:chintk111999@gmail.com?subject=TS%20IPTV%20account%20deletion%20request">chintk111999@gmail.com</a>. We acknowledge within 7 business days and complete deletion no later than 30 days after verifying you own the account.</p>
 
     <h2>What gets deleted</h2>
     <ul>
@@ -136,7 +154,7 @@
     </div>
 
     <h2>Questions</h2>
-    <p>Contact <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a>. See also our <a href="/privacy/">Privacy Policy</a>.</p>
+    <p>Contact <a href="mailto:chintk111999@gmail.com">chintk111999@gmail.com</a>. See also our <a href="/privacy/">Privacy Policy</a>.</p>
   </section>
 
 </main>
@@ -148,5 +166,59 @@
 </footer>
 
 <script src="/assets/lang.js"></script>
+<script type="module">
+import {
+  auth, sendSignInLinkToEmail, CONFIRM_URL, rememberEmail, describeError,
+} from "/assets/firebase.js";
+
+const COPY = {
+  vi: {
+    sending: "Đang gửi…",
+    sent: (e) => `Đã gửi liên kết xác nhận tới ${e}. Mở thư và bấm vào liên kết để hoàn tất việc xoá.`,
+    required: "Vui lòng nhập địa chỉ email.",
+  },
+  en: {
+    sending: "Sending…",
+    sent: (e) => `A confirmation link is on its way to ${e}. Open the email and follow the link to finish.`,
+    required: "Please enter an email address.",
+  },
+};
+
+document.querySelectorAll('[data-action="send-link"]').forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const lang = btn.closest("[data-lang-pane]").getAttribute("data-lang-pane");
+    const copy = COPY[lang];
+    const input = document.getElementById(`${lang}-del-email`);
+    const msg = document.getElementById(`${lang}-del-msg`);
+    const email = input.value.trim();
+
+    if (!email) {
+      msg.className = "msg err";
+      msg.textContent = copy.required;
+      return;
+    }
+
+    btn.setAttribute("disabled", "disabled");
+    msg.className = "msg";
+    msg.textContent = copy.sending;
+
+    try {
+      await sendSignInLinkToEmail(auth, email, {
+        url: CONFIRM_URL,
+        handleCodeInApp: true,
+      });
+      rememberEmail(email);
+      msg.className = "msg ok";
+      // Worded so the page never reveals whether the address has an account.
+      msg.textContent = copy.sent(email);
+    } catch (error) {
+      msg.className = "msg err";
+      msg.textContent = describeError(error);
+    } finally {
+      btn.removeAttribute("disabled");
+    }
+  });
+});
+</script>
 </body>
 </html>

@@ -14,7 +14,7 @@ the same commit.**
 | --- | --- |
 | Does your app collect or share any of the required user data types? | **Yes** |
 | Is all of the user data collected by your app encrypted in transit? | **Yes** — all Firebase SDK traffic is HTTPS. *(See the caveat on cleartext traffic at the bottom.)* |
-| Do you provide a way for users to request that their data be deleted? | **Yes** — `https://tsiptv-76d8f.web.app/delete-account/` |
+| Do you provide a way for users to request that their data be deleted? | **Yes** — `https://tsiptv-8bdd6.web.app/delete-account/` |
 
 ---
 

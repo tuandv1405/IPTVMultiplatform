@@ -289,27 +289,29 @@ class IosFirebaseAuthImplementation : IFirebaseAuth {
     }
 
     override suspend fun deleteUser() {
-        // In a real implementation, this would be:
-        /*
+        val currentUser = FIRAuth.auth().currentUser() ?: throw FirebaseAuthException(
+            "auth/no-current-user",
+            "No current user"
+        )
         return suspendCancellableCoroutine { continuation ->
-            bridge.deleteUser { error ->
+            currentUser.deleteWithCompletion { error ->
                 if (error != null) {
-                    val nsError = error as NSError
+                    // FIRAuthErrorCodeRequiresRecentLogin == 17014; surfaced with the
+                    // same code the Android layer uses so the shared repository can
+                    // treat both platforms alike.
+                    val code = if (error.code == 17014L) {
+                        "auth/requires-recent-login"
+                    } else {
+                        error.domain ?: "auth/unknown"
+                    }
                     continuation.resumeWithException(
-                        FirebaseAuthException(
-                            nsError.domain,
-                            nsError.localizedDescription ?: "Unknown error"
-                        )
+                        FirebaseAuthException(code, error.localizedDescription)
                     )
                 } else {
                     continuation.resume(Unit)
                 }
             }
         }
-        */
-
-        // For now, we'll use the InMemoryFirebaseAuth implementation
-        InMemoryFirebaseAuth().deleteUser()
     }
 
     /**

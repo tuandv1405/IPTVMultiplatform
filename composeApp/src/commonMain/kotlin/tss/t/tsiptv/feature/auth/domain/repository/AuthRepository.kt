@@ -147,4 +147,5 @@ interface AuthRepository {
      * @return [AuthResult.PasswordResetEmailSent] on success, or [AuthResult.Error]
      */
     suspend fun sendPasswordResetEmail(email: String): AuthResult
+
 }

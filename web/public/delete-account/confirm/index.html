@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Xác nhận xoá tài khoản — TS IPTV</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .state { display: none; }
+  .state.on { display: block; }
+  .spinner {
+    width: 2rem; height: 2rem; margin: 2rem auto;
+    border: 3px solid var(--stroke); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .danger {
+    display: inline-block; padding: 0.8rem 1.6rem; border: 0; cursor: pointer;
+    border-radius: 10px; background: #dc2626; color: #fff;
+    font: inherit; font-weight: 700;
+  }
+  .danger[disabled] { opacity: 0.5; cursor: default; }
+  .account { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--accent-cyan); }
+  input[type=email] {
+    width: 100%; padding: 0.7rem 0.9rem; margin: 0.5rem 0 1rem;
+    border-radius: 10px; border: 1px solid var(--stroke);
+    background: var(--navy-800); color: var(--text); font: inherit;
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <img src="/assets/app-icon.png" alt="">
+    <span class="name">TS IPTV</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <ul class="langbar">
+    <li><button type="button" data-lang="vi" aria-pressed="true">Tiếng Việt</button></li>
+    <li><button type="button" data-lang="en" aria-pressed="false">English</button></li>
+  </ul>
+
+  <!-- ==================== VIETNAMESE ==================== -->
+  <section data-lang-pane="vi">
+    <h1>Xác nhận xoá tài khoản</h1>
+
+    <div class="state" id="vi-loading">
+      <div class="spinner"></div>
+      <p style="text-align:center">Đang kiểm tra liên kết…</p>
+    </div>
+
+    <div class="state" id="vi-askEmail">
+      <p>Vì lý do bảo mật, hãy nhập lại địa chỉ email mà bạn đã yêu cầu xoá tài khoản.</p>
+      <label for="vi-email">Email</label>
+      <input type="email" id="vi-email" autocomplete="email" inputmode="email" placeholder="ban@example.com">
+      <button type="button" class="btn" data-action="submit-email">Tiếp tục</button>
+      <p class="err" id="vi-askEmailErr" style="color:#f87171"></p>
+    </div>
+
+    <div class="state" id="vi-confirm">
+      <div class="card warn">
+        <p style="margin:0">Bạn sắp xoá vĩnh viễn tài khoản <span class="account" data-account></span>. Hành động này <strong>không thể hoàn tác</strong>.</p>
+      </div>
+      <p>Sẽ bị xoá: tài khoản đăng nhập, tên hiển thị, ảnh đại diện, liên kết đăng nhập Google/Apple, và mã định danh gắn với dữ liệu thống kê.</p>
+      <p>Danh sách phát lưu trên thiết bị của bạn <strong>không</strong> bị xoá từ đây — hãy gỡ ứng dụng hoặc xoá dữ liệu ứng dụng.</p>
+      <p><button type="button" class="danger" data-action="delete">Xoá vĩnh viễn tài khoản</button></p>
+      <p class="err" id="vi-confirmErr" style="color:#f87171"></p>
+    </div>
+
+    <div class="state" id="vi-done">
+      <div class="card">
+        <h2 style="margin-top:0">Đã xoá xong</h2>
+        <p style="margin:0">Tài khoản <span class="account" data-account></span> và dữ liệu gắn với nó đã bị xoá vĩnh viễn.</p>
+      </div>
+      <p>Báo cáo sự cố đã ẩn danh (tối đa 90 ngày) và dữ liệu thống kê tổng hợp (tối đa 14 tháng) không gắn với danh tính của bạn nên vẫn được giữ, theo <a href="/privacy/">chính sách quyền riêng tư</a>.</p>
+      <p><a class="btn" href="/">Về trang chủ</a></p>
+    </div>
+
+    <div class="state" id="vi-failed">
+      <div class="card warn">
+        <p style="margin:0" id="vi-failedMsg"></p>
+      </div>
+      <p><a class="btn" href="/delete-account/">Yêu cầu liên kết mới</a></p>
+    </div>
+  </section>
+
+  <!-- ==================== ENGLISH ==================== -->
+  <section data-lang-pane="en" hidden>
+    <h1>Confirm account deletion</h1>
+
+    <div class="state" id="en-loading">
+      <div class="spinner"></div>
+      <p style="text-align:center">Checking your link…</p>
+    </div>
+
+    <div class="state" id="en-askEmail">
+      <p>For security, re-enter the email address you asked to delete.</p>
+      <label for="en-email">Email</label>
+      <input type="email" id="en-email" autocomplete="email" inputmode="email" placeholder="you@example.com">
+      <button type="button" class="btn" data-action="submit-email">Continue</button>
+      <p class="err" id="en-askEmailErr" style="color:#f87171"></p>
+    </div>
+
+    <div class="state" id="en-confirm">
+      <div class="card warn">
+        <p style="margin:0">You are about to permanently delete the account <span class="account" data-account></span>. This <strong>cannot be undone</strong>.</p>
+      </div>
+      <p>Deleted: your sign-in account, display name, profile photo, Google/Apple sign-in links, and the identifier attached to analytics data.</p>
+      <p>Playlists stored on your device are <strong>not</strong> removed from here — uninstall the app or clear its data for those.</p>
+      <p><button type="button" class="danger" data-action="delete">Permanently delete account</button></p>
+      <p class="err" id="en-confirmErr" style="color:#f87171"></p>
+    </div>
+
+    <div class="state" id="en-done">
+      <div class="card">
+        <h2 style="margin-top:0">Deleted</h2>
+        <p style="margin:0">The account <span class="account" data-account></span> and the data held against it have been permanently deleted.</p>
+      </div>
+      <p>De-identified crash reports (up to 90 days) and aggregated analytics (up to 14 months) are not linked to your identity and are retained, as described in the <a href="/privacy/">privacy policy</a>.</p>
+      <p><a class="btn" href="/">Back to home</a></p>
+    </div>
+
+    <div class="state" id="en-failed">
+      <div class="card warn">
+        <p style="margin:0" id="en-failedMsg"></p>
+      </div>
+      <p><a class="btn" href="/delete-account/">Request a new link</a></p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    TS IPTV · <a href="/privacy/">Quyền riêng tư / Privacy</a> · <a href="/delete-account/">Xoá tài khoản / Delete account</a>
+  </div>
+</footer>
+
+<script src="/assets/lang.js"></script>
+<script type="module">
+import {
+  auth, isSignInWithEmailLink, signInWithEmailLink, deleteUser,
+  recallEmail, forgetEmail, describeError,
+} from "/assets/firebase.js";
+
+/** Both language panes mirror each other, so every state change applies to both. */
+function show(name) {
+  document.querySelectorAll(".state").forEach((el) => el.classList.remove("on"));
+  document.querySelectorAll(`#vi-${name}, #en-${name}`).forEach((el) => el.classList.add("on"));
+}
+
+function setAccount(email) {
+  document.querySelectorAll("[data-account]").forEach((el) => { el.textContent = email; });
+}
+
+function setText(name, text) {
+  document.querySelectorAll(`#vi-${name}, #en-${name}`).forEach((el) => { el.textContent = text; });
+}
+
+function fail(message) {
+  setText("failedMsg", message);
+  show("failed");
+}
+
+show("loading");
+
+if (!isSignInWithEmailLink(auth, location.href)) {
+  fail(
+    "This page only works from the link we emailed you. " +
+    "Trang này chỉ hoạt động khi mở từ liên kết được gửi qua email."
+  );
+} else {
+  const remembered = recallEmail();
+  if (remembered) {
+    verify(remembered);
+  } else {
+    // Firebase requires the address to be re-entered when the link is opened on a
+    // different device from the one that requested it — otherwise anyone reading
+    // the link could act on it.
+    show("askEmail");
+  }
+}
+
+document.querySelectorAll('[data-action="submit-email"]').forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const pane = btn.closest("[data-lang-pane]").getAttribute("data-lang-pane");
+    const value = document.getElementById(`${pane}-email`).value.trim();
+    if (!value) {
+      setText("askEmailErr", "Email is required / Vui lòng nhập email.");
+      return;
+    }
+    setText("askEmailErr", "");
+    verify(value);
+  });
+});
+
+async function verify(email) {
+  show("loading");
+  try {
+    const credential = await signInWithEmailLink(auth, email, location.href);
+    forgetEmail();
+    setAccount(credential.user.email || email);
+    show("confirm");
+  } catch (error) {
+    fail(describeError(error));
+  }
+}
+
+document.querySelectorAll('[data-action="delete"]').forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      fail("Your session expired. Request a new link. / Phiên đã hết hạn, hãy yêu cầu liên kết mới.");
+      return;
+    }
+    document.querySelectorAll('[data-action="delete"]').forEach((b) => { b.disabled = true; });
+    const email = user.email;
+    try {
+      await deleteUser(user);
+      setAccount(email);
+      show("done");
+    } catch (error) {
+      setText("confirmErr", describeError(error));
+      document.querySelectorAll('[data-action="delete"]').forEach((b) => { b.disabled = false; });
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -93,8 +93,8 @@ add a "What's new in this version" style paragraph later.*
 | App category | Entertainment |
 | Tags | Video players & editors, Entertainment |
 | Contact email | *(the address set via `web/set-support-email.py`)* |
-| Website | `https://tsiptv-76d8f.web.app/` |
-| Privacy policy | `https://tsiptv-76d8f.web.app/privacy/?lang=en` |
+| Website | `https://tsiptv-8bdd6.web.app/` |
+| Privacy policy | `https://tsiptv-8bdd6.web.app/privacy/?lang=en` |
 | Contains ads | **Yes** — see `data-safety.md` |
 | In-app purchases | No |
 

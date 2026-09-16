@@ -101,17 +101,17 @@
 
     <!-- Settings Bottom Sheet -->
     <string name="settings_title">Configuración</string>
-    <string name="settings_deactivate_account">Desactivar cuenta</string>
+    <string name="settings_deactivate_account">Eliminar cuenta</string>
 
     <!-- Deactivation Dialog -->
-    <string name="deactivate_dialog_title">Desactivar cuenta</string>
-    <string name="deactivate_dialog_message">¿Está seguro de que desea desactivar su cuenta?\n\n⚠️ ADVERTENCIA: Su cuenta será eliminada permanentemente y todos sus datos serán borrados después de la revisión del administrador. Esta acción no se puede deshacer.\n\nTiempo de procesamiento: Aproximadamente 1 día laborable</string>
+    <string name="deactivate_dialog_title">Eliminar cuenta</string>
+    <string name="deactivate_dialog_message">¿Seguro que quieres eliminar tu cuenta?\n\n⚠️ ADVERTENCIA: Tu cuenta y los datos asociados se eliminan de inmediato y de forma permanente. No se puede deshacer.\n\nLas listas guardadas en este dispositivo no se borran — desinstala la app o borra sus datos.</string>
     <string name="btn_deactivate_cancel">Mantener cuenta</string>
-    <string name="btn_deactivate_ok">Sí, desactivar</string>
+    <string name="btn_deactivate_ok">Sí, eliminar</string>
 
     <!-- Deactivation Success -->
-    <string name="deactivation_success_title">Solicitud enviada</string>
-    <string name="deactivation_success_message">Su solicitud de desactivación ha sido enviada. Será notificado cuando el administrador revise su solicitud. El tiempo de procesamiento es de aproximadamente 1 día laborable.</string>
+    <string name="deactivation_success_title">Cuenta eliminada</string>
+    <string name="deactivation_success_message">Tu cuenta ha sido eliminada.</string>
     
     <!-- Deactivation Waiting Status -->
     <string name="deactivation_waiting_title">Esperando revisión del administrador</string>

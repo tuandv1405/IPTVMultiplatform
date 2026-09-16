@@ -101,17 +101,17 @@
 
     <!-- Settings Bottom Sheet -->
     <string name="settings_title">设置</string>
-    <string name="settings_deactivate_account">停用账户</string>
+    <string name="settings_deactivate_account">删除账户</string>
 
     <!-- Deactivation Dialog -->
-    <string name="deactivate_dialog_title">停用账户</string>
-    <string name="deactivate_dialog_message">确定要停用您的账户吗？\n\n⚠️ 警告：您的账户将被永久删除，所有数据将在管理员审核后删除。此操作无法撤消。\n\n处理时间：约1个工作日</string>
+    <string name="deactivate_dialog_title">删除账户</string>
+    <string name="deactivate_dialog_message">确定要删除您的账户吗？\n\n⚠️ 警告：您的账户及其关联数据将被立即永久删除，且无法恢复。\n\n本设备上保存的播放列表不会被删除——请卸载应用或清除应用数据。</string>
     <string name="btn_deactivate_cancel">保留账户</string>
-    <string name="btn_deactivate_ok">是，停用</string>
+    <string name="btn_deactivate_ok">是，删除</string>
 
     <!-- Deactivation Success -->
-    <string name="deactivation_success_title">申请已提交</string>
-    <string name="deactivation_success_message">您的停用申请已提交。管理员审核您的申请后，您将收到通知。处理时间约为1个工作日。</string>
+    <string name="deactivation_success_title">账户已删除</string>
+    <string name="deactivation_success_message">您的账户已删除。</string>
     
     <!-- Deactivation Waiting Status -->
     <string name="deactivation_waiting_title">等待管理员审核</string>

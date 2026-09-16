@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// TS IPTV — Cloud Firestore security rules.
+//
+// The app stores almost nothing server side: playlists, channels, guide data and
+// watch history all live in a local Room database on the device. The only
+// documents here belong to a single signed-in user, so the rules are narrow by
+// design: a user reaches their own subtree and nothing else.
+//
+// Deploy with:  firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // users/{uid} and everything beneath it is private to that user.
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Anything not matched above is denied. Without this, a future collection
+    // added in the console would start out world-readable.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

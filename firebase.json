@@ -1,19 +1,36 @@
 {
   "hosting": {
     "public": "web/public",
-    "site": "tsiptv-76d8f",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "site": "tsiptv-8bdd6",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "cleanUrls": true,
     "trailingSlash": true,
     "headers": [
       {
         "source": "**/*.@(png|svg|ico|webp)",
-        "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }]
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
       },
       {
         "source": "**/*.html",
-        "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600"
+          }
+        ]
       }
     ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }

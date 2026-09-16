@@ -101,17 +101,17 @@
 
     <!-- Settings Bottom Sheet -->
     <string name="settings_title">Paramètres</string>
-    <string name="settings_deactivate_account">Désactiver le compte</string>
+    <string name="settings_deactivate_account">Supprimer le compte</string>
 
     <!-- Deactivation Dialog -->
-    <string name="deactivate_dialog_title">Désactiver le compte</string>
-    <string name="deactivate_dialog_message">Êtes-vous sûr de vouloir désactiver votre compte?\n\n⚠️ AVERTISSEMENT: Votre compte sera définitivement supprimé et toutes vos données seront supprimées après examen par l\'administrateur. Cette action ne peut pas être annulée.\n\nTemps de traitement: Environ 1 jour ouvrable</string>
+    <string name="deactivate_dialog_title">Supprimer le compte</string>
+    <string name="deactivate_dialog_message">Voulez-vous vraiment supprimer votre compte ?\n\n⚠️ AVERTISSEMENT : votre compte et les données associées sont supprimés immédiatement et définitivement. Cette action est irréversible.\n\nLes playlists enregistrées sur cet appareil ne sont pas supprimées — désinstallez l'application ou effacez ses données.</string>
     <string name="btn_deactivate_cancel">Garder le compte</string>
-    <string name="btn_deactivate_ok">Oui, désactiver</string>
+    <string name="btn_deactivate_ok">Oui, supprimer</string>
 
     <!-- Deactivation Success -->
-    <string name="deactivation_success_title">Demande soumise</string>
-    <string name="deactivation_success_message">Votre demande de désactivation a été soumise. Vous serez notifié lorsque l\'administrateur examinera votre demande. Le temps de traitement est d\'environ 1 jour ouvrable.</string>
+    <string name="deactivation_success_title">Compte supprimé</string>
+    <string name="deactivation_success_message">Votre compte a été supprimé.</string>
     
     <!-- Deactivation Waiting Status -->
     <string name="deactivation_waiting_title">En attente d\'examen administrateur</string>

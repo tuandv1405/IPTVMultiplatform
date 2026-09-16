@@ -101,17 +101,17 @@
 
     <!-- Settings Bottom Sheet -->
     <string name="settings_title">設定</string>
-    <string name="settings_deactivate_account">アカウントを無効化</string>
+    <string name="settings_deactivate_account">アカウント削除</string>
 
     <!-- Deactivation Dialog -->
-    <string name="deactivate_dialog_title">アカウントを無効化</string>
-    <string name="deactivate_dialog_message">アカウントを無効化してもよろしいですか？\n\n⚠️ 警告：アカウントは永続的に削除され、管理者による審査後にすべてのデータが削除されます。この操作は元に戻せません。\n\n処理時間：約1営業日</string>
-    <string name="btn_deactivate_cancel">アカウントを保持</string>
-    <string name="btn_deactivate_ok">はい、無効化</string>
+    <string name="deactivate_dialog_title">アカウント削除</string>
+    <string name="deactivate_dialog_message">アカウントを削除してもよろしいですか？\n\n⚠️ 警告: アカウントと関連データは直ちに完全に削除されます。元に戻すことはできません。\n\nこの端末に保存されたプレイリストは削除されません。アプリをアンインストールするか、アプリのデータを消去してください。</string>
+    <string name="btn_deactivate_cancel">アカウントを残す</string>
+    <string name="btn_deactivate_ok">はい、削除</string>
 
     <!-- Deactivation Success -->
-    <string name="deactivation_success_title">リクエスト送信済み</string>
-    <string name="deactivation_success_message">無効化リクエストが送信されました。管理者がリクエストを審査すると通知されます。処理時間は約1営業日です。</string>
+    <string name="deactivation_success_title">削除しました</string>
+    <string name="deactivation_success_message">アカウントを削除しました。</string>
     
     <!-- Deactivation Waiting Status -->
     <string name="deactivation_waiting_title">管理者審査待ち</string>

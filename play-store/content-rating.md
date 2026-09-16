@@ -44,7 +44,7 @@ Be ready to answer it in the **review notes** field. Suggested wording:
 > a video file. The app does not host, index, aggregate or recommend any stream,
 > and it has no server-side catalogue. Content responsibility rests with the
 > user, as stated in the store listing, on the landing page, and in the Terms of
-> Use at https://tsiptv-76d8f.web.app/terms/.
+> Use at https://tsiptv-8bdd6.web.app/terms/.
 
 ---
 
