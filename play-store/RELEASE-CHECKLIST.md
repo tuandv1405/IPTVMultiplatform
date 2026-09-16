@@ -6,6 +6,42 @@ Status as of 2026-09-16. Tick items as they are done.
 
 ## 🔴 Blockers — the app should not ship until these are resolved
 
+### 0. Firebase Authentication is not initialised on tsiptv-8bdd6
+
+Probing Identity Toolkit with the project's own API key returns
+`CONFIGURATION_NOT_FOUND`, which means Authentication has never been turned on
+for this project. **Nothing that needs an account works right now** — not
+sign-up, not login, not password reset, not account deletion. The app builds and
+runs, it just cannot authenticate anybody.
+
+This cannot be done from the CLI; enabling Auth for the first time provisions the
+Identity Platform config and is a console action. Three steps:
+
+1. [Authentication](https://console.firebase.google.com/project/tsiptv-8bdd6/authentication)
+   → **Get started**.
+2. **Sign-in method** → **Email/Password** → enable it, and in the same panel
+   enable **Email link (passwordless sign-in)**. The second switch is what the
+   deletion flow uses; without it the confirm page reports that email-link
+   sign-in is not enabled.
+3. **Settings → Authorized domains** → confirm `tsiptv-8bdd6.web.app` is listed.
+   Firebase normally adds the Hosting domain automatically.
+
+Verify without sending yourself anything:
+
+```bash
+curl -s -X POST "https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=AIzaSyAink_cGRkOZe6PcxJ7y5DCL7JIwrebCH8"   -H "Content-Type: application/json"   -d '{"requestType":"EMAIL_SIGNIN","email":"probe@example.com","continueUrl":"https://tsiptv-8bdd6.web.app/delete-account/confirm/","canHandleCodeInApp":true}'
+```
+
+`{}` means it works. `CONFIGURATION_NOT_FOUND` means step 1 is still missing,
+`OPERATION_NOT_ALLOWED` means step 2 is.
+
+### 0b. iOS still points at the retired Firebase project
+
+`iosApp/iosApp/GoogleService-Info.plist` carries `tsiptv-76d8f`. Download the
+replacement from the new project's console and overwrite it, or the iOS build
+talks to a project the app no longer uses.
+
+
 ### ~~1. The Settings tab is a developer sample screen~~ — WRONG, and now fixed
 
 **This entry was mistaken.** Testing on an emulator showed the gear icon on Home
@@ -114,6 +150,15 @@ Full pass on a running device, not just a build:
   title shows through it). Same class of bug in both.
 - **A test account was created** during this pass, `qa.emulator@tsiptv.test`.
   Delete it in Firebase Console → Authentication when you no longer need it.
+
+## ✅ Deployed (2026-09-17)
+
+- [x] `firebase deploy --only hosting` → **https://tsiptv-8bdd6.web.app**
+      All five pages return 200: `/`, `/privacy/`, `/delete-account/`,
+      `/delete-account/confirm/`, `/terms/`.
+- [x] `firebase deploy --only firestore:rules` — this also created the project's
+      Firestore database, which did not exist yet.
+- [x] Support email set to chintk111999@gmail.com across all pages.
 
 ## ✅ Done
 

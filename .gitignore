@@ -24,3 +24,6 @@ composeApp/keystore.properties
 
 # Generated demo assets for store screenshots (large; rebuild with make-demo-assets.py)
 play-store/screenshots/demo-server/
+
+# Firebase CLI deploy cache
+.firebase/
