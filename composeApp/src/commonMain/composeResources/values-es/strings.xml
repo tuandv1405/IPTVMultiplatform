@@ -138,4 +138,14 @@
     <string name="is_changing_password">Cambiando...</string>
     <string name="change_password_title">Cambiar contraseña</string>
     <string name="feature_coming_soon">¡Esta función estará disponible pronto en una futura actualización. ¡Manténgase atento!</string>
+
+    <!-- Forgot password -->
+    <string name="forgot_password_title">Restablecer contraseña</string>
+    <string name="forgot_password_message">Introduce el correo electrónico de tu cuenta y te enviaremos un enlace para crear una nueva contraseña.</string>
+    <string name="forgot_password_send">Enviar enlace</string>
+    <string name="forgot_password_sending">Enviando...</string>
+    <string name="forgot_password_sent_title">Revisa tu correo</string>
+    <string name="forgot_password_sent_message">Si existe una cuenta para %1$s, el enlace para restablecer la contraseña está en camino. Revisa también la carpeta de spam.</string>
+    <string name="forgot_password_email_required">El correo electrónico es obligatorio</string>
+    <string name="forgot_password_email_invalid">Introduce un correo electrónico válido</string>
 </resources>

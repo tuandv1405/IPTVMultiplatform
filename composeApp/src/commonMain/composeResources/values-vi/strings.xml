@@ -137,4 +137,14 @@
     <string name="is_changing_password">Đang thay đổi...</string>
     <string name="change_password_title">Đổi mật khẩu</string>
     <string name="feature_coming_soon">Tính năng này sẽ có sẵn sớm trong bản cập nhật tương lai. Hãy theo dõi!</string>
+
+    <!-- Forgot password -->
+    <string name="forgot_password_title">Đặt lại mật khẩu</string>
+    <string name="forgot_password_message">Nhập địa chỉ email của tài khoản, chúng tôi sẽ gửi cho bạn liên kết để đặt mật khẩu mới.</string>
+    <string name="forgot_password_send">Gửi liên kết</string>
+    <string name="forgot_password_sending">Đang gửi...</string>
+    <string name="forgot_password_sent_title">Kiểm tra email của bạn</string>
+    <string name="forgot_password_sent_message">Nếu có tài khoản dùng địa chỉ %1$s, liên kết đặt lại mật khẩu đang được gửi tới. Nhớ kiểm tra cả hộp thư rác.</string>
+    <string name="forgot_password_email_required">Vui lòng nhập email</string>
+    <string name="forgot_password_email_invalid">Địa chỉ email không hợp lệ</string>
 </resources>

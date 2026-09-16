@@ -138,4 +138,14 @@
     <string name="is_changing_password">Changement en cours...</string>
     <string name="change_password_title">Changer le mot de passe</string>
     <string name="feature_coming_soon">Cette fonctionnalité sera disponible prochainement dans une future mise à jour. Restez à l'écoute!</string>
+
+    <!-- Forgot password -->
+    <string name="forgot_password_title">Réinitialiser le mot de passe</string>
+    <string name="forgot_password_message">Saisissez l'adresse e-mail de votre compte et nous vous enverrons un lien pour définir un nouveau mot de passe.</string>
+    <string name="forgot_password_send">Envoyer le lien</string>
+    <string name="forgot_password_sending">Envoi...</string>
+    <string name="forgot_password_sent_title">Consultez vos e-mails</string>
+    <string name="forgot_password_sent_message">Si un compte existe pour %1$s, un lien de réinitialisation est en route. Pensez à vérifier vos spams.</string>
+    <string name="forgot_password_email_required">L'adresse e-mail est requise</string>
+    <string name="forgot_password_email_invalid">Veuillez saisir une adresse e-mail valide</string>
 </resources>

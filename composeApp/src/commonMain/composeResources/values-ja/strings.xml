@@ -138,4 +138,14 @@
     <string name="is_changing_password">変更中...</string>
     <string name="change_password_title">パスワード変更</string>
     <string name="feature_coming_soon">この機能は今後のアップデートで利用可能になります。お楽しみに！</string>
+
+    <!-- Forgot password -->
+    <string name="forgot_password_title">パスワードの再設定</string>
+    <string name="forgot_password_message">アカウントのメールアドレスを入力してください。新しいパスワードを設定するためのリンクをお送りします。</string>
+    <string name="forgot_password_send">リンクを送信</string>
+    <string name="forgot_password_sending">送信中...</string>
+    <string name="forgot_password_sent_title">メールをご確認ください</string>
+    <string name="forgot_password_sent_message">%1$s のアカウントが存在する場合、パスワード再設定用のリンクを送信しました。迷惑メールフォルダもご確認ください。</string>
+    <string name="forgot_password_email_required">メールアドレスを入力してください</string>
+    <string name="forgot_password_email_invalid">有効なメールアドレスを入力してください</string>
 </resources>

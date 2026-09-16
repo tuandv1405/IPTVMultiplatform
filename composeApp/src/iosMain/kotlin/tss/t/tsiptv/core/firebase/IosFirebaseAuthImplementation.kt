@@ -189,16 +189,13 @@ class IosFirebaseAuthImplementation : IFirebaseAuth {
     }
 
     override suspend fun sendPasswordResetEmail(email: String) {
-        // In a real implementation, this would be:
-        /*
         return suspendCancellableCoroutine { continuation ->
-            bridge.sendPasswordResetEmail(email = email) { error ->
+            FIRAuth.auth().sendPasswordResetWithEmail(email = email) { error ->
                 if (error != null) {
-                    val nsError = error as NSError
                     continuation.resumeWithException(
                         FirebaseAuthException(
-                            nsError.domain,
-                            nsError.localizedDescription ?: "Unknown error"
+                            error.domain ?: "auth/unknown",
+                            error.localizedDescription
                         )
                     )
                 } else {
@@ -206,10 +203,6 @@ class IosFirebaseAuthImplementation : IFirebaseAuth {
                 }
             }
         }
-        */
-
-        // For now, we'll use the InMemoryFirebaseAuth implementation
-        InMemoryFirebaseAuth().sendPasswordResetEmail(email)
     }
 
     override suspend fun updateEmail(email: String) {

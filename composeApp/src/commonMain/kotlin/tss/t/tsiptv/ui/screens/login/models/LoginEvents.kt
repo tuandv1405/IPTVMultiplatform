@@ -58,4 +58,10 @@ sealed interface LoginEvents {
     
     object OnRequestNotificationPermission : LoginEvents
     object OnDismissNotificationDialog : LoginEvents
+
+    // Forgot password events
+    object OnForgotPasswordPressed : LoginEvents
+    data class OnForgotPasswordEmailChanged(val email: String) : LoginEvents
+    object OnSendPasswordResetEmail : LoginEvents
+    object OnDismissForgotPasswordDialog : LoginEvents
 }

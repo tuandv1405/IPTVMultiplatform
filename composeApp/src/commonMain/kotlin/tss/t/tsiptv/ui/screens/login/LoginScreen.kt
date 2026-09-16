@@ -252,6 +252,24 @@ fun LoginScreenPhone(
                     ),
                     textStyle = TextStyle(color = TSColors.TextPrimary)
                 )
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    text = stringResource(Res.string.forgot_password),
+                    color = TSColors.AccentCyan,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                keyboardController?.hide()
+                                onEvent(LoginEvents.OnForgotPasswordPressed)
+                            }
+                        )
+                )
             }
 
             GradientButton1(
@@ -315,5 +333,17 @@ fun LoginScreenPhone(
         ) {
             LanguageIcon(navController)
         }
+    }
+
+    if (authState.showForgotPasswordDialog) {
+        ForgotPasswordDialog(
+            email = authState.forgotPasswordEmail,
+            isLoading = authState.isForgotPasswordLoading,
+            isEmailSent = authState.isForgotPasswordEmailSent,
+            error = authState.forgotPasswordError,
+            onEmailChange = { onEvent(LoginEvents.OnForgotPasswordEmailChanged(it)) },
+            onSend = { onEvent(LoginEvents.OnSendPasswordResetEmail) },
+            onDismiss = { onEvent(LoginEvents.OnDismissForgotPasswordDialog) }
+        )
     }
 }

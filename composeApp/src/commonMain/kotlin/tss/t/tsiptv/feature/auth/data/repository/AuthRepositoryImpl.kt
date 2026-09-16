@@ -46,6 +46,17 @@ class AuthRepositoryImpl(
         private const val KEY_REFRESH_TOKEN = "auth_refresh_token"
         private const val KEY_TOKEN_EXPIRES_IN = "auth_token_expires_in"
         private const val KEY_TOKEN_CREATED_AT = "auth_token_created_at"
+
+        /**
+         * Reset-email failures that reveal whether an address is registered.
+         * These are reported to the caller as if the email had been sent.
+         */
+        private val EMAIL_ENUMERATION_CODES = setOf(
+            "auth/user-not-found",
+            "auth/invalid-email",
+            "ERROR_USER_NOT_FOUND",
+            "ERROR_INVALID_EMAIL"
+        )
     }
 
     private val _authState = MutableStateFlow(AuthState())
@@ -442,6 +453,30 @@ class AuthRepositoryImpl(
                 FirebaseAuthException(
                     "auth/change-password-failed",
                     "Failed to change password: ${e.message}"
+                )
+            )
+        }
+    }
+
+    override suspend fun sendPasswordResetEmail(email: String): AuthResult {
+        return try {
+            firebaseAuth.sendPasswordResetEmail(email)
+            AuthResult.PasswordResetEmailSent
+        } catch (e: FirebaseAuthException) {
+            // "This address has no account" is an answer we must not give: it lets
+            // anyone test an address for membership. Report the same outcome as a
+            // successful send and let the (absent) email be the only signal.
+            if (e.code in EMAIL_ENUMERATION_CODES) {
+                AuthResult.PasswordResetEmailSent
+            } else {
+                AuthResult.Error(e.message ?: "Failed to send password reset email", e)
+            }
+        } catch (e: Exception) {
+            AuthResult.Error(
+                "Failed to send password reset email: ${e.message}",
+                FirebaseAuthException(
+                    "auth/password-reset-failed",
+                    "Failed to send password reset email: ${e.message}"
                 )
             )
         }

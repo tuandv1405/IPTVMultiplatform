@@ -138,4 +138,14 @@
     <string name="is_changing_password">Changing...</string>
     <string name="change_password_title">Change Password</string>
     <string name="feature_coming_soon">This feature is coming soon in a future update. Stay tuned!</string>
+
+    <!-- Forgot password -->
+    <string name="forgot_password_title">Reset your password</string>
+    <string name="forgot_password_message">Enter the email address for your account and we will send you a link to set a new password.</string>
+    <string name="forgot_password_send">Send reset link</string>
+    <string name="forgot_password_sending">Sending...</string>
+    <string name="forgot_password_sent_title">Check your email</string>
+    <string name="forgot_password_sent_message">If an account exists for %1$s, a password reset link is on its way. Remember to look in your spam folder.</string>
+    <string name="forgot_password_email_required">Email is required</string>
+    <string name="forgot_password_email_invalid">Please enter a valid email address</string>
 </resources>

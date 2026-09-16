@@ -37,4 +37,12 @@ sealed class AuthResult {
      * The user was signed out.
      */
     object SignedOut : AuthResult()
+
+    /**
+     * A password reset email was requested successfully.
+     *
+     * Distinct from [Success] because no user is signed in during a password
+     * reset, so there is no [FirebaseUser] to report.
+     */
+    object PasswordResetEmailSent : AuthResult()
 }

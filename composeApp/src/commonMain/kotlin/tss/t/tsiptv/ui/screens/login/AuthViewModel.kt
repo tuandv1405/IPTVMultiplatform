@@ -32,6 +32,11 @@ class AuthViewModel(
     private val userTrackingService: UserTrackingService,
     private val networkConnectivityChecker: NetworkConnectivityChecker = NetworkConnectivityCheckerFactory.create(),
 ) : ViewModel() {
+    companion object {
+        /** Shared by login validation and the forgot-password dialog. */
+        private val EMAIL_REGEX = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\$")
+    }
+
     private val viewModelScope = CoroutineScope(Dispatchers.Main)
 
     // UI state
@@ -271,16 +276,133 @@ class AuthViewModel(
                 }
             }
 
+            // Forgot password events
+            LoginEvents.OnForgotPasswordPressed -> {
+                _uiState.update {
+                    it.copy(
+                        showForgotPasswordDialog = true,
+                        // Carry over whatever was typed on the login form.
+                        forgotPasswordEmail = email,
+                        forgotPasswordError = null,
+                        isForgotPasswordEmailSent = false,
+                        isForgotPasswordLoading = false
+                    )
+                }
+            }
+
+            is LoginEvents.OnForgotPasswordEmailChanged -> {
+                _uiState.update {
+                    it.copy(
+                        forgotPasswordEmail = event.email,
+                        forgotPasswordError = null
+                    )
+                }
+            }
+
+            LoginEvents.OnSendPasswordResetEmail -> {
+                sendPasswordResetEmail()
+            }
+
+            LoginEvents.OnDismissForgotPasswordDialog -> {
+                _uiState.update {
+                    it.copy(
+                        showForgotPasswordDialog = false,
+                        forgotPasswordEmail = "",
+                        forgotPasswordError = null,
+                        isForgotPasswordLoading = false,
+                        isForgotPasswordEmailSent = false
+                    )
+                }
+            }
+
             else -> {
                 // Handle other events if needed
             }
         }
     }
 
+    /**
+     * Sends a password reset email to the address in the forgot-password dialog.
+     *
+     * An unknown address is reported as success by the repository so that the
+     * dialog cannot be used to discover which addresses have an account.
+     */
+    private fun sendPasswordResetEmail() {
+        val targetEmail = _uiState.value.forgotPasswordEmail.trim()
+
+        if (targetEmail.isEmpty()) {
+            _uiState.update {
+                it.copy(forgotPasswordError = "Email is required")
+            }
+            return
+        }
+
+        if (!EMAIL_REGEX.matches(targetEmail)) {
+            _uiState.update {
+                it.copy(forgotPasswordError = "Please enter a valid email address")
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(isForgotPasswordLoading = true, forgotPasswordError = null)
+            }
+
+            if (!networkConnectivityChecker.isNetworkAvailable()) {
+                _uiState.update {
+                    it.copy(
+                        isForgotPasswordLoading = false,
+                        forgotPasswordError = "No internet connection. Please check your network settings and try again."
+                    )
+                }
+                return@launch
+            }
+
+            try {
+                when (val result = authRepository.sendPasswordResetEmail(targetEmail)) {
+                    is AuthResult.PasswordResetEmailSent -> {
+                        _uiState.update {
+                            it.copy(
+                                isForgotPasswordLoading = false,
+                                isForgotPasswordEmailSent = true,
+                                forgotPasswordError = null
+                            )
+                        }
+                    }
+
+                    is AuthResult.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                isForgotPasswordLoading = false,
+                                forgotPasswordError = result.message
+                            )
+                        }
+                    }
+
+                    else -> {
+                        _uiState.update {
+                            it.copy(
+                                isForgotPasswordLoading = false,
+                                forgotPasswordError = "Failed to send password reset email"
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isForgotPasswordLoading = false,
+                        forgotPasswordError = e.message ?: "Failed to send password reset email"
+                    )
+                }
+            }
+        }
+    }
+
     private fun validateEmail(email: String) {
         if (this.email == email) return
-        val emailRegex = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\$")
-        val isValid = email.isNotEmpty() && emailRegex.matches(email)
+        val isValid = email.isNotEmpty() && EMAIL_REGEX.matches(email)
         _uiState.update {
             it.copy(
                 isEmailValid = isValid,
@@ -753,6 +875,10 @@ class AuthViewModel(
                             )
                         }
                     }
+
+                    AuthResult.PasswordResetEmailSent -> {
+                        // Not reachable for this operation.
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.update {
@@ -862,6 +988,10 @@ class AuthViewModel(
                             )
                         }
                     }
+
+                    AuthResult.PasswordResetEmailSent -> {
+                        // Not reachable for this operation.
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.update {
@@ -900,6 +1030,11 @@ class AuthViewModel(
  * @property deactivationRequest The current user's deactivation request, or null if none exists
  * @property isDeactivationLoading Whether a deactivation operation is in progress
  * @property deactivationError The error message from the last deactivation operation, or null if no error
+ * @property showForgotPasswordDialog Whether the forgot-password dialog is open
+ * @property forgotPasswordEmail The address typed into the forgot-password dialog
+ * @property isForgotPasswordLoading Whether a password reset email is being sent
+ * @property forgotPasswordError The error from the last reset attempt, or null if no error
+ * @property isForgotPasswordEmailSent Whether the reset request completed, switching the dialog to its confirmation state
  */
 data class AuthUiState(
     val user: FirebaseUser? = null,
@@ -932,4 +1067,11 @@ data class AuthUiState(
 
     val showNotificationDialog: Boolean = false,
     val notificationPermissionGranted: Boolean = false,
+
+    // Forgot password dialog
+    val showForgotPasswordDialog: Boolean = false,
+    val forgotPasswordEmail: String = "",
+    val isForgotPasswordLoading: Boolean = false,
+    val forgotPasswordError: String? = null,
+    val isForgotPasswordEmailSent: Boolean = false,
 )

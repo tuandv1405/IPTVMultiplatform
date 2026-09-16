@@ -136,4 +136,15 @@ interface AuthRepository {
      * @return The result of the password change operation
      */
     suspend fun changePassword(currentPassword: String, newPassword: String): AuthResult
+
+    /**
+     * Sends a password reset email to the given address.
+     *
+     * To avoid leaking which addresses have an account, an unknown address is
+     * reported as [AuthResult.PasswordResetEmailSent] rather than an error.
+     *
+     * @param email The email address to send the reset link to
+     * @return [AuthResult.PasswordResetEmailSent] on success, or [AuthResult.Error]
+     */
+    suspend fun sendPasswordResetEmail(email: String): AuthResult
 }
