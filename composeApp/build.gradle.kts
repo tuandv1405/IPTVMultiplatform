@@ -168,6 +168,23 @@ kotlin {
     }
 }
 
+// The app's version, in one place. Everything else is derived, so the number
+// Play orders releases by and the name a person reads can never disagree.
+//
+// versionPatch has four digits, giving 10,000 builds inside a minor version;
+// the encoding leaves room for major versions up to 2100 before Play's
+// versionCode ceiling of 2,100,000,000 is a concern.
+val versionMajor = 1
+val versionMinor = 0
+val versionPatch = 1
+
+// 1.0.1 -> 1_000_001. Strictly increasing as long as the three parts only go up,
+// and already above the 26301 this replaced.
+val appVersionCode = versionMajor * 1_000_000 + versionMinor * 10_000 + versionPatch
+
+// e.g. tsptv.1.0.0001
+val appVersionName = "tsptv.$versionMajor.$versionMinor.${versionPatch.toString().padStart(4, '0')}"
+
 // Upload-key credentials for the Play Console release build. Resolved from
 // composeApp/keystore.properties first, then from the environment so CI can
 // supply them without a file on disk. Both are untracked; see
@@ -200,8 +217,8 @@ android {
         applicationId = "tss.t.tsiptv"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 25401
-        versionName = "ts.iptv.v$versionCode"
+        versionCode = appVersionCode
+        versionName = appVersionName
     }
     packaging {
         resources {
@@ -263,10 +280,54 @@ compose.desktop {
     application {
         mainClass = "tss.t.tsiptv.MainKt"
 
+        buildTypes.release.proguard {
+            // Android libraries leak onto the desktop runtime classpath, so
+            // ProGuard sees ~11,700 unresolvable android.* references and refuses
+            // to run. Shrinking is off until that dependency leak is fixed; the
+            // installer is larger than it needs to be but correct.
+            isEnabled.set(false)
+        }
+
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "tss.t.tsiptv"
-            packageVersion = "1.0.0"
+
+            // What a person sees in the installer, the Start Menu and Add/Remove
+            // Programs. The old value was the Java package name.
+            packageName = "TS IPTV"
+            description = "Play your own M3U, XSPF and JSON IPTV playlists, with EPG."
+            vendor = "TSS"
+            copyright = "© 2026 TSS"
+
+            // MSI accepts MAJOR.MINOR.BUILD only, so the four-digit patch of
+            // appVersionName cannot be used verbatim here.
+            packageVersion = "$versionMajor.$versionMinor.$versionPatch"
+
+            // jlink strips the bundled runtime to what it can prove is used, and
+            // it cannot see through reflection. Without these the packaged app
+            // dies on startup with a bare "Failed to launch JVM" dialog.
+            // Regenerate with: ./gradlew :composeApp:suggestRuntimeModules
+            modules(
+                "java.compiler",
+                "java.instrument",
+                "java.management",
+                "java.naming",
+                "java.prefs",
+                "java.sql",
+                "jdk.unsupported",
+            )
+
+            windows {
+                iconFile.set(rootProject.file("brand/app-icon.ico"))
+                menu = true
+                shortcut = true
+                // A stable upgrade code lets a new MSI replace an installed copy
+                // instead of sitting beside it. Never change this for this app.
+                upgradeUuid = "8f3c1d6e-2b4a-4d5f-9a71-6c0e5b2d84f7"
+            }
+
+            linux {
+                iconFile.set(rootProject.file("brand/app-icon-512.png"))
+            }
         }
     }
 }

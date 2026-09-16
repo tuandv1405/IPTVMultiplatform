@@ -9,6 +9,8 @@ import tss.t.tsiptv.core.firebase.DesktopFirebaseInitializer
 import tss.t.tsiptv.core.firebase.IFirebaseAuth
 import tss.t.tsiptv.core.firebase.IFirebaseFirestore
 import tss.t.tsiptv.core.firebase.IFirebaseStorage
+import tss.t.tsiptv.core.storage.DesktopSettingsFactory
+import tss.t.tsiptv.core.storage.SettingsFactory
 import tss.t.tsiptv.player.DesktopMediaPlayer
 import tss.t.tsiptv.player.MediaPlayer
 
@@ -16,6 +18,10 @@ import tss.t.tsiptv.player.MediaPlayer
  * Desktop-specific module for dependencies
  */
 val desktopModule = module {
+    // Settings factory. Android and iOS register theirs; desktop never did, so
+    // resolving KeyValueStorage failed and took the whole graph down.
+    single<SettingsFactory> { DesktopSettingsFactory() }
+
     // Desktop-specific dependencies
     single<MediaPlayer> {
         DesktopMediaPlayer(

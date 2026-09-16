@@ -1,58 +1,119 @@
 package tss.t.tsiptv.core.firebase
 
+import android.app.Application
+import com.google.firebase.FirebasePlatform
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.FirebaseOptions
+import dev.gitlive.firebase.initialize
 import tss.t.tsiptv.core.firebase.auth.InMemoryFirebaseAuth
 import tss.t.tsiptv.core.firebase.firestore.InMemoryFirebaseFirestore
 import tss.t.tsiptv.core.firebase.storage.InMemoryFirebaseStorage
+import java.io.File
+import java.util.Properties
 
 /**
- * Desktop (macOS) Firebase initializer.
- * 
- * This class provides a way to access Firebase services from Kotlin code for desktop (macOS) applications.
- * For desktop applications, Firebase integration is more complex and may require different approaches:
- * 
- * 1. Using Firebase Admin SDK (server-side)
- * 2. Using Firebase REST APIs
- * 3. Using Firebase Web SDK through JavaFX WebView
- * 
- * This implementation provides in-memory implementations for simplicity, but in a real app,
- * you would implement one of the approaches above.
+ * Brings Firebase up on the JVM desktop targets.
+ *
+ * This used to print a line and return. Nothing was initialised, so the first
+ * Koin lookup of `Firebase.firestore` threw "Default FirebaseApp is not
+ * initialized in this process" and the app died before a window could open —
+ * the desktop build had never started successfully.
+ *
+ * `dev.gitlive:firebase-java-sdk` reimplements the parts of the Firebase Android
+ * SDK the gitlive wrappers need, but it cannot discover configuration the way
+ * `google-services.json` is discovered on Android, and it has no place to keep
+ * state. Both have to be supplied here.
  */
 class DesktopFirebaseInitializer {
     companion object {
+        // Mirrors composeApp/google-services.json. Kept as constants because the
+        // Google Services Gradle plugin does not run for the JVM target, so there
+        // is no generated resource to read on desktop.
+        private const val PROJECT_ID = "tsiptv-8bdd6"
+        private const val APPLICATION_ID = "1:234600934735:android:c8d65b7ef4741dacd4a93a"
+        private const val API_KEY = "AIzaSyAink_cGRkOZe6PcxJ7y5DCL7JIwrebCH8"
+        private const val STORAGE_BUCKET = "tsiptv-8bdd6.firebasestorage.app"
+
+        @Volatile
+        private var initialized = false
+
         /**
-         * Initializes Firebase for desktop (macOS).
-         * In a real app, this would initialize the Firebase SDK or set up the necessary clients.
+         * Safe to call more than once; only the first call does anything.
          */
+        @Synchronized
         fun initialize() {
-            // In a real app, this would initialize Firebase
-            println("Initializing Firebase for desktop (macOS)")
+            if (initialized) return
+
+            FirebasePlatform.initializeFirebasePlatform(FilePersistedPlatform())
+
+            // firebase-java-sdk ships a minimal android.app.Application stub for
+            // exactly this: the shared gitlive API still asks for a Context.
+            Firebase.initialize(
+                context = Application(),
+                options = FirebaseOptions(
+                    applicationId = APPLICATION_ID,
+                    apiKey = API_KEY,
+                    projectId = PROJECT_ID,
+                    storageBucket = STORAGE_BUCKET,
+                )
+            )
+
+            initialized = true
         }
-        
-        /**
-         * Provides an in-memory implementation of IFirebaseAuth.
-         * In a real app, this would return a desktop-specific implementation.
-         */
-        fun provideFirebaseAuth(): IFirebaseAuth {
-            // For now, return an in-memory implementation
-            return InMemoryFirebaseAuth()
+
+        fun provideFirebaseAuth(): IFirebaseAuth = InMemoryFirebaseAuth()
+
+        fun provideFirebaseFirestore(): IFirebaseFirestore = InMemoryFirebaseFirestore()
+
+        fun provideFirebaseStorage(): IFirebaseStorage = InMemoryFirebaseStorage()
+    }
+}
+
+/**
+ * Key-value store the Firebase JVM SDK writes its state through — most
+ * importantly the signed-in user's refresh token.
+ *
+ * Backed by a properties file under the user's home directory rather than a map,
+ * so a desktop user stays signed in across restarts, the way they do on Android
+ * and iOS.
+ */
+private class FilePersistedPlatform : FirebasePlatform() {
+
+    private val storeDir = File(System.getProperty("user.home"), ".tsiptv").apply { mkdirs() }
+    private val storeFile = File(storeDir, "firebase.properties")
+
+    private val values: Properties = Properties().apply {
+        if (storeFile.exists()) {
+            runCatching { storeFile.inputStream().use { load(it) } }
+                .onFailure { println("[Firebase] could not read $storeFile: ${it.message}") }
         }
-        
-        /**
-         * Provides an in-memory implementation of IFirebaseFirestore.
-         * In a real app, this would return a desktop-specific implementation.
-         */
-        fun provideFirebaseFirestore(): IFirebaseFirestore {
-            // For now, return an in-memory implementation
-            return InMemoryFirebaseFirestore()
-        }
-        
-        /**
-         * Provides an in-memory implementation of IFirebaseStorage.
-         * In a real app, this would return a desktop-specific implementation.
-         */
-        fun provideFirebaseStorage(): IFirebaseStorage {
-            // For now, return an in-memory implementation
-            return InMemoryFirebaseStorage()
+    }
+
+    override fun store(key: String, value: String) {
+        values.setProperty(key, value)
+        flush()
+    }
+
+    override fun retrieve(key: String): String? = values.getProperty(key)
+
+    override fun clear(key: String) {
+        values.remove(key)
+        flush()
+    }
+
+    override fun log(msg: String) {
+        println("[Firebase] $msg")
+    }
+
+    override fun getDatabasePath(name: String): File = File(storeDir, name).apply { mkdirs() }
+
+    private fun flush() {
+        runCatching {
+            storeFile.outputStream().use { values.store(it, "TS IPTV Firebase state") }
+        }.onFailure {
+            // Losing persistence costs the user a re-login; it must not take the
+            // app down with it.
+            println("[Firebase] could not write $storeFile: ${it.message}")
         }
     }
 }

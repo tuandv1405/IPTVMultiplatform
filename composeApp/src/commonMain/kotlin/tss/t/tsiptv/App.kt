@@ -134,19 +134,22 @@ fun App() {
                             )
                         }
 
-                        if (isDesktop) {
-                            LoginScreenDesktop2()
-                        } else {
-                            LoginScreenPhone(
-                                navController,
-                                authState
-                            ) { event ->
-                                if (event is LoginEvents.OnSignUpPressed) {
-                                    navController.navigate(NavRoutes.SignUp)
-                                } else {
-                                    authViewModel.onEvent(event)
-                                }
+                        // Both screens emit the same events; only the layout differs.
+                        val onLoginEvent: (LoginEvents) -> Unit = { event ->
+                            if (event is LoginEvents.OnSignUpPressed) {
+                                navController.navigate(NavRoutes.SignUp)
+                            } else {
+                                authViewModel.onEvent(event)
                             }
+                        }
+
+                        if (isDesktop) {
+                            // Called without a handler until now, so every tap on
+                            // the desktop login screen went to the default no-op
+                            // and signing in was impossible.
+                            LoginScreenDesktop2(onEvent = onLoginEvent)
+                        } else {
+                            LoginScreenPhone(navController, authState, onLoginEvent)
                         }
                     }
 
