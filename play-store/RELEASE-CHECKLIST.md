@@ -96,8 +96,10 @@ Full pass on a running device, not just a build:
 
 ### Known issues found, not yet fixed
 
-- **Fullscreen control collision.** In landscape, the volume slider overlaps the
-  programme title and the elapsed-time label behind the LIVE badge.
+- **Fullscreen control collision.** In landscape, the elapsed-time label sits
+  behind the LIVE badge and is partly hidden. (An earlier note here also claimed
+  the volume slider covered the programme title; that text turned out to be
+  burned into the broadcast, not drawn by the app.)
 - **Affiliate offers sit above the content** on Home, History and the player,
   pushing channels below the fold. Policy-wise fine once declared; worth a
   product decision before the first screenshot-driven impression.
@@ -142,8 +144,8 @@ Full pass on a running device, not just a build:
 | App icon | 512×512 PNG, 32-bit | ✅ `brand/play-icon-512.png` |
 | Feature graphic | 1024×500 PNG/JPG, no alpha | ✅ `brand/feature-graphic-1024x500.png` |
 | Phone screenshots | 2–8, min 1080px on the short side, 16:9 or 9:16 | ✅ `play-store/screenshots/phone/` (5) |
-| 7" tablet screenshots | optional, up to 8 | ✅ `play-store/screenshots/tablet-7in/` (3) |
-| 10" tablet screenshots | optional, up to 8 | ✅ `play-store/screenshots/tablet-10in/` (3) |
+| 7" tablet screenshots | optional, up to 8 | ✅ `play-store/screenshots/tablet-7in/` (2) |
+| 10" tablet screenshots | optional, up to 8 | ✅ `play-store/screenshots/tablet-10in/` (2) |
 | Promo video | optional YouTube URL | ❌ |
 
 Captured from a running emulator against a **generated demo playlist**, not a
@@ -151,8 +153,10 @@ real one: invented channel names, original logos and video frames stamped
 "SAMPLE CONTENT — NOT A BROADCAST", all produced by
 `play-store/screenshots/make-demo-assets.py`. Screenshots taken against a real
 playlist would have published third-party broadcast frames, station logos and
-channel marks — the fastest route to an IP complaint on an IPTV listing. See
-`play-store/screenshots/README.md` to rebuild them.
+channel marks — the fastest route to an IP complaint on an IPTV listing.
+
+No affiliate offer appears in any image either: every shot is a screen or scroll
+position where none is rendered. See `play-store/screenshots/README.md`.
 
 ## Console sections to complete
 
