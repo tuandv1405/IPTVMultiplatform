@@ -133,17 +133,6 @@ fun HomeBottomNavigationNavHost(
             }
         }
 
-        composable(route = NavRoutes.HomeScreens.SETTINGS) {
-            PermissionExample(
-                permissionChecker = remember {
-                    PermissionCheckerFactory.create()
-                },
-                permission = remember {
-                    Permission.CAMERA
-                }
-            )
-        }
-
         composable(route = NavRoutes.HomeScreens.HISTORY) {
             val mediaItem by playerViewModel.mediaItemState.collectAsStateWithLifecycle()
 

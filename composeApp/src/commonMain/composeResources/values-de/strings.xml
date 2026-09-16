@@ -148,4 +148,8 @@
     <string name="forgot_password_sent_message">Falls ein Konto für %1$s besteht, ist ein Link zum Zurücksetzen unterwegs. Sieh auch im Spam-Ordner nach.</string>
     <string name="forgot_password_email_required">E-Mail-Adresse erforderlich</string>
     <string name="forgot_password_email_invalid">Bitte gib eine gültige E-Mail-Adresse ein</string>
+
+    <!-- Programs empty state -->
+    <string name="empty_programs_title">Kein Programmführer</string>
+    <string name="empty_programs_message">Diese Playlist enthält keine EPG-Daten, daher gibt es hier nichts anzuzeigen. Playlists mit url-tvg oder einem XMLTV-Guide füllen diesen Bildschirm automatisch.</string>
 </resources>

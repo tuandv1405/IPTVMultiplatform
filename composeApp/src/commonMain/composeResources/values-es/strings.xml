@@ -148,4 +148,8 @@
     <string name="forgot_password_sent_message">Si existe una cuenta para %1$s, el enlace para restablecer la contraseña está en camino. Revisa también la carpeta de spam.</string>
     <string name="forgot_password_email_required">El correo electrónico es obligatorio</string>
     <string name="forgot_password_email_invalid">Introduce un correo electrónico válido</string>
+
+    <!-- Programs empty state -->
+    <string name="empty_programs_title">Sin guía de programación</string>
+    <string name="empty_programs_message">Esta lista no incluye datos EPG, así que no hay nada que mostrar aquí. Las listas con url-tvg o una guía XMLTV llenarán esta pantalla automáticamente.</string>
 </resources>

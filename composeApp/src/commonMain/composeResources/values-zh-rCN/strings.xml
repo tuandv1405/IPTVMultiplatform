@@ -148,4 +148,8 @@
     <string name="forgot_password_sent_message">如果 %1$s 存在对应账户，重置密码的链接即将送达。请同时查看垃圾邮件文件夹。</string>
     <string name="forgot_password_email_required">请输入电子邮件地址</string>
     <string name="forgot_password_email_invalid">请输入有效的电子邮件地址</string>
+
+    <!-- Programs empty state -->
+    <string name="empty_programs_title">暂无节目单</string>
+    <string name="empty_programs_message">此播放列表不含 EPG 数据，因此没有可显示的节目。包含 url-tvg 或 XMLTV 指南的播放列表会自动填充此页面。</string>
 </resources>

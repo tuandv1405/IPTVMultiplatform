@@ -148,4 +148,8 @@
     <string name="forgot_password_sent_message">Si un compte existe pour %1$s, un lien de réinitialisation est en route. Pensez à vérifier vos spams.</string>
     <string name="forgot_password_email_required">L'adresse e-mail est requise</string>
     <string name="forgot_password_email_invalid">Veuillez saisir une adresse e-mail valide</string>
+
+    <!-- Programs empty state -->
+    <string name="empty_programs_title">Aucun guide des programmes</string>
+    <string name="empty_programs_message">Cette playlist ne contient pas de données EPG, il n'y a donc rien à afficher ici. Les playlists avec url-tvg ou un guide XMLTV remplissent cet écran automatiquement.</string>
 </resources>

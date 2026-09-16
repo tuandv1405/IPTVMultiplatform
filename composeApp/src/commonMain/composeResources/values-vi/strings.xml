@@ -147,4 +147,8 @@
     <string name="forgot_password_sent_message">Nếu có tài khoản dùng địa chỉ %1$s, liên kết đặt lại mật khẩu đang được gửi tới. Nhớ kiểm tra cả hộp thư rác.</string>
     <string name="forgot_password_email_required">Vui lòng nhập email</string>
     <string name="forgot_password_email_invalid">Địa chỉ email không hợp lệ</string>
+
+    <!-- Programs empty state -->
+    <string name="empty_programs_title">Chưa có lịch phát sóng</string>
+    <string name="empty_programs_message">Danh sách phát này không kèm dữ liệu EPG nên chưa có gì để hiển thị. Những danh sách phát có url-tvg hoặc lịch XMLTV sẽ tự động hiện ở đây.</string>
 </resources>

@@ -28,6 +28,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
@@ -38,6 +44,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.accept
 import tsiptv.composeapp.generated.resources.cancel
+import tsiptv.composeapp.generated.resources.empty_programs_message
+import tsiptv.composeapp.generated.resources.empty_programs_title
 import tsiptv.composeapp.generated.resources.home_nav_programs
 import tsiptv.composeapp.generated.resources.popup_refresh_program_description
 import tsiptv.composeapp.generated.resources.popup_refresh_program_title
@@ -129,6 +137,34 @@ fun ChannelXProgramListScreen(
                         HorizontalDividersGradient()
                     }
                 }
+                if (!uiState.isLoading && uiState.programList.isEmpty()) {
+                    // Without this the screen renders as a blank page: the list is
+                    // empty whenever the active playlist carries no EPG source.
+                    item("EmptyPrograms") {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 32.dp, vertical = 64.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.empty_programs_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = TSColors.TextPrimary,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(Res.string.empty_programs_message),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TSColors.TextSecondary,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
                 items(uiState.programList.size) {
                     val item = uiState.programList[it]
                     ChannelInProgramItem(item) {

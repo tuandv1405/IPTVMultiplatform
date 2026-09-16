@@ -148,4 +148,8 @@
     <string name="forgot_password_sent_message">%1$s のアカウントが存在する場合、パスワード再設定用のリンクを送信しました。迷惑メールフォルダもご確認ください。</string>
     <string name="forgot_password_email_required">メールアドレスを入力してください</string>
     <string name="forgot_password_email_invalid">有効なメールアドレスを入力してください</string>
+
+    <!-- Programs empty state -->
+    <string name="empty_programs_title">番組表がありません</string>
+    <string name="empty_programs_message">このプレイリストにはEPGデータが含まれていないため、表示できる番組がありません。url-tvg または XMLTV ガイドを含むプレイリストなら自動的に表示されます。</string>
 </resources>

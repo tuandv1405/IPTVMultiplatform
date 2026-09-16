@@ -6,35 +6,25 @@ Status as of 2026-09-16. Tick items as they are done.
 
 ## 🔴 Blockers — the app should not ship until these are resolved
 
-### 1. The Settings tab is a developer sample screen
+### ~~1. The Settings tab is a developer sample screen~~ — WRONG, and now fixed
 
-`ui/screens/home/HomeBottomNavigationNavHost.kt:136` routes
-`NavRoutes.HomeScreens.SETTINGS` to `PermissionExample(...)` with
-`Permission.CAMERA`. A user who taps **Settings** gets a camera-permission demo,
-not settings.
+**This entry was mistaken.** Testing on an emulator showed the gear icon on Home
+opens a real bottom sheet (Select Playlist / Import Playlist / Refresh Channels /
+Change Language), and the bottom navigation has no Settings tab at all
+(`defNavItems` = Home, History, Programs, Profile).
 
-This also explains blocker 2. Replace the route with the real settings screen
-(`ui/screens/settings/LanguageSettingsScreen.kt` already exists and is a
-reasonable starting point).
+`NavRoutes.HomeScreens.SETTINGS` was registered as a destination but nothing
+navigated to it, so `PermissionExample` was unreachable dead code. The
+destination has been deleted.
 
-### 2. `CAMERA` permission is declared but the app has no camera feature
+### ~~2. `CAMERA` permission is declared but the app has no camera feature~~ — fixed
 
-`AndroidManifest.xml` declares `android.permission.CAMERA` and
-`<uses-feature android:name="android.hardware.camera">`. The only consumer is
-the sample screen above. Shipping a camera permission with no user-facing camera
-feature is a common cause of policy review failure, and it will show on the
-store listing.
+Still a real problem, for a different reason than stated above: the permission
+existed only to serve dead code. With that destination gone, both
+`android.permission.CAMERA` and the `android.hardware.camera` `uses-feature`
+have been removed from the manifest.
 
-Once blocker 1 is fixed, delete from the manifest:
-
-```xml
-<uses-feature android:name="android.hardware.camera" android:required="false" />
-<uses-permission android:name="android.permission.CAMERA" />
-```
-
-…and drop `Permission.CAMERA` from `core/permission/` if nothing else uses it.
-
-### 3. No upload key exists
+### 1. No upload key exists
 
 The build now reads signing credentials, but there is no key yet. Create one:
 
@@ -58,7 +48,7 @@ Verify:
 # The "no upload key configured" warning must be gone.
 ```
 
-### 4. Support email is still a placeholder
+### 2. Support email is still a placeholder
 
 Run `python web/set-support-email.py you@example.com`, then confirm:
 
@@ -87,6 +77,37 @@ grep -r "{{SUPPORT_EMAIL}}" web/public && echo "STILL UNSET" || echo "ok"
 
 ---
 
+## ✅ Verified on an emulator (API 37, 2026-09-16)
+
+Full pass on a running device, not just a build:
+
+- [x] App launches in 2.4s, no crash.
+- [x] Playlist import end to end: `iptv-org/countries/vn.m3u` → "Found 82
+      channels", matching what the parser produces in `desktopTest`.
+- [x] Live playback works (ANTV, Can Tho TV 2), including the media
+      notification, background service and landscape fullscreen.
+- [x] Watch history records and resumes.
+- [x] Forgot password: dialog opens, validates, and Firebase accepts the
+      request — logcat shows `[PasswordReset] accepted by Firebase`.
+- [x] Sign-up, log-in and log-out.
+- [x] **Fixed during this pass:** the Programs tab rendered a completely blank
+      page whenever the active playlist had no EPG source. It now shows a
+      "No programme guide" empty state, in all seven locales.
+
+### Known issues found, not yet fixed
+
+- **Fullscreen control collision.** In landscape, the volume slider overlaps the
+  programme title and the elapsed-time label behind the LIVE badge.
+- **Affiliate offers sit above the content** on Home, History and the player,
+  pushing channels below the fold. Policy-wise fine once declared; worth a
+  product decision before the first screenshot-driven impression.
+- **Tablet layout is a stretched phone layout.** It does not break, but a 10"
+  screen shows one very wide row per channel. Play may flag the listing as not
+  tablet-optimised.
+- **App name is inconsistent:** `TSIPTV` in-app vs `TS IPTV` on the launcher.
+- **A test account was created** during this pass, `qa.emulator@tsiptv.test`.
+  Delete it in Firebase Console → Authentication when you no longer need it.
+
 ## ✅ Done
 
 - [x] Release signing wired into `composeApp/build.gradle.kts`, reading
@@ -103,7 +124,7 @@ grep -r "{{SUPPORT_EMAIL}}" web/public && echo "STILL UNSET" || echo "ok"
 - [x] Terms of use page — `https://tsiptv-76d8f.web.app/terms/`
 - [x] Store listing copy, English and Vietnamese.
 - [x] Data safety answers mapped to the code.
-- [x] `desktopTest` green: 66/66.
+- [x] `desktopTest` green: 71/71.
 - [x] `:composeApp:bundleRelease` produces
       `composeApp/build/outputs/bundle/release/composeApp-release.aab` (22 MB).
 
@@ -115,31 +136,19 @@ grep -r "{{SUPPORT_EMAIL}}" web/public && echo "STILL UNSET" || echo "ok"
 | --- | --- | --- |
 | App icon | 512×512 PNG, 32-bit | ✅ `brand/play-icon-512.png` |
 | Feature graphic | 1024×500 PNG/JPG, no alpha | ✅ `brand/feature-graphic-1024x500.png` |
-| Phone screenshots | 2–8, min 1080px on the short side, 16:9 or 9:16 | ❌ **you must capture these** |
-| 7" tablet screenshots | optional, up to 8 | ❌ |
-| 10" tablet screenshots | optional, up to 8 | ❌ |
+| Phone screenshots | 2–8, min 1080px on the short side, 16:9 or 9:16 | ✅ `play-store/screenshots/phone/` (6) |
+| 7" tablet screenshots | optional, up to 8 | ✅ `play-store/screenshots/tablet-7in/` (3) |
+| 10" tablet screenshots | optional, up to 8 | ✅ `play-store/screenshots/tablet-10in/` (3) |
 | Promo video | optional YouTube URL | ❌ |
 
-Screenshots cannot be generated from here — they need the app running with real
-playlist data. Suggested set of five, in this order:
-
-1. Home with a populated channel grid
-2. A channel playing, with the programme guide visible
-3. The playlist import screen (shows the app's actual purpose)
-4. Programme guide / EPG timeline
-5. Profile or settings
-
-Do **not** screenshot a playlist of recognisable premium channels — that is the
-single fastest way to attract an IP complaint on an IPTV listing. Use a public
-test playlist such as iptv-org's free channels.
-
----
+Captured from a running emulator; see
+`play-store/screenshots/README.md` for how to regenerate them.
 
 ## Console sections to complete
 
 | Section | Answer / source |
 | --- | --- |
-| App access | "All functionality is available without special access" — the app works without an account. Provide test credentials only if you gate anything. |
+| App access | **Login required.** Emulator testing confirmed there is no guest path: logging out lands on the login screen with only Login / Sign Up. You must tick "All or some functionality is restricted" and supply working test credentials, or Play cannot review the app. |
 | Ads | **Yes, contains ads** — see `data-safety.md` |
 | Content rating | See `content-rating.md` |
 | Target audience | 13+ (do **not** opt into the Families programme) |
