@@ -46,16 +46,18 @@ class AuthRepositoryImpl(
         private const val KEY_REFRESH_TOKEN = "auth_refresh_token"
         private const val KEY_TOKEN_EXPIRES_IN = "auth_token_expires_in"
         private const val KEY_TOKEN_CREATED_AT = "auth_token_created_at"
+        private const val LOG_TAG = "[PasswordReset]"
 
         /**
          * Reset-email failures that reveal whether an address is registered.
          * These are reported to the caller as if the email had been sent.
+         *
+         * Only "no such user" belongs here. A malformed address says nothing
+         * about who has an account, and the user needs to see it to fix it.
          */
         private val EMAIL_ENUMERATION_CODES = setOf(
             "auth/user-not-found",
-            "auth/invalid-email",
-            "ERROR_USER_NOT_FOUND",
-            "ERROR_INVALID_EMAIL"
+            "ERROR_USER_NOT_FOUND"
         )
     }
 
@@ -461,17 +463,22 @@ class AuthRepositoryImpl(
     override suspend fun sendPasswordResetEmail(email: String): AuthResult {
         return try {
             firebaseAuth.sendPasswordResetEmail(email)
+            println("$LOG_TAG accepted by Firebase for $email")
             AuthResult.PasswordResetEmailSent
         } catch (e: FirebaseAuthException) {
-            // "This address has no account" is an answer we must not give: it lets
-            // anyone test an address for membership. Report the same outcome as a
-            // successful send and let the (absent) email be the only signal.
+            // "This address has no account" is an answer we must not give to the
+            // UI: it lets anyone test an address for membership. Report the same
+            // outcome as a successful send, but log the truth, because otherwise
+            // "no account" and "delivered" look identical while debugging.
             if (e.code in EMAIL_ENUMERATION_CODES) {
+                println("$LOG_TAG NOT sent: no account for $email (reported to the UI as sent)")
                 AuthResult.PasswordResetEmailSent
             } else {
+                println("$LOG_TAG failed for $email: ${e.code} - ${e.message}")
                 AuthResult.Error(e.message ?: "Failed to send password reset email", e)
             }
         } catch (e: Exception) {
+            println("$LOG_TAG failed for $email: ${e::class.simpleName} - ${e.message}")
             AuthResult.Error(
                 "Failed to send password reset email: ${e.message}",
                 FirebaseAuthException(
