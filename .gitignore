@@ -21,3 +21,6 @@ composeApp/release
 composeApp/keystore.properties
 *.jks
 *.keystore
+
+# Generated demo assets for store screenshots (large; rebuild with make-demo-assets.py)
+play-store/screenshots/demo-server/

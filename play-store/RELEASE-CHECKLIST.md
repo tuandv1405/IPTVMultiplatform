@@ -105,6 +105,11 @@ Full pass on a running device, not just a build:
   screen shows one very wide row per channel. Play may flag the listing as not
   tablet-optimised.
 - **App name is inconsistent:** `TSIPTV` in-app vs `TS IPTV` on the launcher.
+- **Overlay backgrounds are transparent.** Two places draw an overlay with no
+  opaque background, so whatever is underneath bleeds through: the floating
+  mini-player on Home (the channel list and the group chips show through it),
+  and the affiliate card on the player screen while scrolling (the channel
+  title shows through it). Same class of bug in both.
 - **A test account was created** during this pass, `qa.emulator@tsiptv.test`.
   Delete it in Firebase Console → Authentication when you no longer need it.
 
@@ -136,13 +141,18 @@ Full pass on a running device, not just a build:
 | --- | --- | --- |
 | App icon | 512×512 PNG, 32-bit | ✅ `brand/play-icon-512.png` |
 | Feature graphic | 1024×500 PNG/JPG, no alpha | ✅ `brand/feature-graphic-1024x500.png` |
-| Phone screenshots | 2–8, min 1080px on the short side, 16:9 or 9:16 | ✅ `play-store/screenshots/phone/` (6) |
+| Phone screenshots | 2–8, min 1080px on the short side, 16:9 or 9:16 | ✅ `play-store/screenshots/phone/` (5) |
 | 7" tablet screenshots | optional, up to 8 | ✅ `play-store/screenshots/tablet-7in/` (3) |
 | 10" tablet screenshots | optional, up to 8 | ✅ `play-store/screenshots/tablet-10in/` (3) |
 | Promo video | optional YouTube URL | ❌ |
 
-Captured from a running emulator; see
-`play-store/screenshots/README.md` for how to regenerate them.
+Captured from a running emulator against a **generated demo playlist**, not a
+real one: invented channel names, original logos and video frames stamped
+"SAMPLE CONTENT — NOT A BROADCAST", all produced by
+`play-store/screenshots/make-demo-assets.py`. Screenshots taken against a real
+playlist would have published third-party broadcast frames, station logos and
+channel marks — the fastest route to an IP complaint on an IPTV listing. See
+`play-store/screenshots/README.md` to rebuild them.
 
 ## Console sections to complete
 
