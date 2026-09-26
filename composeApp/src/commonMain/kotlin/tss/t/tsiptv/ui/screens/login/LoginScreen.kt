@@ -34,6 +34,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.input.ImeAction
+import tss.t.tsiptv.ui.tv.tvFocusBorder
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Brush
@@ -107,13 +111,12 @@ fun LoginScreenPhone(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = {
-                    keyboardController?.hide()
-                }
-            )
+            // Tap outside the fields to hide the keyboard. A tap detector, not
+            // clickable: clickable is also a focus target, and this full-screen,
+            // invisible one swallowed the first D-pad move on Android TV.
+            .pointerInput(Unit) {
+                detectTapGestures { keyboardController?.hide() }
+            }
             .background(
                 Brush.horizontalGradient(
                     colors = listOf(
@@ -179,10 +182,13 @@ fun LoginScreenPhone(
                 TextField(
                     value = email,
                     onValueChange = { email = it },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().tvFocusBorder(TSShapes.roundedShape8),
                     shape = TSShapes.roundedShape8,
                     keyboardOptions = remember {
-                        KeyboardOptions(keyboardType = KeyboardType.Email)
+                        KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        )
                     },
                     keyboardActions = remember {
                         KeyboardActions(
@@ -225,13 +231,16 @@ fun LoginScreenPhone(
                 TextField(
                     value = password,
                     onValueChange = { password = it },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().tvFocusBorder(TSShapes.roundedShape8),
                     shape = TSShapes.roundedShape8,
                     visualTransformation = remember {
                         PasswordVisualTransformation()
                     },
                     keyboardOptions = remember {
-                        KeyboardOptions(keyboardType = KeyboardType.Password)
+                        KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        )
                     },
                     keyboardActions = remember {
                         KeyboardActions(
@@ -261,6 +270,7 @@ fun LoginScreenPhone(
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier
                         .align(Alignment.End)
+                        .tvFocusBorder(TSShapes.roundedShape4)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,

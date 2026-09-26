@@ -46,6 +46,12 @@ interface ScreenOrientationUtils {
     fun hideSystemUI()
 
     fun showSystemUI()
+
+    /**
+     * Keep the screen in landscape (either way up) while [locked], or hand
+     * orientation back to the sensor. Used when the TV layout runs on a phone.
+     */
+    fun lockLandscape(locked: Boolean) {}
 }
 
 /**

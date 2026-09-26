@@ -152,4 +152,16 @@
     <!-- Programs empty state -->
     <string name="empty_programs_title">Sin guía de programación</string>
     <string name="empty_programs_message">Esta lista no incluye datos EPG, así que no hay nada que mostrar aquí. Las listas con url-tvg o una guía XMLTV llenarán esta pantalla automáticamente.</string>
+
+    <!-- UI mode / Android TV -->
+    <string name="ui_mode_title">Interfaz</string>
+    <string name="ui_mode_auto">Automático</string>
+    <string name="ui_mode_auto_desc">Diseño de TV en televisores, diseño de teléfono en el resto</string>
+    <string name="ui_mode_phone">Teléfono</string>
+    <string name="ui_mode_phone_desc">Diseño táctil con navegación inferior</string>
+    <string name="ui_mode_tv">TV</string>
+    <string name="ui_mode_tv_desc">Diseño grande para mando a distancia</string>
+    <string name="tv_no_channels">No hay canales en esta categoría</string>
+    <string name="tv_player_hint">▲ ▼ cambiar canal · OK lista de canales · ATRÁS salir</string>
+    <string name="tv_import_playlist_hint">Importa una lista para empezar a ver</string>
 </resources>

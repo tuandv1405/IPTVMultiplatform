@@ -29,6 +29,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import tss.t.tsiptv.ui.tv.tvFocusBorder
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -91,6 +98,7 @@ fun SignUpScreen(
         endX = Float.POSITIVE_INFINITY
     )
     val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(email) {
         onEvent(LoginEvents.EmailChanged(email))
@@ -105,13 +113,12 @@ fun SignUpScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = {
-                    keyboardController?.hide()
-                }
-            )
+            // Tap outside the fields to hide the keyboard. A tap detector, not
+            // clickable: clickable is also a focus target, and this full-screen,
+            // invisible one swallowed the first D-pad move on Android TV.
+            .pointerInput(Unit) {
+                detectTapGestures { keyboardController?.hide() }
+            }
             .background(
                 Brush.horizontalGradient(
                     colors = TSColors.loginBackgroundGradientColors,
@@ -172,9 +179,15 @@ fun SignUpScreen(
                 TextField(
                     value = email,
                     onValueChange = { email = it },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().tvFocusBorder(RoundedCornerShape(8.dp)),
                     shape = RoundedCornerShape(8.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                    ),
                     singleLine = true,
                     isError = !authState.isEmailValid,
                     colors = TextFieldDefaults.colors(
@@ -209,10 +222,16 @@ fun SignUpScreen(
                 TextField(
                     value = password,
                     onValueChange = { password = it },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().tvFocusBorder(RoundedCornerShape(8.dp)),
                     shape = RoundedCornerShape(8.dp),
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                    ),
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = TSColors.TextFieldBackground,
@@ -237,10 +256,16 @@ fun SignUpScreen(
                 TextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().tvFocusBorder(RoundedCornerShape(8.dp)),
                     shape = RoundedCornerShape(8.dp),
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { keyboardController?.hide() }
+                    ),
                     singleLine = true,
                     isError = !passwordsMatch,
                     colors = TextFieldDefaults.colors(

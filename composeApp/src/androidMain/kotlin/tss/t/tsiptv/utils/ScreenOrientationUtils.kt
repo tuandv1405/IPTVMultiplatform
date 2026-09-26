@@ -149,6 +149,16 @@ class AndroidScreenOrientationUtils : ScreenOrientationUtils {
         }
     }
 
+    override fun lockLandscape(locked: Boolean) {
+        val activity = AndroidPlatformUtils.appContext as? Activity
+        activity ?: return
+        activity.requestedOrientation = if (locked) {
+            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
     companion object {
         // Singleton instance
         private val INSTANCE = AndroidScreenOrientationUtils()

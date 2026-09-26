@@ -152,4 +152,16 @@
     <!-- Programs empty state -->
     <string name="empty_programs_title">番組表がありません</string>
     <string name="empty_programs_message">このプレイリストにはEPGデータが含まれていないため、表示できる番組がありません。url-tvg または XMLTV ガイドを含むプレイリストなら自動的に表示されます。</string>
+
+    <!-- UI mode / Android TV -->
+    <string name="ui_mode_title">インターフェース</string>
+    <string name="ui_mode_auto">自動</string>
+    <string name="ui_mode_auto_desc">テレビではTVレイアウト、それ以外はスマホレイアウト</string>
+    <string name="ui_mode_phone">スマホ</string>
+    <string name="ui_mode_phone_desc">下部ナビゲーション付きのタッチ操作レイアウト</string>
+    <string name="ui_mode_tv">TV</string>
+    <string name="ui_mode_tv_desc">リモコン操作向けの大きなレイアウト</string>
+    <string name="tv_no_channels">このカテゴリにはチャンネルがありません</string>
+    <string name="tv_player_hint">▲ ▼ チャンネル切替 · OK チャンネル一覧 · 戻る 終了</string>
+    <string name="tv_import_playlist_hint">プレイリストをインポートして視聴を開始</string>
 </resources>
