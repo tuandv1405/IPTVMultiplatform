@@ -75,6 +75,8 @@ kotlin {
             implementation(libs.media3.ui)
             implementation(libs.media3.session)
             implementation(libs.media3.common)
+            implementation(libs.media3.datasource.okhttp)
+            implementation(libs.okhttp.dnsoverhttps)
 
             // Add Firebase dependencies for Android
             implementation(project.dependencies.platform(libs.firebase.bom))
