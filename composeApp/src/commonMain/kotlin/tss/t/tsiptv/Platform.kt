@@ -8,6 +8,10 @@ interface Platform {
         get() = false
     val isIOS: Boolean
         get() = false
+
+    /** True on a television (Android TV / Google TV). Drives the default UI mode. */
+    val isTv: Boolean
+        get() = false
 }
 
 expect fun getPlatform(): Platform

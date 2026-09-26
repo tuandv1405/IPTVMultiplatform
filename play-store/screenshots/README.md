@@ -26,6 +26,7 @@ removes them; instead every screen here is one where no offer is rendered:
 | `phone/` | 1080×1920 (player 1920×1080) | 9:16 / 16:9 | 5 |
 | `tablet-7in/` | 1200×1920 | 10:16 | 2 |
 | `tablet-10in/` | 1600×2560 | 10:16 | 2 |
+| `tv/` | 1920×1080 | 16:9 | 5 |
 
 There is no ad-free Home shot at tablet width: the screen is tall enough that
 the offer below the group chips is always on screen, so the tablet sets start at
@@ -34,6 +35,31 @@ the channel list. Tablet screenshots are optional for Play, and two qualify.
 All pass Play's constraints: every side within 320–3840 px, and no side more
 than twice the other. **The emulator's native 1080×2424 is 2.24:1 and would be
 rejected**, which is why the captures override the display size.
+
+## Android TV set (2026-09-26)
+
+Captured on the `android-36;android-tv` emulator at its native 1920×1080, signed
+out (the TV layout does not require an account), then converted to 24-bit PNG:
+Play rejects TV screenshots with an alpha channel. The TV layout renders no
+affiliate offers, so no screen had to be avoided.
+
+1. `01-home.png` — category rail, Continue Watching, channel grid
+2. `02-category.png` — one category selected
+3. `03-player.png` — full-screen player with the channel banner
+4. `04-channel-list.png` — channel list opened with OK
+5. `05-settings.png` — settings, with optional Login
+
+The demo playlist only renders two distinct streams (`ts-one`, `ts-news`); the
+other channels reuse them, so a player shot on, say, TS Sport shows a "TS One"
+frame under a "TS Sport" banner. Take player shots on TS One or TS News.
+
+TV shots need no display override or status-bar demo mode — a TV has no status
+bar. Just `adb exec-out screencap -p > tv/NN-name.png` with the emulator selected
+by `-s` if a phone emulator is also running.
+
+TV banner: `brand/tv-banner-1280x720.png` for the Play listing; the in-app
+`android:banner` is `composeApp/src/androidMain/res/drawable-xhdpi/tv_banner.png`
+(320×180). Both come from `python brand/generate_assets.py`.
 
 ## Building the demo playlist
 

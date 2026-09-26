@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import tss.t.tsiptv.ui.tv.tvFocusBorder
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -203,6 +204,7 @@ fun CommonButton(
                 borderRadius = 12.dp
             )
             .clip(TSShapes.roundedShape8)
+            .tvFocusBorder(TSShapes.roundedShape8)
             .clickable(
                 enabled = clickable,
                 onClick = onClick

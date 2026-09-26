@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavOptions
 import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -43,6 +44,24 @@ fun NavController.navigateAndRemoveFromBackStack(
     } else {
         navigate(route)
     }
+}
+
+/**
+ * Go to Home and clear everything behind it (Splash, Login, SignUp, or an older
+ * Home when a TV user signed in from Settings), so Back from Home leaves the app.
+ */
+fun NavController.navigateHomeClearingBackStack() {
+    navigate(NavRoutes.Home()) {
+        popUpTo(graph.id) { inclusive = true }
+    }
+}
+
+/** True while the current screen is one of the sign-in screens or the splash. */
+fun NavController.isOnAuthEntryScreen(): Boolean {
+    val destination = currentBackStackEntry?.destination ?: return true
+    return destination.hasRoute<NavRoutes.Splash>() ||
+            destination.hasRoute<NavRoutes.Login>() ||
+            destination.hasRoute<NavRoutes.SignUp>()
 }
 
 /**

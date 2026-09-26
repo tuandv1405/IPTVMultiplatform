@@ -1,8 +1,7 @@
 package tss.t.tsiptv.ui.screens.addiptv
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +22,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,6 +78,12 @@ fun ImportIPTVScreen(
     onEvent: (HomeEvent) -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
+    // Explicit focus order for the D-pad: back → name → link → add. The top bar
+    // sits in a separate Scaffold slot, and 2D search from it never reached the
+    // fields below on Android TV.
+    val nameFocus = remember { FocusRequester() }
+    val urlFocus = remember { FocusRequester() }
+    val addButtonFocus = remember { FocusRequester() }
     var inputSourceName by remember { mutableStateOf(initSourceName) }
     var inputSourceUrl by remember { mutableStateOf(initSourceUrl) }
 
@@ -131,7 +144,7 @@ fun ImportIPTVScreen(
 
     Scaffold(
         topBar = {
-            Column {
+            Column(modifier = Modifier.focusProperties { down = nameFocus }) {
                 TSAppBarXBackIcon(
                     modifier = Modifier.hazeEffect(hazeState),
                     title = stringResource(Res.string.add_iptv_source_title),
@@ -146,15 +159,12 @@ fun ImportIPTVScreen(
             }
         },
         containerColor = TSColors.BackgroundColor,
-        modifier = Modifier.clickable(
-            interactionSource = remember {
-                MutableInteractionSource()
-            },
-            indication = null,
-            onClick = {
-                focusManager.clearFocus(false)
-            }
-        )
+        // Tap outside the fields to dismiss the keyboard. A tap detector rather
+        // than clickable: clickable is also a focus target, and on a TV the
+        // D-pad's first move landed on this invisible, full-screen one.
+        modifier = Modifier.pointerInput(Unit) {
+            detectTapGestures { focusManager.clearFocus(false) }
+        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -181,8 +191,11 @@ fun ImportIPTVScreen(
             item("InputSourceName") {
                 TSTextField(
                     modifier = Modifier.padding(top = 52.dp)
-                        .padding(horizontal = 20.dp),
+                        .padding(horizontal = 20.dp)
+                        .focusRequester(nameFocus),
                     value = inputSourceName,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { urlFocus.requestFocus() }),
                     label = stringResource(Res.string.add_iptv_source_name_label_title),
                     onValueChange = {
                         inputSourceName = it
@@ -200,7 +213,14 @@ fun ImportIPTVScreen(
             item("InputSourceLink") {
                 TSTextField(
                     modifier = Modifier.padding(top = 12.dp)
-                        .padding(horizontal = 20.dp), value = inputSourceUrl,
+                        .padding(horizontal = 20.dp)
+                        .focusRequester(urlFocus),
+                    value = inputSourceUrl,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Uri,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(onDone = { addButtonFocus.requestFocus() }),
                     label = stringResource(Res.string.add_iptv_source_url_label_title),
                     onValueChange = {
                         inputSourceUrl = it.trim()
@@ -223,7 +243,8 @@ fun ImportIPTVScreen(
                     modifier = Modifier
                         .padding(top = 20.dp)
                         .padding(horizontal = 24.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .focusRequester(addButtonFocus),
                     text = stringResource(Res.string.btn_add_iptv_source_title),
                     icon = progressIndicator,
                 ) {

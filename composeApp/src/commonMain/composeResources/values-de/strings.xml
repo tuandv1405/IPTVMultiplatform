@@ -152,4 +152,16 @@
     <!-- Programs empty state -->
     <string name="empty_programs_title">Kein Programmführer</string>
     <string name="empty_programs_message">Diese Playlist enthält keine EPG-Daten, daher gibt es hier nichts anzuzeigen. Playlists mit url-tvg oder einem XMLTV-Guide füllen diesen Bildschirm automatisch.</string>
+
+    <!-- UI mode / Android TV -->
+    <string name="ui_mode_title">Oberfläche</string>
+    <string name="ui_mode_auto">Automatisch</string>
+    <string name="ui_mode_auto_desc">TV-Layout auf Fernsehern, Telefon-Layout überall sonst</string>
+    <string name="ui_mode_phone">Telefon</string>
+    <string name="ui_mode_phone_desc">Touch-Layout mit unterer Navigation</string>
+    <string name="ui_mode_tv">TV</string>
+    <string name="ui_mode_tv_desc">Großes Layout für Fernbedienung und Steuerkreuz</string>
+    <string name="tv_no_channels">Keine Kanäle in dieser Kategorie</string>
+    <string name="tv_player_hint">▲ ▼ Kanal wechseln · OK Kanalliste · ZURÜCK beenden</string>
+    <string name="tv_import_playlist_hint">Importiere eine Playlist, um loszulegen</string>
 </resources>

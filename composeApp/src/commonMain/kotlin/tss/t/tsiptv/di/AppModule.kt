@@ -20,6 +20,7 @@ import tss.t.tsiptv.core.firebase.remoteconfig.HttpRemoteConfigImpl
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.language.LanguageRepository
 import tss.t.tsiptv.core.language.LocaleManager
+import tss.t.tsiptv.core.uimode.UiModeRepository
 import tss.t.tsiptv.core.network.NetworkClient
 import tss.t.tsiptv.core.network.NetworkClientFactory
 import tss.t.tsiptv.core.network.NetworkConnectivityChecker
@@ -115,6 +116,9 @@ val commonModule = module {
     // Language
     single { LanguageRepository(get()) }
     single { LocaleManager(get()) }
+
+    // UI mode (phone / TV)
+    single { UiModeRepository(get()) }
 
 
     single<CoroutineScope>(named("MediaCoroutine")) {

@@ -6,7 +6,13 @@ Status as of 2026-09-16. Tick items as they are done.
 
 ## 🔴 Blockers — the app should not ship until these are resolved
 
-### 0. Firebase Authentication is not initialised on tsiptv-8bdd6
+### ~~0. Firebase Authentication is not initialised on tsiptv-8bdd6~~ — fixed 2026-09-26
+
+Auth was enabled in the console. Re-probed on 2026-09-26: `signInWithPassword`
+now answers `INVALID_LOGIN_CREDENTIALS` for an unknown account (Auth is live)
+and the email-link probe below returns a `GetOobConfirmationCodeResponse`
+(deletion flow is live). Login from the TV emulator reached Firebase and got the
+expected wrong-credentials error. Kept below for the record.
 
 Probing Identity Toolkit with the project's own API key returns
 `CONFIGURATION_NOT_FOUND`, which means Authentication has never been turned on
@@ -176,11 +182,45 @@ Full pass on a running device, not just a build:
 - [x] Terms of use page — `https://tsiptv-8bdd6.web.app/terms/`
 - [x] Store listing copy, English and Vietnamese.
 - [x] Data safety answers mapped to the code.
-- [x] `desktopTest` green: 71/71.
+- [x] `desktopTest` green: 76/76 (2026-09-26, including `UiModeRepositoryTest`).
 - [x] `:composeApp:bundleRelease` produces
       `composeApp/build/outputs/bundle/release/composeApp-release.aab` (22 MB).
 
 ---
+
+## 📺 Android TV (added 2026-09-26)
+
+The same APK/AAB now serves phones and TVs: `LEANBACK_LAUNCHER`, a 320×180
+`android:banner`, and `leanback` / `touchscreen` declared `required="false"` so
+neither device type is filtered out. On a TV the app opens a D-pad layout
+(category rail + channel grid, full-screen player with ▲▼ zapping); Settings →
+Interface lets anyone force Phone or TV. Verified on the `android-36;android-tv`
+emulator: launcher entry, import, browse, play, zap, channel list, back
+behaviour, settings, and switching layouts both ways.
+
+**The TV layout does not require an account.** Signed out, the app goes from
+the splash straight to Home; Settings shows **Login**, which opens the normal
+login / sign-up screen and returns to Home. Signed in, Settings shows the
+account's email with **Log out**, and logging out stays on Home. The phone
+layout still requires login, as before. Verified signed out: cold start to
+Home, Login and Back, and a failed login staying on the login screen with its
+error. A successful login from the TV was not exercised (no test account).
+
+Play only lists the app on TVs after you opt in:
+
+- [ ] Play Console → **Test and release → Advanced settings → Form factors** →
+      add **Android TV**, and choose the same track the phone build uses.
+- [ ] Store listing → Android TV: upload `brand/tv-banner-1280x720.png`
+      (ready; regenerate with `python brand/generate_assets.py`).
+- [ ] Upload the TV screenshots in `play-store/screenshots/tv/` (5 × 1920×1080,
+      24-bit PNG, in file-name order). Ready.
+- [ ] Expect a separate TV quality review. Things it checks that are already
+      handled: every screen reachable with the D-pad, visible focus, Back always
+      works, no portrait-only screens. Not yet TV-specific: History, Programs
+      and Profile are not in the TV layout (login / log-out are, via Settings).
+- [ ] Google sign-in on Android is still a placeholder that returns a sample
+      user; the TV (and phone) login screens do not show it. Do not add it back
+      before it is implemented.
 
 ## Assets to produce before submission
 
@@ -192,6 +232,8 @@ Full pass on a running device, not just a build:
 | 7" tablet screenshots | optional, up to 8 | ✅ `play-store/screenshots/tablet-7in/` (2) |
 | 10" tablet screenshots | optional, up to 8 | ✅ `play-store/screenshots/tablet-10in/` (2) |
 | Promo video | optional YouTube URL | ❌ |
+| Android TV banner | 1280×720 PNG | ✅ `brand/tv-banner-1280x720.png` |
+| Android TV screenshots | 1920×1080, at least 1 if TV is opted in | ✅ `play-store/screenshots/tv/` (5) |
 
 Captured from a running emulator against a **generated demo playlist**, not a
 real one: invented channel names, original logos and video frames stamped
@@ -207,7 +249,7 @@ position where none is rendered. See `play-store/screenshots/README.md`.
 
 | Section | Answer / source |
 | --- | --- |
-| App access | **Login required.** Emulator testing confirmed there is no guest path: logging out lands on the login screen with only Login / Sign Up. You must tick "All or some functionality is restricted" and supply working test credentials, or Play cannot review the app. |
+| App access | **Phone: login required. TV: no login needed** (see Android TV above) — say so in the access instructions, or a TV reviewer may look for credentials they do not need. For the phone: emulator testing confirmed there is no guest path: logging out lands on the login screen with only Login / Sign Up. You must tick "All or some functionality is restricted" and supply working test credentials, or Play cannot review the app. |
 | Ads | **Yes, contains ads** — see `data-safety.md` |
 | Content rating | See `content-rating.md` |
 | Target audience | 13+ (do **not** opt into the Families programme) |

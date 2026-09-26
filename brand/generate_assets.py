@@ -206,6 +206,43 @@ def feature_graphic(width=1024, height=500):
     return img.convert("RGB")
 
 
+def tv_banner(width=1280, height=720):
+    """
+    Android TV launcher banner (16:9). Mark + wordmark only: the launcher shows it
+    at roughly 160x90dp, where a tagline would be unreadable.
+    """
+    img = vertical_gradient((width, height), NAVY_TOP, NAVY_BOTTOM).convert("RGBA")
+
+    mark_size = int(height * 0.52)
+    mark = square_icon(mark_size, with_background=False)
+    title_font = load_font(int(height * 0.24))
+    title = "TS IPTV"
+
+    measure = ImageDraw.Draw(img)
+    bbox = measure.textbbox((0, 0), title, font=title_font)
+    title_w, title_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+    gap = int(height * 0.06)
+    total_w = mark_size + gap + title_w
+    x = (width - total_w) // 2
+
+    img.paste(mark, (x, (height - mark_size) // 2), mark)
+    measure.text(
+        (x + mark_size + gap - bbox[0], (height - title_h) // 2 - bbox[1]), title,
+        font=title_font, fill=(255, 255, 255),
+    )
+    return img.convert("RGB")
+
+
+def save_tv_banners():
+    banner = tv_banner()
+    # Play Console → Android TV listing asks for a 1280x720 banner.
+    save(banner, os.path.join(BRAND_DIR, "tv-banner-1280x720.png"))
+    # android:banner is 160x90dp; xhdpi (2x) is the density TV launchers use.
+    save(banner.resize((320, 180), Image.LANCZOS),
+         os.path.join(RES_DIR, "drawable-xhdpi", "tv_banner.png"))
+
+
 def save(img, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     img.save(path)
@@ -220,6 +257,7 @@ def main():
     save(square_icon(1024, rounded=True), os.path.join(BRAND_DIR, "app-icon-1024.png"))
     save(square_icon(180, rounded=True), os.path.join(BRAND_DIR, "favicon-180.png"))
     save(square_icon(32, rounded=True), os.path.join(BRAND_DIR, "favicon-32.png"))
+    save_tv_banners()
 
     # --- Android launcher icons --------------------------------------------
     # Legacy (API 24-25) square + round icons.
