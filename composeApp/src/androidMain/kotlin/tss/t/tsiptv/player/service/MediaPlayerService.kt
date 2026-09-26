@@ -49,7 +49,7 @@ import tss.t.tsiptv.player.models.MediaItem as AppMediaItem
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
 import kotlinx.coroutines.flow.MutableStateFlow
-import tss.t.tsiptv.player.network.TrustAllHttpDataSource
+import tss.t.tsiptv.player.network.playerHttpDataSourceFactory
 import kotlin.math.log
 
 /**
@@ -215,8 +215,7 @@ class MediaPlayerService : MediaSessionService() {
         // Create media source factory with DRM support
         val mediaSourceFactory = DefaultMediaSourceFactory(this)
             .setDrmSessionManagerProvider { drmSessionManager }
-            .setDataSourceFactory(TrustAllHttpDataSource.Factory()
-                .setAllowCrossProtocolRedirects(true))
+            .setDataSourceFactory(playerHttpDataSourceFactory())
 
         player = ExoPlayer.Builder(this)
             .setAudioAttributes(audioAttributes, true)
