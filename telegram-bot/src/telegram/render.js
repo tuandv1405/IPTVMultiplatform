@@ -1,4 +1,4 @@
-import { REJECT_REASONS, STATUS } from "../policy.js";
+import { REJECT_REASONS, REQUEST_REJECT_REASONS, REQUEST_STATUS, STATUS } from "../policy.js";
 
 export const escapeHtml = (value) =>
   String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -11,11 +11,9 @@ const STATUS_LINE = {
   [STATUS.REMOVED]: "🗑 <b>REMOVED</b> by the publisher",
 };
 
+// Reviewers are { by, name }: an admin's uid + email, or "tg:<id>" + "@username".
 // Telegram names run to 129 characters; capped so the card stays under the caption limit.
-export const reviewerLabel = (reviewer) =>
-  reviewer
-    ? truncate(reviewer.username ? `@${reviewer.username}` : reviewer.name || `id ${reviewer.id}`, 40)
-    : "?";
+export const reviewerLabel = (reviewer) => (reviewer ? truncate(reviewer.name || reviewer.by || "?", 40) : "?");
 
 /**
  * The review card. Kept under Telegram's 1024-character caption limit: the
@@ -49,11 +47,11 @@ export function renderSubmission(submission) {
     const reason = submission.statusReason?.code
       ? ` — ${escapeHtml(REJECT_REASONS[submission.statusReason.code] ?? submission.statusReason.code)}`
       : "";
-    lines.push(`🧑‍⚖️ ${escapeHtml(reviewerLabel(submission.reviewedBy))}${reason}`);
+    lines.push(`🧑‍⚖️ ${escapeHtml(reviewerLabel(submission.review))}${reason}`);
   }
   if (submission.status === STATUS.REMOVED) {
     const note = submission.statusReason?.note ? ` — ${escapeHtml(truncate(submission.statusReason.note, 120))}` : "";
-    lines.push(`🧑‍⚖️ ${escapeHtml(reviewerLabel(submission.removedBy))}${note}`);
+    lines.push(`🧑‍⚖️ ${escapeHtml(reviewerLabel(submission.review))}${note}`);
   }
   // Fields are length-capped, but a card can still combine every long field.
   // Drop whole optional lines (never cut HTML, which could split a tag) until
@@ -95,6 +93,46 @@ export function rejectReasonKeyboard(submissionId) {
     { text: label, callback_data: `rr:${submissionId}:${code}` },
   ]);
   rows.push([{ text: "⬅️ Back", callback_data: `bk:${submissionId}` }]);
+  return { inline_keyboard: rows };
+}
+
+// ---- contributor requests --------------------------------------------------------
+
+const REQUEST_LINE = {
+  [REQUEST_STATUS.PENDING]: "🟡 <b>CONTRIBUTOR REQUEST</b>",
+  [REQUEST_STATUS.APPROVED]: "✅ <b>CONTRIBUTOR APPROVED</b>",
+  [REQUEST_STATUS.REJECTED]: "❌ <b>CONTRIBUTOR REQUEST REJECTED</b>",
+  CANCELLED: "↩️ <b>REQUEST CANCELLED</b> by the user",
+};
+
+/** Contact data is encrypted and never shown here; admins use /contact in a private chat. */
+export function renderRequest(request) {
+  const lines = [
+    REQUEST_LINE[request.status] ?? request.status,
+    `👤 <b>${escapeHtml(truncate(request.publicName, 40))}</b> · uid <code>${escapeHtml(request.uid)}</code> · attempt ${Number(request.attempt) || 1}`,
+    `📝 ${escapeHtml(truncate(request.about, 500))}`,
+  ];
+  for (const link of (request.links ?? []).slice(0, 3)) lines.push(`🔗 <code>${escapeHtml(truncate(link, 120))}</code>`);
+  if (request.decision) {
+    const reason = request.decision.reason ? ` — ${escapeHtml(truncate(request.decision.reason, 150))}` : "";
+    lines.push(`🧑‍⚖️ ${escapeHtml(reviewerLabel(request.decision))}${reason}`);
+  }
+  return lines.join("\n");
+}
+
+export function requestKeyboard(request) {
+  if (request.status !== REQUEST_STATUS.PENDING) return { inline_keyboard: [] };
+  return {
+    inline_keyboard: [[
+      { text: "✅ Approve", callback_data: `qa:${request.uid}` },
+      { text: "❌ Reject", callback_data: `qr:${request.uid}` },
+    ]],
+  };
+}
+
+export function requestRejectKeyboard(uid) {
+  const rows = Object.entries(REQUEST_REJECT_REASONS).map(([code, label]) => [{ text: label, callback_data: `qx:${uid}:${code}` }]);
+  rows.push([{ text: "⬅️ Back", callback_data: `qb:${uid}` }]);
   return { inline_keyboard: rows };
 }
 

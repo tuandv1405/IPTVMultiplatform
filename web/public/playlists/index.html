@@ -61,10 +61,8 @@
 
 <script src="/assets/lang.js"></script>
 <script type="module">
-import { app } from "/assets/firebase.js";
-import {
-  getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc,
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+// Firestore today, the own server later: see BACKEND in contributor-config.js.
+import { getBackend } from "/assets/contributor-backend.js";
 
 const TEXT = {
   vi: {
@@ -85,14 +83,13 @@ const TEXT = {
 const lang = () => (document.documentElement.lang === "en" ? "en" : "vi");
 const t = (key) => TEXT[lang()][key];
 
-const db = getFirestore(app);
+const backend = await getBackend();
 const list = document.getElementById("list");
 let playlists = [];
 
 async function load() {
   try {
-    const snap = await getDocs(query(collection(db, "public_playlists"), orderBy("approvedAt", "desc"), limit(300)));
-    playlists = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    playlists = await backend.listPublicPlaylists();
   } catch (error) {
     console.error(error);
     playlists = null;
@@ -201,9 +198,8 @@ const imageObserver = new IntersectionObserver((entries) => {
 const imageCache = new Map();
 async function loadImage(id, img) {
   if (!imageCache.has(id)) {
-    imageCache.set(id, getDoc(doc(db, "public_playlist_images", id))
-      .then((snap) => {
-        const data = snap.data();
+    imageCache.set(id, backend.getPublicImage(id)
+      .then((data) => {
         // Only the types the API accepts; anything else is not rendered.
         return data && /^image\/(png|jpeg|webp)$/.test(data.mime) ? `data:${data.mime};base64,${data.data}` : null;
       })

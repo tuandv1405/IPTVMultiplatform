@@ -1,23 +1,59 @@
 import { conflict } from "../errors.js";
 
 /**
- * In-process store with the same contract as firestoreStore. Used by the tests
- * and by `STORE_DRIVER=memory` for a local dry run; everything is lost on exit.
+ * In-process store with the same contract as sqliteStore and firestoreStore.
+ * Used by the tests and by STORE_DRIVER=memory for a local dry run; everything
+ * is lost on exit. No await between a check and its write, so every method is
+ * atomic on the event loop.
  */
 export function createMemoryStore() {
+  const requests = new Map();
   const contributors = new Map();
   const submissions = new Map();
   const urlLocks = new Map();
   const images = { submission: new Map(), public: new Map() };
   const publicPlaylists = new Map();
   const state = new Map();
-  const clone = (value) => (value == null ? value : structuredClone(value));
+  const clone = (value) => (value == null ? value ?? null : structuredClone(value));
+  const newestFirst = (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0);
 
   return {
     kind: "memory",
 
+    // ---- requests ----
+    async getRequest(uid) {
+      return clone(requests.get(uid));
+    },
+    /** `build(existing)` returns the new document or throws to refuse. */
+    async saveRequest(uid, build) {
+      const next = build(clone(requests.get(uid)));
+      requests.set(uid, clone(next));
+      return clone(next);
+    },
+    async transitionRequest(uid, fromStatuses, patch) {
+      const current = requests.get(uid);
+      if (!current || !fromStatuses.includes(current.status)) return { ok: false, current: clone(current) };
+      const next = { ...current, ...clone(patch) };
+      requests.set(uid, next);
+      return { ok: true, current: clone(next) };
+    },
+    async patchRequest(uid, patch) {
+      const current = requests.get(uid);
+      if (current) requests.set(uid, { ...current, ...clone(patch) });
+    },
+    async deleteRequest(uid) {
+      requests.delete(uid);
+    },
+    async listRequests(status) {
+      return [...requests.values()].filter((r) => !status || r.status === status).sort(newestFirst).map(clone);
+    },
+    async listRequestUids() {
+      return [...requests.keys()];
+    },
+
+    // ---- contributors ----
     async getContributor(uid) {
-      return clone(contributors.get(uid) ?? null);
+      return clone(contributors.get(uid));
     },
     async putContributor(uid, data) {
       contributors.set(uid, clone({ ...(contributors.get(uid) ?? {}), ...data }));
@@ -25,14 +61,14 @@ export function createMemoryStore() {
     async deleteContributor(uid) {
       contributors.delete(uid);
     },
-    async findContributorsByHash(field, hash) {
-      return [...contributors.values()].filter((c) => c[field] === hash).map(clone);
+    async listContributors() {
+      return [...contributors.values()].sort((a, b) => (b.approvedAt ?? 0) - (a.approvedAt ?? 0)).map(clone);
     },
     async listContributorUids() {
       return [...contributors.keys()];
     },
 
-    // No await between the checks and the writes, so this is atomic on the event loop.
+    // ---- submissions ----
     async createSubmission(submission, checkOwner = () => {}) {
       checkOwner([...submissions.values()].filter((s) => s.ownerUid === submission.ownerUid));
       const lock = urlLocks.get(submission.urlHash);
@@ -45,13 +81,12 @@ export function createMemoryStore() {
       submissions.set(submission.id, clone(submission));
     },
     async getSubmission(id) {
-      return clone(submissions.get(id) ?? null);
+      return clone(submissions.get(id));
     },
     async transitionSubmission(id, fromStatuses, patch) {
       const current = submissions.get(id);
-      if (!current) return { ok: false, current: null };
-      if (!fromStatuses.includes(current.status)) return { ok: false, current: clone(current) };
-      const next = { ...current, ...patch };
+      if (!current || !fromStatuses.includes(current.status)) return { ok: false, current: clone(current) };
+      const next = { ...current, ...clone(patch) };
       submissions.set(id, next);
       return { ok: true, current: clone(next) };
     },
@@ -60,15 +95,13 @@ export function createMemoryStore() {
       if (current) submissions.set(id, { ...current, ...clone(patch) });
     },
     async listSubmissionsByOwner(uid) {
-      return [...submissions.values()]
-        .filter((s) => s.ownerUid === uid)
-        .sort((a, b) => b.createdAt - a.createdAt)
-        .map(clone);
+      return [...submissions.values()].filter((s) => s.ownerUid === uid).sort(newestFirst).map(clone);
     },
-    async listSubmissionsByStatus(status, limit = 50) {
+    /** `status` null = every status. Oldest first (review queue order). */
+    async listSubmissionsByStatus(status, limit = 50, { newestFirst = false } = {}) {
       return [...submissions.values()]
-        .filter((s) => s.status === status)
-        .sort((a, b) => a.createdAt - b.createdAt)
+        .filter((s) => !status || s.status === status)
+        .sort((a, b) => (newestFirst ? b.createdAt - a.createdAt : a.createdAt - b.createdAt))
         .slice(0, limit)
         .map(clone);
     },
@@ -84,16 +117,16 @@ export function createMemoryStore() {
       if (urlLocks.get(urlHash)?.submissionId === submissionId) urlLocks.delete(urlHash);
     },
 
+    // ---- images, public directory, bot state ----
     async putImage(kind, id, image) {
       images[kind].set(id, clone(image));
     },
     async getImage(kind, id) {
-      return clone(images[kind].get(id) ?? null);
+      return clone(images[kind].get(id));
     },
     async deleteImage(kind, id) {
       images[kind].delete(id);
     },
-
     async putPublicPlaylist(id, doc) {
       publicPlaylists.set(id, clone(doc));
     },
@@ -101,11 +134,13 @@ export function createMemoryStore() {
       publicPlaylists.delete(id);
     },
     async getPublicPlaylist(id) {
-      return clone(publicPlaylists.get(id) ?? null);
+      return clone(publicPlaylists.get(id));
     },
-
+    async listPublicPlaylists() {
+      return [...publicPlaylists.values()].sort((a, b) => (b.approvedAt ?? 0) - (a.approvedAt ?? 0)).slice(0, 300).map(clone);
+    },
     async getState(key) {
-      return clone(state.get(key) ?? null);
+      return clone(state.get(key));
     },
     async setState(key, value) {
       state.set(key, clone(value));
@@ -114,6 +149,7 @@ export function createMemoryStore() {
     /** Test hook: every document, to assert nothing holds plaintext PII. */
     dump() {
       return clone({
+        requests: Object.fromEntries(requests),
         contributors: Object.fromEntries(contributors),
         submissions: Object.fromEntries(submissions),
         publicPlaylists: Object.fromEntries(publicPlaylists),

@@ -73,12 +73,13 @@
 
     <h3 id="contributors">Người đóng góp danh sách phát (chỉ trên web)</h3>
     <div class="card">
-      <p>Nếu bạn tham gia <a href="/contributor/">chương trình người đóng góp</a> trên trang web, chúng tôi thu thập thêm <strong>email và số điện thoại đã xác thực</strong> (bắt buộc), tên hiển thị công khai bạn chọn, và các danh sách bạn gửi (tên, đường dẫn, hình ảnh, mô tả).</p>
+      <p>Nếu bạn đăng ký <a href="/contributor/">chương trình người đóng góp</a> trên trang web (đăng nhập bằng Google), chúng tôi thu thập thêm <strong>họ tên, email và số điện thoại</strong> (bắt buộc), tên hiển thị công khai, phần giới thiệu và đường dẫn mẫu bạn điền, sự đồng ý của bạn với các chính sách, và các danh sách bạn gửi (tên, đường dẫn, hình ảnh, mô tả).</p>
       <ul style="margin-bottom:0">
-        <li>Email và số điện thoại được <strong>mã hoá AES-256-GCM</strong> trước khi lưu; khoá giải mã không lưu cùng dữ liệu. Chúng <strong>không bao giờ hiển thị công khai</strong> và không được gửi cho người kiểm duyệt.</li>
-        <li>Chỉ quản trị viên của nhà phát hành có thể giải mã, và chỉ để liên hệ với bạn về khiếu nại bản quyền hoặc lạm dụng.</li>
-        <li>Người kiểm duyệt (qua Telegram) thấy tên hiển thị, mã tài khoản và nội dung danh sách bạn gửi. Công chúng chỉ thấy tên hiển thị và danh sách đã được duyệt.</li>
-        <li>Khi bạn <a href="/delete-account/">xoá tài khoản</a>, email, số điện thoại đã mã hoá bị xoá và mọi danh sách đang công khai bị gỡ. Nếu tài khoản người đóng góp đã bị đình chỉ, chỉ giữ lại một mã băm (không thể giải ngược) để lệnh đình chỉ vẫn có hiệu lực.</li>
+        <li>Họ tên, email và số điện thoại được <strong>mã hoá ngay trên trình duyệt của bạn</strong> bằng khoá công khai của nhà phát hành (RSA-OAEP 3072 + AES-256-GCM) trước khi gửi đi. Nơi lưu trữ chỉ giữ bản mã; khoá giải mã do quản trị viên giữ riêng. Chúng <strong>không bao giờ hiển thị công khai</strong>.</li>
+        <li>Chỉ quản trị viên của nhà phát hành giải mã được, và chỉ để xét duyệt đơn hoặc liên hệ với bạn về khiếu nại bản quyền hay lạm dụng.</li>
+        <li>Nơi lưu trữ: hiện tại là Google Cloud Firestore (dự án Firebase của TS IPTV); sau này chuyển về máy chủ riêng của nhà phát hành. Quy tắc truy cập chỉ cho phép bạn đọc bản ghi của chính mình.</li>
+        <li>Người kiểm duyệt thấy tên hiển thị, mã tài khoản, phần giới thiệu và danh sách bạn gửi. Công chúng chỉ thấy tên hiển thị và các danh sách đã được duyệt.</li>
+        <li>Bạn có thể huỷ đơn đang chờ bất cứ lúc nào. Khi bạn <a href="/delete-account/">xoá tài khoản</a>, đơn đăng ký (chứa dữ liệu đã mã hoá) bị xoá và các danh sách đang công khai bị gỡ.</li>
         <li>Ứng dụng di động không thu thập các dữ liệu này.</li>
       </ul>
     </div>
@@ -163,12 +164,13 @@
 
     <h3 id="contributors-en">Playlist contributors (web only)</h3>
     <div class="card">
-      <p>If you join the <a href="/contributor/?lang=en">contributor programme</a> on the website, we additionally collect your <strong>verified email address and phone number</strong> (mandatory), the public display name you choose, and the playlists you submit (name, link, image, description).</p>
+      <p>If you apply to the <a href="/contributor/?lang=en">contributor programme</a> on the website (signing in with Google), we additionally collect your <strong>full name, email address and phone number</strong> (mandatory), your public display name, the introduction and sample links you enter, your acceptance of the policies, and the playlists you submit (name, link, image, description).</p>
       <ul style="margin-bottom:0">
-        <li>Email and phone number are <strong>encrypted with AES-256-GCM</strong> before storage; the decryption key is not stored with the data. They are <strong>never shown publicly</strong> and are not sent to reviewers.</li>
-        <li>Only the publisher's administrators can decrypt them, and only to contact you about a copyright or abuse report.</li>
-        <li>Reviewers (via Telegram) see your display name, account ID and the playlist you submitted. The public sees only your display name and approved playlists.</li>
-        <li>When you <a href="/delete-account/?lang=en">delete your account</a>, the encrypted email and phone number are deleted and every published playlist is removed. For a suspended contributor only a keyed hash (which cannot be reversed) is kept, so the suspension still applies.</li>
+        <li>Full name, email and phone number are <strong>encrypted in your browser</strong> with the publisher's public key (RSA-OAEP 3072 + AES-256-GCM) before they are sent. Storage only ever holds the ciphertext; the decryption key is kept by the administrators. They are <strong>never shown publicly</strong>.</li>
+        <li>Only the publisher's administrators can decrypt them, and only to review your application or to contact you about a copyright or abuse report.</li>
+        <li>Where it is stored: Google Cloud Firestore (TS IPTV's Firebase project) for now; later the publisher's own server. Access rules let you read only your own records.</li>
+        <li>Reviewers see your display name, account ID, introduction and the playlists you submit. The public sees only your display name and approved playlists.</li>
+        <li>You can cancel a pending application at any time. When you <a href="/delete-account/?lang=en">delete your account</a>, the application (holding the encrypted data) is deleted and published playlists are removed.</li>
         <li>The mobile app does not collect any of this.</li>
       </ul>
     </div>

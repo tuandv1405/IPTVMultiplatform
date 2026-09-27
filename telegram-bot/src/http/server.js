@@ -1,7 +1,7 @@
 import http from "node:http";
 import { timingSafeEqual } from "node:crypto";
 import { ApiError, badRequest, notFound, tooMany, unauthorized } from "../errors.js";
-import { CATEGORIES, CONTRIBUTOR_DECLARATIONS, POLICY_VERSION, SUBMISSION_DECLARATIONS } from "../policy.js";
+import { CATEGORIES, POLICY_VERSION, POLICY_VERSIONS, SUBMISSION_DECLARATIONS } from "../policy.js";
 import { createRateLimiter } from "../rateLimit.js";
 
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -14,34 +14,44 @@ export function createHttpServer({ service, verifyToken, config, bot = null, log
   const allowedOrigins = new Set(config.corsOrigins);
   const ipLimiter = createRateLimiter({ limit: config.rateLimitPerMinute ?? 30, windowMs: 60_000 });
 
+  const ID = "([A-Za-z0-9_-]{1,128})";
+  const route = (method, path, handler) => [method, new RegExp(`^${path.replaceAll(":id", ID)}$`), handler];
+
+  // Same operations as the browser's Firestore backend (web/public/assets/contributor-backend.js).
   const routes = [
-    ["GET", /^\/healthz$/, async () => ({ ok: true })],
-    [
-      "GET",
-      /^\/api\/policy$/,
-      async () => ({
-        policyVersion: POLICY_VERSION,
-        contributorDeclarations: CONTRIBUTOR_DECLARATIONS,
-        submissionDeclarations: SUBMISSION_DECLARATIONS,
-        categories: CATEGORIES,
-      }),
-    ],
-    ["GET", /^\/api\/me$/, async (ctx) => service.me(await ctx.identity())],
-    // Called by /delete-account/ right before the Firebase account is deleted.
-    ["POST", /^\/api\/me\/delete$/, async (ctx) => service.deleteMe(await ctx.identity())],
-    ["POST", /^\/api\/contributor\/register$/, async (ctx) => service.register(await ctx.identity(), await ctx.json())],
-    [
-      "POST",
-      /^\/api\/playlists\/verify$/,
-      async (ctx) => service.verifyLink(await ctx.identity(), (await ctx.json()).url),
-    ],
-    ["GET", /^\/api\/submissions$/, async (ctx) => ({ submissions: await service.listOwn(await ctx.identity()) })],
-    ["POST", /^\/api\/submissions$/, async (ctx) => service.submit(await ctx.identity(), await ctx.json())],
-    [
-      "POST",
-      /^\/api\/submissions\/([A-Za-z0-9_-]{1,40})\/withdraw$/,
-      async (ctx, [id]) => service.withdraw(await ctx.identity(), id),
-    ],
+    route("GET", "/healthz", async () => ({ ok: true })),
+    route("GET", "/api/policy", async () => ({
+      policyVersion: POLICY_VERSION,
+      policyVersions: POLICY_VERSIONS,
+      submissionDeclarations: SUBMISSION_DECLARATIONS,
+      categories: CATEGORIES,
+    })),
+
+    // Public directory (no sign-in).
+    route("GET", "/api/public/playlists", async () => ({ playlists: await service.listPublic() })),
+    route("GET", "/api/public/playlists/:id/image", async (ctx, [id]) => service.publicImage(id)),
+
+    // The signed-in user.
+    route("GET", "/api/me", async (ctx) => service.me(await ctx.identity())),
+    route("POST", "/api/me/delete", async (ctx) => service.deleteMe(await ctx.identity())),
+    route("GET", "/api/requests/me", async (ctx) => ({ request: await service.getMyRequest(await ctx.identity()) })),
+    route("POST", "/api/requests", async (ctx) => service.createRequest(await ctx.identity(), await ctx.json())),
+    route("POST", "/api/requests/me/cancel", async (ctx) => service.cancelRequest(await ctx.identity())),
+
+    // Contributors.
+    route("POST", "/api/playlists/verify", async (ctx) => service.verifyLink(await ctx.identity(), (await ctx.json()).url)),
+    route("GET", "/api/submissions", async (ctx) => ({ submissions: await service.listOwn(await ctx.identity()) })),
+    route("POST", "/api/submissions", async (ctx) => service.submit(await ctx.identity(), await ctx.json())),
+    route("POST", "/api/submissions/:id/withdraw", async (ctx, [id]) => service.withdraw(await ctx.identity(), id)),
+
+    // Admin console.
+    route("GET", "/api/admin/requests", async (ctx) => ({ requests: await service.listRequests(await ctx.identity(), ctx.query("status")) })),
+    route("POST", "/api/admin/requests/:id/decide", async (ctx, [uid]) => service.adminDecideRequest(await ctx.identity(), uid, await ctx.json())),
+    route("GET", "/api/admin/contributors", async (ctx) => ({ contributors: await service.listContributors(await ctx.identity()) })),
+    route("POST", "/api/admin/contributors/:id/status", async (ctx, [uid]) => service.adminSetContributorStatus(await ctx.identity(), uid, await ctx.json())),
+    route("GET", "/api/admin/submissions", async (ctx) => ({ submissions: await service.listSubmissions(await ctx.identity(), ctx.query("status")) })),
+    route("GET", "/api/admin/submissions/:id/image", async (ctx, [id]) => service.adminImage(await ctx.identity(), id)),
+    route("POST", "/api/admin/submissions/:id/decide", async (ctx, [id]) => service.adminDecideSubmission(await ctx.identity(), id, await ctx.json())),
   ];
 
   if (bot && config.telegram.mode === "webhook") {
@@ -94,6 +104,7 @@ export function createHttpServer({ service, verifyToken, config, bot = null, log
       const ctx = {
         req,
         json: () => readJson(req),
+        query: (name) => url.searchParams.get(name) || null,
         identity: async () => {
           const header = String(req.headers.authorization ?? "");
           const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";

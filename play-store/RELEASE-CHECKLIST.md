@@ -291,3 +291,10 @@ Specs: `docs/prd-rate-app.md`, `docs/prd-contributor-program.md`. QC: `docs/qc-r
 - [ ] One real submission end to end: web → Telegram card → approve → `/playlists/`.
 - [ ] Data safety: contributor email/phone are collected **on the website only**, not by the app, so the app's form does not change. The privacy policy already covers them.
 - Decision kept on purpose: approved playlists are listed **on the website only**, not inside the app (see "Non-goals" in the PRD).
+
+### Contributor programme v2 (Google sign-in, requests, admin console)
+
+- [ ] **Back up** `C:\Users\Admin\.tsiptv-keys\contact-private-key.json` (password manager / offline). It decrypts contributors' contact data; losing it makes that data unreadable.
+- [ ] `firebase deploy --only firestore:rules,hosting` (Google sign-in is already enabled on the project).
+- [ ] Sign in at `/contributor/admin/` as chintk111999@gmail.com, load the key file, and walk one request → approval → upload → approval end to end.
+- [ ] Later, moving to the own server: `telegram-bot/README.md` → "Moving from Firestore to the own server".

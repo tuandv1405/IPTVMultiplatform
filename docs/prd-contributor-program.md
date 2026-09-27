@@ -1,6 +1,8 @@
 # PRD — Contributor programme: publish your own IPTV playlist
 
-Status: **Implemented 2026-09-27** · Owner: PO
+Status: **Implemented 2026-09-27; onboarding superseded by [v2](prd-contributor-requests.md)** · Owner: PO
+
+> **v2 (same day):** contributors now sign in with **Google**, send a **request** that an admin approves, and only then upload playlists; the programme runs on **Firestore now** and on the own server (SQLite) later. Onboarding, pages and storage below are replaced by `docs/prd-contributor-requests.md`; review rules, anti-copy checks, SSRF-safe verification and the Telegram bot still apply.
 Components: `web/public/contributor/`, `web/public/playlists/`, `telegram-bot/`, `firestore.rules`
 
 ---

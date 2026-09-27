@@ -49,19 +49,18 @@
 
     <h2>Quy trình</h2>
     <ol class="steps">
-      <li><strong>Đăng nhập trên web</strong> bằng tài khoản TS IPTV (hoặc tạo tài khoản mới).</li>
-      <li><strong>Xác thực email</strong> — bấm vào liên kết chúng tôi gửi tới hộp thư của bạn.</li>
-      <li><strong>Xác thực số điện thoại</strong> — nhập mã gồm 6 chữ số được gửi qua SMS.</li>
-      <li><strong>Chấp thuận chính sách</strong> bên dưới và chọn tên hiển thị công khai.</li>
-      <li><strong>Gửi danh sách phát</strong>: tên, đường dẫn, hình ảnh, mô tả. Đường dẫn được hệ thống kiểm tra tự động trước khi gửi.</li>
-      <li>Danh sách chuyển sang trạng thái <strong>IN REVIEW</strong> và được gửi tới đội kiểm duyệt. Khi được duyệt, danh sách xuất hiện công khai.</li>
+      <li><strong>Đăng nhập bằng Google</strong> trên trang <a href="/contributor/request/">đăng ký</a>.</li>
+      <li><strong>Điền đơn đăng ký</strong>: tên hiển thị công khai, họ tên, số điện thoại, giới thiệu về bạn và các danh sách bạn duy trì; chấp thuận chính sách này, <a href="/terms/">điều khoản sử dụng</a> và <a href="/privacy/">chính sách quyền riêng tư</a>.</li>
+      <li><strong>Chờ quản trị viên duyệt.</strong> Mỗi tài khoản chỉ có một đơn tại một thời điểm; nếu bị từ chối, bạn có thể sửa và gửi lại.</li>
+      <li>Khi được duyệt, bạn <strong>đăng playlist</strong> trên trang <a href="/contributor/submit/">đăng playlist</a>: tên, đường dẫn, hình ảnh, mô tả.</li>
+      <li>Playlist ở trạng thái <strong>ĐANG DUYỆT</strong> cho tới khi quản trị viên chấp thuận; sau đó xuất hiện trên <a href="/playlists/">thư mục công khai</a>.</li>
     </ol>
 
     <div class="card lock">
-      <h3 style="margin-top:0">🔒 Email và số điện thoại của bạn</h3>
+      <h3 style="margin-top:0">🔒 Họ tên, email và số điện thoại của bạn</h3>
       <ul style="margin-bottom:0">
-        <li>Email và số điện thoại <strong>bắt buộc</strong> để trở thành người đóng góp. Chúng giúp xác định mỗi danh sách thuộc về một người thật, có thể liên hệ được — đây là điều kiện để xử lý khiếu nại bản quyền.</li>
-        <li>Chúng được <strong>mã hoá</strong> (AES-256-GCM) trước khi lưu trữ. Khoá giải mã không được lưu cùng dữ liệu.</li>
+        <li>Họ tên, email và số điện thoại <strong>bắt buộc</strong> để trở thành người đóng góp. Chúng giúp xác định mỗi danh sách thuộc về một người thật, có thể liên hệ được — đây là điều kiện để xử lý khiếu nại bản quyền.</li>
+        <li>Chúng được <strong>mã hoá ngay trên trình duyệt của bạn</strong> (RSA-OAEP 3072 + AES-256-GCM) trước khi gửi đi. Máy chủ và cơ sở dữ liệu chỉ lưu bản mã; khoá giải mã do quản trị viên giữ riêng, không lưu cùng dữ liệu.</li>
         <li>Chúng <strong>không bao giờ được hiển thị công khai</strong> — không trên thư mục, không trong ứng dụng, không cho người kiểm duyệt. Công chúng chỉ thấy tên hiển thị bạn tự chọn.</li>
         <li>Chỉ quản trị viên của nhà phát hành mới có thể giải mã, và chỉ để liên hệ với bạn khi có khiếu nại bản quyền hoặc lạm dụng liên quan tới danh sách của bạn.</li>
         <li>Chúng tôi không bán, không chia sẻ và không dùng chúng cho quảng cáo. Chi tiết trong <a href="/privacy/">chính sách quyền riêng tư</a>.</li>
@@ -99,7 +98,7 @@
     <h3>8. Thay đổi chính sách</h3>
     <p>Khi chính sách thay đổi, ngày phiên bản ở đầu trang được cập nhật và bạn cần chấp thuận lại trước lần gửi tiếp theo.</p>
 
-    <p class="cta"><a class="btn" href="/contributor/app/">Trở thành người đóng góp</a></p>
+    <p class="cta"><a class="btn" href="/contributor/request/">Đăng ký trở thành người đóng góp</a></p>
   </section>
 
   <!-- ==================== ENGLISH ==================== -->
@@ -111,19 +110,18 @@
 
     <h2>How it works</h2>
     <ol class="steps">
-      <li><strong>Sign in on the web</strong> with your TS IPTV account (or create one).</li>
-      <li><strong>Verify your email</strong> — open the link we send to your inbox.</li>
-      <li><strong>Verify your phone number</strong> — enter the 6-digit code sent by SMS.</li>
-      <li><strong>Accept the policy</strong> below and choose a public display name.</li>
-      <li><strong>Submit a playlist</strong>: name, link, image, description. The link is checked automatically before it can be sent.</li>
-      <li>The playlist goes to <strong>IN REVIEW</strong> and is sent to the moderation team. Once approved it is listed publicly.</li>
+      <li><strong>Sign in with Google</strong> on the <a href="/contributor/request/?lang=en">application page</a>.</li>
+      <li><strong>Fill in the application</strong>: public display name, full name, phone number, a few words about you and the playlists you maintain; accept this policy, the <a href="/terms/?lang=en">terms of use</a> and the <a href="/privacy/?lang=en">privacy policy</a>.</li>
+      <li><strong>Wait for an admin to approve it.</strong> One application per account at a time; if it is rejected you can update it and apply again.</li>
+      <li>Once approved, <strong>upload playlists</strong> on the <a href="/contributor/submit/?lang=en">upload page</a>: name, link, image, description.</li>
+      <li>Each playlist stays <strong>IN REVIEW</strong> until an admin approves it; then it appears in the <a href="/playlists/?lang=en">public directory</a>.</li>
     </ol>
 
     <div class="card lock">
-      <h3 style="margin-top:0">🔒 Your email and phone number</h3>
+      <h3 style="margin-top:0">🔒 Your full name, email and phone number</h3>
       <ul style="margin-bottom:0">
-        <li>Email and phone number are <strong>mandatory</strong> to become a contributor. They tie every playlist to a real, reachable person — which is what makes copyright complaints resolvable.</li>
-        <li>They are <strong>encrypted</strong> (AES-256-GCM) before they are stored. The decryption key is not stored with the data.</li>
+        <li>Full name, email and phone number are <strong>mandatory</strong> to become a contributor. They tie every playlist to a real, reachable person — which is what makes copyright complaints resolvable.</li>
+        <li>They are <strong>encrypted in your browser</strong> (RSA-OAEP 3072 + AES-256-GCM) before they are sent. Servers and databases only ever hold ciphertext; the decryption key is kept by the administrators, never with the data.</li>
         <li>They are <strong>never shown publicly</strong> — not in the directory, not in the app, not to reviewers. The public sees only the display name you choose.</li>
         <li>Only the publisher's administrators can decrypt them, and only to contact you about a copyright or abuse report concerning your playlists.</li>
         <li>We do not sell them, share them, or use them for advertising. Details in the <a href="/privacy/?lang=en">privacy policy</a>.</li>
@@ -161,7 +159,7 @@
     <h3>8. Changes</h3>
     <p>When this policy changes, the version date above is updated and you must accept it again before your next submission.</p>
 
-    <p class="cta"><a class="btn" href="/contributor/app/">Become a contributor</a></p>
+    <p class="cta"><a class="btn" href="/contributor/request/?lang=en">Apply to become a contributor</a></p>
   </section>
 
 </main>

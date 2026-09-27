@@ -9,8 +9,12 @@ services:
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/service-account.json
       # Behind the reverse proxy below the client IP arrives in X-Forwarded-For.
       TRUST_PROXY: "true"
+      STORE_DRIVER: sqlite
+      SQLITE_PATH: /app/data/contributors.sqlite
     volumes:
       - ./service-account.json:/run/secrets/service-account.json:ro
+      # The SQLite database. Back up this directory.
+      - ./data:/app/data
     ports:
       # Only reachable from the host; expose it through Caddy/nginx with TLS.
       - "127.0.0.1:8080:8080"

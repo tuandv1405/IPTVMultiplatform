@@ -1,18 +1,21 @@
 {
   "name": "tsiptv-contributor-bot",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "TS IPTV contributor API and Telegram review bot",
+  "description": "TS IPTV contributor server (own-server backend) and Telegram review bot",
   "type": "module",
   "main": "src/index.js",
   "engines": {
-    "node": ">=20.12"
+    "node": ">=22.13"
   },
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "test": "node --test \"test/*.test.js\"",
-    "gen-keys": "node scripts/gen-keys.js"
+    "gen-keys": "node scripts/gen-keys.js",
+    "gen-contact-keypair": "node scripts/gen-contact-keypair.js",
+    "migrate": "node scripts/migrate-firestore-to-sqlite.js",
+    "set-admin": "node scripts/set-admin-claim.js"
   },
   "dependencies": {
     "firebase-admin": "^13.5.0"

@@ -148,26 +148,20 @@ import {
   auth, isSignInWithEmailLink, signInWithEmailLink, deleteUser,
   recallEmail, forgetEmail, describeError,
 } from "/assets/firebase.js";
-import { API_BASE, API_CONFIGURED } from "/assets/contributor-config.js";
+import { getBackend } from "/assets/contributor-backend.js";
 
 /**
- * Contributor data (encrypted email/phone, published playlists) lives with the
- * contributor service, not in Firebase Auth. Asked to purge it first, but this
- * page serves every app user, so a service outage must never block deletion:
- * the service also sweeps contributors whose Firebase account no longer exists.
+ * The contributor request holds this user's (encrypted) full name, email and
+ * phone. It is removed first — on Firestore today, on the own server later.
+ * This page serves every app user, so a failure never blocks the deletion; the
+ * own server also sweeps data of accounts that no longer exist.
  */
-async function purgeContributorData(user) {
-  if (!API_CONFIGURED) return;
+async function purgeContributorData() {
   try {
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), 8000);
-    await fetch(`${API_BASE}/api/me/delete`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${await user.getIdToken()}` },
-      signal: controller.signal,
-    });
+    const backend = await getBackend();
+    await Promise.race([backend.purgeMyData(), new Promise((resolve) => setTimeout(resolve, 8000))]);
   } catch {
-    /* swept later by the contributor service */
+    /* swept later */
   }
 }
 
@@ -244,7 +238,7 @@ document.querySelectorAll('[data-action="delete"]').forEach((btn) => {
     document.querySelectorAll('[data-action="delete"]').forEach((b) => { b.disabled = true; });
     const email = user.email;
     try {
-      await purgeContributorData(user);
+      await purgeContributorData();
       await deleteUser(user);
       setAccount(email);
       show("done");

@@ -1,407 +1,303 @@
+// End-to-end flows of docs/prd-contributor-requests.md over real HTTP, run once
+// on the memory store and once on the SQLite store (the own-server backend).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  ADMIN,
-  MEMBER,
-  REVIEW_CHAT,
-  STRANGER,
-  okVerification,
-  registration,
-  startStack,
-  submission,
-  verifiedUser,
+  ADMIN_EMAIL, DRIVERS, MEMBER, PRIVATE, REVIEW_CHAT, STRANGER, TG_ADMIN,
+  adminUser, googleUser, okVerification, requestBody, startStack, submission,
 } from "./helpers.js";
 
-const PRIVATE = (user) => ({ id: user.id, type: "private" });
-
-async function contributor(stack, uid = "u1", name = "Tuan Lists") {
-  const identity = verifiedUser(uid);
-  const res = await stack.call("POST", "/api/contributor/register", { identity, body: registration(name) });
-  assert.equal(res.status, 200, JSON.stringify(res.body));
-  return identity;
-}
-
-test("onboarding enforces email, phone, policy and declarations (AC-C1..C4)", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-
-  assert.equal((await stack.call("GET", "/api/me")).status, 401, "no token");
-
-  const unverifiedEmail = verifiedUser("u1", { emailVerified: false });
-  let res = await stack.call("POST", "/api/contributor/register", { identity: unverifiedEmail, body: registration() });
-  assert.equal(res.status, 403);
-  assert.equal(res.body.error, "email_not_verified");
-
-  const noPhone = verifiedUser("u1", { phone: null });
-  res = await stack.call("POST", "/api/contributor/register", { identity: noPhone, body: registration() });
-  assert.equal(res.body.error, "phone_not_verified");
-
-  const identity = verifiedUser("u1");
-  res = await stack.call("POST", "/api/contributor/register", {
-    identity,
-    body: { ...registration(), policyVersion: "2000-01-01" },
-  });
-  assert.equal(res.body.error, "policy_outdated");
-
-  res = await stack.call("POST", "/api/contributor/register", {
-    identity,
-    body: { ...registration(), declarations: { contact_accurate: true, accept_policy: true } },
-  });
-  assert.equal(res.body.error, "declarations_required");
-
-  res = await stack.call("POST", "/api/contributor/register", {
-    identity,
-    body: registration("call me 0901 234 567"),
-  });
-  assert.equal(res.body.error, "invalid_public_name");
-
-  res = await stack.call("POST", "/api/contributor/register", { identity, body: registration() });
-  assert.equal(res.status, 200);
-  assert.equal(res.body.contributor.publicName, "Tuan Lists");
-  assert.equal(res.body.contributor.status, "ACTIVE");
-});
-
-test("contact data is stored only encrypted (AC-C5)", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  await stack.call("POST", "/api/submissions", { identity, body: submission() });
-
-  const everything = JSON.stringify(stack.store.dump());
-  assert.ok(!everything.includes(identity.email), "plaintext email found in a document");
-  assert.ok(!everything.includes(identity.phone), "plaintext phone found in a document");
-  assert.ok(!everything.includes("901234567"), "phone digits found in a document");
-
-  const doc = stack.store.dump().contributors.u1;
-  assert.match(doc.emailEnc, /^v1:/);
-  assert.match(doc.phoneEnc, /^v1:/);
-  assert.equal(stack.vault.decrypt(doc.emailEnc), identity.email);
-  assert.equal(doc.emailHash, stack.vault.hash("email", identity.email.toUpperCase()), "hash is case-insensitive");
-
-  const me = await stack.call("GET", "/api/me", { identity });
-  assert.ok(!JSON.stringify(me.body.contributor).includes("+84"), "profile must not echo the phone");
-});
-
-test("submit → IN_REVIEW → posted to admin DMs and the review group with the image (AC-S4)", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-
-  const res = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-  assert.equal(res.status, 200, JSON.stringify(res.body));
-  assert.equal(res.body.status, "IN_REVIEW");
-  assert.equal(res.body.channelCount, 12);
-
-  const photos = stack.telegram.byMethod("sendPhoto");
-  assert.deepEqual(photos.map((p) => p.chatId).sort(), ["-1001", "999"].sort());
-  assert.match(photos[0].caption, /IN REVIEW/);
-  assert.match(photos[0].caption, /My Vietnam news/);
-  assert.ok(!photos[0].caption.includes("u1@example.com"), "reviewers must not see the email");
-  assert.equal(photos[0].reply_markup.inline_keyboard[0][0].callback_data, `ap:${res.body.id}`);
-
-  const list = await stack.call("GET", "/api/submissions", { identity });
-  assert.equal(list.body.submissions.length, 1);
-});
-
-test("an admin who pressed Start in a DM receives cards too", async (t) => {
-  const stack = await startStack({ configOverrides: { telegram: { adminChatIds: [] } } });
-  t.after(stack.close);
-  await stack.say(ADMIN, PRIVATE(ADMIN), "/start");
-  const identity = await contributor(stack);
-  await stack.call("POST", "/api/submissions", { identity, body: submission() });
-  const chats = stack.telegram.byMethod("sendPhoto").map((p) => p.chatId).sort();
-  assert.deepEqual(chats, [String(ADMIN.id), "-1001"].sort());
-});
-
-test("any member of the review group approves; every copy is updated; public doc appears (AC-V1, AC-V4)", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  const { body } = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-
-  await stack.press(MEMBER, REVIEW_CHAT, `ap:${body.id}`);
-
-  const edits = stack.telegram.byMethod("editMessageCaption");
-  assert.equal(edits.length, 2, "both the DM and the group card are edited");
-  for (const edit of edits) {
-    assert.match(edit.caption, /APPROVED/);
-    assert.match(edit.caption, /@reviewer_a/);
-  }
-  const published = await stack.store.getPublicPlaylist(body.id);
-  assert.equal(published.name, "My Vietnam news");
-  assert.equal(published.publicName, "Tuan Lists");
-  assert.ok(!("ownerUid" in published), "the public doc has no uid");
-  assert.ok(await stack.store.getImage("public", body.id), "the image is published too");
-
-  const mine = await stack.call("GET", "/api/submissions", { identity });
-  assert.equal(mine.body.submissions[0].status, "APPROVED");
-});
-
-test("two concurrent decisions produce one transition (AC-V2)", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  const { body } = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-
-  await Promise.all([
-    stack.press(MEMBER, REVIEW_CHAT, `ap:${body.id}`),
-    stack.press(ADMIN, PRIVATE(ADMIN), `rr:${body.id}:broken`),
-  ]);
-  const final = await stack.store.getSubmission(body.id);
-  assert.ok(["APPROVED", "REJECTED"].includes(final.status));
-  const answers = stack.telegram.byMethod("answerCallbackQuery");
-  assert.equal(answers.filter((a) => /already/i.test(a.text ?? "")).length, 1, "the loser is told it was already decided");
-});
-
-test("reject needs a reason, which the contributor sees (AC-V3)", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  const { body } = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-
-  await stack.press(MEMBER, REVIEW_CHAT, `rj:${body.id}`);
-  const menu = stack.telegram.byMethod("editMessageReplyMarkup").at(-1);
-  assert.ok(menu.reply_markup.inline_keyboard.some((row) => row[0].callback_data === `rr:${body.id}:copyright`));
-  assert.equal((await stack.store.getSubmission(body.id)).status, "IN_REVIEW", "opening the menu decides nothing");
-
-  await stack.press(MEMBER, REVIEW_CHAT, `rr:${body.id}:copyright`);
-  const mine = await stack.call("GET", "/api/submissions", { identity });
-  assert.equal(mine.body.submissions[0].status, "REJECTED");
-  assert.equal(mine.body.submissions[0].statusReason.code, "copyright");
-
-  // Rejected as copied: the link stays locked.
-  const again = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-  assert.equal(again.status, 409);
-});
-
-test("a link rejected for another reason can be resubmitted", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  const { body } = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-  await stack.press(MEMBER, REVIEW_CHAT, `rr:${body.id}:incomplete`);
-  const again = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-  assert.equal(again.status, 200);
-});
-
-test("take down: admins only; removes the public doc (AC-V5, AC-V6)", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  const { body } = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-  await stack.press(MEMBER, REVIEW_CHAT, `ap:${body.id}`);
-
-  await stack.press(MEMBER, REVIEW_CHAT, `td:${body.id}`);
-  assert.equal((await stack.store.getSubmission(body.id)).status, "APPROVED", "a non-admin member cannot take down");
-  assert.match(stack.telegram.byMethod("answerCallbackQuery").at(-1).text, /Only admins/);
-
-  await stack.say(MEMBER, REVIEW_CHAT, `/takedown ${body.id} dmca`);
-  assert.equal((await stack.store.getSubmission(body.id)).status, "APPROVED");
-
-  await stack.say(ADMIN, PRIVATE(ADMIN), `/takedown ${body.id} DMCA notice from the rights holder`);
-  const removed = await stack.store.getSubmission(body.id);
-  assert.equal(removed.status, "REMOVED");
-  assert.equal(removed.statusReason.note, "DMCA notice from the rights holder");
-  assert.equal(await stack.store.getPublicPlaylist(body.id), null);
-  assert.equal(await stack.store.getImage("public", body.id), null);
-
-  const mine = await stack.call("GET", "/api/submissions", { identity });
-  assert.equal(mine.body.submissions[0].status, "REMOVED");
-});
-
-test("a stranger pressing a button in a private chat is refused (AC-V7)", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  const { body } = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-
-  await stack.press(STRANGER, PRIVATE(STRANGER), `ap:${body.id}`);
-  assert.equal((await stack.store.getSubmission(body.id)).status, "IN_REVIEW");
-  assert.equal(stack.telegram.byMethod("answerCallbackQuery").at(-1).showAlert, true);
-});
-
-test("/contact: admins only, private chat only (AC-V6)", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  const { body } = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-
-  await stack.say(ADMIN, REVIEW_CHAT, `/contact ${body.id}`);
-  let last = stack.telegram.byMethod("sendMessage").at(-1);
-  assert.ok(!last.text.includes(identity.email), "never in a group");
-
-  await stack.say(MEMBER, PRIVATE(MEMBER), `/contact ${body.id}`);
-  last = stack.telegram.byMethod("sendMessage").at(-1);
-  assert.ok(!last.text.includes(identity.email), "never to a non-admin");
-
-  await stack.say(ADMIN, PRIVATE(ADMIN), `/contact ${body.id}`);
-  last = stack.telegram.byMethod("sendMessage").at(-1);
-  assert.ok(last.text.includes(identity.email));
-  assert.ok(last.text.includes(identity.phone));
-});
-
-test("the same link by another contributor is refused (AC-S5)", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const a = await contributor(stack, "u1", "Alice");
-  const b = await contributor(stack, "u2", "Bob");
-  assert.equal((await stack.call("POST", "/api/submissions", { identity: a, body: submission() })).status, 200);
-  const res = await stack.call("POST", "/api/submissions", {
-    identity: b,
-    // Same list, different spelling of the host and a fragment.
-    body: submission({ url: "https://LISTS.example.com:443/a.m3u#x" }),
-  });
-  assert.equal(res.status, 409);
-  assert.equal(res.body.error, "link_already_submitted");
-});
-
-test("identical content from another contributor is flagged to reviewers (AC-S6)", async (t) => {
-  const stack = await startStack({ verifyPlaylist: async () => okVerification({ contentHash: "same" }) });
-  t.after(stack.close);
-  const a = await contributor(stack, "u1", "Alice");
-  const b = await contributor(stack, "u2", "Bob");
-  const first = await stack.call("POST", "/api/submissions", { identity: a, body: submission() });
-  const second = await stack.call("POST", "/api/submissions", {
-    identity: b,
-    body: submission({ url: "https://mirror.example.net/copy.m3u" }),
-  });
-  assert.equal(second.status, 200);
-  const card = stack.telegram.byMethod("sendPhoto").at(-1);
-  assert.match(card.caption, /Identical channel list/);
-  assert.ok(card.caption.includes(first.body.id));
-});
-
-test("at most 3 in review at a time (AC-S7)", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  for (let i = 0; i < 3; i++) {
-    const res = await stack.call("POST", "/api/submissions", {
-      identity,
-      body: submission({ url: `https://lists.example.com/${i}.m3u` }),
+for (const driver of DRIVERS) {
+  const it = (name, fn) =>
+    test(`[${driver}] ${name}`, async (t) => {
+      const stack = await startStack({ driver, ...(fn.options ?? {}) });
+      t.after(stack.close);
+      await fn(stack);
     });
-    assert.equal(res.status, 200);
-  }
-  const res = await stack.call("POST", "/api/submissions", {
-    identity,
-    body: submission({ url: "https://lists.example.com/4.m3u" }),
+  const itWith = (options, name, fn) => it(name, Object.assign(fn, { options }));
+
+  // ---- requests ------------------------------------------------------------
+
+  it("AC-Q1: every user endpoint needs a sign-in", async ({ call }) => {
+    for (const [method, path] of [["GET", "/api/me"], ["POST", "/api/requests"], ["GET", "/api/admin/requests"], ["POST", "/api/submissions"]]) {
+      assert.equal((await call(method, path)).status, 401, path);
+    }
   });
-  assert.equal(res.status, 429);
-  assert.equal(res.body.error, "too_many_in_review");
-});
 
-test("a failing link check blocks the submission (AC-S3)", async (t) => {
-  const stack = await startStack({
-    verifyPlaylist: async () => ({ ok: false, code: "not_a_playlist", message: "The link returns a web page." }),
+  it("AC-Q2/Q6: one request at a time; consents and encrypted contact required", async ({ call }) => {
+    const identity = googleUser("u1");
+    let res = await call("POST", "/api/requests", { identity, body: await requestBody({ consents: { policy: "2026-09-27" } }) });
+    assert.equal(res.body.error, "consents_required");
+
+    const plaintext = { ...(await requestBody()), contactEnc: { fullName: "A", phone: "+84901234567" } };
+    res = await call("POST", "/api/requests", { identity, body: plaintext });
+    assert.equal(res.body.error, "invalid_contact", "contact data must arrive encrypted");
+
+    const password = googleUser("u1", { provider: "password" });
+    res = await call("POST", "/api/requests", { identity: password, body: await requestBody() });
+    assert.equal(res.body.error, "google_required");
+
+    res = await call("POST", "/api/requests", { identity, body: await requestBody() });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.equal(res.body.status, "PENDING");
+    assert.equal(res.body.attempt, 1);
+
+    res = await call("POST", "/api/requests", { identity, body: await requestBody() });
+    assert.equal(res.status, 409);
+    assert.equal(res.body.error, "request_pending");
   });
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  const res = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-  assert.equal(res.status, 400);
-  assert.equal(res.body.error, "link_check_failed");
-  assert.equal(res.body.details.reason, "not_a_playlist");
-  assert.equal(stack.telegram.byMethod("sendPhoto").length, 0, "nothing reaches reviewers");
-});
 
-test("private and local links are refused before anything is fetched (AC-S2)", async (t) => {
-  let fetched = 0;
-  const stack = await startStack({ verifyPlaylist: async () => (fetched++, okVerification()) });
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  for (const url of [
-    "http://127.0.0.1/a.m3u",
-    "http://localhost:8080/a.m3u",
-    "http://10.0.0.5/a.m3u",
-    "http://192.168.1.1/a.m3u",
-    "http://169.254.169.254/latest/meta-data",
-    "http://[::1]/a.m3u",
-    "ftp://example.com/a.m3u",
-    "https://user:pass@example.com/a.m3u",
-    "http://example.com:22/a.m3u",
-  ]) {
-    const res = await stack.call("POST", "/api/playlists/verify", { identity, body: { url } });
-    assert.equal(res.status, 400, url);
-  }
-  assert.equal(fetched, 0);
-});
+  it("AC-Q3: after a rejection the user may apply again; after approval never", async ({ call }) => {
+    const identity = googleUser("u1");
+    await call("POST", "/api/requests", { identity, body: await requestBody() });
+    await call("POST", "/api/admin/requests/u1/decide", { identity: adminUser(), body: { decision: "REJECTED", reason: "Tell us more" } });
+    const mine = await call("GET", "/api/requests/me", { identity });
+    assert.equal(mine.body.request.status, "REJECTED");
+    assert.equal(mine.body.request.decision.reason, "Tell us more");
 
-test("submission requires image, declarations and valid fields", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  const cases = [
-    [{ image: undefined }, "invalid_image"],
-    [{ image: "data:image/png;base64,AAAA" }, "invalid_image"],
-    [{ declarations: { own_work: true, not_copied: true } }, "declarations_required"],
-    [{ name: "ab" }, "invalid_name"],
-    [{ category: "warez" }, "invalid_category"],
-    [{ language: "vietnamese" }, "invalid_language"],
-  ];
-  for (const [override, code] of cases) {
-    const res = await stack.call("POST", "/api/submissions", { identity, body: submission(override) });
-    assert.equal(res.body.error, code, JSON.stringify(override));
-  }
-});
-
-test("withdraw an approved playlist unpublishes it and frees the link", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  const { body } = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-  await stack.press(MEMBER, REVIEW_CHAT, `ap:${body.id}`);
-
-  const other = verifiedUser("u9");
-  assert.equal((await stack.call("POST", `/api/submissions/${body.id}/withdraw`, { identity: other })).status, 404);
-
-  const res = await stack.call("POST", `/api/submissions/${body.id}/withdraw`, { identity });
-  assert.equal(res.body.status, "WITHDRAWN");
-  assert.equal(await stack.store.getPublicPlaylist(body.id), null);
-  assert.match(stack.telegram.byMethod("editMessageCaption").at(-1).caption, /WITHDRAWN/);
-  assert.equal((await stack.call("POST", "/api/submissions", { identity, body: submission() })).status, 200);
-});
-
-test("/ban removes every live playlist and blocks further submissions", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  const a = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-  const b = await stack.call("POST", "/api/submissions", {
-    identity,
-    body: submission({ url: "https://lists.example.com/b.m3u" }),
+    const again = await call("POST", "/api/requests", { identity, body: await requestBody() });
+    assert.equal(again.body.attempt, 2);
+    await call("POST", "/api/admin/requests/u1/decide", { identity: adminUser(), body: { decision: "APPROVED" } });
+    const third = await call("POST", "/api/requests", { identity, body: await requestBody() });
+    assert.equal(third.body.error, "already_contributor");
+    const me = await call("GET", "/api/me", { identity });
+    assert.equal(me.body.contributor.status, "ACTIVE");
+    assert.equal(me.body.isAdmin, false);
   });
-  await stack.press(MEMBER, REVIEW_CHAT, `ap:${a.body.id}`);
 
-  await stack.say(ADMIN, PRIVATE(ADMIN), "/ban u1 stolen lists");
-  assert.equal((await stack.store.getSubmission(a.body.id)).status, "REMOVED");
-  assert.equal((await stack.store.getSubmission(b.body.id)).status, "REJECTED");
-  const res = await stack.call("POST", "/api/submissions", {
-    identity,
-    body: submission({ url: "https://lists.example.com/c.m3u" }),
+  it("AC-Q4/Q7: only admins list and decide; users see only their own request", async ({ call }) => {
+    await call("POST", "/api/requests", { identity: googleUser("u1"), body: await requestBody() });
+    assert.equal((await call("GET", "/api/admin/requests", { identity: googleUser("u2") })).status, 403);
+    assert.equal((await call("POST", "/api/admin/requests/u1/decide", { identity: googleUser("u1"), body: { decision: "APPROVED" } })).status, 403);
+    assert.equal((await call("GET", "/api/requests/me", { identity: googleUser("u2") })).body.request, null);
+    // A look-alike address is not the owner.
+    const fake = googleUser("x", { email: `${ADMIN_EMAIL}.evil.com` });
+    assert.equal((await call("GET", "/api/admin/requests", { identity: fake })).status, 403);
+    // The custom claim works.
+    const claimed = googleUser("y", { email: "helper@gmail.com", admin: true });
+    const list = await call("GET", "/api/admin/requests?status=PENDING", { identity: claimed });
+    assert.equal(list.body.requests.length, 1);
+    assert.equal(list.body.requests[0].telegramMessages, undefined, "bookkeeping is not exposed");
   });
-  assert.equal(res.body.error, "banned");
-});
 
-test("CORS only for the configured origin", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const good = await stack.call("OPTIONS", "/api/me", { headers: { Origin: "https://tsiptv-8bdd6.web.app" } });
-  assert.equal(good.status, 204);
-  assert.equal(good.headers.get("access-control-allow-origin"), "https://tsiptv-8bdd6.web.app");
-  const bad = await stack.call("OPTIONS", "/api/me", { headers: { Origin: "https://evil.example" } });
-  assert.equal(bad.status, 403);
-  assert.equal(bad.headers.get("access-control-allow-origin"), null);
-});
+  it("AC-Q5: the server stores contact data only as ciphertext; /contact decrypts for an admin DM", async ({ call, store, say, telegram }) => {
+    const identity = googleUser("u1");
+    await call("POST", "/api/requests", { identity, body: await requestBody({ phone: "+84901234567", fullName: "Nguyen Van Tuan", email: identity.email }) });
+    const raw = JSON.stringify(await store.getRequest("u1"));
+    for (const secret of ["+84901234567", "Nguyen Van Tuan", identity.email]) assert.ok(!raw.includes(secret), secret);
 
-test("/pending re-posts the queue into the asking chat and tracks the new message", async (t) => {
-  const stack = await startStack();
-  t.after(stack.close);
-  const identity = await contributor(stack);
-  const { body } = await stack.call("POST", "/api/submissions", { identity, body: submission() });
-  const before = stack.telegram.byMethod("sendPhoto").length;
-  await stack.say(MEMBER, REVIEW_CHAT, "/pending");
-  assert.equal(stack.telegram.byMethod("sendPhoto").length, before + 1);
-  assert.equal((await stack.store.getSubmission(body.id)).telegramMessages.length, 3);
+    await say(TG_ADMIN, REVIEW_CHAT, "/contact u1");
+    assert.ok(!telegram.byMethod("sendMessage").at(-1).text.includes("+84901234567"), "never in a group");
+    await say(MEMBER, PRIVATE(MEMBER), "/contact u1");
+    assert.ok(!telegram.byMethod("sendMessage").at(-1).text.includes("+84901234567"), "never to a non-admin");
+    await say(TG_ADMIN, PRIVATE(TG_ADMIN), "/contact u1");
+    const text = telegram.byMethod("sendMessage").at(-1).text;
+    assert.ok(text.includes("+84901234567") && text.includes("Nguyen Van Tuan"));
+  });
 
-  await stack.say(STRANGER, PRIVATE(STRANGER), "/pending");
-  assert.match(stack.telegram.byMethod("sendMessage").at(-1).text, /not allowed/);
-});
+  it("requests reach Telegram; only an admin can approve them there", async ({ call, telegram, press, store }) => {
+    await call("POST", "/api/requests", { identity: googleUser("u1"), body: await requestBody() });
+    const cards = telegram.byMethod("sendMessage").filter((m) => /CONTRIBUTOR REQUEST/.test(m.text));
+    assert.deepEqual(cards.map((c) => c.chatId).sort(), ["-1001", "999"].sort());
+    assert.ok(!cards[0].text.includes("+849"), "no contact data on cards");
+    assert.equal(cards[0].reply_markup.inline_keyboard[0][0].callback_data, "qa:u1");
+
+    await press(STRANGER, PRIVATE(STRANGER), "qa:u1");
+    assert.equal((await store.getRequest("u1")).status, "PENDING", "strangers cannot decide");
+    await press(MEMBER, REVIEW_CHAT, "qa:u1");
+    assert.equal((await store.getRequest("u1")).status, "PENDING", "review-group members review playlists, not contributors");
+    assert.match(telegram.byMethod("answerCallbackQuery").at(-1).text, /Only admins/);
+    await press(TG_ADMIN, REVIEW_CHAT, "qa:u1");
+    assert.equal((await store.getRequest("u1")).status, "APPROVED");
+    assert.equal((await store.getContributor("u1")).status, "ACTIVE");
+    const edits = telegram.byMethod("editMessageText").filter((e) => /CONTRIBUTOR APPROVED/.test(e.text));
+    assert.equal(edits.length, 2);
+    assert.match(edits[0].text, /@tuandv1405/);
+  });
+
+  it("a request rejected in Telegram carries the reason to the user", async ({ call, press }) => {
+    const identity = googleUser("u1");
+    await call("POST", "/api/requests", { identity, body: await requestBody() });
+    await press(TG_ADMIN, PRIVATE(TG_ADMIN), "qx:u1:incomplete");
+    const mine = await call("GET", "/api/requests/me", { identity });
+    assert.equal(mine.body.request.status, "REJECTED");
+    assert.equal(mine.body.request.decision.reason, "Not enough information");
+  });
+
+  it("QC-1: a suspended contributor cannot come back by cancelling and re-applying", async ({ call, makeContributor }) => {
+    const identity = await makeContributor("u1");
+    await call("POST", "/api/admin/contributors/u1/status", { identity: adminUser(), body: { status: "SUSPENDED", note: "x" } });
+    await call("POST", "/api/requests/me/cancel", { identity });
+    const again = await call("POST", "/api/requests", { identity, body: await requestBody({ publicName: "Second Name" }) });
+    assert.equal(again.body.error, "already_contributor");
+    const me = await call("GET", "/api/me", { identity });
+    assert.equal(me.body.contributor.status, "SUSPENDED");
+  });
+
+  it("QC-7/13: empty contact envelopes are refused; the owner email needs Google sign-in to be admin", async ({ call }) => {
+    const body = await requestBody();
+    const empty = { ...body, contactEnc: { v: 1, alg: body.contactEnc.alg, kid: "", wrappedKey: "", iv: "", ct: "" } };
+    assert.equal((await call("POST", "/api/requests", { identity: googleUser("u1"), body: empty })).body.error, "invalid_contact");
+    const passwordOwner = googleUser("x", { email: ADMIN_EMAIL, provider: "password" });
+    assert.equal((await call("GET", "/api/admin/requests", { identity: passwordOwner })).status, 403);
+  });
+
+  it("the user can cancel a pending request and apply again", async ({ call }) => {
+    const identity = googleUser("u1");
+    await call("POST", "/api/requests", { identity, body: await requestBody() });
+    assert.equal((await call("POST", "/api/requests/me/cancel", { identity })).status, 200);
+    assert.equal((await call("GET", "/api/requests/me", { identity })).body.request, null);
+    assert.equal((await call("POST", "/api/requests", { identity, body: await requestBody() })).status, 200);
+  });
+
+  // ---- playlists -------------------------------------------------------------
+
+  it("AC-Q8: non-contributors and suspended contributors cannot upload", async ({ call, makeContributor }) => {
+    const outsider = googleUser("u9");
+    assert.equal((await call("POST", "/api/submissions", { identity: outsider, body: submission() })).body.error, "not_contributor");
+    assert.equal((await call("POST", "/api/playlists/verify", { identity: outsider, body: { url: "https://x.example/a.m3u" } })).body.error, "not_contributor");
+
+    const identity = await makeContributor("u1");
+    await call("POST", "/api/admin/contributors/u1/status", { identity: adminUser(), body: { status: "SUSPENDED", note: "stolen lists" } });
+    assert.equal((await call("POST", "/api/submissions", { identity, body: submission() })).body.error, "suspended");
+    await call("POST", "/api/admin/contributors/u1/status", { identity: adminUser(), body: { status: "ACTIVE" } });
+    assert.equal((await call("POST", "/api/submissions", { identity, body: submission() })).status, 200);
+  });
+
+  it("AC-Q9: submit → admin console approves → public directory → withdraw removes it", async ({ call, makeContributor, telegram }) => {
+    const identity = await makeContributor("u1");
+    const { body } = await call("POST", "/api/submissions", { identity, body: submission() });
+    assert.equal(body.status, "IN_REVIEW");
+    assert.equal(body.verification.method, "server");
+    assert.equal(telegram.byMethod("sendPhoto").length, 2, "posted to the admin DM and the review group");
+
+    assert.equal((await call("POST", `/api/admin/submissions/${body.id}/decide`, { identity, body: { action: "approve" } })).status, 403);
+    const list = await call("GET", "/api/admin/submissions?status=IN_REVIEW", { identity: adminUser() });
+    assert.equal(list.body.submissions.length, 1);
+    const image = await call("GET", `/api/admin/submissions/${body.id}/image`, { identity: adminUser() });
+    assert.equal(image.body.mime, "image/png");
+
+    const approved = await call("POST", `/api/admin/submissions/${body.id}/decide`, { identity: adminUser(), body: { action: "approve" } });
+    assert.equal(approved.body.status, "APPROVED");
+    assert.equal(approved.body.review.name, "Admin", "never the owner's personal email");
+
+    const pub = await call("GET", "/api/public/playlists");
+    assert.equal(pub.body.playlists.length, 1);
+    assert.equal(pub.body.playlists[0].publicName, "Tuan Lists");
+    assert.ok(!("ownerUid" in pub.body.playlists[0]));
+    assert.equal((await call("GET", `/api/public/playlists/${body.id}/image`)).status, 200);
+
+    const again = await call("POST", `/api/admin/submissions/${body.id}/decide`, { identity: adminUser(), body: { action: "approve" } });
+    assert.equal(again.status, 409);
+
+    await call("POST", `/api/submissions/${body.id}/withdraw`, { identity });
+    assert.equal((await call("GET", "/api/public/playlists")).body.playlists.length, 0);
+  });
+
+  it("admin rejects with a reason; takes down an approved playlist", async ({ call, makeContributor }) => {
+    const identity = await makeContributor("u1");
+    const a = await call("POST", "/api/submissions", { identity, body: submission() });
+    const b = await call("POST", "/api/submissions", { identity, body: submission({ url: "https://lists.example.com/b.m3u" }) });
+    const admin = adminUser();
+    await call("POST", `/api/admin/submissions/${a.body.id}/decide`, { identity: admin, body: { action: "reject", code: "broken", note: "404" } });
+    await call("POST", `/api/admin/submissions/${b.body.id}/decide`, { identity: admin, body: { action: "approve" } });
+    await call("POST", `/api/admin/submissions/${b.body.id}/decide`, { identity: admin, body: { action: "takedown", note: "DMCA" } });
+    const mine = (await call("GET", "/api/submissions", { identity })).body.submissions;
+    const byId = Object.fromEntries(mine.map((s) => [s.id, s]));
+    assert.deepEqual(byId[a.body.id].statusReason, { code: "broken", note: "404" });
+    assert.equal(byId[b.body.id].status, "REMOVED");
+    assert.equal(byId[b.body.id].statusReason.note, "DMCA");
+    assert.equal((await call("GET", "/api/public/playlists")).body.playlists.length, 0);
+    const bad = await call("POST", `/api/admin/submissions/${a.body.id}/decide`, { identity: admin, body: { action: "explode" } });
+    assert.equal(bad.body.error, "invalid_action");
+  });
+
+  it("suspending a contributor rejects/removes all their live playlists", async ({ call, makeContributor, store }) => {
+    const identity = await makeContributor("u1");
+    const a = await call("POST", "/api/submissions", { identity, body: submission() });
+    const b = await call("POST", "/api/submissions", { identity, body: submission({ url: "https://lists.example.com/b.m3u" }) });
+    await call("POST", `/api/admin/submissions/${a.body.id}/decide`, { identity: adminUser(), body: { action: "approve" } });
+    const res = await call("POST", "/api/admin/contributors/u1/status", { identity: adminUser(), body: { status: "SUSPENDED", note: "copied" } });
+    assert.equal(res.body.status, "SUSPENDED");
+    assert.equal((await store.getSubmission(a.body.id)).status, "REMOVED");
+    assert.equal((await store.getSubmission(b.body.id)).status, "REJECTED");
+    assert.equal(await store.getPublicPlaylist(a.body.id), null);
+    const contributors = await call("GET", "/api/admin/contributors", { identity: adminUser() });
+    assert.equal(contributors.body.contributors[0].statusNote, "copied");
+  });
+
+  it("the Telegram review flow still works for playlists (approve, reject reason, take down)", async ({ call, makeContributor, press, say, store, telegram }) => {
+    const identity = await makeContributor("u1");
+    const a = await call("POST", "/api/submissions", { identity, body: submission() });
+    await press(MEMBER, REVIEW_CHAT, `ap:${a.body.id}`);
+    assert.equal((await store.getSubmission(a.body.id)).review.name, "@reviewer_a");
+    await press(MEMBER, REVIEW_CHAT, `td:${a.body.id}`);
+    assert.equal((await store.getSubmission(a.body.id)).status, "APPROVED", "members cannot take down");
+    await say(TG_ADMIN, PRIVATE(TG_ADMIN), `/takedown ${a.body.id} DMCA`);
+    assert.equal((await store.getSubmission(a.body.id)).status, "REMOVED");
+
+    const b = await call("POST", "/api/submissions", { identity, body: submission({ url: "https://lists.example.com/b.m3u" }) });
+    await press(MEMBER, REVIEW_CHAT, `rr:${b.body.id}:copyright`);
+    assert.equal((await store.getSubmission(b.body.id)).statusReason.code, "copyright");
+    // Rejected as copied: the link stays locked.
+    assert.equal((await call("POST", "/api/submissions", { identity, body: submission({ url: "https://lists.example.com/b.m3u" }) })).status, 409);
+    assert.ok(telegram.byMethod("editMessageCaption").length >= 3);
+  });
+
+  it("/pending re-posts waiting requests and playlists; strangers are refused", async ({ call, makeContributor, say, telegram }) => {
+    const identity = await makeContributor("u1");
+    await call("POST", "/api/submissions", { identity, body: submission() });
+    await call("POST", "/api/requests", { identity: googleUser("u2"), body: await requestBody() });
+    const before = telegram.calls.length;
+    await say(MEMBER, REVIEW_CHAT, "/pending");
+    const posted = telegram.calls.slice(before);
+    assert.ok(posted.some((c) => c.method === "sendPhoto"));
+    assert.ok(posted.some((c) => c.method === "sendMessage" && /CONTRIBUTOR REQUEST/.test(c.text)));
+    await say(STRANGER, PRIVATE(STRANGER), "/pending");
+    assert.match(telegram.byMethod("sendMessage").at(-1).text, /not allowed/);
+  });
+
+  it("the same link by another contributor is refused; identical content is flagged", async ({ call, makeContributor, telegram }) => {
+    const a = await makeContributor("u1", "Alice");
+    const b = await makeContributor("u2", "Bob");
+    assert.equal((await call("POST", "/api/submissions", { identity: a, body: submission() })).status, 200);
+    const dup = await call("POST", "/api/submissions", { identity: b, body: submission({ url: "https://LISTS.example.com:443/a.m3u#x" }) });
+    assert.equal(dup.body.error, "link_already_submitted");
+    const mirror = await call("POST", "/api/submissions", { identity: b, body: submission({ url: "https://mirror.example.net/copy.m3u" }) });
+    assert.equal(mirror.status, 200);
+    assert.match(telegram.byMethod("sendPhoto").at(-1).caption, /Identical channel list/);
+  });
+
+  itWith({ verifyPlaylist: async () => ({ ok: false, code: "not_a_playlist", message: "Web page" }) },
+    "on the own server a failing link check blocks the upload", async ({ call, makeContributor }) => {
+      const identity = await makeContributor("u1");
+      const res = await call("POST", "/api/submissions", { identity, body: submission() });
+      assert.equal(res.body.error, "link_check_failed");
+      assert.equal(res.body.details.reason, "not_a_playlist");
+    });
+
+  it("private and local links are refused before anything is fetched", async ({ call, makeContributor }) => {
+    const identity = await makeContributor("u1");
+    for (const url of ["http://127.0.0.1/a.m3u", "http://localhost:8080/a", "http://169.254.169.254/", "http://[::1]/a", "ftp://x.example/a"]) {
+      assert.equal((await call("POST", "/api/playlists/verify", { identity, body: { url } })).status, 400, url);
+    }
+  });
+
+  it("account deletion removes the request (encrypted contact) and withdraws playlists", async ({ call, makeContributor, store }) => {
+    const identity = await makeContributor("u1");
+    const { body } = await call("POST", "/api/submissions", { identity, body: submission() });
+    await call("POST", `/api/admin/submissions/${body.id}/decide`, { identity: adminUser(), body: { action: "approve" } });
+    assert.equal((await call("POST", "/api/me/delete", { identity })).status, 200);
+    assert.equal(await store.getRequest("u1"), null);
+    assert.equal(await store.getContributor("u1"), null);
+    assert.equal((await store.getSubmission(body.id)).status, "WITHDRAWN");
+    assert.equal(await store.getPublicPlaylist(body.id), null);
+  });
+
+  it("CORS only for the configured origin", async ({ call }) => {
+    const good = await call("OPTIONS", "/api/me", { headers: { Origin: "https://tsiptv-8bdd6.web.app" } });
+    assert.equal(good.status, 204);
+    const bad = await call("OPTIONS", "/api/me", { headers: { Origin: "https://evil.example" } });
+    assert.equal(bad.status, 403);
+  });
+}

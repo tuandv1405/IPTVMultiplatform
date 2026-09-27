@@ -2,36 +2,303 @@ rules_version = '2';
 
 // TS IPTV — Cloud Firestore security rules.
 //
-// The app stores almost nothing server side: playlists, channels, guide data and
-// watch history all live in a local Room database on the device. The only
-// documents here belong to a single signed-in user, so the rules are narrow by
-// design: a user reaches their own subtree and nothing else.
+// 1. users/{uid}/**: private per-user data of the app (unchanged).
+// 2. The contributor programme (docs/prd-contributor-requests.md). While it runs
+//    on Firestore, browsers write here directly, so these rules ARE the backend:
+//    every limit the product promises is enforced below, not in the page.
+//      contributor_requests/{uid}    one request per user, owner + admin read
+//      contributors/{uid}            written only by admins
+//      playlist_submissions/{id}     created only by ACTIVE contributors
+//      playlist_submission_images/{id}, playlist_urls/{sha256}
+//      public_playlists/{id}, public_playlist_images/{id}   world-readable
+// 3. Everything else is denied.
 //
-// Deploy with:  firebase deploy --only firestore:rules
+// Tests: firestore-tests/ (npm test, against the emulator).
+// Deploy: firebase deploy --only firestore:rules
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // users/{uid} and everything beneath it is private to that user.
+    // ---- helpers ----------------------------------------------------------
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isGoogle() {
+      return request.auth.token.get('firebase', {}).get('sign_in_provider', '') == 'google.com';
+    }
+
+    // The Firebase project owner, plus anyone given the `admin` custom claim
+    // (telegram-bot/scripts/set-admin-claim.js). Keep in sync with ADMIN_EMAILS
+    // in web/public/assets/contributor-config.js.
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.get('admin', false) == true ||
+        (isGoogle() && request.auth.token.get('email_verified', false) == true &&
+         request.auth.token.get('email', '') in ['chintk111999@gmail.com'])
+      );
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function contributorPath(uid) {
+      return /databases/$(database)/documents/contributors/$(uid);
+    }
+
+    function isActiveContributor() {
+      return signedIn() && exists(contributorPath(request.auth.uid)) &&
+        get(contributorPath(request.auth.uid)).data.status == 'ACTIVE';
+    }
+
+    function text(v, min, max) {
+      return v is string && v.size() >= min && v.size() <= max;
+    }
+
+    function optionalLink(links, i) {
+      return links.size() <= i || (links[i] is string && links[i].size() <= 500 && links[i].matches('^https?://.{3,}'));
+    }
+
+    function changed() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ---- 1. app user data -------------------------------------------------
+
     match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
     }
 
-    // Contributor programme (docs/prd-contributor-program.md). Approved playlists
-    // are public and hold no personal data. Everything else the programme
-    // stores — contributors (encrypted email/phone), submissions, their images,
-    // link locks, bot state — is written and read only by the contributor bot
-    // through the Admin SDK, which bypasses these rules, so browsers get nothing.
-    match /public_playlists/{playlistId} {
+    // ---- 2a. requests to become a contributor ----------------------------
+
+    function validContact(c) {
+      return c is map && c.keys().hasAll(['v', 'alg', 'kid', 'wrappedKey', 'iv', 'ct']) &&
+        c.keys().hasOnly(['v', 'alg', 'kid', 'wrappedKey', 'iv', 'ct']) &&
+        c.v == 1 && c.alg == 'RSA-OAEP-256+A256GCM' && text(c.kid, 8, 64) &&
+        text(c.wrappedKey, 100, 2048) && text(c.iv, 12, 32) && text(c.ct, 20, 4096);
+    }
+
+    function validConsents(c) {
+      return c is map && c.keys().hasAll(['policy', 'terms', 'privacy', 'acceptedAt']) &&
+        c.keys().hasOnly(['policy', 'terms', 'privacy', 'acceptedAt']) &&
+        text(c.policy, 4, 20) && text(c.terms, 4, 20) && text(c.privacy, 4, 20) &&
+        c.acceptedAt == request.time;
+    }
+
+    // A complete, fresh request written by its owner.
+    function validRequest(uid) {
+      let d = request.resource.data;
+      return d.keys().hasAll(['uid', 'publicName', 'about', 'links', 'contactEnc', 'consents', 'status', 'attempt', 'createdAt', 'updatedAt']) &&
+        d.keys().hasOnly(['uid', 'publicName', 'about', 'links', 'contactEnc', 'consents', 'status', 'attempt', 'createdAt', 'updatedAt']) &&
+        d.uid == uid && d.status == 'PENDING' &&
+        text(d.publicName, 2, 40) && text(d.about, 20, 1000) &&
+        d.links is list && d.links.size() <= 3 &&
+        optionalLink(d.links, 0) && optionalLink(d.links, 1) && optionalLink(d.links, 2) &&
+        validContact(d.contactEnc) && validConsents(d.consents) &&
+        d.attempt is int && d.createdAt == request.time && d.updatedAt == request.time;
+    }
+
+    match /contributor_requests/{uid} {
+      allow get: if isOwner(uid) || isAdmin();
+      allow list: if isAdmin();
+
+      // First request. The document ID is the UID, so a user can never hold two.
+      // A contributor record (active or suspended) means the user was approved
+      // already: applying again must not be a way round a suspension.
+      allow create: if isOwner(uid) && isGoogle() && validRequest(uid) && request.resource.data.attempt == 1 &&
+        !exists(contributorPath(uid));
+
+      allow update: if
+        // The owner may apply again only after a rejection (never while PENDING,
+        // never after APPROVED).
+        (isOwner(uid) && isGoogle() && resource.data.status == 'REJECTED' && validRequest(uid) &&
+          request.resource.data.attempt == resource.data.attempt + 1 && !exists(contributorPath(uid))) ||
+        // An admin decides a pending request. Approval must create the
+        // contributor in the same batch.
+        (isAdmin() && resource.data.status == 'PENDING' &&
+          changed().hasOnly(['status', 'decision', 'updatedAt']) &&
+          request.resource.data.status in ['APPROVED', 'REJECTED'] &&
+          request.resource.data.decision.keys().hasOnly(['by', 'name', 'at', 'reason']) &&
+          request.resource.data.decision.by == request.auth.uid &&
+          request.resource.data.decision.at == request.time &&
+          text(request.resource.data.decision.reason, 0, 500) &&
+          request.resource.data.updatedAt == request.time &&
+          (request.resource.data.status == 'REJECTED' ||
+            getAfter(contributorPath(uid)).data.status == 'ACTIVE'));
+
+      // Cancelling a request, or deleting the account (the request holds the
+      // encrypted contact data). Admins may clean up.
+      allow delete: if isOwner(uid) || isAdmin();
+    }
+
+    // ---- 2b. contributors ---------------------------------------------------
+
+    match /contributors/{uid} {
+      allow get: if isOwner(uid) || isAdmin();
+      allow list: if isAdmin();
+
+      // Created only together with an approved request, never over an existing
+      // (e.g. suspended) contributor, and with the name the user asked for.
+      allow create, update: if isAdmin() && (
+        (resource == null &&
+          request.resource.data.keys().hasOnly(['uid', 'publicName', 'status', 'approvedAt', 'approvedBy', 'updatedAt']) &&
+          request.resource.data.uid == uid && request.resource.data.status == 'ACTIVE' &&
+          request.resource.data.publicName == getAfter(/databases/$(database)/documents/contributor_requests/$(uid)).data.publicName &&
+          request.resource.data.approvedBy == request.auth.uid &&
+          request.resource.data.approvedAt == request.time &&
+          getAfter(/databases/$(database)/documents/contributor_requests/$(uid)).data.status == 'APPROVED') ||
+        // Suspend / reinstate.
+        (resource != null && changed().hasOnly(['status', 'statusNote', 'updatedAt']) &&
+          request.resource.data.status in ['ACTIVE', 'SUSPENDED'] &&
+          text(request.resource.data.statusNote, 0, 300) &&
+          request.resource.data.updatedAt == request.time)
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ---- 2c. playlist submissions -------------------------------------------
+
+    function submissionPath(id) {
+      return /databases/$(database)/documents/playlist_submissions/$(id);
+    }
+
+    function validSubmission(id) {
+      let d = request.resource.data;
+      return d.keys().hasAll(['id', 'ownerUid', 'publicName', 'name', 'url', 'urlHash', 'description', 'category', 'language', 'declarations', 'verification', 'status', 'statusReason', 'createdAt', 'updatedAt']) &&
+        d.keys().hasOnly(['id', 'ownerUid', 'publicName', 'name', 'url', 'urlHash', 'description', 'category', 'language', 'declarations', 'verification', 'status', 'statusReason', 'createdAt', 'updatedAt']) &&
+        d.id == id && d.ownerUid == request.auth.uid &&
+        d.publicName == get(contributorPath(request.auth.uid)).data.publicName &&
+        text(d.name, 3, 80) && text(d.url, 10, 2048) && normalisedUrl(d.url) &&
+        // The lock key is derived from the link here, not trusted from the client.
+        d.urlHash == hashing.sha256(d.url).toHexString().lower() &&
+        text(d.description, 0, 500) &&
+        d.category in ['general', 'news', 'sports', 'movies', 'kids', 'music', 'documentary', 'education', 'religious', 'regional', 'other'] &&
+        d.language is string && d.language.matches('^([a-z]{2,3}|multi)$') &&
+        d.declarations.keys().hasOnly(['own_work', 'not_copied', 'rights_ok', 'policyVersion']) &&
+        d.declarations.own_work == true && d.declarations.not_copied == true && d.declarations.rights_ok == true &&
+        text(d.declarations.policyVersion, 4, 20) &&
+        validBrowserCheck(d.verification) &&
+        d.status == 'IN_REVIEW' && d.statusReason == null &&
+        d.createdAt == request.time && d.updatedAt == request.time;
+    }
+
+    // The form normaliseUrl() in contributor-backend.js produces, so that one link
+    // has one spelling and therefore one lock: lower-case host, no user info, no
+    // default port, a path, no fragment, no "." / ".." path segments.
+    function normalisedUrl(u) {
+      return u.matches('https?://[a-z0-9.-]*[a-z0-9](:[1-9][0-9]{0,4})?/[^#\\s]*') &&
+        !u.matches('https://[^/]+:443/.*') && !u.matches('http://[^/]+:80/.*') &&
+        !u.matches('[^?]*/[.]{1,2}(/[^?]*)?([?].*)?') &&
+        !u.matches('[^?]*%2[eE].*') &&
+        !u.matches('https?://[^/]+[^?]*//.*') &&
+        !u.matches('.*[?]');
+    }
+
+    function optionalCount(v) {
+      return v == null || (v is int && v >= 0 && v <= 100000);
+    }
+
+    // What the browser could check. Self-reported, so bounded and marked as such.
+    function validBrowserCheck(v) {
+      return v == null || (v is map &&
+        v.keys().hasOnly(['ok', 'method', 'format', 'channelCount', 'groupCount']) &&
+        v.method == 'browser' &&
+        (v.get('ok', null) == null || v.ok is bool) &&
+        (v.get('format', null) == null || v.format in ['m3u', 'xspf', 'json']) &&
+        optionalCount(v.get('channelCount', null)) && optionalCount(v.get('groupCount', null)));
+    }
+
+    match /playlist_submissions/{id} {
+      allow get: if (signedIn() && resource.data.ownerUid == request.auth.uid) || isAdmin();
+      // Queries must filter on ownerUid == own uid; admins may list everything.
+      allow list: if (signedIn() && resource.data.ownerUid == request.auth.uid) || isAdmin();
+
+      // Only ACTIVE contributors, and only together with the image and the link lock.
+      allow create: if isActiveContributor() && validSubmission(id) &&
+        existsAfter(/databases/$(database)/documents/playlist_submission_images/$(id)) &&
+        getAfter(/databases/$(database)/documents/playlist_urls/$(request.resource.data.urlHash)).data.submissionId == id;
+
+      allow update: if
+        // The owner withdraws. An approved one must leave the public directory in the same batch.
+        (signedIn() && resource.data.ownerUid == request.auth.uid &&
+          resource.data.status in ['IN_REVIEW', 'APPROVED'] &&
+          request.resource.data.status == 'WITHDRAWN' &&
+          changed().hasOnly(['status', 'statusReason', 'updatedAt']) &&
+          request.resource.data.statusReason == {'code': 'withdrawn'} &&
+          request.resource.data.updatedAt == request.time &&
+          !existsAfter(/databases/$(database)/documents/public_playlists/$(id)) &&
+          !existsAfter(/databases/$(database)/documents/public_playlist_images/$(id))) ||
+        // An admin decides: approve / reject a submission in review, take down an approved one.
+        (isAdmin() &&
+          changed().hasOnly(['status', 'statusReason', 'review', 'updatedAt']) &&
+          request.resource.data.review.by == request.auth.uid &&
+          request.resource.data.review.at == request.time &&
+          request.resource.data.updatedAt == request.time &&
+          ((resource.data.status == 'IN_REVIEW' && request.resource.data.status == 'APPROVED' &&
+              existsAfter(/databases/$(database)/documents/public_playlists/$(id))) ||
+           (resource.data.status == 'IN_REVIEW' && request.resource.data.status == 'REJECTED') ||
+           (resource.data.status == 'APPROVED' && request.resource.data.status == 'REMOVED' &&
+              !existsAfter(/databases/$(database)/documents/public_playlists/$(id)) &&
+              !existsAfter(/databases/$(database)/documents/public_playlist_images/$(id)))));
+
+      allow delete: if false;
+    }
+
+    match /playlist_submission_images/{id} {
+      allow get: if isAdmin() || (signedIn() && get(submissionPath(id)).data.ownerUid == request.auth.uid);
+      allow list: if false;
+      // Only in the batch that creates its submission.
+      allow create: if isActiveContributor() && !exists(submissionPath(id)) &&
+        getAfter(submissionPath(id)).data.ownerUid == request.auth.uid &&
+        request.resource.data.keys().hasOnly(['mime', 'data']) &&
+        request.resource.data.mime in ['image/png', 'image/jpeg', 'image/webp'] &&
+        text(request.resource.data.data, 100, 420000);
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // Link locks: one contributor per playlist link. The ID is sha256 of the
+    // normalised link. Anyone signed in may check whether a link is taken.
+    match /playlist_urls/{hash} {
+      allow get: if isActiveContributor() || isAdmin();
+      allow list: if false;
+      allow create: if isActiveContributor() &&
+        request.resource.data.keys().hasOnly(['submissionId', 'ownerUid']) &&
+        request.resource.data.ownerUid == request.auth.uid &&
+        !exists(submissionPath(request.resource.data.submissionId)) &&
+        getAfter(submissionPath(request.resource.data.submissionId)).data.urlHash == hash;
+      allow update: if false;
+      // Released when the owner withdraws, or by an admin.
+      allow delete: if isAdmin() ||
+        (signedIn() && resource.data.ownerUid == request.auth.uid &&
+          getAfter(submissionPath(resource.data.submissionId)).data.status == 'WITHDRAWN');
+    }
+
+    // ---- 2d. public directory ---------------------------------------------------
+
+    match /public_playlists/{id} {
       allow read: if true;
-      allow write: if false;
-    }
-    match /public_playlist_images/{playlistId} {
-      allow get: if true;
-      allow list, write: if false;
+      allow create, update: if isAdmin() && getAfter(submissionPath(id)).data.status == 'APPROVED' &&
+        request.resource.data.keys().hasOnly(['id', 'name', 'url', 'description', 'category', 'language', 'publicName', 'channelCount', 'groupCount', 'format', 'approvedAt']) &&
+        request.resource.data.id == id;
+      allow delete: if isAdmin() ||
+        (signedIn() && get(submissionPath(id)).data.ownerUid == request.auth.uid &&
+          getAfter(submissionPath(id)).data.status == 'WITHDRAWN');
     }
 
-    // Anything not matched above is denied. Without this, a future collection
-    // added in the console would start out world-readable.
+    match /public_playlist_images/{id} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if isAdmin() && getAfter(submissionPath(id)).data.status == 'APPROVED';
+      allow delete: if isAdmin() ||
+        (signedIn() && get(submissionPath(id)).data.ownerUid == request.auth.uid &&
+          getAfter(submissionPath(id)).data.status == 'WITHDRAWN');
+    }
+
+    // ---- 3. everything else -------------------------------------------------------
+    // Also covers the collections the own-server backend uses when it runs on
+    // Firestore (Admin SDK bypasses rules, browsers get nothing).
     match /{document=**} {
       allow read, write: if false;
     }

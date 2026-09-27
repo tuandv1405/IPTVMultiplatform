@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import zlib from "node:zlib";
 import { randomBytes } from "node:crypto";
-import { createPiiVault } from "../src/crypto.js";
 import { loadConfig } from "../src/config.js";
 import { createLogger } from "../src/logger.js";
 import { parseImageDataUrl } from "../src/image.js";
@@ -15,25 +14,6 @@ import { renderSubmission } from "../src/telegram/render.js";
 import { PNG_DATA_URL } from "./helpers.js";
 
 const key = () => randomBytes(32).toString("base64");
-
-test("vault: round trip, random IV, tamper detection, domain-separated hashes", () => {
-  const vault = createPiiVault({ encryptionKey: key(), hashKey: key() });
-  const a = vault.encrypt("a@example.com");
-  const b = vault.encrypt("a@example.com");
-  assert.notEqual(a, b, "same plaintext, different ciphertext");
-  assert.equal(vault.decrypt(a), "a@example.com");
-
-  const parts = a.split(":");
-  parts[3] = Buffer.from("tampered").toString("base64url");
-  assert.throws(() => vault.decrypt(parts.join(":")));
-
-  assert.notEqual(vault.hash("email", "x"), vault.hash("phone", "x"));
-  assert.equal(vault.hash("phone", "+84 90-123"), vault.hash("phone", "+8490123"));
-
-  const other = createPiiVault({ encryptionKey: key(), hashKey: key() });
-  assert.throws(() => other.decrypt(a), "another key cannot read it");
-  assert.throws(() => createPiiVault({ encryptionKey: "short", hashKey: key() }));
-});
 
 test("netguard: public vs reserved addresses", () => {
   for (const ip of ["8.8.8.8", "1.1.1.1", "2606:4700:4700::1111"]) assert.ok(isPublicAddress(ip), ip);
@@ -204,26 +184,21 @@ test("image: checks magic bytes, not the declared type", () => {
 test("config: lists every problem, refuses dev auth in production (AC-D4)", () => {
   assert.throws(() => loadConfig({}), (error) => {
     assert.match(error.message, /TELEGRAM_BOT_TOKEN is required/);
-    assert.match(error.message, /PII_ENCRYPTION_KEY is required/);
     assert.match(error.message, /at least one of TELEGRAM_ADMIN_CHAT_IDS/);
     return true;
   });
-  const base = {
-    TELEGRAM_BOT_TOKEN: "123:abc",
-    TELEGRAM_ADMIN_USERNAMES: "@TuanDV1405",
-    PII_ENCRYPTION_KEY: key(),
-    PII_HASH_KEY: key(),
-  };
+  const base = { TELEGRAM_BOT_TOKEN: "123:abc", TELEGRAM_ADMIN_USERNAMES: "@TuanDV1405" };
   const config = loadConfig(base);
   assert.deepEqual(config.telegram.adminUsernames, ["tuandv1405"]);
-  assert.equal(config.telegram.mode, "polling");
+  assert.equal(config.storeDriver, "sqlite", "the own server is the default");
+  assert.deepEqual(config.adminEmails, ["chintk111999@gmail.com"]);
+  assert.equal(loadConfig({ TELEGRAM_MODE: "off" }).telegram.mode, "off", "Telegram is optional");
 
   assert.throws(() => loadConfig({ ...base, NODE_ENV: "production", ALLOW_DEV_AUTH: "true" }), /ALLOW_DEV_AUTH/);
   assert.throws(() => loadConfig({ ...base, TELEGRAM_MODE: "webhook" }), /TELEGRAM_WEBHOOK_URL/);
   assert.throws(() => loadConfig({ ...base, TELEGRAM_REVIEW_CHAT_ID: "@group" }), /must be numeric/);
-  assert.throws(() => loadConfig({ ...base, PII_HASH_KEY: base.PII_ENCRYPTION_KEY }), /different keys/);
+  assert.throws(() => loadConfig({ ...base, STORE_DRIVER: "mysql" }), /STORE_DRIVER/);
 });
-
 test("logger redacts personal data", () => {
   const lines = [];
   const log = createLogger({ write: (line) => lines.push(line) });

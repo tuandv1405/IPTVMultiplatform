@@ -1,20 +1,22 @@
-import { REJECT_REASONS, STATUS } from "../policy.js";
+import { REJECT_REASONS, REQUEST_REJECT_REASONS, REQUEST_STATUS, STATUS } from "../policy.js";
 import { ADMIN_CHATS_STATE } from "./notifier.js";
-import { escapeHtml, rejectReasonKeyboard, reviewKeyboard, reviewerLabel } from "./render.js";
+import {
+  escapeHtml, rejectReasonKeyboard, requestKeyboard, requestRejectKeyboard, reviewKeyboard, reviewerLabel,
+} from "./render.js";
 
 const HELP = [
   "<b>TS IPTV review bot</b>",
   "",
-  "New playlists arrive here as cards. Anyone in the review group can use the buttons.",
+  "Contributor requests and new playlists arrive here as cards. Anyone in the review group can use the buttons.",
   "",
-  "/pending — post every playlist waiting for review",
+  "/pending — post every request and playlist waiting for review",
   "/stats — counts per status",
   "/whoami — this chat's ID and your user ID (for .env)",
   "",
   "<i>Admins only</i>",
   "/takedown &lt;id&gt; [reason] — remove a published playlist",
   "/ban &lt;uid&gt; [reason] — suspend a contributor and remove their playlists",
-  "/contact &lt;id&gt; — contributor's email and phone (private chat only)",
+  "/contact &lt;playlist id or uid&gt; — contributor's name, email and phone (private chat only; needs CONTACT_PRIVATE_KEY_FILE)",
 ].join("\n");
 
 /**
@@ -36,10 +38,10 @@ export function createBot({ api, service, notifier, config, store, log = console
   // only admins may press the buttons.
   const canReview = (user, chat) => (reviewChatId && String(chat?.id) === reviewChatId) || isAdmin(user);
 
+  // Same { by, name } shape as an admin in the web console.
   const reviewerOf = (user) => ({
-    id: user.id,
-    username: user.username ?? null,
-    name: [user.first_name, user.last_name].filter(Boolean).join(" ") || null,
+    by: `tg:${user.id}`,
+    name: user.username ? `@${user.username}` : [user.first_name, user.last_name].filter(Boolean).join(" ") || `tg:${user.id}`,
   });
 
   const reply = (chatId, text, extra = {}) =>
@@ -89,6 +91,9 @@ export function createBot({ api, service, notifier, config, store, log = console
       case "ban":
         if (!isAdmin(user)) return denied(chat);
         return ban(chat, user, args);
+      case "reinstate":
+        if (!isAdmin(user)) return denied(chat);
+        return reinstate(chat, user, args);
       case "contact":
         if (!isAdmin(user)) return denied(chat);
         if (chat.type !== "private") {
@@ -118,8 +123,15 @@ export function createBot({ api, service, notifier, config, store, log = console
   }
 
   async function pending(chat) {
+    const requests = await service.pendingRequests(10);
     const items = await service.pending(10);
-    if (items.length === 0) return reply(chat.id, "Nothing is waiting for review. 🎉");
+    if (items.length === 0 && requests.length === 0) return reply(chat.id, "Nothing is waiting for review. 🎉");
+    if (requests.length) await reply(chat.id, `🟡 ${requests.length} contributor request(s):`);
+    for (const request of requests) {
+      const ref = await notifier.postRequestCard(chat.id, request);
+      await service.addRequestMessages(request.uid, [ref]);
+    }
+    if (items.length === 0) return;
     await reply(chat.id, `🟡 ${items.length} playlist(s) in review:`);
     for (const submission of items) {
       const image = await service.getImage(submission.id);
@@ -145,24 +157,40 @@ export function createBot({ api, service, notifier, config, store, log = console
   async function ban(chat, user, args) {
     const [uid, ...rest] = args.split(/\s+/);
     if (!uid) return reply(chat.id, "Usage: /ban &lt;uid&gt; [reason]");
-    const result = await service.ban(uid, reviewerOf(user), rest.join(" ") || "Contributor suspended");
-    if (!result.ok) return reply(chat.id, `No contributor with uid <code>${escapeHtml(uid)}</code>.`);
-    return reply(
-      chat.id,
-      `⛔ Contributor <code>${escapeHtml(uid)}</code> suspended. ${result.affected.length} playlist(s) rejected or removed.`,
-    );
+    try {
+      const result = await service.setContributorStatus(uid, "SUSPENDED", rest.join(" ") || "Contributor suspended", reviewerOf(user));
+      return reply(
+        chat.id,
+        `⛔ Contributor <code>${escapeHtml(uid)}</code> suspended. ${result.affected.length} playlist(s) rejected or removed.`,
+      );
+    } catch {
+      return reply(chat.id, `No contributor with uid <code>${escapeHtml(uid)}</code>.`);
+    }
+  }
+
+  async function reinstate(chat, user, args) {
+    const uid = args.split(/\s+/)[0];
+    if (!uid) return reply(chat.id, "Usage: /reinstate &lt;uid&gt;");
+    try {
+      await service.setContributorStatus(uid, "ACTIVE", "", reviewerOf(user));
+      return reply(chat.id, `✅ Contributor <code>${escapeHtml(uid)}</code> reinstated.`);
+    } catch {
+      return reply(chat.id, `No contributor with uid <code>${escapeHtml(uid)}</code>.`);
+    }
   }
 
   async function contact(chat, args) {
     const id = args.split(/\s+/)[0];
     if (!id) return reply(chat.id, "Usage: /contact &lt;submission id&gt;");
     const info = await service.contact(id);
-    if (!info) return reply(chat.id, `No submission <code>${escapeHtml(id)}</code>.`);
+    if (info?.unavailable) return reply(chat.id, "🔒 CONTACT_PRIVATE_KEY_FILE is not configured on this server. Use the admin console instead.");
+    if (!info) return reply(chat.id, `No request or playlist <code>${escapeHtml(id)}</code>.`);
     log.info?.("contact data disclosed to admin", { submission: id, chat: chat.id });
     return reply(
       chat.id,
       [
         `👤 ${escapeHtml(info.publicName)} · <code>${escapeHtml(info.uid)}</code>`,
+        `🪪 ${escapeHtml(info.fullName)}`,
         `✉️ ${escapeHtml(info.email)}`,
         `📱 ${escapeHtml(info.phone)}`,
         "",
@@ -182,10 +210,44 @@ export function createBot({ api, service, notifier, config, store, log = console
     const user = query.from;
 
     if (!canReview(user, chat)) {
-      return api.answerCallbackQuery(query.id, "Only members of the review group can review playlists.", true);
+      return api.answerCallbackQuery(query.id, "Only members of the review group can review.", true);
+    }
+
+    // Deciding who becomes a contributor is the admins' call (the review group
+    // reviews playlists).
+    if (action.startsWith("q") && !isAdmin(user)) {
+      return api.answerCallbackQuery(query.id, "Only admins can decide contributor requests.", true);
     }
 
     switch (action) {
+      // ---- contributor requests ----
+      case "qa": {
+        try {
+          const result = await service.decideRequest(id, REQUEST_STATUS.APPROVED, "", reviewerOf(user));
+          return answerResult(query, result, "✅ Contributor approved");
+        } catch (error) {
+          if (error.code !== "already_contributor") throw error;
+          return api.answerCallbackQuery(query.id, "This user is already a contributor (possibly suspended). Use /reinstate instead.", true);
+        }
+      }
+      case "qr": {
+        const request = await service.getRequest(id);
+        if (request?.status !== REQUEST_STATUS.PENDING) return answerResult(query, { ok: false, current: request });
+        await editKeyboard(message, requestRejectKeyboard(id));
+        return api.answerCallbackQuery(query.id, "Pick a reason");
+      }
+      case "qb": {
+        const request = await service.getRequest(id);
+        if (request) await editKeyboard(message, requestKeyboard(request));
+        return api.answerCallbackQuery(query.id);
+      }
+      case "qx": {
+        if (!(code in REQUEST_REJECT_REASONS)) return api.answerCallbackQuery(query.id, "Unknown reason", true);
+        const reason = REQUEST_REJECT_REASONS[code].replace(/^\S+\s/, "");
+        const result = await service.decideRequest(id, REQUEST_STATUS.REJECTED, reason, reviewerOf(user));
+        return answerResult(query, result, "❌ Request rejected");
+      }
+      // ---- playlists ----
       case "ap": {
         const result = await service.approve(id, reviewerOf(user));
         return answerResult(query, result, "✅ Approved and published");
@@ -240,8 +302,8 @@ export function createBot({ api, service, notifier, config, store, log = console
   }
 
   function notApplied(id, current, expected) {
-    if (!current) return `No submission ${id ? `<code>${escapeHtml(id)}</code>` : "with that ID"}.`;
-    const by = current.reviewedBy || current.removedBy;
+    if (!current) return `Nothing ${id ? `with ID <code>${escapeHtml(id)}</code>` : "with that ID"}.`;
+    const by = current.review || current.decision;
     return `Not ${expected}: already ${current.status}${by ? ` by ${escapeHtml(reviewerLabel(by))}` : ""}.`;
   }
 

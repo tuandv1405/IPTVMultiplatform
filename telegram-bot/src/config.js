@@ -22,7 +22,8 @@ export function loadConfig(env = process.env) {
 
   const nodeEnv = env.NODE_ENV || "development";
   const mode = (env.TELEGRAM_MODE || "polling").toLowerCase();
-  const storeDriver = (env.STORE_DRIVER || "firestore").toLowerCase();
+  // sqlite: the own server (VPS / physical). firestore: Cloud Run. memory: tests / dry runs.
+  const storeDriver = (env.STORE_DRIVER || "sqlite").toLowerCase();
 
   const config = {
     nodeEnv,
@@ -34,10 +35,15 @@ export function loadConfig(env = process.env) {
     corsOrigins: list(env.CORS_ORIGINS).length ? list(env.CORS_ORIGINS) : DEFAULT_ORIGINS,
     rateLimitPerMinute: Number(env.RATE_LIMIT_PER_MINUTE || 30),
     storeDriver,
+    sqlitePath: env.SQLITE_PATH || "./data/contributors.sqlite",
+    // Admins of the web console / API. Keep in sync with firestore.rules and contributor-config.js.
+    adminEmails: list(env.ADMIN_EMAILS || "chintk111999@gmail.com").map((e) => e.toLowerCase()),
+    // Optional: lets Telegram /contact decrypt contact data. The admin console needs no server key.
+    contactPrivateKeyFile: env.CONTACT_PRIVATE_KEY_FILE || null,
     allowDevAuth: env.ALLOW_DEV_AUTH === "true",
     firebaseProjectId: env.FIREBASE_PROJECT_ID || "tsiptv-8bdd6",
     telegram: {
-      token: required("TELEGRAM_BOT_TOKEN"),
+      token: mode === "off" ? env.TELEGRAM_BOT_TOKEN || "" : required("TELEGRAM_BOT_TOKEN"),
       mode,
       webhookUrl: (env.TELEGRAM_WEBHOOK_URL || "").replace(/\/+$/, ""),
       webhookSecret: env.TELEGRAM_WEBHOOK_SECRET || "",
@@ -45,26 +51,10 @@ export function loadConfig(env = process.env) {
       adminUsernames: list(env.TELEGRAM_ADMIN_USERNAMES).map((u) => u.replace(/^@/, "").toLowerCase()),
       reviewChatId: (env.TELEGRAM_REVIEW_CHAT_ID || "").trim() || null,
     },
-    pii: {
-      encryptionKey: required("PII_ENCRYPTION_KEY"),
-      hashKey: required("PII_HASH_KEY"),
-    },
   };
 
-  for (const [key, value] of [
-    ["PII_ENCRYPTION_KEY", config.pii.encryptionKey],
-    ["PII_HASH_KEY", config.pii.hashKey],
-  ]) {
-    if (value && Buffer.from(value, "base64").length !== 32) {
-      problems.push(`${key} must be 32 bytes, base64-encoded (npm run gen-keys)`);
-    }
-  }
-  if (config.pii.encryptionKey && config.pii.encryptionKey === config.pii.hashKey) {
-    problems.push("PII_ENCRYPTION_KEY and PII_HASH_KEY must be different keys");
-  }
-
   const t = config.telegram;
-  if (t.adminChatIds.length === 0 && t.adminUsernames.length === 0 && !t.reviewChatId) {
+  if (mode !== "off" && t.adminChatIds.length === 0 && t.adminUsernames.length === 0 && !t.reviewChatId) {
     problems.push("Set at least one of TELEGRAM_ADMIN_CHAT_IDS, TELEGRAM_ADMIN_USERNAMES or TELEGRAM_REVIEW_CHAT_ID");
   }
   for (const id of [...t.adminChatIds, ...(t.reviewChatId ? [t.reviewChatId] : [])]) {
@@ -77,7 +67,8 @@ export function loadConfig(env = process.env) {
       problems.push("TELEGRAM_WEBHOOK_SECRET must be 16-256 characters of A-Z a-z 0-9 _ -");
     }
   }
-  if (!["firestore", "memory"].includes(storeDriver)) problems.push("STORE_DRIVER must be firestore or memory");
+  if (!["sqlite", "firestore", "memory"].includes(storeDriver)) problems.push("STORE_DRIVER must be sqlite, firestore or memory");
+  if (config.adminEmails.length === 0) problems.push("ADMIN_EMAILS must list at least one admin");
   if (config.allowDevAuth && nodeEnv === "production") {
     problems.push("ALLOW_DEV_AUTH=true is refused when NODE_ENV=production");
   }

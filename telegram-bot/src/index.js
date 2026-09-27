@@ -1,13 +1,15 @@
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createDevAuthVerifier, createFirebaseAuthVerifier } from "./auth.js";
 import { ConfigError, loadConfig } from "./config.js";
-import { createPiiVault } from "./crypto.js";
+import { importPrivateKey } from "./contactCrypto.js";
 import { createHttpServer } from "./http/server.js";
 import { createLogger } from "./logger.js";
 import { createContributorService } from "./service.js";
 import { createMemoryStore } from "./store/memoryStore.js";
 import { createFirestoreStore } from "./store/firestoreStore.js";
+import { createSqliteStore } from "./store/sqliteStore.js";
 import { createTelegramApi } from "./telegram/api.js";
 import { createBot, runPolling } from "./telegram/bot.js";
 import { createNotifier } from "./telegram/notifier.js";
@@ -51,19 +53,36 @@ if (config.storeDriver === "firestore" || !config.allowDevAuth) {
     verifyToken = createFirebaseAuthVerifier(firebaseAuth);
   }
 }
+if (!store && config.storeDriver === "sqlite") {
+  mkdirSync(dirname(config.sqlitePath), { recursive: true });
+  store = createSqliteStore(config.sqlitePath);
+}
 if (!store) store = createMemoryStore();
 if (!verifyToken) {
   log.warn("ALLOW_DEV_AUTH is on: any 'dev:' token is accepted. Never use this outside your machine.");
   verifyToken = createDevAuthVerifier();
 }
 
+// Optional: only Telegram /contact needs it. Admins normally decrypt in the web console.
+let contactPrivateKey = null;
+if (config.contactPrivateKeyFile) {
+  const { kid, ...jwk } = JSON.parse(readFileSync(config.contactPrivateKeyFile, "utf8"));
+  contactPrivateKey = await importPrivateKey(jwk);
+}
+
 const api = createTelegramApi({ token: config.telegram.token });
-const notifier = createNotifier({ api, config, store, log });
+const telegramOn = config.telegram.mode !== "off";
+const realNotifier = createNotifier({ api, config, store, log });
+// With Telegram off, notifications are simply skipped.
+const notifier = telegramOn
+  ? realNotifier
+  : { announce: async () => [], refresh: async () => {}, announceRequest: async () => {}, refreshRequest: async () => {}, postCard: realNotifier.postCard, postRequestCard: realNotifier.postRequestCard };
 const service = createContributorService({
   store,
-  vault: createPiiVault(config.pii),
   verifyPlaylist: createPlaylistVerifier(),
   notifier,
+  adminEmails: config.adminEmails,
+  contactPrivateKey,
   log,
 });
 const bot = createBot({ api, service, notifier, config, store, log });
@@ -79,7 +98,7 @@ const shutdown = new AbortController();
 // contributor data purged. Only "user-not-found" counts as deleted; any other
 // error is treated as "still exists" so nothing is purged on a lookup failure.
 // Against the Auth emulator every production uid looks deleted: never sweep then.
-if (firebaseAuth && config.storeDriver === "firestore" && !process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+if (firebaseAuth && config.storeDriver !== "memory" && !process.env.FIREBASE_AUTH_EMULATOR_HOST) {
   const accountExists = async (uid) => {
     try {
       await firebaseAuth.getUser(uid);

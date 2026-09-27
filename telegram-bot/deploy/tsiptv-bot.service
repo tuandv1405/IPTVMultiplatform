@@ -22,6 +22,8 @@ ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
 ReadOnlyPaths=/opt/tsiptv-bot
+# The SQLite database lives here (SQLITE_PATH=./data/contributors.sqlite).
+ReadWritePaths=/opt/tsiptv-bot/data
 
 [Install]
 WantedBy=multi-user.target

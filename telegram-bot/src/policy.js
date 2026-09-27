@@ -5,12 +5,19 @@
  */
 export const POLICY_VERSION = "2026-09-27";
 
-/** Ticked once, when becoming a contributor. */
-export const CONTRIBUTOR_DECLARATIONS = [
-  "contact_accurate", // the email and phone are mine and reachable
-  "accept_policy", // I have read and accept the contributor policy
-  "accept_takedown", // the publisher may remove my playlists and my access at any time
-];
+/** Accepted with every contributor request. Same values as POLICY_VERSIONS in
+ *  web/public/assets/contributor-config.js. */
+export const POLICY_VERSIONS = { policy: POLICY_VERSION, terms: "2026-09-16", privacy: "2026-09-27" };
+
+export const REQUEST_STATUS = Object.freeze({ PENDING: "PENDING", APPROVED: "APPROVED", REJECTED: "REJECTED" });
+export const CONTRIBUTOR_STATUS = Object.freeze({ ACTIVE: "ACTIVE", SUSPENDED: "SUSPENDED" });
+
+/** Quick reasons a Telegram reviewer can pick when rejecting a request. */
+export const REQUEST_REJECT_REASONS = {
+  incomplete: "📄 Not enough information",
+  not_eligible: "🚫 Not eligible",
+  other: "❔ Other",
+};
 
 /** Ticked for every playlist. */
 export const SUBMISSION_DECLARATIONS = [

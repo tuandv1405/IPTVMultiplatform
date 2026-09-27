@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Đăng ký người đóng góp — TS IPTV</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/contributor.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <img src="/assets/app-icon.png" alt="">
+    <span class="name">TS IPTV</span>
+    <nav>
+      <a href="/contributor/" data-i18n="nav_policy">Chính sách</a>
+      <a href="/contributor/submit/" data-i18n="nav_submit">Đăng playlist</a>
+      <a href="/playlists/" data-i18n="nav_directory">Danh sách công khai</a>
+      <button type="button" class="linklike" id="signOut" hidden data-i18n="sign_out">Đăng xuất</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <ul class="langbar">
+    <li><button type="button" data-ui-lang="vi" aria-pressed="true">Tiếng Việt</button></li>
+    <li><button type="button" data-ui-lang="en" aria-pressed="false">English</button></li>
+  </ul>
+
+  <h1 data-i18n="title">Đăng ký trở thành người đóng góp</h1>
+  <p class="hint" id="who"></p>
+  <p class="flash" id="flash" role="status" hidden></p>
+
+  <section class="state on" data-state="loading"><div class="spinner"></div></section>
+
+  <section class="state" data-state="closed">
+    <div class="card warn"><p style="margin:0" data-i18n="closed">Chương trình người đóng góp sắp mở. Hãy quay lại sau.</p></div>
+  </section>
+
+  <section class="state" data-state="signin">
+    <p data-i18n="signin_needed">Hãy đăng nhập bằng tài khoản Google để tiếp tục.</p>
+    <button type="button" class="btn google" id="signIn" data-i18n="sign_in_google">Đăng nhập bằng Google</button>
+  </section>
+
+  <section class="state" data-state="retry">
+    <div class="card warn">
+      <p style="margin-top:0" id="retryMsg"></p>
+      <button type="button" class="ghost" id="retryBtn" data-i18n="retry">Thử lại</button>
+    </div>
+  </section>
+
+  <!-- ============ current request ============ -->
+  <section class="state" data-state="status">
+    <div class="card">
+      <div class="top">
+        <h2 style="margin:0" data-i18n="status_title">Yêu cầu của bạn</h2>
+        <span class="badge" id="reqBadge"></span>
+      </div>
+      <p class="meta" id="reqMeta"></p>
+      <p id="reqExplain"></p>
+      <p class="reason" id="reqReason" hidden></p>
+      <div class="row">
+        <a class="btn" id="goSubmit" href="/contributor/submit/" hidden data-i18n="go_submit">Đăng playlist</a>
+        <button type="button" class="btn" id="reapply" hidden data-i18n="reapply">Gửi lại yêu cầu</button>
+        <button type="button" class="ghost" id="cancelReq" hidden data-i18n="cancel_request">Huỷ yêu cầu</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ request form ============ -->
+  <section class="state" data-state="form">
+    <div class="card lock">
+      <p style="margin:0" data-i18n="privacy_note">🔒 Họ tên, email và số điện thoại là bắt buộc. Chúng được mã hoá ngay trên trình duyệt của bạn trước khi gửi đi; chỉ quản trị viên của nhà phát hành giữ khoá giải mã. Chúng không bao giờ hiển thị công khai.</p>
+    </div>
+    <form id="requestForm" class="form" novalidate>
+      <label for="publicName" data-i18n="f_public_name">Tên hiển thị công khai</label>
+      <input type="text" id="publicName" maxlength="40" required>
+      <p class="hint" data-i18n="f_public_name_hint">Tên duy nhất công chúng nhìn thấy. Không dùng email hay số điện thoại.</p>
+
+      <label for="fullName" data-i18n="f_full_name">Họ và tên</label>
+      <input type="text" id="fullName" maxlength="100" autocomplete="name" required>
+
+      <label for="email" data-i18n="f_email">Email (từ tài khoản Google)</label>
+      <input type="email" id="email" readonly>
+
+      <label for="phone" data-i18n="f_phone">Số điện thoại (kèm mã quốc gia)</label>
+      <input type="tel" id="phone" autocomplete="tel" placeholder="+84 912 345 678" required>
+
+      <label for="about" data-i18n="f_about">Giới thiệu bản thân và các danh sách bạn duy trì</label>
+      <textarea id="about" rows="5" maxlength="1000" required></textarea>
+      <p class="hint" data-i18n="f_about_hint">20–1000 ký tự. Bạn tự xây dựng danh sách như thế nào, nguồn kênh đến từ đâu?</p>
+
+      <label data-i18n="f_links">Đường dẫn mẫu (không bắt buộc, tối đa 3)</label>
+      <input type="url" class="sample" placeholder="https://…">
+      <input type="url" class="sample" placeholder="https://…">
+      <input type="url" class="sample" placeholder="https://…">
+
+      <fieldset>
+        <legend data-i18n="consents">Xác nhận</legend>
+        <label class="check"><input type="checkbox" name="policy"> <span><span data-i18n="c_policy">Tôi đã đọc và chấp thuận</span> <a href="/contributor/" target="_blank" rel="noopener" data-i18n="c_policy_link">chính sách người đóng góp</a>.</span></label>
+        <label class="check"><input type="checkbox" name="terms"> <span><span data-i18n="c_terms">Tôi đồng ý với</span> <a href="/terms/" target="_blank" rel="noopener" data-i18n="c_terms_link">điều khoản sử dụng</a>.</span></label>
+        <label class="check"><input type="checkbox" name="privacy"> <span><span data-i18n="c_privacy">Tôi đã đọc</span> <a href="/privacy/#contributors" target="_blank" rel="noopener" data-i18n="c_privacy_link">chính sách quyền riêng tư</a> <span data-i18n="c_privacy_tail">và đồng ý cho xử lý dữ liệu như mô tả.</span></span></label>
+      </fieldset>
+
+      <button type="submit" class="btn" id="sendReq" data-i18n="send_request">Gửi yêu cầu</button>
+      <p class="err" id="formErr"></p>
+    </form>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    TS IPTV · <a href="/contributor/">Chính sách / Policy</a> · <a href="/terms/">Điều khoản / Terms</a> · <a href="/privacy/">Quyền riêng tư / Privacy</a>
+  </div>
+</footer>
+
+<script type="module" src="/assets/contributor-request.js"></script>
+</body>
+</html>

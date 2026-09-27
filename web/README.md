@@ -10,7 +10,9 @@ Hosting on the existing project `tsiptv-8bdd6`.
 | Account deletion | `https://tsiptv-8bdd6.web.app/delete-account/` | **Required** — Play Console → App content → Data deletion |
 | Terms of use | `https://tsiptv-8bdd6.web.app/terms/` | Optional, linked from the listing |
 | Contributor programme | `https://tsiptv-8bdd6.web.app/contributor/` | Policy; opened from the app's Profile tab |
-| Contributor dashboard | `https://tsiptv-8bdd6.web.app/contributor/app/` | Sign-in, email/phone verification, playlist submission |
+| Apply as contributor | `https://tsiptv-8bdd6.web.app/contributor/request/` | Google sign-in, one request at a time |
+| Upload a playlist | `https://tsiptv-8bdd6.web.app/contributor/submit/` | Approved contributors only |
+| Contributor admin | `https://tsiptv-8bdd6.web.app/contributor/admin/` | Firebase project owner (or `admin` claim) |
 | Community playlists | `https://tsiptv-8bdd6.web.app/playlists/` | Approved playlists, read from Firestore |
 
 Each page carries both Vietnamese and English in one document, toggled client
@@ -61,5 +63,14 @@ Hosting → Custom domains and update the URLs in the Play Console listing.
 
 ## Contributor pages
 
-The contributor dashboard talks to the API in `telegram-bot/`. Set its URL in
-`public/assets/contributor-config.js` (the placeholder `{{CONTRIBUTOR_API_BASE}}` the page say the programme is not open yet). See `telegram-bot/README.md` `docs/prd-contributor-program.md`.
+All data access goes through `public/assets/contributor-backend.js`, selected by
+`BACKEND` in `public/assets/contributor-config.js`:
+
+- `"firestore"` (now): browsers read and write Firestore; `firestore.rules` is
+  the backend. Tests: `firestore-tests/` (`npm test`, uses the emulators).
+- `"http"` (own server later): the same pages call `telegram-bot/`. Switch
+  procedure: `telegram-bot/README.md` → "Moving from Firestore to the own server".
+
+`CONTACT_PUBLIC_KEY` in the same file encrypts contributors' contact data in the
+browser; the private key stays with the admin (never in this repository).
+Spec: `docs/prd-contributor-requests.md`.

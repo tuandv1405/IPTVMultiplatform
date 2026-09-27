@@ -1,4 +1,4 @@
-import { renderSubmission, reviewKeyboard } from "./render.js";
+import { renderRequest, renderSubmission, requestKeyboard, reviewKeyboard } from "./render.js";
 
 export const ADMIN_CHATS_STATE = "admin_chats";
 
@@ -73,5 +73,41 @@ export function createNotifier({ api, config, store, log = console }) {
     }
   }
 
-  return { targets, postCard, announce, refresh };
+  // ---- contributor requests (text cards) ----
+
+  async function postRequestCard(chatId, request) {
+    const message = await api.sendMessage(chatId, renderRequest(request), {
+      parse_mode: "HTML",
+      reply_markup: requestKeyboard(request),
+      link_preview_options: { is_disabled: true },
+    });
+    return { chatId: String(chatId), messageId: message.message_id, kind: "text" };
+  }
+
+  async function announceRequest(request, onPosted = async () => {}) {
+    for (const chatId of await targets()) {
+      try {
+        await onPosted(await postRequestCard(chatId, request));
+      } catch (error) {
+        log.error?.("telegram request post failed", { chatId, uid: request.uid, error: error.message });
+      }
+    }
+  }
+
+  async function refreshRequest(request) {
+    for (const ref of request.telegramMessages ?? []) {
+      try {
+        await api.editMessageText(ref.chatId, ref.messageId, renderRequest(request), {
+          parse_mode: "HTML",
+          reply_markup: requestKeyboard(request),
+          link_preview_options: { is_disabled: true },
+        });
+      } catch (error) {
+        if (/message is not modified/i.test(error.description ?? error.message)) continue;
+        log.error?.("telegram request edit failed", { chatId: ref.chatId, uid: request.uid, error: error.message });
+      }
+    }
+  }
+
+  return { targets, postCard, announce, refresh, postRequestCard, announceRequest, refreshRequest };
 }

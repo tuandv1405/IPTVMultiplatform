@@ -1,13 +1,15 @@
-import { randomBytes } from "node:crypto";
-import { devToken } from "../src/auth.js";
-import { createDevAuthVerifier } from "../src/auth.js";
-import { createPiiVault } from "../src/crypto.js";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createDevAuthVerifier, devToken } from "../src/auth.js";
+import { encryptContact, importPrivateKey } from "../src/contactCrypto.js";
 import { createHttpServer } from "../src/http/server.js";
+import { POLICY_VERSIONS } from "../src/policy.js";
 import { createContributorService } from "../src/service.js";
 import { createMemoryStore } from "../src/store/memoryStore.js";
+import { createSqliteStore } from "../src/store/sqliteStore.js";
 import { createBot } from "../src/telegram/bot.js";
 import { createNotifier } from "../src/telegram/notifier.js";
-import { POLICY_VERSION } from "../src/policy.js";
 
 export const silentLog = { info() {}, warn() {}, error() {}, debug() {} };
 
@@ -15,16 +17,30 @@ export const silentLog = { info() {}, warn() {}, error() {}, debug() {} };
 export const PNG_DATA_URL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
 
-export const ADMIN = { id: 111, username: "tuandv1405", first_name: "Tuan" };
+export const ADMIN_EMAIL = "chintk111999@gmail.com";
+export const TG_ADMIN = { id: 111, username: "tuandv1405", first_name: "Tuan" };
 export const MEMBER = { id: 222, username: "reviewer_a", first_name: "Rev" };
 export const STRANGER = { id: 333, username: "someone", first_name: "Some" };
 export const REVIEW_CHAT = { id: -1001, type: "supergroup" };
+export const PRIVATE = (user) => ({ id: user.id, type: "private" });
+
+export const DRIVERS = ["memory", "sqlite"];
+
+// One RSA key pair for the whole test run (3072-bit generation is slow).
+const keyPair = await crypto.subtle.generateKey(
+  { name: "RSA-OAEP", modulusLength: 3072, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
+  true,
+  ["encrypt", "decrypt"],
+);
+export const PUBLIC_JWK = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+export const PRIVATE_KEY = await importPrivateKey(await crypto.subtle.exportKey("jwk", keyPair.privateKey));
 
 export function testConfig(overrides = {}) {
   return {
     corsOrigins: ["https://tsiptv-8bdd6.web.app"],
     rateLimitPerMinute: 1000,
     trustProxy: false,
+    adminEmails: [ADMIN_EMAIL],
     ...overrides,
     telegram: {
       mode: "polling",
@@ -73,21 +89,27 @@ export const okVerification = (overrides = {}) => ({
   ...overrides,
 });
 
-/** A whole running stack on an ephemeral port: memory store, fake Telegram, dev auth. */
-export async function startStack({ verifyPlaylist, configOverrides, limits } = {}) {
-  const store = createMemoryStore();
+function openStore(driver) {
+  if (driver === "sqlite") {
+    const dir = mkdtempSync(join(tmpdir(), "tsiptv-"));
+    const store = createSqliteStore(join(dir, "test.sqlite"));
+    return { store, cleanup: () => { store.close(); rmSync(dir, { recursive: true, force: true }); } };
+  }
+  return { store: createMemoryStore(), cleanup: () => {} };
+}
+
+/** A whole running stack on an ephemeral port: store, fake Telegram, dev auth. */
+export async function startStack({ driver = "memory", verifyPlaylist, configOverrides, limits } = {}) {
+  const { store, cleanup } = openStore(driver);
   const telegram = createFakeTelegram();
   const config = testConfig(configOverrides);
-  const vault = createPiiVault({
-    encryptionKey: randomBytes(32).toString("base64"),
-    hashKey: randomBytes(32).toString("base64"),
-  });
   const notifier = createNotifier({ api: telegram, config, store, log: silentLog });
   const service = createContributorService({
     store,
-    vault,
     verifyPlaylist: verifyPlaylist ?? (async () => okVerification()),
     notifier,
+    adminEmails: config.adminEmails,
+    contactPrivateKey: PRIVATE_KEY,
     log: silentLog,
     ...(limits ? { limits } : {}),
   });
@@ -112,29 +134,46 @@ export async function startStack({ verifyPlaylist, configOverrides, limits } = {
 
   let updateId = 1;
   const press = (user, chat, data, message = { message_id: 1 }) =>
-    bot.handleUpdate({
-      update_id: updateId++,
-      callback_query: { id: `cq${updateId}`, from: user, data, message: { ...message, chat } },
-    });
+    bot.handleUpdate({ update_id: updateId++, callback_query: { id: `cq${updateId}`, from: user, data, message: { ...message, chat } } });
   const say = (user, chat, text) =>
     bot.handleUpdate({ update_id: updateId++, message: { message_id: 50, from: user, chat, text } });
 
-  return { store, telegram, service, bot, vault, call, press, say, close: () => server.close() };
+  /** request → admin approves: the only way to become a contributor. */
+  async function makeContributor(uid = "u1", publicName = "Tuan Lists") {
+    const identity = googleUser(uid);
+    const created = await call("POST", "/api/requests", { identity, body: await requestBody({ publicName, email: identity.email }) });
+    if (created.status !== 200) throw new Error(`request failed: ${JSON.stringify(created.body)}`);
+    const decided = await call("POST", `/api/admin/requests/${uid}/decide`, { identity: adminUser(), body: { decision: "APPROVED" } });
+    if (decided.status !== 200) throw new Error(`approve failed: ${JSON.stringify(decided.body)}`);
+    return identity;
+  }
+
+  return {
+    store, telegram, service, bot, call, press, say, makeContributor,
+    close: () => { server.close(); cleanup(); },
+  };
 }
 
-export const verifiedUser = (uid = "u1", extra = {}) => ({
+export const googleUser = (uid = "u1", extra = {}) => ({
   uid,
-  email: `${uid}@example.com`,
+  email: `${uid}@gmail.com`,
   emailVerified: true,
-  phone: "+84901234567",
+  provider: "google.com",
   ...extra,
 });
 
-export const registration = (publicName = "Tuan Lists") => ({
-  publicName,
-  policyVersion: POLICY_VERSION,
-  declarations: { contact_accurate: true, accept_policy: true, accept_takedown: true },
-});
+export const adminUser = () => googleUser("owner", { email: ADMIN_EMAIL });
+
+export async function requestBody({ publicName = "Tuan Lists", email = "u1@gmail.com", phone = "+84901234567", fullName = "Nguyen Van Tuan", ...rest } = {}) {
+  return {
+    publicName,
+    about: "I maintain a list of Vietnamese public news channels.",
+    links: ["https://example.com/a.m3u"],
+    contactEnc: await encryptContact(PUBLIC_JWK, { fullName, email, phone }),
+    consents: { ...POLICY_VERSIONS },
+    ...rest,
+  };
+}
 
 export const submission = (overrides = {}) => ({
   name: "My Vietnam news",

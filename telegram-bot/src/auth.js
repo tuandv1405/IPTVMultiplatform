@@ -2,10 +2,9 @@ import { unauthorized } from "./errors.js";
 
 /**
  * Turns a bearer token into the caller's identity:
- * { uid, email, emailVerified, phone }.
- *
- * `phone` comes from the `phone_number` claim, which Firebase only sets after
- * the SMS code has been confirmed — so its presence *is* the phone check.
+ * { uid, email, emailVerified, provider, claims: { admin } }.
+ * Identity stays with Firebase Auth (Google sign-in) in both phases; only the
+ * data moves to the own server.
  */
 export function createFirebaseAuthVerifier(auth) {
   return async function verify(token) {
@@ -17,7 +16,8 @@ export function createFirebaseAuthVerifier(auth) {
         uid: claims.uid,
         email: claims.email ?? null,
         emailVerified: claims.email_verified === true,
-        phone: claims.phone_number ?? null,
+        provider: claims.firebase?.sign_in_provider ?? null,
+        claims: { admin: claims.admin === true },
       };
     } catch {
       throw unauthorized();
@@ -39,7 +39,8 @@ export function createDevAuthVerifier() {
         uid: String(identity.uid),
         email: identity.email ?? null,
         emailVerified: identity.emailVerified === true,
-        phone: identity.phone ?? null,
+        provider: identity.provider ?? "google.com",
+        claims: { admin: identity.admin === true },
       };
     } catch {
       throw unauthorized();
