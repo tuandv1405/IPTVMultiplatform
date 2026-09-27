@@ -164,4 +164,10 @@
     <string name="tv_no_channels">このカテゴリにはチャンネルがありません</string>
     <string name="tv_player_hint">▲ ▼ チャンネル切替 · OK チャンネル一覧 · 戻る 終了</string>
     <string name="tv_import_playlist_hint">プレイリストをインポートして視聴を開始</string>
+
+    <!-- Rating and contributor programme -->
+    <string name="rate_app_title">TS IPTV を評価</string>
+    <string name="rate_app_desc">アプリを気に入っていただけましたか？Google Play でレビューをお願いします</string>
+    <string name="contributor_entry_title">コントリビューターになる</string>
+    <string name="open_link_failed">リンクを開けませんでした。ブラウザまたは Play ストアがインストールされているか確認してください。</string>
 </resources>

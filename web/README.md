@@ -9,6 +9,9 @@ Hosting on the existing project `tsiptv-8bdd6`.
 | Privacy policy | `https://tsiptv-8bdd6.web.app/privacy/` | **Required** — Play Console → App content → Privacy policy |
 | Account deletion | `https://tsiptv-8bdd6.web.app/delete-account/` | **Required** — Play Console → App content → Data deletion |
 | Terms of use | `https://tsiptv-8bdd6.web.app/terms/` | Optional, linked from the listing |
+| Contributor programme | `https://tsiptv-8bdd6.web.app/contributor/` | Policy; opened from the app's Profile tab |
+| Contributor dashboard | `https://tsiptv-8bdd6.web.app/contributor/app/` | Sign-in, email/phone verification, playlist submission |
+| Community playlists | `https://tsiptv-8bdd6.web.app/playlists/` | Approved playlists, read from Firestore |
 
 Each page carries both Vietnamese and English in one document, toggled client
 side. `?lang=en` forces English, so the English listing can deep-link to
@@ -55,3 +58,8 @@ Hosting → Custom domains and update the URLs in the Play Console listing.
 - Images in `public/assets/` are produced by `brand/generate_assets.py`.
 - When you change the substance of a policy, bump the `<time>` element and the
   visible date in **both** language panes.
+
+## Contributor pages
+
+The contributor dashboard talks to the API in `telegram-bot/`. Set its URL in
+`public/assets/contributor-config.js` (the placeholder `{{CONTRIBUTOR_API_BASE}}` the page say the programme is not open yet). See `telegram-bot/README.md` `docs/prd-contributor-program.md`.

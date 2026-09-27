@@ -15,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,7 +23,20 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import dev.chrisbanes.haze.HazeState
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.error_occurred
+import tsiptv.composeapp.generated.resources.ok
+import tsiptv.composeapp.generated.resources.open_link_failed
+import tss.t.tsiptv.core.rating.AppRatingController
+import tss.t.tsiptv.ui.screens.login.models.LoginEvents
+import tss.t.tsiptv.ui.screens.profile.ProfileScreenActions
+import tss.t.tsiptv.ui.widgets.TSDialog
+import tss.t.tsiptv.utils.AppLinks
+import tss.t.tsiptv.utils.getUrlOpener
 import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
 import tss.t.tsiptv.core.database.entity.toPlaylist
 import tss.t.tsiptv.core.permission.Permission
@@ -157,11 +171,39 @@ fun HomeBottomNavigationNavHost(
         composable(
             route = NavRoutes.HomeScreens.PROFILE,
         ) {
+            val appRating: AppRatingController = koinInject()
+            val scope = rememberCoroutineScope()
+            var showOpenFailed by remember { mutableStateOf(false) }
+
             ProfileScreen(
                 authState = authState,
-                hazeState = hazeState
-            ) {
-                authViewModel.onEvent(it)
+                hazeState = hazeState,
+                showRateApp = appRating.canOpenStoreListing,
+            ) { event ->
+                val action = (event as? LoginEvents.OnProfileActionEvent)?.action
+                when (action) {
+                    ProfileScreenActions.RateApp -> scope.launch {
+                        if (!appRating.openStoreListing()) showOpenFailed = true
+                    }
+
+                    ProfileScreenActions.BecomeContributor -> scope.launch {
+                        if (!getUrlOpener().openUrl(AppLinks.CONTRIBUTOR_URL)) {
+                            showOpenFailed = true
+                        }
+                    }
+
+                    else -> authViewModel.onEvent(event)
+                }
+            }
+
+            if (showOpenFailed) {
+                TSDialog(
+                    title = stringResource(Res.string.error_occurred),
+                    message = stringResource(Res.string.open_link_failed),
+                    positiveButtonText = stringResource(Res.string.ok),
+                    onPositiveClick = { showOpenFailed = false },
+                    onDismissRequest = { showOpenFailed = false },
+                )
             }
         }
 

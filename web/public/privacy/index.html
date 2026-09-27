@@ -33,7 +33,7 @@
   <section data-lang-pane="vi">
     <h1>Chính sách quyền riêng tư</h1>
     <p class="updated">Áp dụng cho ứng dụng <strong>TS IPTV</strong> (<code>tss.t.tsiptv</code>) trên Android, iOS và máy tính.<br>
-      Cập nhật lần cuối: <time datetime="2026-09-16">16/09/2026</time></p>
+      Cập nhật lần cuối: <time datetime="2026-09-27">27/09/2026</time></p>
 
     <p>TS IPTV là trình phát danh sách phát IPTV. Ứng dụng <strong>không cung cấp, không lưu trữ và không phát lại bất kỳ kênh truyền hình nào</strong>. Bạn tự cung cấp đường dẫn danh sách phát (M3U, XSPF, JSON, XMLTV…) và ứng dụng chỉ đọc, sắp xếp rồi phát nội dung từ nguồn đó.</p>
 
@@ -69,6 +69,18 @@
     <h2>3. Đường dẫn do bạn cung cấp</h2>
     <div class="card">
       <p>Khi bạn thêm một danh sách phát, ứng dụng kết nối trực tiếp tới máy chủ trong đường dẫn đó. Máy chủ ấy <strong>do bên thứ ba vận hành, không phải chúng tôi</strong>, và có thể thấy địa chỉ IP, loại thiết bị cùng các kênh bạn mở. Chúng tôi không kiểm soát và không chịu trách nhiệm về cách các máy chủ đó xử lý dữ liệu. Hãy chỉ thêm những nguồn mà bạn tin tưởng và có quyền sử dụng hợp pháp.</p>
+    </div>
+
+    <h3 id="contributors">Người đóng góp danh sách phát (chỉ trên web)</h3>
+    <div class="card">
+      <p>Nếu bạn tham gia <a href="/contributor/">chương trình người đóng góp</a> trên trang web, chúng tôi thu thập thêm <strong>email và số điện thoại đã xác thực</strong> (bắt buộc), tên hiển thị công khai bạn chọn, và các danh sách bạn gửi (tên, đường dẫn, hình ảnh, mô tả).</p>
+      <ul style="margin-bottom:0">
+        <li>Email và số điện thoại được <strong>mã hoá AES-256-GCM</strong> trước khi lưu; khoá giải mã không lưu cùng dữ liệu. Chúng <strong>không bao giờ hiển thị công khai</strong> và không được gửi cho người kiểm duyệt.</li>
+        <li>Chỉ quản trị viên của nhà phát hành có thể giải mã, và chỉ để liên hệ với bạn về khiếu nại bản quyền hoặc lạm dụng.</li>
+        <li>Người kiểm duyệt (qua Telegram) thấy tên hiển thị, mã tài khoản và nội dung danh sách bạn gửi. Công chúng chỉ thấy tên hiển thị và danh sách đã được duyệt.</li>
+        <li>Khi bạn <a href="/delete-account/">xoá tài khoản</a>, email, số điện thoại đã mã hoá bị xoá và mọi danh sách đang công khai bị gỡ. Nếu tài khoản người đóng góp đã bị đình chỉ, chỉ giữ lại một mã băm (không thể giải ngược) để lệnh đình chỉ vẫn có hiệu lực.</li>
+        <li>Ứng dụng di động không thu thập các dữ liệu này.</li>
+      </ul>
     </div>
 
     <h2>4. Quyền truy cập trên thiết bị</h2>
@@ -111,7 +123,7 @@
   <section data-lang-pane="en" hidden>
     <h1>Privacy Policy</h1>
     <p class="updated">Applies to the <strong>TS IPTV</strong> app (<code>tss.t.tsiptv</code>) on Android, iOS and desktop.<br>
-      Last updated: <time datetime="2026-09-16">16 September 2026</time></p>
+      Last updated: <time datetime="2026-09-27">27 September 2026</time></p>
 
     <p>TS IPTV is an IPTV playlist player. The app <strong>does not provide, host or rebroadcast any television channel</strong>. You supply the playlist URLs (M3U, XSPF, JSON, XMLTV and similar); the app only reads them, organises the entries and plays the stream from the source you chose.</p>
 
@@ -147,6 +159,18 @@
     <h2>3. URLs you supply</h2>
     <div class="card">
       <p>When you add a playlist, the app connects directly to the server in that URL. That server is <strong>operated by a third party, not by us</strong>, and can see your IP address, device type and which channels you open. We neither control nor take responsibility for how those servers handle data. Only add sources you trust and are legally entitled to use.</p>
+    </div>
+
+    <h3 id="contributors-en">Playlist contributors (web only)</h3>
+    <div class="card">
+      <p>If you join the <a href="/contributor/?lang=en">contributor programme</a> on the website, we additionally collect your <strong>verified email address and phone number</strong> (mandatory), the public display name you choose, and the playlists you submit (name, link, image, description).</p>
+      <ul style="margin-bottom:0">
+        <li>Email and phone number are <strong>encrypted with AES-256-GCM</strong> before storage; the decryption key is not stored with the data. They are <strong>never shown publicly</strong> and are not sent to reviewers.</li>
+        <li>Only the publisher's administrators can decrypt them, and only to contact you about a copyright or abuse report.</li>
+        <li>Reviewers (via Telegram) see your display name, account ID and the playlist you submitted. The public sees only your display name and approved playlists.</li>
+        <li>When you <a href="/delete-account/?lang=en">delete your account</a>, the encrypted email and phone number are deleted and every published playlist is removed. For a suspended contributor only a keyed hash (which cannot be reversed) is kept, so the suspension still applies.</li>
+        <li>The mobile app does not collect any of this.</li>
+      </ul>
     </div>
 
     <h2>4. Device permissions</h2>

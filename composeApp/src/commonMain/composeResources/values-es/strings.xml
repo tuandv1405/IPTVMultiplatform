@@ -164,4 +164,10 @@
     <string name="tv_no_channels">No hay canales en esta categoría</string>
     <string name="tv_player_hint">▲ ▼ cambiar canal · OK lista de canales · ATRÁS salir</string>
     <string name="tv_import_playlist_hint">Importa una lista para empezar a ver</string>
+
+    <!-- Rating and contributor programme -->
+    <string name="rate_app_title">Valorar TS IPTV</string>
+    <string name="rate_app_desc">¿Te gusta la app? Deja una reseña en Google Play</string>
+    <string name="contributor_entry_title">Hazte colaborador</string>
+    <string name="open_link_failed">No se pudo abrir el enlace. Comprueba que haya un navegador o Play Store instalado.</string>
 </resources>

@@ -276,3 +276,18 @@ position where none is rendered. See `play-store/screenshots/README.md`.
 Expect the first review of an IPTV app to take longer than average, and expect
 questions. The "provides no content" framing in the listing copy and on the
 landing page is there to answer them before they are asked.
+---
+
+## ⭐ Rate app + 🤝 contributor programme (added 2026-09-27)
+
+Specs: `docs/prd-rate-app.md`, `docs/prd-contributor-program.md`. QC: `docs/qc-report-2026-09-27.md`.
+
+- [x] In-app review (Play In-App Review API) and the **Rate TS IPTV** entry (Profile, TV Settings) — verified on the Pixel_10a emulator.
+- [ ] iOS: compile `AppReviewPlatform.ios.kt` on a Mac.
+- [ ] Firebase Auth → enable **Phone** sign-in (SMS needs the Blaze plan); add a test number.
+- [ ] Deploy `telegram-bot/` (Cloud Run webhook or VPS polling — see its README), fill `.env`, back up the two PII keys.
+- [ ] `@tuandv1405` presses Start in the bot; add the bot to the review group and put `/whoami`'s group ID in `.env`.
+- [ ] Set `API_BASE` in `web/public/assets/contributor-config.js`, then `firebase deploy --only firestore:rules,hosting`.
+- [ ] One real submission end to end: web → Telegram card → approve → `/playlists/`.
+- [ ] Data safety: contributor email/phone are collected **on the website only**, not by the app, so the app's form does not change. The privacy policy already covers them.
+- Decision kept on purpose: approved playlists are listed **on the website only**, not inside the app (see "Non-goals" in the PRD).

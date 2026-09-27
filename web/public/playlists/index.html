@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Danh sách phát cộng đồng — TS IPTV</title>
+<meta name="description" content="Danh sách phát IPTV do người đóng góp tự tạo và được kiểm duyệt trước khi công khai.">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/contributor.css">
+<style>
+  .wrap { --max: 64rem; max-width: var(--max); }
+  .dir li:target { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <img src="/assets/app-icon.png" alt="">
+    <span class="name">TS IPTV</span>
+    <nav>
+      <a href="/contributor/">Đóng góp / Contribute</a>
+      <a href="/privacy/">Quyền riêng tư / Privacy</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <ul class="langbar">
+    <li><button type="button" data-lang="vi" aria-pressed="true">Tiếng Việt</button></li>
+    <li><button type="button" data-lang="en" aria-pressed="false">English</button></li>
+  </ul>
+
+  <section data-lang-pane="vi">
+    <h1>Danh sách phát cộng đồng</h1>
+    <p>Các danh sách do <a href="/contributor/">người đóng góp</a> tự tạo và duy trì, được đội kiểm duyệt xem xét trước khi công khai. Sao chép đường dẫn rồi dán vào <strong>TS IPTV → Nhập danh sách phát</strong>.</p>
+    <div class="card warn"><p style="margin:0">TS IPTV không sở hữu, lưu trữ hay kiểm soát nội dung của các danh sách này. Nếu một danh sách vi phạm quyền của bạn, hãy bấm <strong>Báo cáo</strong> — danh sách vi phạm sẽ bị gỡ.</p></div>
+  </section>
+  <section data-lang-pane="en" hidden>
+    <h1>Community playlists</h1>
+    <p>Playlists created and maintained by <a href="/contributor/?lang=en">contributors</a>, reviewed by the moderation team before they are listed. Copy a link and paste it into <strong>TS IPTV → Import playlist</strong>.</p>
+    <div class="card warn"><p style="margin:0">TS IPTV does not own, host or control the content of these playlists. If one infringes your rights, press <strong>Report</strong> — infringing playlists are removed.</p></div>
+  </section>
+
+  <div class="filters">
+    <input type="search" id="q" aria-label="Search" placeholder="Tìm / Search">
+    <select id="cat" aria-label="Category"></select>
+  </div>
+
+  <div class="spinner" id="loading"></div>
+  <p class="hint" id="empty" hidden></p>
+  <ul class="dir" id="list"></ul>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    TS IPTV · <a href="/contributor/">Chính sách người đóng góp / Contributor policy</a> · <a href="/terms/">Điều khoản / Terms</a>
+  </div>
+</footer>
+
+<script src="/assets/lang.js"></script>
+<script type="module">
+import { app } from "/assets/firebase.js";
+import {
+  getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const TEXT = {
+  vi: {
+    by: "bởi", channels: "kênh", copy: "Sao chép đường dẫn", copied: "Đã sao chép ✓", report: "Báo cáo",
+    all: "Tất cả thể loại", empty: "Chưa có danh sách nào được công khai.", none: "Không có danh sách phù hợp.",
+    failed: "Không tải được danh sách. Hãy thử lại sau.",
+    categories: { general: "Tổng hợp", news: "Tin tức", sports: "Thể thao", movies: "Phim", kids: "Thiếu nhi", music: "Âm nhạc",
+      documentary: "Tài liệu", education: "Giáo dục", religious: "Tôn giáo", regional: "Địa phương", other: "Khác" },
+  },
+  en: {
+    by: "by", channels: "channels", copy: "Copy link", copied: "Copied ✓", report: "Report",
+    all: "All categories", empty: "No playlist has been published yet.", none: "No playlist matches.",
+    failed: "Could not load the playlists. Try again later.",
+    categories: { general: "General", news: "News", sports: "Sports", movies: "Movies", kids: "Kids", music: "Music",
+      documentary: "Documentary", education: "Education", religious: "Religious", regional: "Regional", other: "Other" },
+  },
+};
+const lang = () => (document.documentElement.lang === "en" ? "en" : "vi");
+const t = (key) => TEXT[lang()][key];
+
+const db = getFirestore(app);
+const list = document.getElementById("list");
+let playlists = [];
+
+async function load() {
+  try {
+    const snap = await getDocs(query(collection(db, "public_playlists"), orderBy("approvedAt", "desc"), limit(300)));
+    playlists = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (error) {
+    console.error(error);
+    playlists = null;
+  }
+  document.getElementById("loading").hidden = true;
+  render();
+  if (location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView({ block: "center" });
+}
+
+function fillCategories() {
+  const select = document.getElementById("cat");
+  const keep = select.value;
+  select.replaceChildren(new Option(t("all"), ""), ...Object.entries(t("categories")).map(([k, v]) => new Option(v, k)));
+  select.value = keep;
+}
+
+function render() {
+  fillCategories();
+  const empty = document.getElementById("empty");
+  if (playlists === null) {
+    empty.hidden = false;
+    empty.textContent = t("failed");
+    return;
+  }
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const cat = document.getElementById("cat").value;
+  const shown = playlists.filter((p) =>
+    (!cat || p.category === cat) &&
+    (!q || `${p.name} ${p.publicName} ${p.description ?? ""}`.toLowerCase().includes(q)));
+  empty.hidden = shown.length > 0;
+  empty.textContent = playlists.length ? t("none") : t("empty");
+
+  const names = new Intl.DisplayNames([lang()], { type: "language" });
+  list.replaceChildren(...shown.map((p) => {
+    const li = document.createElement("li");
+    li.id = p.id;
+    const img = document.createElement("img");
+    img.className = "thumb";
+    img.alt = "";
+    img.dataset.id = p.id;
+    imageObserver.observe(img);
+
+    const body = document.createElement("div");
+    body.className = "body";
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = p.name;
+    const by = document.createElement("div");
+    by.className = "by";
+    by.textContent = `${t("by")} ${p.publicName}`;
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    let language = p.language;
+    try { language = p.language === "multi" ? "multi" : names.of(p.language); } catch { /* keep the code */ }
+    meta.textContent = [
+      p.channelCount != null ? `${p.channelCount} ${t("channels")}` : null,
+      String(p.format ?? "").toUpperCase(),
+      t("categories")[p.category] ?? p.category,
+      language,
+    ].filter(Boolean).join(" · ");
+    body.append(name, by, meta);
+    if (p.description) {
+      const desc = document.createElement("p");
+      desc.className = "desc";
+      desc.textContent = p.description;
+      body.append(desc);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    const copy = document.createElement("button");
+    copy.type = "button";
+    copy.className = "ghost";
+    copy.textContent = t("copy");
+    copy.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(p.url);
+        copy.textContent = t("copied");
+        setTimeout(() => { copy.textContent = t("copy"); }, 2000);
+      } catch {
+        prompt(t("copy"), p.url);
+      }
+    });
+    const report = document.createElement("a");
+    report.className = "ghost";
+    report.textContent = t("report");
+    report.href = `mailto:chintk111999@gmail.com?subject=${encodeURIComponent(`Playlist report ${p.id}`)}` +
+      `&body=${encodeURIComponent(`Playlist: ${p.name} (${p.id})\nReason: `)}`;
+    actions.append(copy, report);
+    body.append(actions);
+    li.append(img, body);
+    return li;
+  }));
+}
+
+// Each image is its own Firestore read of up to 300 KB, so only cards that are
+// about to be seen fetch theirs (loading="lazy" does nothing for a data: URL).
+const imageObserver = new IntersectionObserver((entries) => {
+  for (const entry of entries) {
+    if (!entry.isIntersecting) continue;
+    imageObserver.unobserve(entry.target);
+    loadImage(entry.target.dataset.id, entry.target);
+  }
+}, { rootMargin: "300px" });
+
+const imageCache = new Map();
+async function loadImage(id, img) {
+  if (!imageCache.has(id)) {
+    imageCache.set(id, getDoc(doc(db, "public_playlist_images", id))
+      .then((snap) => {
+        const data = snap.data();
+        // Only the types the API accepts; anything else is not rendered.
+        return data && /^image\/(png|jpeg|webp)$/.test(data.mime) ? `data:${data.mime};base64,${data.data}` : null;
+      })
+      .catch(() => null));
+  }
+  const src = await imageCache.get(id);
+  if (src) img.src = src;
+}
+
+document.getElementById("q").addEventListener("input", render);
+document.getElementById("cat").addEventListener("change", render);
+document.querySelectorAll("[data-lang]").forEach((b) => b.addEventListener("click", () => setTimeout(render)));
+load();
+</script>
+</body>
+</html>

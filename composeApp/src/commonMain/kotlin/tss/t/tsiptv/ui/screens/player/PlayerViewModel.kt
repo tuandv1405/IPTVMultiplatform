@@ -19,6 +19,7 @@ import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.firebase.analystics.AnalyticsConstants
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.model.Channel
+import tss.t.tsiptv.core.rating.AppRatingController
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackState
@@ -33,6 +34,7 @@ class PlayerViewModel(
     private val _mediaPlayer: MediaPlayer,
     private val _iptvDatabase: IPTVDatabase,
     private val historyTracker: ChannelHistoryTracker,
+    private val appRating: AppRatingController,
 ) : ViewModel() {
 
     // Flag to track if auto full-screen is enabled
@@ -74,6 +76,7 @@ class PlayerViewModel(
                     PlaybackState.PLAYING -> {
                         // Media is playing, resume tracking if needed
                         historyTracker.onPlaybackResumed()
+                        appRating.onPlaybackStarted(_mediaPlayer.currentMedia.value?.id.orEmpty())
                     }
 
                     PlaybackState.PAUSED -> {

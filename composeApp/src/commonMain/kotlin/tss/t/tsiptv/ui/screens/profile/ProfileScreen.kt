@@ -63,6 +63,10 @@ import tsiptv.composeapp.generated.resources.cancel
 import tsiptv.composeapp.generated.resources.change_password_guide
 import tsiptv.composeapp.generated.resources.change_password_title
 import tsiptv.composeapp.generated.resources.confirm_new_password
+import tsiptv.composeapp.generated.resources.contributor_entry_title
+import tsiptv.composeapp.generated.resources.ic_like
+import tsiptv.composeapp.generated.resources.ic_share
+import tsiptv.composeapp.generated.resources.rate_app_title
 import tsiptv.composeapp.generated.resources.current_password
 import tsiptv.composeapp.generated.resources.deactivate_dialog_message
 import tsiptv.composeapp.generated.resources.deactivate_dialog_title
@@ -117,6 +121,8 @@ enum class ProfileScreenActions(val value: Int) {
     Subscription(3),
     Notification(4),
     Settings(5),
+    RateApp(6),
+    BecomeContributor(7),
     Logout(10);
 
 }
@@ -126,6 +132,7 @@ enum class ProfileScreenActions(val value: Int) {
 fun ProfileScreen(
     authState: AuthUiState,
     hazeState: HazeState,
+    showRateApp: Boolean = false,
     onProfileEvent: (LoginEvents) -> Unit = {},
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -152,17 +159,27 @@ fun ProfileScreen(
                 title = Res.string.profile_subscription_title,
                 icon = Res.drawable.ic_subscriptions,
                 action = ProfileScreenActions.Subscription
+            ),
+            ProfileItem(
+                title = Res.string.contributor_entry_title,
+                icon = Res.drawable.ic_share,
+                action = ProfileScreenActions.BecomeContributor
             )
         )
     }
 
-    val preferencesGroupItems = remember {
-        listOf(
+    val preferencesGroupItems = remember(showRateApp) {
+        listOfNotNull(
             ProfileItem(
                 title = Res.string.profile_notification_title,
                 icon = Res.drawable.ic_notification,
                 action = ProfileScreenActions.Notification
-            )
+            ),
+            ProfileItem(
+                title = Res.string.rate_app_title,
+                icon = Res.drawable.ic_like,
+                action = ProfileScreenActions.RateApp
+            ).takeIf { showRateApp }
         )
     }
     Box(

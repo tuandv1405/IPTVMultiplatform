@@ -92,6 +92,7 @@ fun TvHomeScreen(
     signedInEmail: String?,
     onLogin: () -> Unit,
     onLogout: () -> Unit,
+    onRateApp: (() -> Unit)? = null,
 ) {
     var showSettings by remember { mutableStateOf(false) }
     val railFocus = remember { FocusRequester() }
@@ -176,6 +177,7 @@ fun TvHomeScreen(
             onLogin = onLogin,
             onLogout = onLogout,
             onDismissRequest = { showSettings = false },
+            onRateApp = onRateApp,
         )
     }
 

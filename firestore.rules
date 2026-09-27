@@ -16,6 +16,20 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Contributor programme (docs/prd-contributor-program.md). Approved playlists
+    // are public and hold no personal data. Everything else the programme
+    // stores — contributors (encrypted email/phone), submissions, their images,
+    // link locks, bot state — is written and read only by the contributor bot
+    // through the Admin SDK, which bypasses these rules, so browsers get nothing.
+    match /public_playlists/{playlistId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /public_playlist_images/{playlistId} {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
     // Anything not matched above is denied. Without this, a future collection
     // added in the console would start out world-readable.
     match /{document=**} {
