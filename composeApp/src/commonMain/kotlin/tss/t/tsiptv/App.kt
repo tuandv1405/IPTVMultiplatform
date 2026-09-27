@@ -36,9 +36,11 @@ import tsiptv.composeapp.generated.resources.error_occurred
 import tsiptv.composeapp.generated.resources.iptv_import_success_msg
 import tsiptv.composeapp.generated.resources.iptv_import_success_title
 import tsiptv.composeapp.generated.resources.ok
+import tsiptv.composeapp.generated.resources.open_link_failed
 import tsiptv.composeapp.generated.resources.try_again
 import tss.t.tsiptv.core.database.entity.ChannelWithProgramCount
 import tss.t.tsiptv.core.language.AppLocaleProvider
+import tss.t.tsiptv.core.rating.AppRatingController
 import tss.t.tsiptv.core.tracking.UserTrackingService
 import tss.t.tsiptv.core.uimode.LocalIsTvMode
 import tss.t.tsiptv.core.uimode.LocalUiMode
@@ -131,6 +133,23 @@ fun App() {
             authState.isNetworkAvailable -> {
                 navController.navigateAndRemoveFromBackStack(NavRoutes.Login)
             }
+        }
+    }
+
+    // Rating prompt: only on the way back from the player to Home, so it never
+    // interrupts playback. The controller decides whether it is due.
+    val appRating: AppRatingController = koinInject()
+    val appScope = rememberCoroutineScope()
+    var showOpenLinkFailed by remember { mutableStateOf(false) }
+    LaunchedEffect(navController) {
+        appRating.onAppStarted()
+        var wasOnPlayer = false
+        navController.currentBackStackEntryFlow.collect { entry ->
+            val destination = entry.destination
+            if (wasOnPlayer && destination.hasRoute<NavRoutes.Home>()) {
+                appRating.maybePrompt()
+            }
+            wasOnPlayer = destination.hasRoute<NavRoutes.Player>()
         }
     }
 
@@ -314,7 +333,24 @@ fun App() {
                                         .takeIf { authState.isAuthenticated },
                                     onLogin = { navController.navigate(NavRoutes.Login) },
                                     onLogout = { authViewModel.onEvent(LoginEvents.OnLogoutPressed) },
+                                    onRateApp = if (appRating.canOpenStoreListing) {
+                                        {
+                                            appScope.launch {
+                                                // Common on Android TV: no Play Store app and no browser.
+                                                if (!appRating.openStoreListing()) showOpenLinkFailed = true
+                                            }
+                                        }
+                                    } else null,
                                 )
+                                if (showOpenLinkFailed) {
+                                    TSDialog(
+                                        title = stringResource(Res.string.error_occurred),
+                                        message = stringResource(Res.string.open_link_failed),
+                                        positiveButtonText = stringResource(Res.string.ok),
+                                        onPositiveClick = { showOpenLinkFailed = false },
+                                        onDismissRequest = { showOpenLinkFailed = false },
+                                    )
+                                }
                             } else {
                                 HomeBottomNavigationScreen(
                                     hazeState = hazeState,

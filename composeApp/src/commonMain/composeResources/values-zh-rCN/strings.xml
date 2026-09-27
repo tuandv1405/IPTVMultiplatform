@@ -164,4 +164,10 @@
     <string name="tv_no_channels">此分类下没有频道</string>
     <string name="tv_player_hint">▲ ▼ 切换频道 · OK 频道列表 · 返回 退出</string>
     <string name="tv_import_playlist_hint">导入播放列表即可开始观看</string>
+
+    <!-- Rating and contributor programme -->
+    <string name="rate_app_title">为 TS IPTV 评分</string>
+    <string name="rate_app_desc">喜欢这款应用吗？请在 Google Play 上留下评价</string>
+    <string name="contributor_entry_title">成为贡献者</string>
+    <string name="open_link_failed">无法打开链接。请确认已安装浏览器或 Play 商店。</string>
 </resources>

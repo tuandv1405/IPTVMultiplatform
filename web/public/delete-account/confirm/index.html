@@ -148,6 +148,22 @@ import {
   auth, isSignInWithEmailLink, signInWithEmailLink, deleteUser,
   recallEmail, forgetEmail, describeError,
 } from "/assets/firebase.js";
+import { getBackend } from "/assets/contributor-backend.js";
+
+/**
+ * The contributor request holds this user's (encrypted) full name, email and
+ * phone. It is removed first — on Firestore today, on the own server later.
+ * This page serves every app user, so a failure never blocks the deletion; the
+ * own server also sweeps data of accounts that no longer exist.
+ */
+async function purgeContributorData() {
+  try {
+    const backend = await getBackend();
+    await Promise.race([backend.purgeMyData(), new Promise((resolve) => setTimeout(resolve, 8000))]);
+  } catch {
+    /* swept later */
+  }
+}
 
 /** Both language panes mirror each other, so every state change applies to both. */
 function show(name) {
@@ -222,6 +238,7 @@ document.querySelectorAll('[data-action="delete"]').forEach((btn) => {
     document.querySelectorAll('[data-action="delete"]').forEach((b) => { b.disabled = true; });
     const email = user.email;
     try {
+      await purgeContributorData();
       await deleteUser(user);
       setAccount(email);
       show("done");

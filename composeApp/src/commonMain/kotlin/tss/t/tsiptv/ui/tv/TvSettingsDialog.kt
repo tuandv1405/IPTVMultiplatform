@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,6 +20,7 @@ import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -47,6 +50,8 @@ import tsiptv.composeapp.generated.resources.login
 import tsiptv.composeapp.generated.resources.logout_button_title
 import tsiptv.composeapp.generated.resources.logout_dialog_message
 import tsiptv.composeapp.generated.resources.logout_dialog_title
+import tsiptv.composeapp.generated.resources.rate_app_desc
+import tsiptv.composeapp.generated.resources.rate_app_title
 import tsiptv.composeapp.generated.resources.settings_title
 import tsiptv.composeapp.generated.resources.ui_mode_title
 import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
@@ -76,6 +81,7 @@ fun TvSettingsDialog(
     onLogin: () -> Unit,
     onLogout: () -> Unit,
     onDismissRequest: () -> Unit,
+    onRateApp: (() -> Unit)? = null,
 ) {
     var page by remember { mutableStateOf(TvSettingsPage.MENU) }
 
@@ -102,6 +108,12 @@ fun TvSettingsDialog(
                 onLogin()
             },
             onLogout = { page = TvSettingsPage.LOGOUT },
+            onRateApp = onRateApp?.let { rate ->
+                {
+                    onDismissRequest()
+                    rate()
+                }
+            },
             onDismissRequest = onDismissRequest,
         )
 
@@ -169,6 +181,7 @@ private fun SettingsMenu(
     signedInEmail: String?,
     onLogin: () -> Unit,
     onLogout: () -> Unit,
+    onRateApp: (() -> Unit)?,
     onDismissRequest: () -> Unit,
 ) {
     val firstItem = remember { FocusRequester() }
@@ -176,50 +189,66 @@ private fun SettingsMenu(
         title = stringResource(Res.string.settings_title),
         onDismissRequest = onDismissRequest
     ) {
-        TvMenuItem(
-            title = stringResource(Res.string.bottom_sheet_select_playlist),
-            icon = Icons.Rounded.ChangeCircle,
-            onClick = onSelectPlaylist,
-            modifier = Modifier.focusRequester(firstItem)
-        )
-        TvMenuItem(
-            title = stringResource(Res.string.bottom_sheet_import_playlist),
-            icon = Icons.Rounded.FileDownload,
-            onClick = onImportPlaylist
-        )
-        // RefreshIPTVSource assumes a current playlist.
-        if (hasPlaylist) {
+        // Scrollable: on a phone held in landscape (or a small TV UI scale) the
+        // menu is taller than the screen, and D-pad focus must be able to bring
+        // the last rows (Rate, Login/Logout) into view.
+        Column(
+            modifier = Modifier.verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             TvMenuItem(
-                title = stringResource(Res.string.bottom_sheet_refresh_channel),
-                icon = Icons.Rounded.Refresh,
-                onClick = onRefresh
+                title = stringResource(Res.string.bottom_sheet_select_playlist),
+                icon = Icons.Rounded.ChangeCircle,
+                onClick = onSelectPlaylist,
+                modifier = Modifier.focusRequester(firstItem)
             )
-        }
-        TvMenuItem(
-            title = stringResource(Res.string.bottom_sheet_change_language),
-            icon = Icons.Rounded.Language,
-            onClick = onLanguage
-        )
-        TvMenuItem(
-            title = stringResource(Res.string.ui_mode_title),
-            description = stringResource(LocalUiMode.current.titleRes),
-            icon = Icons.Rounded.Tv,
-            onClick = onUiMode
-        )
-        // The TV layout does not require an account; signing in is optional.
-        if (signedInEmail == null) {
             TvMenuItem(
-                title = stringResource(Res.string.login),
-                icon = Icons.AutoMirrored.Rounded.Login,
-                onClick = onLogin
+                title = stringResource(Res.string.bottom_sheet_import_playlist),
+                icon = Icons.Rounded.FileDownload,
+                onClick = onImportPlaylist
             )
-        } else {
+            // RefreshIPTVSource assumes a current playlist.
+            if (hasPlaylist) {
+                TvMenuItem(
+                    title = stringResource(Res.string.bottom_sheet_refresh_channel),
+                    icon = Icons.Rounded.Refresh,
+                    onClick = onRefresh
+                )
+            }
             TvMenuItem(
-                title = stringResource(Res.string.logout_button_title),
-                description = signedInEmail,
-                icon = Icons.AutoMirrored.Rounded.Logout,
-                onClick = onLogout
+                title = stringResource(Res.string.bottom_sheet_change_language),
+                icon = Icons.Rounded.Language,
+                onClick = onLanguage
             )
+            TvMenuItem(
+                title = stringResource(Res.string.ui_mode_title),
+                description = stringResource(LocalUiMode.current.titleRes),
+                icon = Icons.Rounded.Tv,
+                onClick = onUiMode
+            )
+            if (onRateApp != null) {
+                TvMenuItem(
+                    title = stringResource(Res.string.rate_app_title),
+                    description = stringResource(Res.string.rate_app_desc),
+                    icon = Icons.Rounded.Star,
+                    onClick = onRateApp
+                )
+            }
+            // The TV layout does not require an account; signing in is optional.
+            if (signedInEmail == null) {
+                TvMenuItem(
+                    title = stringResource(Res.string.login),
+                    icon = Icons.AutoMirrored.Rounded.Login,
+                    onClick = onLogin
+                )
+            } else {
+                TvMenuItem(
+                    title = stringResource(Res.string.logout_button_title),
+                    description = signedInEmail,
+                    icon = Icons.AutoMirrored.Rounded.Logout,
+                    onClick = onLogout
+                )
+            }
         }
     }
     LaunchedEffect(Unit) {

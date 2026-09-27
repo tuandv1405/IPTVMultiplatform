@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chương trình người đóng góp — TS IPTV</title>
+<meta name="description" content="Chia sẻ danh sách phát IPTV do chính bạn tạo ra. Chính sách dành cho người đóng góp của TS IPTV.">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .steps { counter-reset: step; list-style: none; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding-left: 2.6rem; margin: 0.9rem 0; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 0.1rem;
+    width: 1.8rem; height: 1.8rem; border-radius: 50%;
+    background: var(--navy-700); border: 1px solid var(--accent); color: var(--accent);
+    display: grid; place-items: center; font-weight: 700; font-size: 0.9rem;
+  }
+  .cta { text-align: center; margin: 2.5rem 0 1rem; }
+  .lock { border-color: #0e7490; background: #04161c; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <img src="/assets/app-icon.png" alt="">
+    <span class="name">TS IPTV</span>
+    <nav>
+      <a href="/playlists/">Danh sách / Playlists</a>
+      <a href="/privacy/">Quyền riêng tư / Privacy</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <ul class="langbar">
+    <li><button type="button" data-lang="vi" aria-pressed="true">Tiếng Việt</button></li>
+    <li><button type="button" data-lang="en" aria-pressed="false">English</button></li>
+  </ul>
+
+  <!-- ==================== VIETNAMESE ==================== -->
+  <section data-lang-pane="vi">
+    <h1>Chương trình người đóng góp</h1>
+    <p class="updated">Phiên bản chính sách: <time datetime="2026-09-27">27/09/2026</time></p>
+
+    <p>Nếu bạn tự xây dựng và duy trì một danh sách phát IPTV, bạn có thể đăng ký trở thành <strong>người đóng góp</strong> để chia sẻ danh sách đó trên <a href="/playlists/">thư mục công khai của TS IPTV</a>. Mỗi danh sách đều được đội ngũ kiểm duyệt của nhà phát hành xem xét trước khi công khai.</p>
+
+    <h2>Quy trình</h2>
+    <ol class="steps">
+      <li><strong>Đăng nhập bằng Google</strong> trên trang <a href="/contributor/request/">đăng ký</a>.</li>
+      <li><strong>Điền đơn đăng ký</strong>: tên hiển thị công khai, họ tên, số điện thoại, giới thiệu về bạn và các danh sách bạn duy trì; chấp thuận chính sách này, <a href="/terms/">điều khoản sử dụng</a> và <a href="/privacy/">chính sách quyền riêng tư</a>.</li>
+      <li><strong>Chờ quản trị viên duyệt.</strong> Mỗi tài khoản chỉ có một đơn tại một thời điểm; nếu bị từ chối, bạn có thể sửa và gửi lại.</li>
+      <li>Khi được duyệt, bạn <strong>đăng playlist</strong> trên trang <a href="/contributor/submit/">đăng playlist</a>: tên, đường dẫn, hình ảnh, mô tả.</li>
+      <li>Playlist ở trạng thái <strong>ĐANG DUYỆT</strong> cho tới khi quản trị viên chấp thuận; sau đó xuất hiện trên <a href="/playlists/">thư mục công khai</a>.</li>
+    </ol>
+
+    <div class="card lock">
+      <h3 style="margin-top:0">🔒 Họ tên, email và số điện thoại của bạn</h3>
+      <ul style="margin-bottom:0">
+        <li>Họ tên, email và số điện thoại <strong>bắt buộc</strong> để trở thành người đóng góp. Chúng giúp xác định mỗi danh sách thuộc về một người thật, có thể liên hệ được — đây là điều kiện để xử lý khiếu nại bản quyền.</li>
+        <li>Chúng được <strong>mã hoá ngay trên trình duyệt của bạn</strong> (RSA-OAEP 3072 + AES-256-GCM) trước khi gửi đi. Máy chủ và cơ sở dữ liệu chỉ lưu bản mã; khoá giải mã do quản trị viên giữ riêng, không lưu cùng dữ liệu.</li>
+        <li>Chúng <strong>không bao giờ được hiển thị công khai</strong> — không trên thư mục, không trong ứng dụng, không cho người kiểm duyệt. Công chúng chỉ thấy tên hiển thị bạn tự chọn.</li>
+        <li>Chỉ quản trị viên của nhà phát hành mới có thể giải mã, và chỉ để liên hệ với bạn khi có khiếu nại bản quyền hoặc lạm dụng liên quan tới danh sách của bạn.</li>
+        <li>Chúng tôi không bán, không chia sẻ và không dùng chúng cho quảng cáo. Chi tiết trong <a href="/privacy/">chính sách quyền riêng tư</a>.</li>
+      </ul>
+    </div>
+
+    <h2>Chính sách dành cho người đóng góp</h2>
+
+    <h3>1. Chỉ danh sách do chính bạn tạo ra</h3>
+    <p>Mỗi danh sách bạn gửi phải do <strong>chính bạn tạo ra và duy trì</strong>. Khi gửi, bạn xác nhận rằng danh sách <strong>không được sao chép, thu thập tự động hay lấy cắp</strong> từ người khác, ứng dụng khác hay dịch vụ khác, và bạn có quyền chia sẻ mọi đường dẫn trong đó.</p>
+
+    <h3>2. Nội dung bị cấm</h3>
+    <ul>
+      <li>Danh sách sao chép, đánh cắp, hoặc chỉ đổi tên từ danh sách của người khác.</li>
+      <li>Nội dung vi phạm bản quyền: kênh truyền hình trả phí, giải đấu thể thao, phim, chương trình được phát lại mà không có quyền.</li>
+      <li>Nội dung người lớn, bạo lực, thù ghét hoặc trái pháp luật.</li>
+      <li>Đường dẫn chứa mã độc, lừa đảo, hoặc tên/mô tả gây hiểu nhầm.</li>
+    </ul>
+
+    <h3>3. Kiểm duyệt</h3>
+    <p>Mọi danh sách đều ở trạng thái <strong>IN REVIEW</strong> cho tới khi một thành viên của đội kiểm duyệt duyệt hoặc từ chối. Hệ thống tự cảnh báo người kiểm duyệt khi một danh sách trùng với danh sách của người đóng góp khác. Việc được duyệt không có nghĩa nhà phát hành xác nhận quyền sở hữu hay tính hợp pháp của nội dung.</p>
+
+    <h3>4. Gỡ bỏ bất cứ lúc nào</h3>
+    <p>Nhà phát hành <strong>có quyền gỡ bỏ bất kỳ danh sách nào, vào bất cứ lúc nào, không cần báo trước</strong> — đặc biệt khi phát hiện hành vi sao chép, đánh cắp hoặc vi phạm bản quyền, hoặc khi nhận được khiếu nại từ chủ sở hữu quyền. Người đóng góp vi phạm có thể bị đình chỉ vĩnh viễn và toàn bộ danh sách của họ bị gỡ.</p>
+
+    <h3>5. Trách nhiệm</h3>
+    <p>TS IPTV là trình phát và không cung cấp nội dung. Bạn chịu hoàn toàn trách nhiệm về các danh sách mình gửi và các đường dẫn trong đó.</p>
+
+    <h3>6. Rút lại</h3>
+    <p>Bạn có thể rút lại danh sách của mình bất cứ lúc nào từ trang quản lý. Để xoá hẳn tài khoản, dùng trang <a href="/delete-account/">xoá tài khoản</a>.</p>
+
+    <h3>7. Khiếu nại bản quyền</h3>
+    <p>Nếu bạn là chủ sở hữu quyền và cho rằng một danh sách vi phạm, gửi email tới <a href="mailto:chintk111999@gmail.com?subject=Copyright%20report">chintk111999@gmail.com</a> kèm mã danh sách (hiển thị trên thư mục). Chúng tôi xử lý và gỡ bỏ khi phù hợp.</p>
+
+    <h3>8. Thay đổi chính sách</h3>
+    <p>Khi chính sách thay đổi, ngày phiên bản ở đầu trang được cập nhật và bạn cần chấp thuận lại trước lần gửi tiếp theo.</p>
+
+    <p class="cta"><a class="btn" href="/contributor/request/">Đăng ký trở thành người đóng góp</a></p>
+  </section>
+
+  <!-- ==================== ENGLISH ==================== -->
+  <section data-lang-pane="en" hidden>
+    <h1>Contributor programme</h1>
+    <p class="updated">Policy version: <time datetime="2026-09-27">27 September 2026</time></p>
+
+    <p>If you build and maintain your own IPTV playlist, you can become a <strong>contributor</strong> and share it in the <a href="/playlists/">TS IPTV public directory</a>. Every playlist is reviewed by the publisher's moderation team before it becomes public.</p>
+
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><strong>Sign in with Google</strong> on the <a href="/contributor/request/?lang=en">application page</a>.</li>
+      <li><strong>Fill in the application</strong>: public display name, full name, phone number, a few words about you and the playlists you maintain; accept this policy, the <a href="/terms/?lang=en">terms of use</a> and the <a href="/privacy/?lang=en">privacy policy</a>.</li>
+      <li><strong>Wait for an admin to approve it.</strong> One application per account at a time; if it is rejected you can update it and apply again.</li>
+      <li>Once approved, <strong>upload playlists</strong> on the <a href="/contributor/submit/?lang=en">upload page</a>: name, link, image, description.</li>
+      <li>Each playlist stays <strong>IN REVIEW</strong> until an admin approves it; then it appears in the <a href="/playlists/?lang=en">public directory</a>.</li>
+    </ol>
+
+    <div class="card lock">
+      <h3 style="margin-top:0">🔒 Your full name, email and phone number</h3>
+      <ul style="margin-bottom:0">
+        <li>Full name, email and phone number are <strong>mandatory</strong> to become a contributor. They tie every playlist to a real, reachable person — which is what makes copyright complaints resolvable.</li>
+        <li>They are <strong>encrypted in your browser</strong> (RSA-OAEP 3072 + AES-256-GCM) before they are sent. Servers and databases only ever hold ciphertext; the decryption key is kept by the administrators, never with the data.</li>
+        <li>They are <strong>never shown publicly</strong> — not in the directory, not in the app, not to reviewers. The public sees only the display name you choose.</li>
+        <li>Only the publisher's administrators can decrypt them, and only to contact you about a copyright or abuse report concerning your playlists.</li>
+        <li>We do not sell them, share them, or use them for advertising. Details in the <a href="/privacy/?lang=en">privacy policy</a>.</li>
+      </ul>
+    </div>
+
+    <h2>Contributor policy</h2>
+
+    <h3>1. Only playlists you created</h3>
+    <p>Every playlist you submit must be <strong>created and maintained by you</strong>. By submitting, you confirm that it is <strong>not copied, scraped or stolen</strong> from another person, app or service, and that you have the right to share every link in it.</p>
+
+    <h3>2. Not allowed</h3>
+    <ul>
+      <li>Playlists copied, stolen, or merely renamed from someone else's.</li>
+      <li>Infringing content: pay-TV channels, sports competitions, films or shows redistributed without rights.</li>
+      <li>Adult, violent, hateful or illegal content.</li>
+      <li>Links carrying malware or scams, and misleading names or descriptions.</li>
+    </ul>
+
+    <h3>3. Review</h3>
+    <p>Every playlist stays <strong>IN REVIEW</strong> until a member of the moderation team approves or rejects it. Reviewers are warned automatically when a playlist matches one from another contributor. Approval does not mean the publisher vouches for ownership or legality of the content.</p>
+
+    <h3>4. Removal at any time</h3>
+    <p>The publisher <strong>may remove any playlist, at any time, without notice</strong> — in particular when copying, theft or copyright infringement is found, or when a rights holder complains. Contributors who break these rules may be suspended permanently and all their playlists removed.</p>
+
+    <h3>5. Responsibility</h3>
+    <p>TS IPTV is a player and provides no content. You are solely responsible for the playlists you submit and the links in them.</p>
+
+    <h3>6. Withdrawing</h3>
+    <p>You can withdraw your playlists at any time from your dashboard. To delete your account entirely, use the <a href="/delete-account/?lang=en">account deletion page</a>.</p>
+
+    <h3>7. Copyright complaints</h3>
+    <p>If you hold rights and believe a playlist infringes them, email <a href="mailto:chintk111999@gmail.com?subject=Copyright%20report">chintk111999@gmail.com</a> with the playlist ID shown in the directory. We act on valid reports and remove content where appropriate.</p>
+
+    <h3>8. Changes</h3>
+    <p>When this policy changes, the version date above is updated and you must accept it again before your next submission.</p>
+
+    <p class="cta"><a class="btn" href="/contributor/request/?lang=en">Apply to become a contributor</a></p>
+  </section>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    TS IPTV · <a href="/playlists/">Danh sách / Playlists</a> · <a href="/privacy/">Quyền riêng tư / Privacy</a> · <a href="/terms/">Điều khoản / Terms</a>
+  </div>
+</footer>
+
+<script src="/assets/lang.js"></script>
+</body>
+</html>

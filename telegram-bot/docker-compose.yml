@@ -1,0 +1,25 @@
+# VPS deployment: docker compose up -d --build
+# Put .env and service-account.json next to this file first.
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/service-account.json
+      # Behind the reverse proxy below the client IP arrives in X-Forwarded-For.
+      TRUST_PROXY: "true"
+      STORE_DRIVER: sqlite
+      SQLITE_PATH: /app/data/contributors.sqlite
+    volumes:
+      - ./service-account.json:/run/secrets/service-account.json:ro
+      # The SQLite database. Back up this directory.
+      - ./data:/app/data
+    ports:
+      # Only reachable from the host; expose it through Caddy/nginx with TLS.
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

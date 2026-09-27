@@ -88,6 +88,9 @@ kotlin {
             // Add Firebase App Check dependencies
             implementation("com.google.firebase:firebase-appcheck-playintegrity")
             implementation("com.google.firebase:firebase-appcheck-debug")
+
+            // Play In-App Review for the rating prompt (docs/prd-rate-app.md)
+            implementation(libs.play.review.ktx)
         }
 
         commonMain.dependencies {

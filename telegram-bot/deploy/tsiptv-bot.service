@@ -1,0 +1,29 @@
+# VPS without Docker. Install:
+#   sudo useradd --system --home /opt/tsiptv-bot tsiptv
+#   sudo cp -r telegram-bot /opt/tsiptv-bot && cd /opt/tsiptv-bot && sudo npm ci --omit=dev
+#   sudo cp deploy/tsiptv-bot.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now tsiptv-bot
+#   journalctl -u tsiptv-bot -f
+[Unit]
+Description=TS IPTV contributor API and Telegram review bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tsiptv
+WorkingDirectory=/opt/tsiptv-bot
+# .env in WorkingDirectory is loaded by the app itself.
+ExecStart=/usr/bin/node src/index.js
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/tsiptv-bot
+# The SQLite database lives here (SQLITE_PATH=./data/contributors.sqlite).
+ReadWritePaths=/opt/tsiptv-bot/data
+
+[Install]
+WantedBy=multi-user.target

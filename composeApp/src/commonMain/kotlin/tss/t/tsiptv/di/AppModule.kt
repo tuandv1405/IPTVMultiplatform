@@ -36,6 +36,9 @@ import tss.t.tsiptv.core.parser.JSONParser
 import tss.t.tsiptv.core.parser.XMLParser
 import tss.t.tsiptv.core.parser.epg.XMLTVEPGParser
 import tss.t.tsiptv.core.parser.iptv.m3u.M3UParser
+import tss.t.tsiptv.core.rating.AppRatingController
+import tss.t.tsiptv.core.rating.AppRatingRepository
+import tss.t.tsiptv.core.rating.getAppReviewPlatform
 import tss.t.tsiptv.core.repository.HistoryRepositoryImpl
 import tss.t.tsiptv.core.repository.IAdsRepository
 import tss.t.tsiptv.core.repository.IHistoryRepository
@@ -119,6 +122,10 @@ val commonModule = module {
 
     // UI mode (phone / TV)
     single { UiModeRepository(get()) }
+
+    // Asking for a Play / App Store rating (docs/prd-rate-app.md)
+    single { AppRatingRepository(get()) }
+    single { AppRatingController(get(), getAppReviewPlatform()) }
 
 
     single<CoroutineScope>(named("MediaCoroutine")) {

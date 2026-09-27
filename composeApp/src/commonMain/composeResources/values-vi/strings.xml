@@ -163,4 +163,10 @@
     <string name="tv_no_channels">Không có kênh nào trong danh mục này</string>
     <string name="tv_player_hint">▲ ▼ đổi kênh · OK danh sách kênh · BACK thoát</string>
     <string name="tv_import_playlist_hint">Nhập danh sách phát để bắt đầu xem</string>
+
+    <!-- Rating and contributor programme -->
+    <string name="rate_app_title">Đánh giá TS IPTV</string>
+    <string name="rate_app_desc">Bạn thấy ứng dụng hữu ích? Hãy để lại đánh giá trên Google Play</string>
+    <string name="contributor_entry_title">Trở thành người đóng góp</string>
+    <string name="open_link_failed">Không mở được liên kết. Hãy kiểm tra thiết bị đã có trình duyệt hoặc CH Play.</string>
 </resources>

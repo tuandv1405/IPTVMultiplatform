@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Đăng playlist — TS IPTV</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/contributor.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <img src="/assets/app-icon.png" alt="">
+    <span class="name">TS IPTV</span>
+    <nav>
+      <a href="/contributor/" data-i18n="nav_policy">Chính sách</a>
+      <a href="/contributor/request/" data-i18n="nav_request">Đăng ký</a>
+      <a href="/playlists/" data-i18n="nav_directory">Danh sách công khai</a>
+      <button type="button" class="linklike" id="signOut" hidden data-i18n="sign_out">Đăng xuất</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <ul class="langbar">
+    <li><button type="button" data-ui-lang="vi" aria-pressed="true">Tiếng Việt</button></li>
+    <li><button type="button" data-ui-lang="en" aria-pressed="false">English</button></li>
+  </ul>
+
+  <h1 data-i18n="title">Đăng playlist</h1>
+  <p class="hint" id="who"></p>
+  <p class="flash" id="flash" role="status" hidden></p>
+
+  <section class="state on" data-state="loading"><div class="spinner"></div></section>
+
+  <section class="state" data-state="signin">
+    <p data-i18n="signin_needed">Hãy đăng nhập bằng tài khoản Google để tiếp tục.</p>
+    <button type="button" class="btn google" id="signIn" data-i18n="sign_in_google">Đăng nhập bằng Google</button>
+  </section>
+
+  <section class="state" data-state="retry">
+    <div class="card warn">
+      <p style="margin-top:0" id="retryMsg"></p>
+      <button type="button" class="ghost" id="retryBtn" data-i18n="retry">Thử lại</button>
+    </div>
+  </section>
+
+  <!-- Not a contributor (or suspended): the form is not rendered at all. -->
+  <section class="state" data-state="locked">
+    <div class="card warn">
+      <h2 style="margin-top:0" data-i18n="locked_title">Chỉ dành cho người đóng góp</h2>
+      <p id="lockedMsg"></p>
+      <a class="btn" href="/contributor/request/" id="lockedCta" data-i18n="locked_cta">Đăng ký trở thành người đóng góp</a>
+    </div>
+  </section>
+
+  <section class="state" data-state="form">
+    <p><span data-i18n="hello">Xin chào</span> <strong id="publicNameOut"></strong> 👋</p>
+
+    <div class="card">
+      <h2 style="margin-top:0" data-i18n="new_title">Gửi danh sách phát mới</h2>
+      <form id="submitForm" class="form" novalidate>
+        <label for="plName" data-i18n="f_name">Tên danh sách</label>
+        <input type="text" id="plName" maxlength="80" required>
+
+        <label for="plUrl" data-i18n="f_url">Đường dẫn danh sách (M3U, M3U8, XSPF, JSON)</label>
+        <div class="row nowrap">
+          <input type="url" id="plUrl" placeholder="https://…" required>
+          <button type="button" class="ghost" id="checkLink" data-i18n="check_link">Kiểm tra</button>
+        </div>
+        <div class="verify" id="verifyResult" hidden></div>
+
+        <label for="plImage" data-i18n="f_image">Hình ảnh (PNG, JPEG hoặc WebP)</label>
+        <input type="file" id="plImage" accept="image/png,image/jpeg,image/webp" required>
+        <img id="plPreview" class="preview" alt="" hidden>
+
+        <label for="plDesc" data-i18n="f_desc">Mô tả (không bắt buộc)</label>
+        <textarea id="plDesc" maxlength="500" rows="3"></textarea>
+
+        <div class="grid2">
+          <div>
+            <label for="plCategory" data-i18n="f_category">Thể loại</label>
+            <select id="plCategory" required></select>
+          </div>
+          <div>
+            <label for="plLanguage" data-i18n="f_language">Ngôn ngữ</label>
+            <select id="plLanguage" required></select>
+          </div>
+        </div>
+
+        <fieldset>
+          <legend data-i18n="decl_title">Cam kết về danh sách này</legend>
+          <label class="check"><input type="checkbox" name="own_work"> <span data-i18n="decl_own_work">Tôi tự tạo ra và duy trì danh sách này.</span></label>
+          <label class="check"><input type="checkbox" name="not_copied"> <span data-i18n="decl_not_copied">Danh sách không được sao chép, thu thập hay lấy cắp từ người khác hoặc dịch vụ khác.</span></label>
+          <label class="check"><input type="checkbox" name="rights_ok"> <span data-i18n="decl_rights_ok">Tôi có quyền chia sẻ mọi đường dẫn trong đó, và hiểu rằng danh sách vi phạm bản quyền sẽ bị gỡ bỏ bất cứ lúc nào.</span></label>
+        </fieldset>
+
+        <button type="submit" class="btn" id="submitBtn" disabled data-i18n="submit">Gửi để kiểm duyệt</button>
+        <p class="hint" id="submitHint" data-i18n="submit_hint">Bấm “Kiểm tra” đường dẫn trước khi gửi.</p>
+        <p class="err" id="submitErr"></p>
+      </form>
+    </div>
+
+    <h2 data-i18n="mine_title">Danh sách của tôi</h2>
+    <p class="hint" id="mineEmpty" data-i18n="mine_empty">Bạn chưa gửi danh sách nào.</p>
+    <ul class="subs" id="mine"></ul>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    TS IPTV · <a href="/contributor/">Chính sách / Policy</a> · <a href="/terms/">Điều khoản / Terms</a> · <a href="/privacy/">Quyền riêng tư / Privacy</a>
+  </div>
+</footer>
+
+<script type="module" src="/assets/contributor-submit.js"></script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quản trị người đóng góp — TS IPTV</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/contributor.css">
+<style>
+  .wrap { --max: 60rem; max-width: var(--max); }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <img src="/assets/app-icon.png" alt="">
+    <span class="name">TS IPTV · Admin</span>
+    <nav>
+      <a href="/playlists/" data-i18n="nav_directory">Danh sách công khai</a>
+      <button type="button" class="linklike" id="signOut" hidden data-i18n="sign_out">Đăng xuất</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <ul class="langbar">
+    <li><button type="button" data-ui-lang="vi" aria-pressed="true">Tiếng Việt</button></li>
+    <li><button type="button" data-ui-lang="en" aria-pressed="false">English</button></li>
+  </ul>
+
+  <h1 data-i18n="title">Quản trị người đóng góp</h1>
+  <p class="hint" id="who"></p>
+  <p class="flash" id="flash" role="status" hidden></p>
+
+  <section class="state on" data-state="loading"><div class="spinner"></div></section>
+
+  <section class="state" data-state="signin">
+    <p data-i18n="admin_signin">Đăng nhập bằng tài khoản Google của chủ sở hữu dự án Firebase.</p>
+    <button type="button" class="btn google" id="signIn" data-i18n="sign_in_google">Đăng nhập bằng Google</button>
+  </section>
+
+  <section class="state" data-state="denied">
+    <div class="card warn"><p style="margin:0" id="deniedMsg"></p></div>
+  </section>
+
+  <section class="state" data-state="console">
+    <div class="card lock keybar">
+      <span id="keyStatus"></span>
+      <label class="ghost filebtn"><span data-i18n="load_key">Nạp khoá riêng…</span><input type="file" id="keyFile" accept=".json,application/json" hidden></label>
+      <button type="button" class="linklike" id="forgetKey" hidden data-i18n="forget_key">Quên khoá</button>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="requests" aria-selected="true" data-i18n="tab_requests">Yêu cầu</button>
+      <button type="button" role="tab" data-tab="contributors" aria-selected="false" data-i18n="tab_contributors">Người đóng góp</button>
+      <button type="button" role="tab" data-tab="playlists" aria-selected="false" data-i18n="tab_playlists">Playlist</button>
+    </div>
+
+    <div class="filters">
+      <select id="filter" aria-label="Status"></select>
+      <button type="button" class="ghost" id="reload" data-i18n="reload">Tải lại</button>
+    </div>
+    <p class="hint" id="empty" hidden data-i18n="empty">Không có mục nào.</p>
+    <ul class="subs" id="items"></ul>
+  </section>
+</main>
+
+<script type="module" src="/assets/contributor-admin.js"></script>
+</body>
+</html>
