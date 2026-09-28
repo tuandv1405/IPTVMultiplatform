@@ -1,0 +1,80 @@
+    <h1>Format guides</h1>
+    <p class="lead">TS IPTV plays what <em>you</em> provide: a playlist, a programme guide, or a link from your provider. Pick the format you have, or the one you want to make yourself.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels.</strong> It plays only the playlists and sources you add. You are responsible for those sources and must be legally entitled to use them.</p>
+    </div>
+
+    <p>Each guide shows the real format: the syntax, a complete example file you can download, how to write one by hand, how to host it, how to add it in TS IPTV, and common mistakes.</p>
+
+    <h2 id="start-en">Start here</h2>
+    <div class="features">
+      <div class="card">
+        <h3><a href="/guides/iptv/">What is IPTV?</a></h3>
+        <p>What streams, playlists and programme guides are, how they fit together, and what TS IPTV does.</p>
+      </div>
+    </div>
+
+    <h2 id="playlists-en">Playlists</h2>
+    <div class="features">
+      <div class="card">
+        <h3><a href="/guides/m3u/">M3U / M3U8</a></h3>
+        <p>The most common format. A text file: each channel is one description line and one link.</p>
+      </div>
+      <div class="card">
+        <h3><a href="/guides/xspf/">XSPF</a></h3>
+        <p>An XML playlist, often saved from VLC.</p>
+      </div>
+      <div class="card">
+        <h3><a href="/guides/json/">JSON</a></h3>
+        <p>Channel lists in JSON: the generic shape TS IPTV reads and the iptv-org <code>streams.json</code> shape.</p>
+      </div>
+      <div class="card">
+        <h3><a href="/guides/tsiptv-source/">TS IPTV Source</a></h3>
+        <p>TS IPTV's open format for a whole collection: channels, movies, series, home layout, colours and includes.</p>
+      </div>
+    </div>
+
+    <h2 id="epg-en">Programme guides</h2>
+    <div class="features">
+      <div class="card">
+        <h3><a href="/guides/xmltv/">XMLTV</a></h3>
+        <p>An XML file with each channel's schedule, linked to a playlist through <code>tvg-id</code>.</p>
+      </div>
+    </div>
+
+    <h2 id="other-en">Other apps and services</h2>
+    <div class="features">
+      <div class="card">
+        <h3><a href="/guides/xtream-codes/">Xtream Codes style links</a></h3>
+        <p>Your provider gave you a server, a username and a password? This is how to use them.</p>
+      </div>
+      <div class="card">
+        <h3><a href="/guides/stremio-addons/">Stremio-compatible addons</a></h3>
+        <p>The open addon protocol: film, series and channel catalogues as JSON over HTTP. How it works and how to build one.</p>
+      </div>
+      <div class="card">
+        <h3><a href="/guides/kodi/">Kodi formats</a></h3>
+        <p>What TS IPTV reads from playlists written for Kodi PVR IPTV Simple, and what cannot run.</p>
+      </div>
+      <div class="card">
+        <h3><a href="/guides/monplayer/">MonPlayer</a></h3>
+        <p>Why TS IPTV cannot import MonPlayer's JSON sources yet.</p>
+      </div>
+    </div>
+
+    <h2 id="which-en">Which one do I need?</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Your situation</th><th>Read</th></tr></thead>
+        <tbody>
+          <tr><td>Your provider gave you a playlist link</td><td><a href="/guides/m3u/">M3U</a>; if the link contains <code>get.php</code> or you were given a username and password: <a href="/guides/xtream-codes/">Xtream Codes</a></td></tr>
+          <tr><td>You have a programme guide (EPG) link</td><td><a href="/guides/xmltv/">XMLTV</a></td></tr>
+          <tr><td>You want to build your own channel list</td><td><a href="/guides/m3u/">M3U</a> (the simplest), or <a href="/guides/tsiptv-source/">TS IPTV Source</a> (with movies, series and your own layout)</td></tr>
+          <tr><td>You run, or want to build, a Stremio-compatible addon</td><td><a href="/guides/stremio-addons/">Stremio-compatible addons</a></td></tr>
+          <tr><td>You used a playlist with Kodi PVR IPTV Simple</td><td><a href="/guides/kodi/">Kodi formats</a></td></tr>
+          <tr><td>You have a list saved from VLC</td><td><a href="/guides/xspf/">XSPF</a> or <a href="/guides/m3u/">M3U</a></td></tr>
+          <tr><td>You have a <code>.json</code> file</td><td><a href="/guides/json/">JSON</a></td></tr>
+        </tbody>
+      </table>
+    </div>

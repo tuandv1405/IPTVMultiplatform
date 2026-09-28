@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tv generator-info-name="TS IPTV examples">
+  <channel id="HlsTest.example">
+    <display-name lang="en">HLS Test Channel</display-name>
+  </channel>
+  <channel id="ExampleNews.us">
+    <display-name lang="en">Example News</display-name>
+    <icon src="https://example.com/logos/news.png"/>
+  </channel>
+  <programme start="20251231220000 +0000" stop="20251231230000 +0000" channel="ExampleNews.us">
+    <title lang="en">Weekly Magazine</title>
+    <sub-title lang="en">Harvest Season</sub-title>
+    <desc lang="en">A dated example programme with an episode number and a rating.</desc>
+    <category lang="en">Documentary</category>
+    <episode-num system="xmltv_ns">2.4.</episode-num>
+    <episode-num system="onscreen">S03E05</episode-num>
+    <rating system="MPAA"><value>PG</value></rating>
+  </programme>
+  <programme start="20251231230000 +0000" stop="20260101000000 +0000" channel="ExampleNews.us">
+    <title lang="en">Year in Review</title>
+    <sub-title lang="en">Part One</sub-title>
+    <category lang="en">News</category>
+    <episode-num system="xmltv_ns">0.11/12.0/2</episode-num>
+    <episode-num system="onscreen">S01E12</episode-num>
+    <rating system="MPAA"><value>G</value></rating>
+  </programme>
+  <programme start="20260101000000 +0000" stop="20301231235959 +0000" channel="HlsTest.example">
+    <title lang="en">Test pattern</title>
+    <desc lang="en">One long programme, so the guide always shows something on now.</desc>
+    <category lang="en">Test</category>
+  </programme>
+  <programme start="20260101000000 +0000" stop="20301231235959 +0000" channel="ExampleNews.us">
+    <title lang="en">Test pattern</title>
+    <desc lang="en">One long programme, so the guide always shows something on now.</desc>
+    <category lang="en">Test</category>
+  </programme>
+</tv>

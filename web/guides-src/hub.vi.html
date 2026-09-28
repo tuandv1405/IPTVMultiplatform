@@ -1,0 +1,80 @@
+    <h1>Hướng dẫn định dạng</h1>
+    <p class="lead">TS IPTV phát những gì <em>bạn</em> cung cấp: một danh sách phát, một lịch phát sóng, hoặc một đường dẫn từ nhà cung cấp của bạn. Hãy chọn định dạng bạn đang có, hoặc định dạng bạn muốn tự tạo.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV không có sẵn kênh nào.</strong> Ứng dụng chỉ phát các danh sách phát và nguồn do bạn thêm vào. Bạn chịu trách nhiệm về các nguồn đó và phải có quyền sử dụng hợp pháp đối với chúng.</p>
+    </div>
+
+    <p>Mỗi hướng dẫn cho bạn thấy định dạng thật: cú pháp, một tệp ví dụ đầy đủ có thể tải về, cách tự viết, cách đưa lên mạng, cách thêm vào TS IPTV và những lỗi hay gặp.</p>
+
+    <h2 id="start">Bắt đầu từ đây</h2>
+    <div class="features">
+      <div class="card">
+        <h3><a href="/guides/iptv/">IPTV là gì?</a></h3>
+        <p>Luồng, danh sách phát và lịch phát sóng là gì, chúng khớp với nhau ra sao, và TS IPTV làm gì.</p>
+      </div>
+    </div>
+
+    <h2 id="playlists">Danh sách phát</h2>
+    <div class="features">
+      <div class="card">
+        <h3><a href="/guides/m3u/">M3U / M3U8</a></h3>
+        <p>Định dạng phổ biến nhất. Một tệp văn bản: mỗi kênh gồm một dòng mô tả và một đường dẫn.</p>
+      </div>
+      <div class="card">
+        <h3><a href="/guides/xspf/">XSPF</a></h3>
+        <p>Danh sách phát dạng XML, thường được lưu từ VLC.</p>
+      </div>
+      <div class="card">
+        <h3><a href="/guides/json/">JSON</a></h3>
+        <p>Danh sách kênh dạng JSON: dạng chung mà TS IPTV đọc được và dạng <code>streams.json</code> của iptv-org.</p>
+      </div>
+      <div class="card">
+        <h3><a href="/guides/tsiptv-source/">TS IPTV Source</a></h3>
+        <p>Định dạng mở của TS IPTV cho cả một bộ sưu tập: kênh, phim lẻ, phim bộ, bố cục trang chủ, màu sắc và include.</p>
+      </div>
+    </div>
+
+    <h2 id="epg">Lịch phát sóng</h2>
+    <div class="features">
+      <div class="card">
+        <h3><a href="/guides/xmltv/">XMLTV</a></h3>
+        <p>Tệp XML chứa lịch chương trình của từng kênh, liên kết với danh sách phát qua <code>tvg-id</code>.</p>
+      </div>
+    </div>
+
+    <h2 id="other">Ứng dụng và dịch vụ khác</h2>
+    <div class="features">
+      <div class="card">
+        <h3><a href="/guides/xtream-codes/">Đường dẫn kiểu Xtream Codes</a></h3>
+        <p>Nhà cung cấp đưa cho bạn máy chủ, tên đăng nhập và mật khẩu? Đây là cách dùng chúng.</p>
+      </div>
+      <div class="card">
+        <h3><a href="/guides/stremio-addons/">Addon tương thích Stremio</a></h3>
+        <p>Giao thức addon mở: danh mục phim, phim bộ và kênh dạng JSON qua HTTP. Cách hoạt động và cách tự tạo một addon.</p>
+      </div>
+      <div class="card">
+        <h3><a href="/guides/kodi/">Định dạng Kodi</a></h3>
+        <p>TS IPTV đọc được gì từ danh sách phát viết cho Kodi PVR IPTV Simple, và những gì không chạy được.</p>
+      </div>
+      <div class="card">
+        <h3><a href="/guides/monplayer/">MonPlayer</a></h3>
+        <p>Vì sao TS IPTV chưa nhập được nguồn JSON của MonPlayer.</p>
+      </div>
+    </div>
+
+    <h2 id="which">Tôi cần định dạng nào?</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Trường hợp của bạn</th><th>Xem hướng dẫn</th></tr></thead>
+        <tbody>
+          <tr><td>Nhà cung cấp đưa cho bạn một đường dẫn danh sách phát</td><td><a href="/guides/m3u/">M3U</a>; nếu đường dẫn có <code>get.php</code> hoặc bạn nhận được tên đăng nhập và mật khẩu: <a href="/guides/xtream-codes/">Xtream Codes</a></td></tr>
+          <tr><td>Bạn có một đường dẫn lịch phát sóng (EPG)</td><td><a href="/guides/xmltv/">XMLTV</a></td></tr>
+          <tr><td>Bạn muốn tự làm danh sách kênh của riêng mình</td><td><a href="/guides/m3u/">M3U</a> (đơn giản nhất), hoặc <a href="/guides/tsiptv-source/">TS IPTV Source</a> (có phim lẻ, phim bộ và bố cục riêng)</td></tr>
+          <tr><td>Bạn vận hành hoặc muốn tự tạo một addon tương thích Stremio</td><td><a href="/guides/stremio-addons/">Addon tương thích Stremio</a></td></tr>
+          <tr><td>Bạn từng dùng danh sách phát với Kodi PVR IPTV Simple</td><td><a href="/guides/kodi/">Định dạng Kodi</a></td></tr>
+          <tr><td>Bạn có danh sách đã lưu từ VLC</td><td><a href="/guides/xspf/">XSPF</a> hoặc <a href="/guides/m3u/">M3U</a></td></tr>
+          <tr><td>Bạn có một tệp <code>.json</code></td><td><a href="/guides/json/">JSON</a></td></tr>
+        </tbody>
+      </table>
+    </div>

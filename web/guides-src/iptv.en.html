@@ -1,0 +1,77 @@
+    <h1>What is IPTV?</h1>
+    <p class="lead">IPTV (Internet Protocol Television) is television and video delivered over IP networks, that is over the internet or a local network, instead of through an aerial, satellite dish or TV cable.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels.</strong> It is a player: it plays only the playlists and sources you add.</p>
+    </div>
+
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+        <li><a href="#pieces-en">Three pieces: stream, playlist, guide</a></li>
+        <li><a href="#glossary-en">Glossary</a></li>
+        <li><a href="#sources-en">Where legitimate streams come from</a></li>
+        <li><a href="#tsiptv-en">What TS IPTV is and is not</a></li>
+        <li><a href="#next-en">Next steps</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="pieces-en">Three pieces: stream, playlist, guide</h2>
+    <ol>
+      <li>A <strong>stream</strong> is video or audio sent to your device from a link, for example <code>https://cdn.example.com/news/index.m3u8</code>. Each channel is one stream.</li>
+      <li>A <strong>playlist</strong> is a file that lists channels: each channel's name, logo, group and the link to its stream. The most common format is <a href="/guides/m3u/">M3U</a>.</li>
+      <li>A <strong>programme guide (EPG)</strong> is a separate file that says what is on each channel now and next. The usual format is <a href="/guides/xmltv/">XMLTV</a>. The playlist points to the guide, and each channel is matched to its schedule by an identifier.</li>
+    </ol>
+    <p>When you add a playlist to TS IPTV, the app downloads it, shows the channels in their groups, downloads the guide if the playlist points to one, and plays the stream of the channel you pick.</p>
+
+    <h2 id="glossary-en">Glossary</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Playlist</td><td>A file that lists channels or videos with their links. Examples: M3U, XSPF, JSON.</td></tr>
+          <tr><td>Stream</td><td>Video or audio delivered continuously from a link.</td></tr>
+          <tr><td>HLS</td><td>HTTP Live Streaming: the stream is cut into short segments listed in an <code>.m3u8</code> index file. The most common stream type; it plays on every platform.</td></tr>
+          <tr><td>DASH</td><td>MPEG-DASH: similar to HLS, with an <code>.mpd</code> index file. Often used for DRM-protected content.</td></tr>
+          <tr><td>MPEG-TS</td><td>The transport format of digital TV, common for links that end in <code>.ts</code>.</td></tr>
+          <tr><td>EPG / XMLTV</td><td>Electronic Programme Guide. XMLTV is the most common file format for it.</td></tr>
+          <tr><td>DRM</td><td>Digital Rights Management: the stream is encrypted and the player must get a licence from the provider's server to decrypt it. Examples: Widevine, PlayReady, ClearKey.</td></tr>
+          <tr><td>Catch-up</td><td>Watching programmes that aired in the last few days, if the provider's server keeps an archive.</td></tr>
+          <tr><td>VOD</td><td>Video on demand: films and episodes you watch at any time, rather than live channels.</td></tr>
+          <tr><td>User-Agent / Referer</td><td>HTTP headers the player sends when it requests a stream. Some servers only answer when they have the expected values; a playlist can set them per channel.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="sources-en">Where legitimate streams come from</h2>
+    <p>In general, legitimate sources include:</p>
+    <ul>
+      <li>your TV operator or internet provider, if it offers IPTV and allows third-party players;</li>
+      <li>broadcasters that offer their channels online;</li>
+      <li>your own home media server, for example a network TV tuner or a personal video library;</li>
+      <li>archives of public-domain content.</li>
+    </ul>
+    <p>TS IPTV does not recommend, list or link to any particular source.</p>
+
+    <h2 id="tsiptv-en">What TS IPTV is and is not</h2>
+    <ul>
+      <li>TS IPTV is a <strong>player</strong> for Android, Android TV, iOS and desktop. It reads playlists and programme guides in the formats described in <a href="/guides/">these guides</a>.</li>
+      <li>TS IPTV <strong>does not provide television channels</strong>. The app ships with no playlists, hosts nothing, and rebroadcasts no third-party content.</li>
+      <li>You are responsible for the sources you add and must be legally entitled to use them.</li>
+    </ul>
+
+    <h2 id="next-en">Next steps</h2>
+    <ul>
+      <li>Write your first playlist: <a href="/guides/m3u/">the M3U / M3U8 guide</a>.</li>
+      <li>Add a programme guide to your channels: <a href="/guides/xmltv/">the XMLTV guide</a>.</li>
+    </ul>
+
+    <section class="related">
+      <h2 id="related-en">Related guides</h2>
+      <ul>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/xmltv/">XMLTV</a></li>
+        <li><a href="/guides/xtream-codes/">Xtream Codes style links</a></li>
+        <li><a href="/guides/">All guides</a></li>
+      </ul>
+    </section>

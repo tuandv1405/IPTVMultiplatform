@@ -1,0 +1,7 @@
+{
+  "format": "tsiptv-source",
+  "version": 1,
+  "id": "org.example.fixture",
+  "meta": { "name": "Fixture" },
+  "channels": [ { "id": "a", "nmae": "Channel A", "url": "https://cdn.example.com/a.m3u8" } ]
+}

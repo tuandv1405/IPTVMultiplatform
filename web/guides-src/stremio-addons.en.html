@@ -1,0 +1,375 @@
+    <h1>Stremio-compatible addons</h1>
+    <p class="lead">An addon is a small web service, or even a folder of static JSON files, that answers a handful of HTTP requests with catalogues, details and stream links. The addon protocol is open and documented; TS IPTV can use any addon that follows it and returns ordinary video links.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels and no addons.</strong> Nothing is pre-installed and TS IPTV does not recommend any addon. Addons are third-party services that you add yourself; you are responsible for having the rights to what you watch through them.</p>
+      <p>The protocol was created for the Stremio app and is published as the open <a href="https://github.com/Stremio/stremio-addon-sdk">stremio-addon-sdk</a> specification. TS IPTV is not affiliated with or endorsed by Stremio; “Stremio-compatible” only describes the protocol. Every example uses TS IPTV's own sample addon on <code>tsiptv-8bdd6.web.app</code>, public-domain films from archive.org, a public test stream or <code>example.com</code> placeholders.</p>
+    </div>
+
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+        <li><a href="#what-en">What an addon is</a></li>
+        <li><a href="#syntax-en">The protocol</a></li>
+        <li><a href="#example-en">Complete example: the sample addon</a></li>
+        <li><a href="#create-en">Create your own addon</a></li>
+        <li><a href="#host-en">Host it</a></li>
+        <li><a href="#add-en">Add it in TS IPTV</a></li>
+        <li><a href="#mistakes-en">Common mistakes</a></li>
+        <li><a href="#support-en">What TS IPTV plays</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what-en">What an addon is</h2>
+    <p>An addon is identified by the link to its <strong>manifest</strong>, a JSON file that always ends in <code>/manifest.json</code>. The manifest says what the addon offers: which content types (<code>movie</code>, <code>series</code>, <code>tv</code>…), which catalogues, and which resources (catalogue lists, details, streams, subtitles). The player then builds further URLs from the manifest's address and requests them with plain HTTP GET. Every answer is JSON. There is no login, no session and no custom transport, which is why an addon can be as simple as a set of files on a static web host.</p>
+    <p>Addons are useful for publishing your own collection with posters, descriptions, seasons and episodes, for example a home media server, a licensed service you operate, or an archive of public-domain films.</p>
+
+    <h2 id="syntax-en">The protocol</h2>
+    <p>The normative text is the SDK's <a href="https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/protocol.md">protocol.md</a> and the <a href="https://github.com/Stremio/stremio-addon-sdk/tree/master/docs/api">API reference</a>. This section summarises what an addon author needs.</p>
+
+    <h3 id="urls-en">URLs</h3>
+    <p>The <strong>base URL</strong> is the manifest link without <code>/manifest.json</code>. All other requests are built from it:</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>GET {base}/manifest.json
+GET {base}/{resource}/{type}/{id}.json
+GET {base}/{resource}/{type}/{id}/{extra}.json</code></pre>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Resource</th><th><code>type</code></th><th><code>id</code></th><th>Response</th></tr></thead>
+        <tbody>
+          <tr><td><code>catalog</code></td><td>the catalogue's type</td><td>the catalogue id from the manifest</td><td><code>{ "metas": [ … ] }</code></td></tr>
+          <tr><td><code>meta</code></td><td>the item's type</td><td>the item id from the catalogue</td><td><code>{ "meta": { … } }</code></td></tr>
+          <tr><td><code>stream</code></td><td>the item's type</td><td>the <strong>video</strong> id (a film: its own id; an episode: the episode id; <code>tv</code>: the channel id)</td><td><code>{ "streams": [ … ] }</code></td></tr>
+          <tr><td><code>subtitles</code></td><td>the item's type</td><td>the video id</td><td><code>{ "subtitles": [ … ] }</code></td></tr>
+          <tr><td><code>addon_catalog</code></td><td>from <code>addonCatalogs</code></td><td>from <code>addonCatalogs</code></td><td><code>{ "addons": [ … ] }</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul>
+      <li>A query string on the manifest link is kept and added after <code>.json</code> of every request. Anything before <code>/manifest.json</code> is kept too; configurable addons put the user's settings there, for example <code>https://addon.example.com/eyJsYW5nIjoiZW4ifQ/manifest.json</code>.</li>
+      <li>SDK servers answer 404 <code>{"err":"not found"}</code> for unknown resources and 500 <code>{"err":"handler error"}</code> when a handler fails; they may also answer with a 307 redirect. Static hosts answer 404 for any file that does not exist.</li>
+    </ul>
+
+    <h3 id="encoding-en">Encoding: path segments and <code>extra</code></h3>
+    <ul>
+      <li><code>resource</code>, <code>type</code> and <code>id</code> are each encoded like JavaScript's <code>encodeURIComponent</code>: every byte except letters, digits and <code>- _ . ! ~ * ' ( )</code> becomes <code>%XX</code>. So <code>tt1234567:1:2</code> is sent as <code>tt1234567%3A1%3A2</code>.</li>
+      <li><code>extra</code> is <code>name=value</code> pairs joined with <code>&amp;</code>, each name and value encoded the same way: <code>search=his%20girl&amp;skip=100</code>. A space is <strong><code>%20</code>, never <code>+</code></strong>; a literal <code>&amp;</code> or <code>=</code> inside a value becomes <code>%26</code> or <code>%3D</code>.</li>
+      <li>Extras that allow several values repeat the name: <code>genre=Action&amp;genre=Comedy</code>. TS IPTV writes extras in the order the manifest declares them, with <code>skip</code> last, and leaves out the <code>/{extra}</code> segment when there are none.</li>
+    </ul>
+
+    <h3 id="manifest-en">Manifest</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Field</th><th>Required</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><strong>yes</strong></td><td>Reverse-DNS identifier, for example <code>com.example.myaddon</code>. The same id added again means an update.</td></tr>
+          <tr><td><code>version</code></td><td><strong>yes</strong></td><td>Version string, normally semver (<code>1.0.0</code>).</td></tr>
+          <tr><td><code>name</code></td><td><strong>yes</strong></td><td>Display name.</td></tr>
+          <tr><td><code>description</code></td><td>yes (spec)</td><td>One or two sentences.</td></tr>
+          <tr><td><code>types</code></td><td><strong>yes</strong></td><td>Content types: <code>movie</code>, <code>series</code>, <code>channel</code>, <code>tv</code>, or any other string.</td></tr>
+          <tr><td><code>resources</code></td><td><strong>yes</strong></td><td><code>"catalog"</code>, <code>"meta"</code>, <code>"stream"</code>, <code>"subtitles"</code>, <code>"addon_catalog"</code>, or objects <code>{ "name": "stream", "types": ["movie"], "idPrefixes": ["ex_"] }</code>.</td></tr>
+          <tr><td><code>catalogs</code></td><td><strong>yes</strong> (may be <code>[]</code>)</td><td>List of catalogues (below).</td></tr>
+          <tr><td><code>idPrefixes</code></td><td>no</td><td>Only ids starting with one of these are sent to the addon, for example <code>["ex_"]</code>.</td></tr>
+          <tr><td><code>addonCatalogs</code></td><td>no</td><td>Lists of other addons (<code>type</code>, <code>id</code>, <code>name</code>).</td></tr>
+          <tr><td><code>behaviorHints</code></td><td>no</td><td><code>adult</code>, <code>p2p</code>, <code>configurable</code>, <code>configurationRequired</code>, <code>epgProvider</code>, all booleans.</td></tr>
+          <tr><td><code>logo</code>, <code>background</code>, <code>contactEmail</code></td><td>no</td><td>Logo (256×256 PNG), background image, contact address.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A <strong>catalogue</strong> is <code>{ "type", "id", "name", "extra": [ … ] }</code>. The same <code>id</code> may be used for several types. Each <code>extra</code> entry is <code>{ "name", "isRequired", "options", "optionsLimit" }</code>:</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Extra</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>search</code></td><td>Free-text search. <code>isRequired: true</code> makes a search-only catalogue that is never shown as a row.</td></tr>
+          <tr><td><code>genre</code></td><td>Filter; the values come from <code>options</code>. A required genre starts on its first option.</td></tr>
+          <tr><td><code>skip</code></td><td>Paging (below).</td></tr>
+          <tr><td>other names</td><td>Allowed; declare them the same way.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Older manifests use <code>extraSupported</code>/<code>extraRequired</code> string lists and a separate <code>genres</code> list; TS IPTV reads those too, but <code>extra</code> wins when both are present.</p>
+
+    <h3 id="paging-en">Paging</h3>
+    <p>A catalogue page holds up to <strong>100</strong> items. The first page is requested without <code>skip</code>; the following pages with <code>skip=100</code>, <code>skip=200</code> and so on. The specification says a page with fewer than 100 items is the end. TS IPTV is more lenient: it asks for the next page with <code>skip</code> equal to the number of items received so far and stops at an empty page, a page with no new ids, or an error answer after a short page (a static host's 404). Only declare <code>skip</code> if your catalogue has more than one page.</p>
+
+    <h3 id="meta-en">Catalogue items and details</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Field</th><th>Where</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code>, <code>type</code>, <code>name</code></td><td>both</td><td>Required.</td></tr>
+          <tr><td><code>poster</code>, <code>posterShape</code></td><td>both</td><td>Image; shape <code>poster</code> (portrait, default), <code>square</code> or <code>landscape</code>.</td></tr>
+          <tr><td><code>genres</code>, <code>releaseInfo</code>, <code>description</code>, <code>imdbRating</code></td><td>both</td><td>Text shown on cards and on the detail page.</td></tr>
+          <tr><td><code>background</code>, <code>logo</code>, <code>released</code>, <code>runtime</code>, <code>language</code>, <code>country</code>, <code>links</code></td><td>meta</td><td>Detail page fields. <code>released</code> is ISO 8601; <code>runtime</code> is text such as <code>"92 min"</code>.</td></tr>
+          <tr><td><code>videos</code></td><td>meta</td><td>Episodes of a series (or a channel's videos). Without <code>videos</code>, the item has one video whose id is the item id.</td></tr>
+          <tr><td><code>behaviorHints.defaultVideoId</code>, <code>behaviorHints.isLive</code></td><td>meta</td><td>Open this video directly; a live item (<code>tv</code> implies live).</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A <strong>video</strong> is <code>{ "id", "title", "released", "season", "episode", "thumbnail", "overview" }</code>. Season <code>0</code> means specials. A <code>released</code> date in the future marks an upcoming episode. If a video carries its own <code>streams</code> array, those are the only streams used for it.</p>
+
+    <h3 id="stream-en">Streams</h3>
+    <p>Each stream object has exactly one source and some labels:</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>url</code></td><td>A direct <code>https</code> (or <code>http</code>) link: MP4, MKV, HLS <code>.m3u8</code>, DASH <code>.mpd</code>.</td></tr>
+          <tr><td><code>externalUrl</code></td><td>A web page to open in a browser.</td></tr>
+          <tr><td><code>name</code></td><td>Short label, for example the quality.</td></tr>
+          <tr><td><code>description</code> (older: <code>title</code>)</td><td>Longer label, may have several lines.</td></tr>
+          <tr><td><code>behaviorHints.proxyHeaders.request</code></td><td>HTTP headers to send with every request for this stream, for example <code>{ "User-Agent": "…", "Referer": "…" }</code>. The specification requires <code>notWebReady: true</code> alongside.</td></tr>
+          <tr><td><code>behaviorHints.notWebReady</code></td><td>The link cannot play directly in a web browser (not MP4, plain http, or needs headers).</td></tr>
+          <tr><td><code>behaviorHints.bingeGroup</code></td><td>Streams of the same group are preferred for the next episode.</td></tr>
+          <tr><td><code>behaviorHints.filename</code>, <code>videoSize</code></td><td>File name and size; helps players guess the format.</td></tr>
+          <tr><td><code>behaviorHints.countryWhitelist</code></td><td>ISO 3166-1 alpha-3 codes (lower case) where the stream works.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Other source fields exist in the specification; TS IPTV does not use them (see <a href="#support-en">What TS IPTV plays</a>). Order streams from highest to lowest quality.</p>
+
+    <h3 id="subtitles-en">Subtitles</h3>
+    <p><code>GET {base}/subtitles/{type}/{videoId}.json</code>, optionally with <code>videoHash</code>, <code>videoSize</code> and <code>filename</code> in <code>extra</code>, returns <code>{ "subtitles": [ { "id", "url", "lang", "label" } ] }</code>. <code>lang</code> is an ISO 639-2 code such as <code>eng</code>; files are SRT or VTT. TS IPTV does not use subtitle addons yet.</p>
+
+    <h3 id="cache-en">Caching</h3>
+    <p>Any response may carry <code>cacheMaxAge</code>, <code>staleRevalidate</code> and <code>staleError</code> (seconds). The SDK turns them into a <code>Cache-Control</code> header and also keeps them in the JSON. TS IPTV honours <code>Cache-Control</code> first, then these fields, then its own defaults (catalogues 1 hour, details 6 hours, streams 5 minutes), and never keeps stream answers longer than 5 minutes.</p>
+
+    <h3 id="ids-en">Types and ids</h3>
+    <p>Types are free strings; <code>movie</code>, <code>series</code>, <code>channel</code> and <code>tv</code> are the common ones. Ids are opaque. Give your ids a prefix of your own (<code>ex_news</code>, <code>tspd_his_girl_friday</code>) and declare it in <code>idPrefixes</code>, so the player only asks your addon about your items. Episode ids are separate ids, for example <code>tspd_superman_s1e1</code>.</p>
+
+    <h2 id="example-en">Complete example: the sample addon</h2>
+    <p>TS IPTV publishes a small static addon, the <strong>Public Domain Sampler</strong>, as a live example and QA fixture. It has one film (His Girl Friday, 1940), one cartoon series (Fleischer Superman, 1941–43), both public domain on archive.org, and one live channel that plays the Mux public test stream (Big Buck Bunny © Blender Foundation, CC BY 3.0). Its manifest link is <code>https://tsiptv-8bdd6.web.app/examples/stremio-sampler/manifest.json</code>.</p>
+    <p>These are all its files; each one is exactly the URL a player requests:</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>manifest.json
+catalog/movie/tspd-movie.json
+catalog/movie/tspd-movie/genre=Comedy.json
+catalog/series/tspd-series.json
+catalog/tv/tspd-tv.json
+meta/movie/tspd_his_girl_friday.json
+meta/series/tspd_superman.json
+meta/tv/tspd_test_hls.json
+stream/movie/tspd_his_girl_friday.json
+stream/series/tspd_superman_s1e1.json
+stream/tv/tspd_test_hls.json</code></pre>
+    </div>
+
+    <h3 id="ex-manifest-en"><code>manifest.json</code></h3>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/stremio-sampler/manifest.json" download>Download manifest.json</a></div>
+      <pre data-copy data-example="/examples/stremio-sampler/manifest.json" tabindex="0"><code></code></pre>
+    </div>
+    <p>Three catalogues, one per type. The movie catalogue declares a <code>genre</code> extra with a single option, so exactly one extra file exists: <code>catalog/movie/tspd-movie/genre=Comedy.json</code> (a copy of the unfiltered list). <code>idPrefixes</code> is <code>tspd_</code>, and ids use <code>_</code>, never <code>:</code>, because every id becomes a file name.</p>
+
+    <h3 id="ex-catalog-en"><code>catalog/movie/tspd-movie.json</code></h3>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/stremio-sampler/catalog/movie/tspd-movie.json" download>Download</a></div>
+      <pre data-copy data-example="/examples/stremio-sampler/catalog/movie/tspd-movie.json" tabindex="0"><code></code></pre>
+    </div>
+    <p>Requested as <code>…/catalog/movie/tspd-movie.json</code>. The catalogue does not declare <code>skip</code>, so this single page is the whole catalogue and no further page is requested.</p>
+
+    <h3 id="ex-meta-en"><code>meta/series/tspd_superman.json</code></h3>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/stremio-sampler/meta/series/tspd_superman.json" download>Download</a></div>
+      <pre data-copy data-example="/examples/stremio-sampler/meta/series/tspd_superman.json" tabindex="0"><code></code></pre>
+    </div>
+    <p>A series lists its episodes in <code>videos</code>. The episode id <code>tspd_superman_s1e1</code> is what the stream request uses.</p>
+
+    <h3 id="ex-stream-en"><code>stream/movie/tspd_his_girl_friday.json</code> and <code>stream/tv/tspd_test_hls.json</code></h3>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/stremio-sampler/stream/movie/tspd_his_girl_friday.json" download>Download</a></div>
+      <pre data-copy data-example="/examples/stremio-sampler/stream/movie/tspd_his_girl_friday.json" tabindex="0"><code></code></pre>
+    </div>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/stremio-sampler/stream/tv/tspd_test_hls.json" download>Download</a></div>
+      <pre data-copy data-example="/examples/stremio-sampler/stream/tv/tspd_test_hls.json" tabindex="0"><code></code></pre>
+    </div>
+    <p>The film's stream is a direct MP4 <code>url</code> with a <code>filename</code> hint. The live channel's stream is HLS and asks for a <code>User-Agent</code> header through <code>proxyHeaders.request</code>; TS IPTV sends it with every playlist and segment request. The remaining files follow the same pattern: <a href="/examples/stremio-sampler/catalog/series/tspd-series.json">series catalogue</a>, <a href="/examples/stremio-sampler/catalog/tv/tspd-tv.json">tv catalogue</a>, <a href="/examples/stremio-sampler/meta/movie/tspd_his_girl_friday.json">film details</a>, <a href="/examples/stremio-sampler/meta/tv/tspd_test_hls.json">channel details</a>, <a href="/examples/stremio-sampler/stream/series/tspd_superman_s1e1.json">episode stream</a>, <a href="/examples/stremio-sampler/catalog/movie/tspd-movie/genre=Comedy.json">Comedy genre file</a>.</p>
+
+    <h2 id="create-en">Create your own addon</h2>
+    <h3 id="create-static-en">Option 1: static JSON files (no server)</h3>
+    <ol>
+      <li>Download the sample files above into a folder with the same tree.</li>
+      <li>Edit <code>manifest.json</code>: a new <code>id</code> (reverse-DNS of a domain you control), <code>name</code>, <code>description</code>, your own <code>idPrefixes</code> and catalogues.</li>
+      <li>For each catalogue, write <code>catalog/{type}/{catalogId}.json</code>. Add one file per <code>genre</code> option (<code>catalog/{type}/{catalogId}/genre={option}.json</code>) and, for more than 100 items, <code>…/skip=100.json</code>, <code>…/skip=200.json</code>.</li>
+      <li>For each item, write <code>meta/{type}/{id}.json</code>; for each film, episode or channel, <code>stream/{type}/{videoId}.json</code>.</li>
+      <li>Keep ids and <code>extra</code> values URL-safe: letters, digits, <code>_</code> and <code>-</code>. Validate each file as JSON (VS Code shows errors as you type).</li>
+      <li>Test locally: in the folder run <code>npx http-server . --cors -c-1</code> and add <code>http://127.0.0.1:8080/manifest.json</code> (Android emulator: <code>http://10.0.2.2:8080/manifest.json</code>).</li>
+    </ol>
+    <p>Limits of static hosting: no free-text <code>search</code> (queries cannot be pre-generated), one file per genre and page, and no <code>:</code> in ids (the host would look for a file name with <code>:</code>, which Windows and some hosts do not allow).</p>
+
+    <h3 id="create-sdk-en">Option 2: the Node.js SDK</h3>
+    <p>With the official SDK (Node.js 12 or later) you write handlers instead of files, which allows search, large catalogues and computed answers. <code>serveHTTP</code> adds the CORS headers for you and turns the <code>cacheMaxAge</code>, <code>staleRevalidate</code> and <code>staleError</code> values your handlers return into a <code>Cache-Control</code> header.</p>
+    <p><code>package.json</code>:</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>{
+  "name": "my-publicdomain-addon",
+  "version": "1.0.0",
+  "main": "addon.js",
+  "scripts": { "start": "node addon.js" },
+  "dependencies": { "stremio-addon-sdk": "^1.6.10" }
+}</code></pre>
+    </div>
+    <p><code>addon.js</code> (the sample addon with search, genre filter and paging):</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>const { addonBuilder, serveHTTP } = require('stremio-addon-sdk')
+
+const ITEMS = [
+  { id: 'tspd_his_girl_friday', type: 'movie', name: 'His Girl Friday',
+    releaseInfo: '1940', genres: ['Comedy'],
+    poster: 'https://archive.org/services/img/his_girl_friday',
+    streams: [{ name: 'archive.org', description: 'MP4 512kb',
+      url: 'https://archive.org/download/his_girl_friday/his_girl_friday_512kb.mp4',
+      behaviorHints: { filename: 'his_girl_friday_512kb.mp4' } }] },
+  { id: 'tspd_superman', type: 'series', name: 'Fleischer Superman (1941-43)',
+    releaseInfo: '1941-1943', genres: ['Animation'],
+    poster: 'https://archive.org/services/img/superman_the_mechanical_monsters',
+    videos: [{ id: 'tspd_superman_s1e1', title: 'The Mechanical Monsters',
+      season: 1, episode: 1, released: '1941-11-28T00:00:00.000Z',
+      streams: [{ name: 'archive.org', description: 'MP4 512kb',
+        url: 'https://archive.org/download/superman_the_mechanical_monsters/superman_the_mechanical_monsters_512kb.mp4' }] }] },
+  { id: 'tspd_test_hls', type: 'tv', name: 'HLS Test Channel',
+    posterShape: 'square', poster: 'https://archive.org/services/img/his_girl_friday',
+    streams: [{ name: 'HLS', description: 'Mux public test stream',
+      url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+      behaviorHints: { notWebReady: true,
+        proxyHeaders: { request: { 'User-Agent': 'TSIPTV-Example/1.0' } } } }] }
+]
+const PAGE = 100
+
+const builder = new addonBuilder({
+  id: 'org.example.publicdomain', version: '1.0.0', name: 'My Public Domain Addon',
+  description: 'Public-domain films and cartoons, plus a public HLS test channel.',
+  resources: ['catalog', 'meta', 'stream'], types: ['movie', 'series', 'tv'],
+  idPrefixes: ['tspd_'],
+  catalogs: ['movie', 'series', 'tv'].map(type =&gt; ({
+    type, id: 'tspd-' + type, name: 'Public Domain ' + type,
+    extra: [{ name: 'search' }, { name: 'genre', options: ['Animation', 'Comedy'] }, { name: 'skip' }]
+  })),
+  behaviorHints: { adult: false, p2p: false }
+})
+
+const preview = i =&gt; ({ id: i.id, type: i.type, name: i.name, poster: i.poster,
+  posterShape: i.posterShape, genres: i.genres, releaseInfo: i.releaseInfo })
+
+builder.defineCatalogHandler(({ type, id, extra }) =&gt; {
+  let list = ITEMS.filter(i =&gt; i.type === type &amp;&amp; id === 'tspd-' + type)
+  if (extra.genre) list = list.filter(i =&gt; (i.genres || []).includes(extra.genre))
+  if (extra.search) list = list.filter(i =&gt; i.name.toLowerCase().includes(extra.search.toLowerCase()))
+  const skip = parseInt(extra.skip || '0', 10) || 0
+  return Promise.resolve({ metas: list.slice(skip, skip + PAGE).map(preview), cacheMaxAge: 3600 })
+})
+
+builder.defineMetaHandler(({ type, id }) =&gt; {
+  const i = ITEMS.find(x =&gt; x.id === id &amp;&amp; x.type === type)
+  if (!i) return Promise.resolve({ meta: null })
+  const meta = preview(i)
+  if (i.videos) meta.videos = i.videos.map(({ streams, ...v }) =&gt; v)
+  return Promise.resolve({ meta, cacheMaxAge: 3600 })
+})
+
+builder.defineStreamHandler(({ type, id }) =&gt; {
+  for (const i of ITEMS) {
+    if (i.id === id &amp;&amp; i.streams) return Promise.resolve({ streams: i.streams, cacheMaxAge: 600 })
+    const v = (i.videos || []).find(v =&gt; v.id === id)
+    if (v) return Promise.resolve({ streams: v.streams, cacheMaxAge: 600 })
+  }
+  return Promise.resolve({ streams: [] })
+})
+
+serveHTTP(builder.getInterface(), { port: process.env.PORT || 7000 })</code></pre>
+    </div>
+    <ol>
+      <li>Run <code>npm install</code>, then <code>npm start</code>. The SDK prints the manifest link, <code>http://127.0.0.1:7000/manifest.json</code>.</li>
+      <li>Add that link in TS IPTV on the same computer, or <code>http://10.0.2.2:7000/manifest.json</code> from an Android emulator, or <code>http://&lt;your computer's LAN address&gt;:7000/manifest.json</code> from a phone or TV on the same network.</li>
+      <li>To publish it, deploy to any Node.js host that gives you an HTTPS address, and use <code>https://&lt;your host&gt;/manifest.json</code>.</li>
+    </ol>
+    <p>The SDK can also generate a configuration page (<code>config</code> in the manifest) and mount the addon in an existing Express app; see the <a href="https://github.com/Stremio/stremio-addon-sdk/blob/master/README.md">SDK README</a>.</p>
+
+    <h2 id="host-en">Host it</h2>
+    <ul>
+      <li><strong>HTTPS.</strong> The specification requires HTTPS for everything except <code>127.0.0.1</code>. TS IPTV also accepts <code>http://</code>, with the warning “This addon does not use an encrypted connection”.</li>
+      <li><strong>CORS.</strong> The specification requires <code>Access-Control-Allow-Origin: *</code> on every route, including <code>/manifest.json</code>. TS IPTV is an installed app and does not need it, but web-based players do, so add it.</li>
+      <li><strong>Cache headers.</strong> A short <code>Cache-Control: public, max-age=600</code> on catalogues and details is a good default; keep stream answers short-lived if the links expire.</li>
+      <li><strong>Content type.</strong> Serve <code>.json</code> as <code>application/json</code>. No redirect from <code>/file.json</code> to <code>/file.json/</code>.</li>
+    </ul>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Host</th><th>What to do</th></tr></thead>
+        <tbody>
+          <tr><td>GitHub Pages</td><td>Push the file tree to a repository and enable Pages. Add an empty <code>.nojekyll</code> file at the root so files are served unchanged. Pages already sends <code>Access-Control-Allow-Origin: *</code>. Manifest: <code>https://&lt;user&gt;.github.io/&lt;repo&gt;/manifest.json</code>.</td></tr>
+          <tr><td>Firebase Hosting</td><td>Add a header rule in <code>firebase.json</code>: <code>{"source": "**/*.json", "headers": [{"key": "Access-Control-Allow-Origin", "value": "*"}]}</code>. TS IPTV's sample addon is hosted this way.</td></tr>
+          <tr><td>Netlify</td><td>A <code>_headers</code> file at the root with <code>/*</code> and, on the next line, <code>  Access-Control-Allow-Origin: *</code>.</td></tr>
+          <tr><td>Vercel</td><td><code>vercel.json</code>: <code>{"headers": [{"source": "/(.*)", "headers": [{"key": "Access-Control-Allow-Origin", "value": "*"}]}]}</code>.</td></tr>
+          <tr><td>Any web server</td><td>Serve the folder as static files and add the CORS header, for example in nginx: <code>add_header Access-Control-Allow-Origin *;</code></td></tr>
+          <tr><td>Node.js SDK</td><td>Any Node.js host with HTTPS; <code>serveHTTP</code> sets the CORS headers itself; <code>Cache-Control</code> comes from the <code>cacheMaxAge</code> your handlers return.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A GitHub <code>blob/</code> page or a file-sharing page is not an addon: the manifest link must return the JSON itself.</p>
+
+    <h2 id="add-en">Add it in TS IPTV</h2>
+    <ol>
+      <li>Phone, tablet, iOS and desktop: <strong>Profile → Addons → Add addon</strong>. Android TV: <strong>Settings → Addons → Add addon</strong> (type the link with the on-screen keyboard).</li>
+      <li>Paste the manifest link (it ends with <code>/manifest.json</code>). A <code>stremio://…/manifest.json</code> install link also works; TS IPTV turns it into <code>https://</code>, or <code>http://</code> for local and LAN hosts (<code>localhost</code>, <code>127.0.0.1</code>, <code>10.x</code>, <code>192.168.x</code>, <code>172.16–31.x</code>).</li>
+      <li>Choose <strong>Continue</strong>. The preview shows the name, version, host, content types, number of catalogues, whether the addon provides streams, and any warning (not encrypted, peer-to-peer, adult content).</li>
+      <li>Read and accept the notice (“Addons are third-party services, not operated by TS IPTV…”), then choose <strong>Add</strong>.</li>
+      <li><strong>Discover</strong> appears: on phones between Home and History, on TV at the top of the Home rail. It shows one row per catalogue; open a title and choose a stream to play it.</li>
+    </ol>
+    <p>If the manifest says <code>configurationRequired</code>, TS IPTV does not add it yet: choose <strong>Configure</strong> to open the addon's <code>/configure</code> page in your browser (on TV the address is shown as text), finish there, and paste the link it gives you. Manage addons (enable, reorder, update, remove) in the same Addons screen. Addon links can contain personal settings, so TS IPTV stores them encrypted and shows only the host.</p>
+
+    <h2 id="mistakes-en">Common mistakes</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Mistake</th><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>The link does not end with <code>/manifest.json</code></td><td>“Enter the addon's manifest link. It ends with /manifest.json.”</td><td>Use the manifest link, not the addon's web page.</td></tr>
+          <tr><td>A manifest field missing (<code>id</code>, <code>name</code>, <code>version</code>, <code>types</code>, <code>resources</code>)</td><td>“This link did not return a valid addon manifest.”</td><td>Add the field; check the file is valid JSON.</td></tr>
+          <tr><td><code>+</code> instead of <code>%20</code> in a static file name</td><td>Genre or search file not found</td><td>Players send <code>%20</code>; name files with URL-safe values only.</td></tr>
+          <tr><td><code>:</code> in ids of a static addon</td><td>Files cannot be created on Windows, or 404s</td><td>Use <code>_</code> or <code>-</code> in ids.</td></tr>
+          <tr><td>Pages of 20 items</td><td>Other apps stop after the first page</td><td>Return 100 items per page; only the last page may be shorter.</td></tr>
+          <tr><td><code>idPrefixes</code> that do not match your ids, or <code>"stream"</code> missing from <code>resources</code></td><td>Details or streams never requested</td><td>Declare every resource you serve and a prefix all your ids share.</td></tr>
+          <tr><td>A video with its own <code>streams</code></td><td>No other addon is asked for that video</td><td>Leave inline streams out unless they are the only ones.</td></tr>
+          <tr><td><code>configurationRequired: true</code></td><td>“This addon must be configured first.”</td><td>Configure it in the browser and paste the configured link.</td></tr>
+          <tr><td>A link on <code>127.0.0.1:11470</code></td><td>“This address belongs to the Stremio app's own local server…”</td><td>That server belongs to another app; it is not an addon.</td></tr>
+          <tr><td>An old <code>/stremio/v1</code> addon</td><td>“This is an old-style addon that TS IPTV cannot use.”</td><td>Only the current HTTP protocol is supported.</td></tr>
+          <tr><td>An addon that offers only sources other than <code>url</code></td><td>“No playable stream was found for this title.”</td><td>TS IPTV plays <code>url</code> streams only; see below.</td></tr>
+          <tr><td>No CORS header</td><td>Works in TS IPTV, fails in web players</td><td>Add <code>Access-Control-Allow-Origin: *</code>.</td></tr>
+          <tr><td>GitHub Pages without <code>.nojekyll</code></td><td>Files starting with <code>_</code> missing</td><td>Add an empty <code>.nojekyll</code>.</td></tr>
+          <tr><td>Expired or signed stream links cached for long</td><td>Streams fail after a while</td><td>Keep <code>cacheMaxAge</code> short on stream answers.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support-en">What TS IPTV plays</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Feature</th><th>Android</th><th>iOS</th><th>Desktop</th></tr></thead>
+        <tbody>
+          <tr><td><code>url</code> streams: HTTPS/HTTP MP4, HLS</td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td><code>url</code> streams: DASH <code>.mpd</code>, MKV</td><td><span class="badge yes">Supported</span></td><td><span class="badge partial">May not play</span></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td><code>proxyHeaders.request</code></td><td><span class="badge yes">All headers</span></td><td><span class="badge partial">Best effort</span></td><td><span class="badge partial">User-Agent and Referer only</span></td></tr>
+          <tr><td><code>externalUrl</code></td><td colspan="3">Opens in your browser after you confirm; on a TV without a browser the link is shown as text. <code>stremio:///…</code> page links open the matching TS IPTV screen.</td></tr>
+          <tr><td>Torrent, Usenet, archive and YouTube streams</td><td colspan="3"><span class="badge no">Not supported</span></td></tr>
+          <tr><td>Catalogues, genre filter, search, paging, series with seasons, live <code>tv</code> items</td><td colspan="3"><span class="badge yes">Supported</span></td></tr>
+          <tr><td><code>configurable</code>, <code>configurationRequired</code></td><td colspan="3"><span class="badge yes">Supported</span> Through the addon's configuration page in the browser.</td></tr>
+          <tr><td><code>adult</code>, <code>p2p</code> hints</td><td colspan="3">Warnings when adding; adult addons need an 18+ confirmation and are left out of Discover rows and search.</td></tr>
+          <tr><td>Continue watching and resume for addon films and episodes</td><td colspan="3"><span class="badge yes">Supported</span></td></tr>
+          <tr><td>Subtitles, EPG addons (<code>epgProvider</code>), addon lists (<code>addon_catalog</code>), auto-play of the next episode</td><td colspan="3"><span class="badge partial">Not yet</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>TS IPTV has no built-in addons and does not suggest any. Addons can be disabled remotely only when a takedown request requires it.</p>
+
+    <section class="related">
+      <h2 id="related-en">Related guides</h2>
+      <ul>
+        <li><a href="/guides/json/">JSON playlists</a></li>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/iptv/">What is IPTV</a></li>
+        <li><a href="/guides/tsiptv-source/">TS IPTV Source</a></li>
+        <li><a href="/guides/">All guides</a></li>
+      </ul>
+    </section>

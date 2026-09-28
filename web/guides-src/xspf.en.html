@@ -1,0 +1,138 @@
+    <h1>XSPF playlists</h1>
+    <p class="lead">XSPF (XML Shareable Playlist Format, pronounced “spiff”) is an XML playlist format. VLC uses it to save playlists, including IPTV channel lists.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels.</strong> It plays only the playlists you add.</p>
+    </div>
+
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+        <li><a href="#what-en">What XSPF is</a></li>
+        <li><a href="#syntax-en">Syntax</a></li>
+        <li><a href="#example-en">Complete example</a></li>
+        <li><a href="#create-en">Create one</a></li>
+        <li><a href="#host-en">Host it</a></li>
+        <li><a href="#add-en">Add it in TS IPTV</a></li>
+        <li><a href="#mistakes-en">Common mistakes</a></li>
+        <li><a href="#support-en">What TS IPTV supports</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what-en">What XSPF is</h2>
+    <p>XSPF is an open format defined by the <a href="https://www.xspf.org/spec">XSPF version 1 specification</a>. Each entry is a <code>&lt;track&gt;</code> with a location, a title and an image. It is more verbose than M3U but strictly structured; you usually meet it when you save a list from VLC.</p>
+
+    <h2 id="syntax-en">Syntax</h2>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;playlist version="1" xmlns="http://xspf.org/ns/0/"&gt;
+  &lt;title&gt;…&lt;/title&gt;                 (0 or 1)
+  &lt;trackList&gt;                     (exactly 1, may be empty)
+    &lt;track&gt;
+      &lt;location&gt;URI&lt;/location&gt;    (0 or more; only one is played)
+      &lt;title&gt;…&lt;/title&gt;             (0 or 1)
+      &lt;image&gt;URI&lt;/image&gt;          (0 or 1)
+      &lt;extension application="URI"&gt;…&lt;/extension&gt;
+    &lt;/track&gt;
+  &lt;/trackList&gt;
+&lt;/playlist&gt;</code></pre>
+    </div>
+    <ul>
+      <li>The namespace is <code>http://xspf.org/ns/0/</code> with <code>version="1"</code>: the namespace says 0 but the version is 1.</li>
+      <li>Optional playlist-level elements: <code>title</code>, <code>creator</code>, <code>annotation</code>, <code>info</code>, <code>location</code>, <code>identifier</code>, <code>image</code>, <code>date</code>, <code>license</code>, <code>attribution</code>, <code>link</code>, <code>meta</code>, <code>extension</code>.</li>
+      <li>Optional track-level elements: <code>location</code>, <code>identifier</code>, <code>title</code>, <code>creator</code>, <code>annotation</code>, <code>info</code>, <code>image</code>, <code>album</code>, <code>trackNum</code>, <code>duration</code> (milliseconds, a hint only), <code>link</code>, <code>meta</code>, <code>extension</code>.</li>
+      <li>Relative locations are resolved against the address of the XSPF file itself.</li>
+    </ul>
+    <h3 id="vlc-en">VLC's extension</h3>
+    <p>VLC adds its own information inside <code>&lt;extension application="http://www.videolan.org/vlc/playlist/0"&gt;</code>, with the namespace <code>xmlns:vlc="http://www.videolan.org/vlc/playlist/ns/0/"</code>:</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Element</th><th>Where</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>&lt;vlc:id&gt;</code></td><td>in each track's <code>&lt;extension&gt;</code></td><td>The track's number. TS IPTV uses it as the channel id.</td></tr>
+          <tr><td><code>&lt;vlc:node title="…"&gt;</code></td><td>in the playlist-level <code>&lt;extension&gt;</code></td><td>A group (folder).</td></tr>
+          <tr><td><code>&lt;vlc:item tid="N"/&gt;</code></td><td>inside <code>&lt;vlc:node&gt;</code></td><td>The track whose <code>vlc:id</code> is N belongs to this group.</td></tr>
+          <tr><td><code>&lt;vlc:option&gt;</code></td><td>in a track's <code>&lt;extension&gt;</code></td><td>A VLC playback option. TS IPTV ignores it.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="example-en">Complete example</h2>
+    <p>The first track is the Mux public test stream (Big Buck Bunny © Blender Foundation, CC BY 3.0); the second uses an <code>example.com</code> placeholder.</p>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/playlist.xspf" download>Download playlist.xspf</a></div>
+      <pre data-copy data-example="/examples/playlist.xspf" tabindex="0"><code></code></pre>
+    </div>
+    <ol>
+      <li>Line 2 declares both the XSPF namespace and the VLC namespace.</li>
+      <li>The first <code>&lt;title&gt;</code> is the playlist name.</li>
+      <li>Each <code>&lt;track&gt;</code> has a <code>&lt;location&gt;</code> (the stream URL), a <code>&lt;title&gt;</code> (the channel name), optionally an <code>&lt;image&gt;</code> (the logo), and a <code>&lt;vlc:id&gt;</code>.</li>
+      <li>The <code>&lt;extension&gt;</code> at the end puts the tracks in the groups “Test” and “News”.</li>
+    </ol>
+    <div class="card callout">
+      <p><strong>Keep one element per line.</strong> TS IPTV's current XSPF reader works line by line, so <code>&lt;location&gt;…&lt;/location&gt;</code>, <code>&lt;title&gt;…&lt;/title&gt;</code> and <code>&lt;vlc:id&gt;…&lt;/vlc:id&gt;</code> must each fit on one line, as in the example. VLC saves files this way too.</p>
+    </div>
+
+    <h2 id="create-en">Create one</h2>
+    <h3 id="create-vlc-en">With VLC</h3>
+    <ol>
+      <li>Open the streams in VLC (<em>Media › Open Network Stream</em>) so they are in its playlist.</li>
+      <li>Choose <em>Media › Save Playlist to File…</em>.</li>
+      <li>Pick the <strong>XSPF</strong> format and save with the extension <code>.xspf</code>.</li>
+    </ol>
+    <h3 id="create-hand-en">By hand</h3>
+    <ol>
+      <li>Copy the example above into a plain-text editor.</li>
+      <li>Add or edit <code>&lt;track&gt;</code> elements, one element per line.</li>
+      <li>Write <code>&amp;</code> in URLs as <code>&amp;amp;</code>.</li>
+      <li>Save as UTF-8 with the extension <code>.xspf</code>.</li>
+    </ol>
+
+    <h2 id="host-en">Host it</h2>
+    <p>Just like M3U: any HTTPS link that returns the file itself works (<code>https://raw.githubusercontent.com/&lt;user&gt;/&lt;repo&gt;/&lt;branch&gt;/playlist.xspf</code>, <code>https://&lt;user&gt;.github.io/&lt;repo&gt;/playlist.xspf</code>, <code>https://www.example.com/playlist.xspf</code>, Dropbox with <code>dl=1</code>). Share pages and GitHub <code>blob/</code> links do not work. HTTPS is recommended; TS IPTV needs no CORS. The server may send <code>Content-Type: application/xspf+xml</code> or <code>text/xml</code>. Details: <a href="/guides/m3u/#host-en">hosting an M3U file</a>.</p>
+
+    <h2 id="add-en">Add it in TS IPTV</h2>
+    <ol>
+      <li>Open <strong>Add IPTV Source</strong> (the <strong>Add IPTV</strong> button).</li>
+      <li>Enter a <strong>Source Name</strong>, paste the link into <strong>Source Link</strong> and choose <strong>Add IPTV</strong>; or choose <strong>Import from file</strong> and pick the <code>.xspf</code> file.</li>
+      <li>TS IPTV recognises XSPF by the <code>&lt;?xml …?&gt;</code> first line and the namespace and shows how many channels it found. On a TV, use a link if the TV has no file picker.</li>
+    </ol>
+
+    <h2 id="mistakes-en">Common mistakes</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Mistake</th><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>Missing <code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;</code> first line</td><td>Not recognised as a playlist</td><td>Put it at the very start of the file; TS IPTV currently needs it to detect XSPF.</td></tr>
+          <tr><td>Missing or wrong <code>xmlns</code></td><td>Not recognised as a playlist</td><td>Use exactly <code>xmlns="http://xspf.org/ns/0/"</code>.</td></tr>
+          <tr><td><code>&amp;</code> in a URL not written as <code>&amp;amp;</code></td><td>XML error</td><td>Write <code>&amp;amp;</code>.</td></tr>
+          <tr><td>The URL placed in <code>&lt;title&gt;</code> or <code>&lt;info&gt;</code></td><td>The track does not play</td><td>Put the stream URL in <code>&lt;location&gt;</code>.</td></tr>
+          <tr><td>An element broken across several lines</td><td>Missing name or link</td><td>Keep each element on one line.</td></tr>
+          <tr><td>A track without <code>&lt;title&gt;</code></td><td>The track is skipped</td><td>Each track needs both <code>&lt;location&gt;</code> and <code>&lt;title&gt;</code>.</td></tr>
+          <tr><td>Relying on <code>&lt;duration&gt;</code> for a live channel</td><td>No effect</td><td>Leave <code>&lt;duration&gt;</code> out for live streams.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support-en">What TS IPTV supports</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Track <code>location</code>, <code>title</code>, <code>image</code></td><td><span class="badge yes">Supported</span> on every platform</td></tr>
+          <tr><td><code>vlc:id</code> as the channel id</td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>Groups from <code>vlc:node</code></td><td><span class="badge partial">Partial</span> Group names are read, but tracks are not yet assigned to groups by <code>vlc:item tid</code>.</td></tr>
+          <tr><td>Elements written across several lines</td><td><span class="badge no">Not supported</span> Keep each element on one line.</td></tr>
+          <tr><td>Headers, DRM, programme guide</td><td><span class="badge no">Not in XSPF</span> Use <a href="/guides/m3u/">M3U</a> if you need them.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related-en">Related guides</h2>
+      <ul>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/json/">JSON</a></li>
+        <li><a href="/guides/">All guides</a></li>
+      </ul>
+    </section>

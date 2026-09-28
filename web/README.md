@@ -14,6 +14,48 @@ Hosting on the existing project `tsiptv-8bdd6`.
 | Upload a playlist | `https://tsiptv-8bdd6.web.app/contributor/submit/` | Approved contributors only |
 | Contributor admin | `https://tsiptv-8bdd6.web.app/contributor/admin/` | Firebase project owner (or `admin` claim) |
 | Community playlists | `https://tsiptv-8bdd6.web.app/playlists/` | Approved playlists, read from Firestore |
+| Format guides hub | `https://tsiptv-8bdd6.web.app/guides/` | Entry point to every format guide; linked from nav and footer |
+| What is IPTV | `https://tsiptv-8bdd6.web.app/guides/iptv/` | Basics: stream, playlist, guide, glossary |
+| M3U / M3U8 | `https://tsiptv-8bdd6.web.app/guides/m3u/` | Full M3U dialect incl. Kodi attributes (F1 behaviour) |
+| XMLTV | `https://tsiptv-8bdd6.web.app/guides/xmltv/` | Programme guide format |
+| XSPF | `https://tsiptv-8bdd6.web.app/guides/xspf/` | XSPF / VLC playlists |
+| JSON | `https://tsiptv-8bdd6.web.app/guides/json/` | Generic JSON and iptv-org `streams.json` shape |
+| Xtream Codes | `https://tsiptv-8bdd6.web.app/guides/xtream-codes/` | Provider API URL shapes (facts only) |
+| Kodi formats | `https://tsiptv-8bdd6.web.app/guides/kodi/` | `#KODIPROP`, DRM, catch-up, `.strm`; what cannot run |
+| Stremio-compatible addons | `https://tsiptv-8bdd6.web.app/guides/stremio-addons/` | Addon protocol, static and SDK addons, sample addon (wave B, publish with F2) |
+| TS IPTV Source | `https://tsiptv-8bdd6.web.app/guides/tsiptv-source/` | Full format reference, examples, create/host/add (wave C, publish with F3) |
+| TS IPTV Source validator | `https://tsiptv-8bdd6.web.app/guides/tsiptv-source/validate/` | `noindex`; in-browser validator (vendored Ajv in `assets/vendor/`, MIT), not in the sitemap |
+| MonPlayer note | `https://tsiptv-8bdd6.web.app/guides/monplayer/` | `noindex`, linked from the hub only, not in the sitemap |
+| Example files | `https://tsiptv-8bdd6.web.app/examples/…` | Guide examples and QA fixtures (incl. `stremio-sampler/`); never suggested in the app |
+| Addon blocklist | `https://tsiptv-8bdd6.web.app/policy/addon-blocklist.json` | F2 kill switch, `{"ids":[],"hosts":[]}` |
+| Sitemap / robots | `/sitemap.xml`, `/robots.txt` | Indexable pages only |
+
+### Format guides: editing and checks
+
+**Workflow: edit the sources, run `build_guides.py`, run `check_guides.py`.** Never edit
+`public/guides/**` by hand: those pages are generated.
+
+1. Edit the sources in `guides-src/`: `<slug>.vi.html` and `<slug>.en.html` hold the body of each
+   language pane (`hub.*` is `/guides/`). Titles, descriptions, breadcrumb labels and `noindex`
+   are in the `PAGES` table at the top of `scripts/build_guides.py`. The shared head, header,
+   footer and scripts are its `TEMPLATE`. For a new page, add a `PAGES` row, its two source
+   files, a hub card, and a sitemap entry.
+2. `python web/scripts/build_guides.py` writes `public/guides/<slug>/index.html`. It fills
+   every `<pre data-example="/examples/<file>">` block from that file, so to change an example,
+   edit the file in `public/examples/`, not the block. `--check` only reports out-of-date pages.
+3. `python web/scripts/check_guides.py` before every deploy (needs `pip install jsonschema`).
+   It fails if any generated page differs from what the sources produce. It also checks example
+   blocks, anchors, the denylist, the outbound-link allowlist, internal links, head tags, the
+   sitemap, and the Guides link in every page's nav and footer. `--fix` runs the build first.
+
+- Validator: `public/assets/tsiptv-validate.js` (core + UI) uses `public/assets/vendor/ajv2020.min.js`
+  (Ajv 8.17.1 from `ajv-dist`, MIT, licence next to it; no CDN). `node web/scripts/test_validator.js`
+  checks it against the examples and `scripts/validator-fixtures/`; `check_guides.py` runs it.
+  When the schema changes, re-run the test; when upgrading Ajv, keep the bundle under 200 KB.
+- Anchor ids: Vietnamese pane `what`, `syntax`, …; English pane `what-en`, `syntax-en`, …
+  (`assets/guides.js` maps `#syntax` to the visible pane and adds the copy buttons).
+- Content rules (placeholders only, allowlisted spec links, no source listing):
+  `docs/prd-web-format-guides.md`.
 
 Each page carries both Vietnamese and English in one document, toggled client
 side. `?lang=en` forces English, so the English listing can deep-link to

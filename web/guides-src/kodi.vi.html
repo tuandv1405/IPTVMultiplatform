@@ -1,0 +1,188 @@
+    <h1>Định dạng Kodi trong TS IPTV</h1>
+    <p class="lead">Nhiều danh sách phát IPTV được viết cho Kodi. TS IPTV đọc được <strong>định dạng</strong> của chúng: các thuộc tính M3U, <code>#KODIPROP</code>, header, DRM, thông tin xem lại và tệp <code>.strm</code>. TS IPTV không chạy được tiện ích (add-on) của Kodi.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV không có sẵn kênh nào</strong> và không giới thiệu tiện ích, kho tiện ích hay danh sách phát nào của Kodi. Mọi ví dụ dùng tên miền giả <code>example.com</code>, một luồng thử nghiệm công khai, hoặc tệp ví dụ của chính TS IPTV trên <code>tsiptv-8bdd6.web.app</code>.</p>
+    </div>
+
+    <nav class="toc" aria-label="Trên trang này">
+      <p class="toc-title">Trên trang này</p>
+      <ol>
+        <li><a href="#what">Kodi và PVR IPTV Simple</a></li>
+        <li><a href="#syntax">TS IPTV hiểu những gì</a></li>
+        <li><a href="#cannot">TS IPTV không chạy được những gì</a></li>
+        <li><a href="#example">Ví dụ đầy đủ</a></li>
+        <li><a href="#create">Tự viết</a></li>
+        <li><a href="#host">Đưa tệp lên mạng</a></li>
+        <li><a href="#add">Chuyển từ Kodi sang TS IPTV</a></li>
+        <li><a href="#mistakes">Lỗi thường gặp</a></li>
+        <li><a href="#support">TS IPTV hỗ trợ những gì</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what">Kodi và PVR IPTV Simple</h2>
+    <p>Kodi là trình phát media mã nguồn mở. Tiện ích chính thức <strong>PVR IPTV Simple Client</strong> của Kodi đọc danh sách M3U và lịch XMLTV; tài liệu <a href="https://github.com/kodi-pvr/pvr.iptvsimple">README của nó</a> là bản mô tả thuộc tính M3U được trích dẫn nhiều nhất. Các thuộc tính DRM và header đến từ <a href="https://github.com/xbmc/inputstream.adaptive/wiki">inputstream.adaptive</a>, bộ phát luồng thích ứng của Kodi. TS IPTV dùng lại các <strong>định dạng dữ liệu</strong> đó, vì chúng chỉ là văn bản; nó không dùng lại mã chương trình của Kodi.</p>
+
+    <h2 id="syntax">TS IPTV hiểu những gì</h2>
+    <p>Phần cơ bản (thuộc tính <code>#EXTINF</code>, nhiều nhóm với <code>;</code>, <code>#EXTGRP</code>, <code>#EXTVLCOPT</code>, header sau dấu <code>|</code>, <code>x-tvg-url</code>) có trong <a href="/guides/m3u/#syntax">hướng dẫn M3U</a>. Phần dưới đây là những gì riêng của Kodi.</p>
+
+    <h3 id="kodiprop"><code>#KODIPROP</code></h3>
+    <p>Mỗi dòng <code>#KODIPROP:khoá=giá trị</code> nằm giữa <code>#EXTINF</code> và đường dẫn, và chỉ áp dụng cho kênh đó. Khoá không phân biệt hoa thường; giá trị kéo dài tới hết dòng (được phép là JSON).</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Khoá</th><th>TS IPTV làm gì</th></tr></thead>
+        <tbody>
+          <tr><td><code>inputstream</code>, <code>inputstreamaddon</code>, <code>inputstreamclass</code></td><td>Bỏ qua: chúng chỉ chọn bộ giải mã bên trong Kodi.</td></tr>
+          <tr><td><code>mimetype</code></td><td>Gợi ý loại luồng: <code>application/dash+xml</code> (DASH), <code>application/vnd.apple.mpegurl</code> hoặc <code>application/x-mpegurl</code> (HLS), <code>application/vnd.ms-sstr+xml</code> (Smooth Streaming), <code>video/mp2t</code> (MPEG-TS). Hữu ích khi đường dẫn không có đuôi <code>.mpd</code>/<code>.m3u8</code>.</td></tr>
+          <tr><td><code>inputstream.adaptive.manifest_type</code></td><td><code>mpd</code>, <code>hls</code>, <code>ism</code>: gợi ý loại luồng như trên.</td></tr>
+          <tr><td><code>inputstream.adaptive.common_headers</code>, <code>manifest_headers</code>, <code>stream_headers</code></td><td>Header dạng <code>tên=giá-trị-mã-hoá&amp;tên=…</code>. Cả ba được gộp và gửi kèm mọi yêu cầu của kênh.</td></tr>
+          <tr><td><code>inputstream.adaptive.license_type</code>, <code>license_key</code>, <code>drm_legacy</code>, <code>drm</code></td><td>Cấu hình DRM (xem bên dưới).</td></tr>
+          <tr><td>khoá khác</td><td>Được lưu lại, không có tác dụng.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="drm">DRM</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Hệ DRM</th><th>Giá trị trong danh sách</th><th>Android</th><th>iOS</th><th>Máy tính</th></tr></thead>
+        <tbody>
+          <tr><td>Widevine</td><td><code>com.widevine.alpha</code> (hoặc <code>widevine</code>)</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge no">Không hỗ trợ</span></td><td><span class="badge no">Không hỗ trợ</span></td></tr>
+          <tr><td>PlayReady</td><td><code>com.microsoft.playready</code> (hoặc <code>playready</code>)</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge no">Không hỗ trợ</span></td><td><span class="badge no">Không hỗ trợ</span></td></tr>
+          <tr><td>ClearKey</td><td><code>org.w3.clearkey</code> (hoặc <code>clearkey</code>)</td><td><span class="badge partial">Chỉ luồng DASH</span></td><td><span class="badge no">Không hỗ trợ</span></td><td><span class="badge no">Không hỗ trợ</span></td></tr>
+          <tr><td>WisePlay</td><td><code>com.huawei.wiseplay</code></td><td><span class="badge no">Không hỗ trợ</span></td><td><span class="badge no">Không hỗ trợ</span></td><td><span class="badge no">Không hỗ trợ</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Trên iOS và máy tính, kênh có DRM hiện thông báo “Thiết bị này không hỗ trợ DRM” trước khi tải luồng, và bạn vẫn chuyển sang kênh khác bình thường. Luồng HLS mã hoá AES-128 thông thường không cần khai báo DRM và phát được trên mọi nền tảng.</p>
+    <p>Kodi có ba cách viết cấu hình DRM. Khi một kênh có nhiều cách, cách mới nhất được dùng: <code>drm</code>, rồi <code>drm_legacy</code>, rồi <code>license_type</code> + <code>license_key</code>.</p>
+    <p><strong>1. <code>license_type</code> + <code>license_key</code></strong> (cách cũ). <code>license_key</code> có bốn trường nối bằng <code>|</code>: <code>URL|header|thân-yêu-cầu|phản-hồi</code>.</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha
+#KODIPROP:inputstream.adaptive.license_key=https://license.example.com/widevine|Content-Type=application%2Foctet-stream|R{SSM}|R</code></pre>
+    </div>
+    <ul>
+      <li>Trường 1: đường dẫn máy chủ giấy phép.</li>
+      <li>Trường 2: header <code>tên=giá-trị&amp;…</code>, giá trị mã hoá URL. Để trống nếu không có.</li>
+      <li>Trường 3 chỉ được để trống hoặc là <code>R{SSM}</code>; trường 4 chỉ được để trống hoặc là <code>R</code>. Các giá trị khác (<code>b{SSM}</code>, <code>B{SSM}</code>, phản hồi <code>J…</code>, <code>{HASH}</code> trong đường dẫn) cần xử lý đặc biệt mà TS IPTV chưa có: kênh vẫn được nhập nhưng khi phát sẽ báo “Cấu hình DRM của kênh này chưa được hỗ trợ”.</li>
+      <li>Với <code>license_type=clearkey</code>, <code>license_key</code> có thể là cặp <code>kid:key</code>, một JWKS <code>{"keys":[…]}</code>, một URI <code>data:</code> hoặc một đường dẫn.</li>
+    </ul>
+    <p><strong>2. <code>drm_legacy</code></strong>: <code>hệ-DRM|đường-dẫn-hoặc-khoá|header</code>, từ 1 tới 3 trường.</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>#KODIPROP:inputstream.adaptive.drm_legacy=com.widevine.alpha|https://license.example.com/widevine|User-Agent=Mozilla%2F5.0
+#KODIPROP:inputstream.adaptive.drm_legacy=org.w3.clearkey|000102030405060708090a0b0c0d0e0f:00112233445566778899aabbccddeeff</code></pre>
+    </div>
+    <p><strong>3. <code>drm</code></strong> (JSON). TS IPTV dùng hệ DRM đầu tiên được hỗ trợ, nếu cấu hình của nó chỉ có <code>license.server_url</code>, <code>license.req_headers</code> và <code>license.keyids</code>.</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>#KODIPROP:inputstream.adaptive.drm={"com.widevine.alpha":{"license":{"server_url":"https://license.example.com/widevine","req_headers":"X-Example=1"}}}</code></pre>
+    </div>
+    <p><strong>Khoá ClearKey</strong>: KID và key là 32 ký tự hex; dạng UUID có dấu gạch (<code>00010203-0405-…</code>) được chấp nhận, và giá trị không phải hex được hiểu là base64 dài 16 byte. TS IPTV không cung cấp khoá hay công cụ lấy khoá: DRM chỉ để phát nội dung bạn có quyền xem, ví dụ danh sách của nhà mạng.</p>
+
+    <h3 id="catchup">Xem lại (catch-up)</h3>
+    <p>TS IPTV đọc và <strong>lưu</strong> mọi thông tin xem lại dưới đây. Tính năng phát lại chương trình đã phát sẽ có trong một bản cập nhật sau; hiện chưa có nút hay biểu tượng xem lại.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th><code>catchup=</code></th><th>Đường dẫn xem lại được tạo thế nào</th></tr></thead>
+        <tbody>
+          <tr><td><code>default</code></td><td><code>catchup-source</code> là toàn bộ đường dẫn.</td></tr>
+          <tr><td><code>append</code></td><td>Đường dẫn kênh + <code>catchup-source</code>.</td></tr>
+          <tr><td><code>shift</code> (hoặc <code>timeshift="N"</code> kiểu cũ)</td><td>Đường dẫn kênh + <code>?utc={utc}&amp;lutc={lutc}</code> (hoặc <code>&amp;utc=…</code> nếu đường dẫn đã có <code>?</code>).</td></tr>
+          <tr><td><code>flussonic</code>, <code>flussonic-hls</code>, <code>flussonic-ts</code>, <code>fs</code></td><td>Theo quy ước đường dẫn của máy chủ Flussonic.</td></tr>
+          <tr><td><code>xc</code></td><td>Theo quy ước <code>/timeshift/…</code> của <a href="/guides/xtream-codes/">API kiểu Xtream Codes</a>.</td></tr>
+          <tr><td><code>vod</code></td><td>Chỉ phát <code>catchup-source</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Các thuộc tính đi kèm: <code>catchup-days</code> (hoặc <code>tvg-rec</code>) là số ngày lưu trữ; <code>catchup-correction</code> là số giờ cộng thêm. Các chỗ trống trong <code>catchup-source</code>: <code>{utc}</code> (giờ bắt đầu, giây Unix), <code>{utcend}</code>, <code>{lutc}</code> (giờ hiện tại), <code>{Y}</code> <code>{m}</code> <code>{d}</code> <code>{H}</code> <code>{M}</code> <code>{S}</code> (theo giờ địa phương của thiết bị, như Kodi), <code>{duration}</code>, <code>{duration:60}</code> (phút), <code>{offset:X}</code>, <code>{catchup-id}</code> và dạng định dạng <code>{utc:YmdHM}</code>.</p>
+
+    <h3 id="strm">Tệp <code>.strm</code></h3>
+    <p>Tệp <code>.strm</code> là một tệp văn bản chứa <strong>đúng một</strong> đường dẫn luồng, có thể có vài dòng <code>#KODIPROP</code> hoặc <code>#EXTVLCOPT</code> phía trước, và có thể có header sau dấu <code>|</code>. TS IPTV nhập nó thành một danh sách phát có một kênh, đặt tên theo tên tệp (bỏ đuôi). Tệp <code>.strm</code> trỏ tới <code>plugin://</code> sẽ bị từ chối.</p>
+
+    <h2 id="cannot">TS IPTV không chạy được những gì</h2>
+    <ul>
+      <li><strong>Tiện ích video của Kodi</strong> và mọi đường dẫn <code>plugin://…</code>;</li>
+      <li><strong>kho tiện ích</strong> (repository) và tệp <code>addons.xml</code>;</li>
+      <li><strong>cài đặt từ tệp zip</strong>;</li>
+      <li><strong>lấy luồng từ trang web</strong> bằng <code>#WEBPROP</code> hoặc đường dẫn bắt đầu bằng <code>@</code>.</li>
+    </ul>
+    <p>Lý do: tiện ích Kodi là chương trình Python chỉ chạy được bên trong Kodi, dựa vào các thư viện riêng của Kodi; chúng không phải dữ liệu mà một trình phát khác có thể đọc. Chạy mã tải về từ nguồn bất kỳ cũng là rủi ro bảo mật, và quy định của các kho ứng dụng không cho phép. Khi nhập, các mục như vậy bị bỏ qua và được liệt kê trong phần <strong>Chi tiết</strong>; phần còn lại của danh sách vẫn được nhập.</p>
+
+    <h2 id="example">Ví dụ đầy đủ</h2>
+    <p>Tệp M3U ví dụ của TS IPTV có hai kênh dùng tính năng kiểu Kodi: <strong>Example Sports</strong> gửi header bằng hậu tố <code>|</code>, và <strong>Example Protected</strong> khai báo DRM Widevine bằng <code>#KODIPROP</code>. Đường dẫn giấy phép là đường dẫn giả, nên kênh đó chỉ để minh hoạ.</p>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/playlist.m3u" download>Tải playlist.m3u</a></div>
+      <pre data-copy data-example="/examples/playlist.m3u" tabindex="0"><code></code></pre>
+    </div>
+    <ol>
+      <li><code>license_type=com.widevine.alpha</code>: hệ DRM là Widevine.</li>
+      <li><code>license_key=…|Content-Type=application%2Foctet-stream|R{SSM}|R</code>: gửi yêu cầu giấy phép tới <code>license.example.com</code> với header <code>Content-Type</code>, thân và phản hồi dạng thô.</li>
+      <li><code>mimetype=application/dash+xml</code>: luồng là DASH.</li>
+      <li><code>catchup="shift" catchup-days="3"</code> ở kênh cuối: thông tin xem lại, được lưu.</li>
+    </ol>
+    <p>Và một tệp <code>.strm</code> trỏ tới luồng thử nghiệm công khai của Mux (Big Buck Bunny © Blender Foundation, CC BY 3.0):</p>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/channel.strm" download>Tải channel.strm</a></div>
+      <pre data-copy data-example="/examples/channel.strm" tabindex="0"><code></code></pre>
+    </div>
+
+    <h2 id="create">Tự viết</h2>
+    <ol>
+      <li>Viết danh sách M3U như trong <a href="/guides/m3u/#create">hướng dẫn M3U</a>.</li>
+      <li>Thêm các dòng <code>#KODIPROP</code> ngay sau <code>#EXTINF</code> của kênh cần, trước dòng đường dẫn, mỗi thuộc tính một dòng.</li>
+      <li>Mã hoá URL giá trị header (<code>/</code> → <code>%2F</code>, <code>:</code> → <code>%3A</code>).</li>
+      <li>Với <code>.strm</code>: tạo một tệp văn bản chỉ có đường dẫn luồng (và các dòng <code>#KODIPROP</code> nếu cần), lưu UTF-8 với đuôi <code>.strm</code>. Tên tệp sẽ thành tên kênh.</li>
+    </ol>
+
+    <h2 id="host">Đưa tệp lên mạng</h2>
+    <p>Danh sách M3U kiểu Kodi được lưu trữ như mọi tệp M3U: xem <a href="/guides/m3u/#host">đưa tệp M3U lên mạng</a>. Tệp <code>.strm</code> thường được nhập thẳng từ máy bằng <strong>Nhập từ tệp</strong>; nếu đưa lên mạng, máy chủ có thể gửi nó dưới dạng <code>text/plain</code>.</p>
+
+    <h2 id="add">Chuyển từ Kodi sang TS IPTV</h2>
+    <ol>
+      <li>Trong Kodi, mở cài đặt của <strong>PVR IPTV Simple Client</strong>. Ở phần chung, chép <strong>đường dẫn danh sách M3U</strong> (hoặc ghi lại đường dẫn tệp trên máy). Ở phần EPG, chép <strong>đường dẫn XMLTV</strong>.</li>
+      <li>Trong TS IPTV, mở <strong>Thêm nguồn IPTV</strong>, dán đường dẫn danh sách vào <strong>Liên kết nguồn</strong> và chọn <strong>Thêm IPTV</strong>; hoặc chọn <strong>Nhập từ tệp</strong> cho tệp trên máy và tệp <code>.strm</code>.</li>
+      <li>Nếu danh sách chưa có <code>x-tvg-url</code>, thêm <code>x-tvg-url="&lt;đường dẫn XMLTV&gt;"</code> vào dòng <code>#EXTM3U</code> (xem <a href="/guides/xmltv/#add">hướng dẫn XMLTV</a>).</li>
+      <li>Xem thông báo nhập: nếu có mục cần tiện ích Kodi hay lấy luồng từ trang web, chúng được đếm trong phần <strong>Chi tiết</strong>.</li>
+    </ol>
+
+    <h2 id="mistakes">Lỗi thường gặp</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Trường hợp</th><th>Biểu hiện</th><th>Cách xử lý</th></tr></thead>
+        <tbody>
+          <tr><td>Header gắn bằng <code>|</code> vào đường dẫn manifest</td><td>Không lỗi: TS IPTV chấp nhận</td><td>Kodi khuyên dùng <code>*_headers</code>; TS IPTV đọc được cả hai cách.</td></tr>
+          <tr><td><code>license_key</code> có thân hoặc phản hồi đặc biệt (<code>b{SSM}</code>, <code>J…</code>, <code>{HASH}</code>)</td><td>“Cấu hình DRM của kênh này chưa được hỗ trợ”</td><td>Hỏi nhà cung cấp một cấu hình giấy phép tiêu chuẩn (<code>R{SSM}|R</code>).</td></tr>
+          <tr><td>ClearKey trên luồng HLS</td><td>Không phát, hiện thông báo lỗi DRM</td><td>ClearKey chỉ chạy với luồng DASH trên Android.</td></tr>
+          <tr><td>WisePlay (<code>com.huawei.wiseplay</code>)</td><td>“Cấu hình DRM của kênh này chưa được hỗ trợ”</td><td>Không hỗ trợ.</td></tr>
+          <tr><td>Kênh DRM trên iPhone, iPad hoặc máy tính</td><td>“Thiết bị này không hỗ trợ DRM”</td><td>Xem kênh đó trên Android.</td></tr>
+          <tr><td>Máy chủ giấy phép từ chối</td><td>“Máy chủ giấy phép DRM từ chối thiết bị này”</td><td>Kiểm tra gói thuê bao của bạn còn hiệu lực.</td></tr>
+          <tr><td>Mục <code>plugin://…</code></td><td>Bị bỏ qua, ghi trong phần Chi tiết</td><td>Cần tiện ích Kodi; không chạy được trong TS IPTV.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support">TS IPTV hỗ trợ những gì</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Tính năng</th><th>Android</th><th>iOS</th><th>Máy tính</th></tr></thead>
+        <tbody>
+          <tr><td>Thuộc tính M3U của PVR IPTV Simple</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td><code>mimetype</code>, <code>manifest_type</code></td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Header (<code>*_headers</code>, <code>#EXTVLCOPT</code>, <code>|</code>)</td><td><span class="badge yes">Mọi header</span></td><td><span class="badge partial">Cố gắng tối đa</span></td><td><span class="badge partial">Chỉ User-Agent và Referer</span></td></tr>
+          <tr><td>Widevine, PlayReady</td><td><span class="badge yes">Chỉ Android</span></td><td><span class="badge no">Không hỗ trợ</span></td><td><span class="badge no">Không hỗ trợ</span></td></tr>
+          <tr><td>ClearKey</td><td><span class="badge partial">Chỉ DASH</span></td><td><span class="badge no">Không hỗ trợ</span></td><td><span class="badge no">Không hỗ trợ</span></td></tr>
+          <tr><td>Xem lại (catch-up)</td><td colspan="3"><span class="badge partial">Được lưu, phát lại sẽ có sau</span></td></tr>
+          <tr><td>Tệp <code>.strm</code></td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Tiện ích Kodi, <code>plugin://</code>, kho tiện ích, <code>#WEBPROP</code></td><td colspan="3"><span class="badge no">Không hỗ trợ</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related">Hướng dẫn liên quan</h2>
+      <ul>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/xmltv/">XMLTV</a></li>
+        <li><a href="/guides/xtream-codes/">Đường dẫn kiểu Xtream Codes</a></li>
+        <li><a href="/guides/">Tất cả hướng dẫn</a></li>
+      </ul>
+    </section>

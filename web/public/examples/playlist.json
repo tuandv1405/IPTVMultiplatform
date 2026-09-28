@@ -1,0 +1,37 @@
+{
+  "name": "TS IPTV example playlist",
+  "epgUrl": "https://tsiptv-8bdd6.web.app/examples/guide.xml",
+  "channels": [
+    {
+      "id": "HlsTest.example",
+      "name": "HLS Test Channel",
+      "url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+      "group": "Test",
+      "epgId": "HlsTest.example"
+    },
+    {
+      "id": "ExampleRadio.us",
+      "name": "Example Radio",
+      "url": "https://cdn.example.com/radio/stream.aac",
+      "group": "Radio"
+    }
+  ],
+  "groups": [
+    {
+      "name": "News",
+      "channels": [
+        {
+          "id": "ExampleNews.us",
+          "name": "Example News",
+          "url": "https://cdn.example.com/news/index.m3u8",
+          "logo": "https://example.com/logos/news.png",
+          "epgId": "ExampleNews.us",
+          "attributes": {
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "referrer": "https://example.com/"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+    <h1>Validate a TS IPTV Source</h1>
+    <p class="lead">Paste a <a href="/guides/tsiptv-source/">TS IPTV Source</a> file or choose one, then press <strong>Validate</strong>. The check runs entirely in your browser: nothing is uploaded, and the only request this page makes is for the <a href="/schema/tsiptv-source-v1.json">JSON Schema</a>.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels and no sources.</strong> This tool only reads the file you give it. It never opens the links inside it: includes, guides, images and streams are not fetched.</p>
+    </div>
+
+    <div class="validator" data-validator>
+      <label for="vsrc-en">File content (JSON)</label>
+      <textarea id="vsrc-en" rows="14" spellcheck="false" autocomplete="off" placeholder='{ "format": "tsiptv-source", "version": 1, … }'></textarea>
+      <div class="validator-actions">
+        <label class="vfile-label" for="vfile-en">Or choose a file</label>
+        <input type="file" id="vfile-en" accept=".json,application/json,text/plain">
+        <button type="button" class="btn" data-validate>Validate</button>
+      </div>
+      <div data-result role="status" aria-live="polite"></div>
+    </div>
+
+    <h2 id="checks-en">What is checked</h2>
+    <ul>
+      <li><strong>JSON</strong>: the file parses, and its root is an object (<code>E_NOT_JSON</code>). Files over 5 MiB are refused (<code>E_TOO_LARGE</code>). Only uncompressed JSON can be checked here; unzip a <code>.gz</code> file first.</li>
+      <li><strong>Document rules</strong>: <code>format</code> is <code>"tsiptv-source"</code>, <code>version</code> is <code>1</code>, and the file has channels, movies, series or includes.</li>
+      <li><strong>The JSON Schema</strong> (draft 2020-12): required fields, types, ranges, id and URL patterns, forbidden headers, texts and language keys, and <strong>unknown fields</strong>, which usually are typos. The schema is stricter than the app, so a file that passes it is almost always accepted (the exceptions are listed in the <a href="/guides/tsiptv-source/#what-en">format guide</a>).</li>
+      <li><strong>Rules the schema cannot express</strong>: duplicate ids across channels, movies, series, episodes and includes; duplicate season and episode numbers; include ids starting with <code>epg-</code>; queries that name an unknown include or an <code>xmltv</code> include; <code>ids</code> and banner targets that are not in the file; <code>endYear</code> before <code>year</code>.</li>
+    </ul>
+    <p>Each problem is listed as <code>path — message</code>, for example <code>channels[0].id — must be an id…</code>, with the validation code where the app uses one. <strong>Errors</strong> are things the schema rejects or TS IPTV drops; <strong>warnings</strong> are things TS IPTV accepts but handles specially.</p>
+
+    <h2 id="not-checked-en">What is not checked here</h2>
+    <p>Everything that needs the network or the app: whether links and streams work, the content of includes (M3U playlists, guides, addons, other sources), whether an addon declares a catalogue, colour contrast, and the device's DRM support. TS IPTV checks those when you import the source and lists the results in the preview.</p>
+
+    <p>This page uses the MIT-licensed <a href="/assets/vendor/ajv2020.LICENSE.txt">Ajv validator</a>, served from this site.</p>
+
+    <section class="related">
+      <h2 id="related-en">Related guides</h2>
+      <ul>
+        <li><a href="/guides/tsiptv-source/">TS IPTV Source format</a></li>
+        <li><a href="/guides/">All guides</a></li>
+      </ul>
+    </section>
+    <script src="/assets/vendor/ajv2020.min.js"></script>
+    <script src="/assets/tsiptv-validate.js"></script>

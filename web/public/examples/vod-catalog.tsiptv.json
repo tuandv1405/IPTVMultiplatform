@@ -1,0 +1,148 @@
+{
+  "$schema": "https://tsiptv-8bdd6.web.app/schema/tsiptv-source-v1.json",
+  "format": "tsiptv-source",
+  "version": 1,
+  "id": "app.tsiptv.examples.vod-catalog",
+  "revision": 1,
+  "meta": {
+    "name": { "en": "Public Domain Cinema", "vi": "Rạp phim Phạm vi công cộng" },
+    "description": {
+      "en": "A small movie and series catalog built only from public-domain films on archive.org and a public test stream. It shows a custom appearance and home layout.",
+      "vi": "Danh mục phim và phim bộ nhỏ, chỉ gồm phim thuộc phạm vi công cộng trên archive.org và một luồng thử nghiệm công khai. Tệp này minh hoạ giao diện và bố cục trang chủ tuỳ chỉnh."
+    },
+    "author": { "name": "TS IPTV examples", "url": "https://tsiptv-8bdd6.web.app/guides/tsiptv-source/" },
+    "homepage": "https://tsiptv-8bdd6.web.app/guides/tsiptv-source/",
+    "language": "en",
+    "languages": ["en"],
+    "updatedAt": "2026-09-27T00:00:00Z",
+    "license": "Listing: CC0-1.0. Films: public domain (see each item)."
+  },
+  "appearance": {
+    "accent": "#FFB300",
+    "accentSecondary": "#FF7043",
+    "background": { "gradient": ["#101014", "#1C1C24"] },
+    "card": { "style": "poster", "corner": "large", "showTitles": true }
+  },
+  "layout": {
+    "home": [
+      {
+        "type": "hero",
+        "id": "featured",
+        "items": [
+          {
+            "image": "https://archive.org/services/img/his_girl_friday",
+            "title": "His Girl Friday",
+            "subtitle": { "en": "Screwball comedy, 1940", "vi": "Hài kịch, 1940" },
+            "target": "his-girl-friday"
+          },
+          {
+            "image": "https://archive.org/services/img/superman_the_mechanical_monsters",
+            "title": { "en": "Fleischer Superman", "vi": "Superman của Fleischer" },
+            "subtitle": { "en": "Animated shorts, 1941–1943", "vi": "Phim hoạt hình ngắn, 1941–1943" },
+            "target": "fleischer-superman"
+          }
+        ]
+      },
+      {
+        "type": "row",
+        "id": "continue",
+        "title": { "en": "Continue watching", "vi": "Xem tiếp" },
+        "query": { "from": "continueWatching" },
+        "card": { "style": "landscape" }
+      },
+      {
+        "type": "row",
+        "id": "movies",
+        "title": { "en": "Movies", "vi": "Phim lẻ" },
+        "query": { "from": "movies", "sort": "yearDesc", "limit": 20 }
+      },
+      {
+        "type": "row",
+        "id": "series",
+        "title": { "en": "Series", "vi": "Phim bộ" },
+        "query": { "from": "series" }
+      },
+      {
+        "type": "grid",
+        "id": "comedy",
+        "title": { "en": "Comedy", "vi": "Hài" },
+        "query": { "from": "movies", "genres": ["Comedy"], "sort": "name" },
+        "card": { "style": "landscape", "corner": "small" }
+      }
+    ]
+  },
+  "movies": [
+    {
+      "id": "his-girl-friday",
+      "name": "His Girl Friday",
+      "poster": "https://archive.org/services/img/his_girl_friday",
+      "backdrop": "https://archive.org/services/img/his_girl_friday",
+      "description": {
+        "en": "Howard Hawks' screwball comedy. Public domain (archive.org item his_girl_friday).",
+        "vi": "Phim hài của Howard Hawks. Thuộc phạm vi công cộng (mục his_girl_friday trên archive.org)."
+      },
+      "year": 1940,
+      "releaseDate": "1940-01-18",
+      "runtimeMinutes": 92,
+      "genres": ["Comedy"],
+      "directors": ["Howard Hawks"],
+      "countries": ["US"],
+      "languages": ["en"],
+      "streams": [
+        {
+          "name": { "en": "archive.org, MP4 512 kb/s", "vi": "archive.org, MP4 512 kb/s" },
+          "url": "https://archive.org/download/his_girl_friday/his_girl_friday_512kb.mp4",
+          "mimeType": "video/mp4",
+          "quality": "SD",
+          "language": "en"
+        }
+      ]
+    },
+    {
+      "id": "big-buck-bunny",
+      "name": "Big Buck Bunny",
+      "description": {
+        "en": "Open movie by the Blender Foundation, CC BY 3.0, streamed from the Mux public HLS test stream.",
+        "vi": "Phim mở của Blender Foundation, giấy phép CC BY 3.0, phát từ luồng thử nghiệm HLS công khai của Mux."
+      },
+      "year": 2008,
+      "runtimeMinutes": 10,
+      "genres": ["Animation", "Comedy"],
+      "url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+      "mimeType": "application/x-mpegURL"
+    }
+  ],
+  "series": [
+    {
+      "id": "fleischer-superman",
+      "name": { "en": "Fleischer Superman", "vi": "Superman của Fleischer" },
+      "poster": "https://archive.org/services/img/superman_the_mechanical_monsters",
+      "backdrop": "https://archive.org/services/img/superman_the_mechanical_monsters",
+      "description": {
+        "en": "Fleischer Studios' Superman cartoons, now in the public domain.",
+        "vi": "Loạt phim hoạt hình Superman của Fleischer Studios, nay thuộc phạm vi công cộng."
+      },
+      "year": 1941,
+      "endYear": 1943,
+      "genres": ["Animation"],
+      "countries": ["US"],
+      "seasons": [
+        {
+          "number": 1,
+          "episodes": [
+            {
+              "id": "fleischer-superman-s1e1",
+              "number": 1,
+              "name": "The Mechanical Monsters",
+              "thumbnail": "https://archive.org/services/img/superman_the_mechanical_monsters",
+              "releaseDate": "1941-11-28",
+              "runtimeMinutes": 10,
+              "url": "https://archive.org/download/superman_the_mechanical_monsters/superman_the_mechanical_monsters_512kb.mp4",
+              "mimeType": "video/mp4"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

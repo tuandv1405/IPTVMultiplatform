@@ -1,0 +1,94 @@
+{
+  "$schema": "https://tsiptv-8bdd6.web.app/schema/tsiptv-source-v1.json",
+  "format": "tsiptv-source",
+  "version": 1,
+  "id": "app.tsiptv.examples.composed",
+  "meta": {
+    "name": { "en": "Composed from includes", "vi": "Ghép từ nguồn bên ngoài" },
+    "description": {
+      "en": "This source contains no items of its own. It pulls an M3U playlist, an XMLTV guide, a Stremio addon and another TS IPTV Source, and places each one in its own section. Every include points at a TS IPTV example file with public test or public-domain streams.",
+      "vi": "Nguồn này không tự chứa mục nào. Nó lấy một danh sách M3U, một lịch phát sóng XMLTV, một addon Stremio và một TS IPTV Source khác, rồi đặt mỗi nguồn vào một mục riêng. Mọi nguồn đều trỏ tới tệp ví dụ của TS IPTV, chỉ chứa luồng thử nghiệm công khai hoặc phim thuộc phạm vi công cộng."
+    },
+    "author": { "name": "TS IPTV examples" },
+    "language": "en",
+    "updatedAt": "2026-09-27T00:00:00Z"
+  },
+  "appearance": {
+    "accent": "#4FC3F7",
+    "background": { "color": "#06121C" },
+    "card": { "style": "auto", "corner": "medium" }
+  },
+  "includes": [
+    {
+      "id": "live",
+      "type": "m3u",
+      "url": "https://tsiptv-8bdd6.web.app/examples/playlist.m3u",
+      "name": { "en": "Example M3U playlist", "vi": "Danh sách M3U ví dụ" },
+      "refreshHours": 24
+    },
+    {
+      "id": "guide",
+      "type": "xmltv",
+      "url": "https://tsiptv-8bdd6.web.app/examples/guide.xml",
+      "name": { "en": "Example XMLTV guide", "vi": "Lịch phát sóng XMLTV ví dụ" },
+      "refreshHours": 12
+    },
+    {
+      "id": "sampler",
+      "type": "stremio",
+      "url": "https://tsiptv-8bdd6.web.app/examples/stremio-sampler/manifest.json",
+      "name": { "en": "Public Domain Sampler addon", "vi": "Addon Public Domain Sampler" }
+    },
+    {
+      "id": "cinema",
+      "type": "tsiptv-source",
+      "url": "https://tsiptv-8bdd6.web.app/examples/vod-catalog.tsiptv.json",
+      "refreshHours": 72
+    }
+  ],
+  "layout": {
+    "home": [
+      {
+        "type": "hero",
+        "id": "hero",
+        "query": { "from": "movies", "include": "cinema", "limit": 3 }
+      },
+      {
+        "type": "row",
+        "id": "on-air",
+        "title": { "en": "On air", "vi": "Đang phát" },
+        "subtitle": { "en": "From the M3U include, with the XMLTV guide", "vi": "Từ danh sách M3U, kèm lịch phát sóng XMLTV" },
+        "query": { "from": "channels", "include": "live", "sort": "number" },
+        "card": { "style": "list" }
+      },
+      {
+        "type": "row",
+        "id": "addon-movies",
+        "title": { "en": "From the Stremio addon", "vi": "Từ addon Stremio" },
+        "query": { "from": "catalog", "include": "sampler", "catalog": { "type": "movie", "id": "tspd-movie" } },
+        "card": { "style": "poster" }
+      },
+      {
+        "type": "row",
+        "id": "cinema-series",
+        "title": { "en": "Series", "vi": "Phim bộ" },
+        "query": { "from": "series", "include": "cinema" }
+      },
+      {
+        "type": "row",
+        "id": "picked",
+        "title": { "en": "Picked by hand", "vi": "Chọn tay" },
+        "query": { "from": "movies", "ids": ["cinema:big-buck-bunny", "cinema:his-girl-friday"] },
+        "card": { "style": "landscape" },
+        "seeAll": false
+      },
+      {
+        "type": "grid",
+        "id": "all-channels",
+        "title": { "en": "All channels", "vi": "Tất cả kênh" },
+        "query": { "from": "channels", "sort": "number" },
+        "groupChips": true
+      }
+    ]
+  }
+}

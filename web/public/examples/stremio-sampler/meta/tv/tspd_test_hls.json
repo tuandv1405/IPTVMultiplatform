@@ -1,0 +1,8 @@
+{
+  "meta": {
+    "id": "tspd_test_hls", "type": "tv", "name": "HLS Test Channel (Mux test stream)",
+    "poster": "https://archive.org/services/img/his_girl_friday", "posterShape": "square",
+    "description": "Public HLS test stream from Mux (Big Buck Bunny, CC-BY Blender Foundation).",
+    "behaviorHints": { "isLive": true }
+  }
+}

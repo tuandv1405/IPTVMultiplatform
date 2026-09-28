@@ -1,0 +1,39 @@
+    <h1>Kiểm tra một TS IPTV Source</h1>
+    <p class="lead">Dán nội dung tệp <a href="/guides/tsiptv-source/">TS IPTV Source</a> hoặc chọn một tệp, rồi bấm <strong>Kiểm tra</strong>. Việc kiểm tra diễn ra hoàn toàn trong trình duyệt của bạn: không có gì được tải lên, và yêu cầu mạng duy nhất của trang này là tải <a href="/schema/tsiptv-source-v1.json">JSON Schema</a>.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV không có sẵn kênh nào và cũng không có sẵn nguồn nào.</strong> Công cụ này chỉ đọc tệp bạn đưa vào. Nó không bao giờ mở các đường dẫn bên trong: include, lịch phát sóng, ảnh và luồng đều không được tải.</p>
+    </div>
+
+    <div class="validator" data-validator>
+      <label for="vsrc-vi">Nội dung tệp (JSON)</label>
+      <textarea id="vsrc-vi" rows="14" spellcheck="false" autocomplete="off" placeholder='{ "format": "tsiptv-source", "version": 1, … }'></textarea>
+      <div class="validator-actions">
+        <label class="vfile-label" for="vfile-vi">Hoặc chọn một tệp</label>
+        <input type="file" id="vfile-vi" accept=".json,application/json,text/plain">
+        <button type="button" class="btn" data-validate>Kiểm tra</button>
+      </div>
+      <div data-result role="status" aria-live="polite"></div>
+    </div>
+
+    <h2 id="checks">Những gì được kiểm tra</h2>
+    <ul>
+      <li><strong>JSON</strong>: tệp đọc được và gốc là một đối tượng (<code>E_NOT_JSON</code>). Tệp lớn hơn 5 MiB bị từ chối (<code>E_TOO_LARGE</code>). Ở đây chỉ kiểm tra được JSON chưa nén; hãy giải nén tệp <code>.gz</code> trước.</li>
+      <li><strong>Quy tắc của tài liệu</strong>: <code>format</code> là <code>"tsiptv-source"</code>, <code>version</code> là <code>1</code>, và tệp có kênh, phim lẻ, phim bộ hoặc include.</li>
+      <li><strong>JSON Schema</strong> (chuẩn 2020-12): trường bắt buộc, kiểu dữ liệu, khoảng giá trị, mẫu của id và URL, header bị cấm, chữ và khoá ngôn ngữ, và <strong>trường không xác định</strong>, thường là do gõ nhầm. Schema khắt khe hơn ứng dụng, nên tệp qua được schema gần như luôn được chấp nhận (các ngoại lệ có trong <a href="/guides/tsiptv-source/#what">hướng dẫn định dạng</a>).</li>
+      <li><strong>Quy tắc schema không diễn đạt được</strong>: id trùng giữa kênh, phim lẻ, phim bộ, tập và include; số mùa, số tập trùng nhau; id include bắt đầu bằng <code>epg-</code>; truy vấn trỏ tới include không tồn tại hoặc include <code>xmltv</code>; <code>ids</code> và target của banner không có trong tệp; <code>endYear</code> nhỏ hơn <code>year</code>.</li>
+    </ul>
+    <p>Mỗi vấn đề được liệt kê dạng <code>đường dẫn — thông báo</code>, ví dụ <code>channels[0].id — phải là một id…</code>, kèm mã kiểm tra nếu ứng dụng có dùng mã đó. <strong>Lỗi</strong> là những gì schema từ chối hoặc TS IPTV bỏ đi; <strong>cảnh báo</strong> là những gì TS IPTV chấp nhận nhưng xử lý đặc biệt.</p>
+
+    <h2 id="not-checked">Những gì không được kiểm tra ở đây</h2>
+    <p>Mọi thứ cần mạng hoặc cần ứng dụng: đường dẫn và luồng có hoạt động không, nội dung của các include (danh sách M3U, lịch phát sóng, addon, nguồn khác), addon có khai báo danh mục hay không, độ tương phản màu, và thiết bị có hỗ trợ DRM không. TS IPTV kiểm tra những điều đó khi bạn nhập nguồn và liệt kê kết quả trong màn hình xem trước.</p>
+
+    <p>Trang này dùng <a href="/assets/vendor/ajv2020.LICENSE.txt">trình kiểm tra Ajv</a> (giấy phép MIT), được phục vụ từ chính trang web này.</p>
+
+    <section class="related">
+      <h2 id="related">Hướng dẫn liên quan</h2>
+      <ul>
+        <li><a href="/guides/tsiptv-source/">Định dạng TS IPTV Source</a></li>
+        <li><a href="/guides/">Tất cả hướng dẫn</a></li>
+      </ul>
+    </section>

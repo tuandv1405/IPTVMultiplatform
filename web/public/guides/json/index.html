@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="vi" data-title-vi="Danh sách phát JSON — Hướng dẫn TS IPTV" data-title-en="JSON playlists — TS IPTV guides">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Danh sách phát JSON — Hướng dẫn TS IPTV</title>
+<meta name="description" content="Hai dạng danh sách phát JSON mà TS IPTV đọc được: JSON chung và dạng streams.json của iptv-org, kèm ví dụ đầy đủ.">
+<link rel="canonical" href="https://tsiptv-8bdd6.web.app/guides/json/">
+<link rel="alternate" hreflang="vi" href="https://tsiptv-8bdd6.web.app/guides/json/">
+<link rel="alternate" hreflang="en" href="https://tsiptv-8bdd6.web.app/guides/json/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://tsiptv-8bdd6.web.app/guides/json/">
+<meta property="og:title" content="Danh sách phát JSON — Hướng dẫn TS IPTV">
+<meta property="og:description" content="Hai dạng danh sách phát JSON mà TS IPTV đọc được: JSON chung và dạng streams.json của iptv-org, kèm ví dụ đầy đủ.">
+<meta property="og:image" content="https://tsiptv-8bdd6.web.app/assets/og-image.png">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://tsiptv-8bdd6.web.app/guides/json/">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <img src="/assets/app-icon.png" alt="">
+    <span class="name">TS IPTV</span>
+    <nav>
+      <a href="/guides/" aria-current="page">Hướng dẫn / Guides</a>
+      <a href="/">Trang chủ / Home</a>
+      <a href="/privacy/">Quyền riêng tư / Privacy</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <ul class="langbar">
+    <li><button type="button" data-lang="vi" aria-pressed="true">Tiếng Việt</button></li>
+    <li><button type="button" data-lang="en" aria-pressed="false">English</button></li>
+  </ul>
+
+  <!-- ==================== VIETNAMESE ==================== -->
+  <article data-lang-pane="vi">
+    <nav class="breadcrumb" aria-label="Vị trí trang"><a href="/guides/">Hướng dẫn</a> › <span aria-current="page">JSON</span></nav>
+    <h1>Danh sách phát JSON</h1>
+    <p class="lead">TS IPTV đọc được hai dạng danh sách kênh JSON: <strong>JSON chung</strong> (dạng riêng của TS IPTV, rất linh hoạt) và dạng <strong><code>streams.json</code> của iptv-org</strong>. Trang này mô tả cả hai.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV không có sẵn kênh nào.</strong> Ứng dụng chỉ phát các danh sách phát do bạn thêm vào. Trang này chỉ mô tả định dạng, không giới thiệu danh sách nào.</p>
+    </div>
+
+    <nav class="toc" aria-label="Trên trang này">
+      <p class="toc-title">Trên trang này</p>
+      <ol>
+        <li><a href="#what">Hai dạng JSON</a></li>
+        <li><a href="#syntax">Cú pháp</a></li>
+        <li><a href="#example">Ví dụ đầy đủ</a></li>
+        <li><a href="#create">Tự viết một tệp</a></li>
+        <li><a href="#host">Đưa tệp lên mạng</a></li>
+        <li><a href="#add">Thêm vào TS IPTV</a></li>
+        <li><a href="#mistakes">Lỗi thường gặp</a></li>
+        <li><a href="#support">TS IPTV hỗ trợ những gì</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what">Hai dạng JSON</h2>
+    <p>JSON không có một chuẩn chung cho danh sách kênh; mỗi ứng dụng dùng một dạng riêng. TS IPTV đọc hai dạng:</p>
+    <ul>
+      <li><strong>JSON chung</strong>: một đối tượng hoặc mảng chứa các kênh (và có thể có nhóm). Tên trường có vài biến thể được chấp nhận, nên nhiều tệp JSON tự tạo đọc được ngay.</li>
+      <li><strong>Dạng <code>streams.json</code> của iptv-org</strong>: một mảng luồng, mỗi phần tử có <code>channel</code>, <code>title</code>, <code>url</code> và header. Dự án iptv-org dùng dạng này cho dữ liệu công khai của họ.</li>
+    </ul>
+    <p>TS IPTV tự nhận ra dạng: nếu tệp bắt đầu bằng <code>[</code> và phần tử đầu tiên có <code>channel</code>, <code>url</code>, <code>title</code> mà không có <code>name</code>, đó là dạng iptv-org; mọi tệp khác bắt đầu bằng <code>{</code> hoặc <code>[</code> là JSON chung.</p>
+
+    <h2 id="syntax">Cú pháp</h2>
+    <h3 id="syntax-generic">JSON chung</h3>
+    <p>Các dạng cấp cao nhất được chấp nhận:</p>
+    <ol>
+      <li>một đối tượng <code>{ "name", "epgUrl", "channels": [ … ], "groups": [ … ] }</code> (cũng chấp nhận <code>channel</code> và <code>group</code>);</li>
+      <li>một đối tượng chỉ có <code>channels</code>, hoặc chỉ có <code>groups</code>;</li>
+      <li>một mảng các đối tượng kênh: <code>[ { … }, { … } ]</code>;</li>
+      <li>một mảng các đối tượng nhóm.</li>
+    </ol>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Trường của danh sách</th><th>Bắt buộc</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>name</code></td><td>không</td><td>Tên danh sách phát.</td></tr>
+          <tr><td><code>epgUrl</code></td><td>không</td><td>Đường dẫn lịch phát sóng <a href="/guides/xmltv/">XMLTV</a>.</td></tr>
+          <tr><td><code>channels</code> (hoặc <code>channel</code>)</td><td>không</td><td>Mảng kênh không thuộc nhóm nào, hoặc tự khai báo nhóm.</td></tr>
+          <tr><td><code>groups</code> (hoặc <code>group</code>)</td><td>không</td><td>Mảng nhóm: <code>{ "id"?, "name", "channels": [ … ] }</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Trường của kênh</th><th>Bắt buộc</th><th>Tên khác được chấp nhận</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><strong>có</strong></td><td></td><td>Mã duy nhất, là chuỗi.</td></tr>
+          <tr><td><code>name</code></td><td><strong>có</strong></td><td></td><td>Tên hiển thị.</td></tr>
+          <tr><td><code>url</code></td><td><strong>có</strong> (hoặc <code>remote_data.url</code>)</td><td><code>remote_data: { "url": "…" }</code></td><td>Đường dẫn luồng.</td></tr>
+          <tr><td><code>logoUrl</code></td><td>không</td><td><code>logo</code>, <code>image: { "url": "…" }</code></td><td>Logo.</td></tr>
+          <tr><td><code>groupTitle</code></td><td>không</td><td><code>group</code></td><td>Tên nhóm (khi kênh không nằm trong một <code>groups</code>).</td></tr>
+          <tr><td><code>groupId</code></td><td>không</td><td></td><td>Mã nhóm; tự tạo từ tên nếu thiếu.</td></tr>
+          <tr><td><code>epgId</code></td><td>không</td><td><code>epg</code></td><td>Mã kênh trong lịch XMLTV (giống <code>tvg-id</code> của M3U).</td></tr>
+          <tr><td><code>description</code></td><td>không</td><td></td><td>Mô tả.</td></tr>
+          <tr><td><code>attributes</code></td><td>không</td><td></td><td>Tập cặp khoá–giá trị (chuỗi), cùng khoá với thuộc tính M3U. <code>"user-agent"</code> và <code>"referrer"</code> trở thành header HTTP.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Trường không có trong bảng sẽ bị bỏ qua.</p>
+
+    <h3 id="syntax-iptvorg">Dạng <code>streams.json</code> của iptv-org</h3>
+    <p>Một mảng; mỗi phần tử là một luồng:</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Trường</th><th>Kiểu</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>channel</code></td><td>chuỗi hoặc null</td><td>Mã kênh, ví dụ <code>ExampleNews.us</code>.</td></tr>
+          <tr><td><code>feed</code></td><td>chuỗi hoặc null</td><td>Mã bản phát (feed), ví dụ <code>HD</code>. Mã luồng đầy đủ là <code>channel@feed</code>, ví dụ <code>ExampleNews.us@HD</code>.</td></tr>
+          <tr><td><code>title</code></td><td>chuỗi</td><td>Tên luồng.</td></tr>
+          <tr><td><code>url</code></td><td>chuỗi</td><td>Đường dẫn luồng.</td></tr>
+          <tr><td><code>referrer</code></td><td>chuỗi hoặc null</td><td>Header <code>Referer</code>.</td></tr>
+          <tr><td><code>user_agent</code></td><td>chuỗi hoặc null</td><td>Header <code>User-Agent</code>.</td></tr>
+          <tr><td><code>quality</code></td><td>chuỗi hoặc null</td><td>Chất lượng tối đa, ví dụ <code>720p</code>.</td></tr>
+          <tr><td><code>labels</code></td><td>mảng</td><td>Nhãn như <code>Geo-blocked</code>, <code>Not 24/7</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="example">Ví dụ đầy đủ</h2>
+    <h3 id="example-generic">JSON chung</h3>
+    <p>Kênh đầu tiên là luồng thử nghiệm công khai của Mux (Big Buck Bunny © Blender Foundation, CC BY 3.0); các kênh khác dùng đường dẫn giả <code>example.com</code>.</p>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/playlist.json" download>Tải playlist.json</a></div>
+      <pre data-copy data-example="/examples/playlist.json" tabindex="0"><code>{
+  "name": "TS IPTV example playlist",
+  "epgUrl": "https://tsiptv-8bdd6.web.app/examples/guide.xml",
+  "channels": [
+    {
+      "id": "HlsTest.example",
+      "name": "HLS Test Channel",
+      "url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+      "group": "Test",
+      "epgId": "HlsTest.example"
+    },
+    {
+      "id": "ExampleRadio.us",
+      "name": "Example Radio",
+      "url": "https://cdn.example.com/radio/stream.aac",
+      "group": "Radio"
+    }
+  ],
+  "groups": [
+    {
+      "name": "News",
+      "channels": [
+        {
+          "id": "ExampleNews.us",
+          "name": "Example News",
+          "url": "https://cdn.example.com/news/index.m3u8",
+          "logo": "https://example.com/logos/news.png",
+          "epgId": "ExampleNews.us",
+          "attributes": {
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "referrer": "https://example.com/"
+          }
+        }
+      ]
+    }
+  ]
+}</code></pre>
+    </div>
+    <ol>
+      <li><code>name</code> và <code>epgUrl</code>: tên danh sách và lịch phát sóng ví dụ.</li>
+      <li><code>channels</code>: hai kênh tự khai báo nhóm bằng <code>group</code> (“Test” và “Radio”).</li>
+      <li><code>groups</code>: nhóm “News” chứa một kênh có logo, <code>epgId</code> và hai header trong <code>attributes</code>.</li>
+    </ol>
+    <p>Dạng ngắn nhất là một mảng: <code>[{"id":"a","name":"A","url":"https://cdn.example.com/a.m3u8"}]</code>.</p>
+
+    <h3 id="example-iptvorg">Dạng iptv-org</h3>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/iptv-org-streams.json" download>Tải iptv-org-streams.json</a></div>
+      <pre data-copy data-example="/examples/iptv-org-streams.json" tabindex="0"><code>[
+  {
+    "channel": "HlsTest.example",
+    "feed": null,
+    "title": "HLS Test Channel",
+    "url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+    "referrer": null,
+    "user_agent": null,
+    "quality": null,
+    "labels": []
+  },
+  {
+    "channel": "ExampleNews.us",
+    "feed": "HD",
+    "title": "Example News HD",
+    "url": "https://cdn.example.com/news/index.m3u8",
+    "referrer": "https://example.com/",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "quality": "1080p",
+    "labels": ["Not 24/7"]
+  }
+]</code></pre>
+    </div>
+    <p>Phần tử thứ nhất là luồng thử nghiệm của Mux, không có header. Phần tử thứ hai là một đường dẫn giả, có <code>feed</code>, <code>referrer</code> và <code>user_agent</code>; mã luồng của nó là <code>ExampleNews.us@HD</code>.</p>
+
+    <h2 id="create">Tự viết một tệp</h2>
+    <ol>
+      <li>Mở một trình soạn thảo văn bản thuần. VS Code tốt nhất vì nó báo lỗi cú pháp JSON ngay khi gõ.</li>
+      <li>Chép một trong hai ví dụ ở trên và sửa các kênh.</li>
+      <li>Dùng nháy kép thẳng <code>"</code> cho mọi khoá và chuỗi; <code>id</code> luôn là chuỗi (<code>"7"</code>, không phải <code>7</code>).</li>
+      <li>Không để dấu phẩy sau phần tử cuối cùng và không viết chú thích <code>//</code>.</li>
+      <li>Lưu với mã hoá UTF-8 (không BOM), đuôi <code>.json</code>.</li>
+    </ol>
+    <p>Cần header cho từng kênh, DRM hay thông tin xem lại? Hãy dùng <a href="/guides/m3u/">M3U</a> hoặc <a href="/guides/tsiptv-source/">TS IPTV Source</a>. Cần phim lẻ, phim bộ có mùa và tập, nhiều luồng cho mỗi mục, hoặc bố cục trang chủ và màu sắc riêng? Hãy dùng <a href="/guides/tsiptv-source/">TS IPTV Source</a>, cũng là một định dạng JSON.</p>
+
+    <h2 id="host">Đưa tệp lên mạng</h2>
+    <p>Giống như M3U: mọi đường dẫn HTTPS trả về chính nội dung tệp đều dùng được (<code>https://raw.githubusercontent.com/&lt;user&gt;/&lt;repo&gt;/&lt;branch&gt;/playlist.json</code>, <code>https://&lt;user&gt;.github.io/&lt;repo&gt;/playlist.json</code>, <code>https://www.example.com/playlist.json</code>, Dropbox với <code>dl=1</code>). Trang hiển thị tệp trên GitHub (<code>github.com/…/blob/…</code>) là trang web, không phải tệp. Máy chủ nên gửi <code>Content-Type: application/json</code>, nhưng TS IPTV tự nhận dạng nội dung. HTTPS được khuyến nghị; TS IPTV không cần CORS. Chi tiết: <a href="/guides/m3u/#host">đưa tệp M3U lên mạng</a>.</p>
+
+    <h2 id="add">Thêm vào TS IPTV</h2>
+    <ol>
+      <li>Mở <strong>Thêm nguồn IPTV</strong> (nút <strong>Thêm IPTV</strong>).</li>
+      <li>Nhập <strong>Tên nguồn</strong>, dán đường dẫn vào <strong>Liên kết nguồn</strong> rồi chọn <strong>Thêm IPTV</strong>; hoặc chọn <strong>Nhập từ tệp</strong> và chọn tệp <code>.json</code>.</li>
+      <li>TS IPTV nhận ra dạng JSON và cho biết số kênh tìm thấy. Nếu tệp có <code>epgUrl</code>, lịch phát sóng được tải cùng lúc.</li>
+    </ol>
+
+    <h2 id="mistakes">Lỗi thường gặp</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Lỗi</th><th>Biểu hiện</th><th>Cách sửa</th></tr></thead>
+        <tbody>
+          <tr><td>Dấu phẩy sau phần tử cuối (<code>[{…},]</code>)</td><td>Không đọc được tệp</td><td>Xoá dấu phẩy thừa.</td></tr>
+          <tr><td>Chú thích <code>//</code> hoặc <code>/* */</code></td><td>Không đọc được tệp</td><td>JSON không cho phép chú thích; hãy xoá chúng.</td></tr>
+          <tr><td><code>id</code> là số (<code>"id": 7</code>)</td><td>TS IPTV vẫn đọc được, nhưng ứng dụng khác có thể từ chối</td><td>Viết thành chuỗi: <code>"id": "7"</code>.</td></tr>
+          <tr><td>Nháy cong <code>“ ”</code></td><td>Không đọc được tệp</td><td>Gõ lại thành nháy thẳng <code>"</code>.</td></tr>
+          <tr><td>Thiếu <code>name</code> hoặc <code>url</code> ở một kênh</td><td>Không đọc được tệp, hoặc kênh không phát</td><td>Mỗi kênh cần <code>id</code>, <code>name</code> và <code>url</code>.</td></tr>
+          <tr><td>Đường dẫn là trang GitHub thay vì tệp gốc</td><td>“Đường dẫn này mở một trang web”</td><td>Dùng đường dẫn <em>Raw</em>.</td></tr>
+          <tr><td>Tệp iptv-org có thêm trường <code>name</code></td><td>Được đọc như JSON chung; vì JSON chung bắt buộc có <code>id</code>, cả tệp không đọc được</td><td>Giữ đúng dạng iptv-org, hoặc chuyển hẳn sang JSON chung.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support">TS IPTV hỗ trợ những gì</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Tính năng</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+          <tr><td>Bốn dạng cấp cao nhất của JSON chung, kể cả mảng</td><td><span class="badge yes">Hỗ trợ</span> trên mọi nền tảng</td></tr>
+          <tr><td>Nhóm lồng nhau, <code>remote_data.url</code>, <code>image.url</code></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Header từ <code>attributes</code> (JSON chung) và <code>referrer</code>/<code>user_agent</code> (iptv-org)</td><td><span class="badge yes">Android</span> <span class="badge partial">iOS: cố gắng tối đa</span> <span class="badge partial">Máy tính: chỉ User-Agent và Referer</span></td></tr>
+          <tr><td><code>epgUrl</code></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td><code>labels</code>, <code>quality</code> của iptv-org</td><td><span class="badge partial">Được chấp nhận, chưa hiển thị</span></td></tr>
+          <tr><td>DRM, xem lại</td><td><span class="badge no">Không có trong JSON</span> Dùng <a href="/guides/m3u/">M3U</a>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related">Hướng dẫn liên quan</h2>
+      <ul>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/xmltv/">XMLTV</a></li>
+        <li><a href="/guides/stremio-addons/">Addon tương thích Stremio</a></li>
+        <li><a href="/guides/tsiptv-source/">TS IPTV Source</a></li>
+        <li><a href="/guides/">Tất cả hướng dẫn</a></li>
+      </ul>
+    </section>
+  </article>
+
+  <!-- ==================== ENGLISH ==================== -->
+  <article data-lang-pane="en" hidden>
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/guides/">Guides</a> › <span aria-current="page">JSON</span></nav>
+    <h1>JSON playlists</h1>
+    <p class="lead">TS IPTV reads two JSON channel-list shapes: <strong>generic JSON</strong> (TS IPTV's own, flexible shape) and the <strong>iptv-org <code>streams.json</code> shape</strong>. This page describes both.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels.</strong> It plays only the playlists you add. This page describes formats only and recommends no list.</p>
+    </div>
+
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+        <li><a href="#what-en">Two JSON shapes</a></li>
+        <li><a href="#syntax-en">Syntax</a></li>
+        <li><a href="#example-en">Complete examples</a></li>
+        <li><a href="#create-en">Create one by hand</a></li>
+        <li><a href="#host-en">Host it</a></li>
+        <li><a href="#add-en">Add it in TS IPTV</a></li>
+        <li><a href="#mistakes-en">Common mistakes</a></li>
+        <li><a href="#support-en">What TS IPTV supports</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what-en">Two JSON shapes</h2>
+    <p>There is no common standard for JSON channel lists; every app uses its own shape. TS IPTV reads two:</p>
+    <ul>
+      <li><strong>Generic JSON</strong>: an object or array of channels (optionally in groups). Several field-name variants are accepted, so many home-made JSON files read as they are.</li>
+      <li><strong>The iptv-org <code>streams.json</code> shape</strong>: an array of streams, each with <code>channel</code>, <code>title</code>, <code>url</code> and headers. The iptv-org project uses this shape for its public data.</li>
+    </ul>
+    <p>TS IPTV detects the shape: if the file starts with <code>[</code> and the first element has <code>channel</code>, <code>url</code> and <code>title</code> but no <code>name</code>, it is the iptv-org shape; any other file that starts with <code>{</code> or <code>[</code> is generic JSON.</p>
+
+    <h2 id="syntax-en">Syntax</h2>
+    <h3 id="syntax-generic-en">Generic JSON</h3>
+    <p>Accepted top-level shapes:</p>
+    <ol>
+      <li>an object <code>{ "name", "epgUrl", "channels": [ … ], "groups": [ … ] }</code> (<code>channel</code> and <code>group</code> are accepted too);</li>
+      <li>an object with only <code>channels</code>, or only <code>groups</code>;</li>
+      <li>an array of channel objects: <code>[ { … }, { … } ]</code>;</li>
+      <li>an array of group objects.</li>
+    </ol>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Playlist field</th><th>Required</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>name</code></td><td>no</td><td>Playlist name.</td></tr>
+          <tr><td><code>epgUrl</code></td><td>no</td><td><a href="/guides/xmltv/">XMLTV</a> guide URL.</td></tr>
+          <tr><td><code>channels</code> (or <code>channel</code>)</td><td>no</td><td>Array of channels that are in no group, or that name their own group.</td></tr>
+          <tr><td><code>groups</code> (or <code>group</code>)</td><td>no</td><td>Array of groups: <code>{ "id"?, "name", "channels": [ … ] }</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Channel field</th><th>Required</th><th>Also accepted</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><strong>yes</strong></td><td></td><td>Unique id, a string.</td></tr>
+          <tr><td><code>name</code></td><td><strong>yes</strong></td><td></td><td>Display name.</td></tr>
+          <tr><td><code>url</code></td><td><strong>yes</strong> (or <code>remote_data.url</code>)</td><td><code>remote_data: { "url": "…" }</code></td><td>Stream URL.</td></tr>
+          <tr><td><code>logoUrl</code></td><td>no</td><td><code>logo</code>, <code>image: { "url": "…" }</code></td><td>Logo.</td></tr>
+          <tr><td><code>groupTitle</code></td><td>no</td><td><code>group</code></td><td>Group name (when the channel is not inside a <code>groups</code> entry).</td></tr>
+          <tr><td><code>groupId</code></td><td>no</td><td></td><td>Group id; derived from the name if missing.</td></tr>
+          <tr><td><code>epgId</code></td><td>no</td><td><code>epg</code></td><td>The channel's id in the XMLTV guide (like M3U <code>tvg-id</code>).</td></tr>
+          <tr><td><code>description</code></td><td>no</td><td></td><td>Description.</td></tr>
+          <tr><td><code>attributes</code></td><td>no</td><td></td><td>A string map with the same keys as M3U attributes. <code>"user-agent"</code> and <code>"referrer"</code> become HTTP headers.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Fields that are not in the table are ignored.</p>
+
+    <h3 id="syntax-iptvorg-en">The iptv-org <code>streams.json</code> shape</h3>
+    <p>An array; each element is one stream:</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>channel</code></td><td>string or null</td><td>Channel id, for example <code>ExampleNews.us</code>.</td></tr>
+          <tr><td><code>feed</code></td><td>string or null</td><td>Feed id, for example <code>HD</code>. The full stream id is <code>channel@feed</code>, for example <code>ExampleNews.us@HD</code>.</td></tr>
+          <tr><td><code>title</code></td><td>string</td><td>Stream title.</td></tr>
+          <tr><td><code>url</code></td><td>string</td><td>Stream URL.</td></tr>
+          <tr><td><code>referrer</code></td><td>string or null</td><td><code>Referer</code> header.</td></tr>
+          <tr><td><code>user_agent</code></td><td>string or null</td><td><code>User-Agent</code> header.</td></tr>
+          <tr><td><code>quality</code></td><td>string or null</td><td>Maximum quality, for example <code>720p</code>.</td></tr>
+          <tr><td><code>labels</code></td><td>array</td><td>Labels such as <code>Geo-blocked</code>, <code>Not 24/7</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="example-en">Complete examples</h2>
+    <h3 id="example-generic-en">Generic JSON</h3>
+    <p>The first channel is the Mux public test stream (Big Buck Bunny © Blender Foundation, CC BY 3.0); the others use <code>example.com</code> placeholders.</p>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/playlist.json" download>Download playlist.json</a></div>
+      <pre data-copy data-example="/examples/playlist.json" tabindex="0"><code>{
+  "name": "TS IPTV example playlist",
+  "epgUrl": "https://tsiptv-8bdd6.web.app/examples/guide.xml",
+  "channels": [
+    {
+      "id": "HlsTest.example",
+      "name": "HLS Test Channel",
+      "url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+      "group": "Test",
+      "epgId": "HlsTest.example"
+    },
+    {
+      "id": "ExampleRadio.us",
+      "name": "Example Radio",
+      "url": "https://cdn.example.com/radio/stream.aac",
+      "group": "Radio"
+    }
+  ],
+  "groups": [
+    {
+      "name": "News",
+      "channels": [
+        {
+          "id": "ExampleNews.us",
+          "name": "Example News",
+          "url": "https://cdn.example.com/news/index.m3u8",
+          "logo": "https://example.com/logos/news.png",
+          "epgId": "ExampleNews.us",
+          "attributes": {
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "referrer": "https://example.com/"
+          }
+        }
+      ]
+    }
+  ]
+}</code></pre>
+    </div>
+    <ol>
+      <li><code>name</code> and <code>epgUrl</code>: the playlist name and the example guide.</li>
+      <li><code>channels</code>: two channels that name their own group with <code>group</code> (“Test” and “Radio”).</li>
+      <li><code>groups</code>: a “News” group with one channel that has a logo, an <code>epgId</code> and two headers in <code>attributes</code>.</li>
+    </ol>
+    <p>The shortest form is an array: <code>[{"id":"a","name":"A","url":"https://cdn.example.com/a.m3u8"}]</code>.</p>
+
+    <h3 id="example-iptvorg-en">iptv-org shape</h3>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/iptv-org-streams.json" download>Download iptv-org-streams.json</a></div>
+      <pre data-copy data-example="/examples/iptv-org-streams.json" tabindex="0"><code>[
+  {
+    "channel": "HlsTest.example",
+    "feed": null,
+    "title": "HLS Test Channel",
+    "url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+    "referrer": null,
+    "user_agent": null,
+    "quality": null,
+    "labels": []
+  },
+  {
+    "channel": "ExampleNews.us",
+    "feed": "HD",
+    "title": "Example News HD",
+    "url": "https://cdn.example.com/news/index.m3u8",
+    "referrer": "https://example.com/",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "quality": "1080p",
+    "labels": ["Not 24/7"]
+  }
+]</code></pre>
+    </div>
+    <p>The first element is the Mux test stream, with no headers. The second is a placeholder with a <code>feed</code>, a <code>referrer</code> and a <code>user_agent</code>; its stream id is <code>ExampleNews.us@HD</code>.</p>
+
+    <h2 id="create-en">Create one by hand</h2>
+    <ol>
+      <li>Open a plain-text editor. VS Code is best because it flags JSON syntax errors as you type.</li>
+      <li>Copy one of the examples above and edit the channels.</li>
+      <li>Use straight double quotes <code>"</code> for every key and string; <code>id</code> is always a string (<code>"7"</code>, not <code>7</code>).</li>
+      <li>No comma after the last element, and no <code>//</code> comments.</li>
+      <li>Save as UTF-8 (no BOM) with the extension <code>.json</code>.</li>
+    </ol>
+    <p>Need per-channel headers, DRM or catch-up information? Use <a href="/guides/m3u/">M3U</a> or <a href="/guides/tsiptv-source/">TS IPTV Source</a>. Need movies, series with seasons and episodes, several streams per item, or your own home layout and colours? Use <a href="/guides/tsiptv-source/">TS IPTV Source</a>, which is also JSON.</p>
+
+    <h2 id="host-en">Host it</h2>
+    <p>Just like M3U: any HTTPS link that returns the file itself works (<code>https://raw.githubusercontent.com/&lt;user&gt;/&lt;repo&gt;/&lt;branch&gt;/playlist.json</code>, <code>https://&lt;user&gt;.github.io/&lt;repo&gt;/playlist.json</code>, <code>https://www.example.com/playlist.json</code>, Dropbox with <code>dl=1</code>). GitHub's file view (<code>github.com/…/blob/…</code>) is a web page, not the file. The server should send <code>Content-Type: application/json</code>, but TS IPTV detects the content anyway. HTTPS is recommended; TS IPTV needs no CORS. Details: <a href="/guides/m3u/#host-en">hosting an M3U file</a>.</p>
+
+    <h2 id="add-en">Add it in TS IPTV</h2>
+    <ol>
+      <li>Open <strong>Add IPTV Source</strong> (the <strong>Add IPTV</strong> button).</li>
+      <li>Enter a <strong>Source Name</strong>, paste the link into <strong>Source Link</strong> and choose <strong>Add IPTV</strong>; or choose <strong>Import from file</strong> and pick the <code>.json</code> file.</li>
+      <li>TS IPTV detects the JSON shape and shows how many channels it found. If the file has an <code>epgUrl</code>, the guide is downloaded with it.</li>
+    </ol>
+
+    <h2 id="mistakes-en">Common mistakes</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Mistake</th><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>A comma after the last element (<code>[{…},]</code>)</td><td>The file cannot be read</td><td>Remove the extra comma.</td></tr>
+          <tr><td><code>//</code> or <code>/* */</code> comments</td><td>The file cannot be read</td><td>JSON has no comments; remove them.</td></tr>
+          <tr><td>A numeric <code>id</code> (<code>"id": 7</code>)</td><td>TS IPTV still reads it, but other apps may reject it</td><td>Write it as a string: <code>"id": "7"</code>.</td></tr>
+          <tr><td>Curly quotes <code>“ ”</code></td><td>The file cannot be read</td><td>Retype them as straight <code>"</code>.</td></tr>
+          <tr><td>A channel without <code>name</code> or <code>url</code></td><td>The file cannot be read, or the channel does not play</td><td>Every channel needs <code>id</code>, <code>name</code> and <code>url</code>.</td></tr>
+          <tr><td>The link is a GitHub page instead of the raw file</td><td>“This link opens a web page”</td><td>Use the <em>Raw</em> link.</td></tr>
+          <tr><td>An iptv-org file with an extra <code>name</code> field</td><td>Read as generic JSON, which requires <code>id</code>, so the whole file cannot be read</td><td>Keep the iptv-org shape exactly, or switch fully to generic JSON.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support-en">What TS IPTV supports</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>All four generic top-level shapes, including arrays</td><td><span class="badge yes">Supported</span> on every platform</td></tr>
+          <tr><td>Nested groups, <code>remote_data.url</code>, <code>image.url</code></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>Headers from <code>attributes</code> (generic) and <code>referrer</code>/<code>user_agent</code> (iptv-org)</td><td><span class="badge yes">Android</span> <span class="badge partial">iOS: best effort</span> <span class="badge partial">Desktop: User-Agent and Referer only</span></td></tr>
+          <tr><td><code>epgUrl</code></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>iptv-org <code>labels</code>, <code>quality</code></td><td><span class="badge partial">Accepted, not shown yet</span></td></tr>
+          <tr><td>DRM, catch-up</td><td><span class="badge no">Not in JSON</span> Use <a href="/guides/m3u/">M3U</a>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related-en">Related guides</h2>
+      <ul>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/xmltv/">XMLTV</a></li>
+        <li><a href="/guides/stremio-addons/">Stremio-compatible addons</a></li>
+        <li><a href="/guides/tsiptv-source/">TS IPTV Source</a></li>
+        <li><a href="/guides/">All guides</a></li>
+      </ul>
+    </section>
+  </article>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    TS IPTV · <a href="/guides/">Hướng dẫn / Guides</a> · <a href="/">Trang chủ / Home</a> · <a href="/privacy/">Quyền riêng tư / Privacy</a> · <a href="/terms/">Điều khoản / Terms</a>
+  </div>
+</footer>
+
+<script src="/assets/lang.js"></script>
+<script src="/assets/guides.js"></script>
+</body>
+</html>

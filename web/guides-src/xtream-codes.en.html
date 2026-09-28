@@ -1,0 +1,106 @@
+    <h1>Xtream Codes style links</h1>
+    <p class="lead">If your provider gave you a <strong>server</strong>, a <strong>username</strong> and a <strong>password</strong>, or a link that contains <code>get.php</code>, the service uses an Xtream Codes style API. This page explains those links and how to use them in TS IPTV.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels</strong> and recommends no provider. Every example uses the placeholder server <code>provider.example.com</code>, username <code>U</code> and password <code>P</code>.</p>
+    </div>
+
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+        <li><a href="#what-en">What it is</a></li>
+        <li><a href="#syntax-en">URL structure</a></li>
+        <li><a href="#example-en">Example</a></li>
+        <li><a href="#create-en">Create one</a></li>
+        <li><a href="#host-en">Hosting</a></li>
+        <li><a href="#add-en">Add it in TS IPTV</a></li>
+        <li><a href="#mistakes-en">Common mistakes</a></li>
+        <li><a href="#support-en">What TS IPTV supports</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what-en">What it is</h2>
+    <p>“Xtream Codes” is the name of panel software that many IPTV providers use to manage subscribers and streams. It is a <strong>provider API, not a file format</strong>: the provider's server generates an M3U playlist, an XMLTV guide and JSON data for your account. There is no official public specification; the structure below is the one open-source players use. Whether a provider is licensed to carry its channels is a question about that provider, not about the software it runs.</p>
+
+    <div class="card warn">
+      <p style="margin:0"><strong>The link contains your username and password.</strong> Do not share it, post it online or take screenshots that show it. Anyone who has the link can use your account.</p>
+    </div>
+
+    <h2 id="syntax-en">URL structure</h2>
+    <p><code>http(s)://provider.example.com:8080</code> is the server and port your provider gave you; <code>U</code> is the username, <code>P</code> the password.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Purpose</th><th>URL</th></tr></thead>
+        <tbody>
+          <tr><td>M3U playlist</td><td><code>…/get.php?username=U&amp;password=P&amp;type=m3u_plus&amp;output=ts</code><br><code>type=m3u_plus</code>: with names, logos, groups and <code>tvg-id</code>; <code>type=m3u</code>: without. <code>output=ts</code> (MPEG-TS) or <code>output=m3u8</code> (HLS).</td></tr>
+          <tr><td>Account information (JSON)</td><td><code>…/player_api.php?username=U&amp;password=P</code><br>Returns <code>user_info</code> (status, expiry date, maximum connections…) and <code>server_info</code>.</td></tr>
+          <tr><td>Categories and channel lists (JSON)</td><td><code>…/player_api.php?username=U&amp;password=P&amp;action=get_live_categories</code><br><code>…&amp;action=get_live_streams</code> (add <code>&amp;category_id=X</code> to filter)</td></tr>
+          <tr><td>Films and series (JSON)</td><td><code>…&amp;action=get_vod_categories</code>, <code>get_vod_streams</code>, <code>get_vod_info&amp;vod_id=X</code>, <code>get_series_categories</code>, <code>get_series</code>, <code>get_series_info&amp;series_id=X</code></td></tr>
+          <tr><td>XMLTV guide</td><td><code>…/xmltv.php?username=U&amp;password=P</code></td></tr>
+          <tr><td>One live channel</td><td><code>…/live/U/P/&lt;stream_id&gt;.ts</code> (or <code>.m3u8</code>)</td></tr>
+          <tr><td>One film / one episode</td><td><code>…/movie/U/P/&lt;id&gt;.&lt;ext&gt;</code>, <code>…/series/U/P/&lt;id&gt;.&lt;ext&gt;</code></td></tr>
+          <tr><td>Catch-up</td><td><code>…/timeshift/U/P/&lt;minutes&gt;/&lt;YYYY-MM-DD:HH-MM&gt;/&lt;stream_id&gt;.ts</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="example-en">Example</h2>
+    <p>This is the playlist link you paste into TS IPTV. There is no file to download: the provider's server generates the list for your account each time it is fetched.</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>http://provider.example.com:8080/get.php?username=U&amp;password=P&amp;type=m3u_plus&amp;output=ts</code></pre>
+    </div>
+    <p>What it returns is an ordinary <a href="/guides/m3u/">M3U</a> playlist. Some providers add a guide link to the first line, for example <code>#EXTM3U url-tvg="…/xmltv.php?username=U&amp;password=P"</code>. Each channel points to a <code>/live/U/P/…</code> link.</p>
+
+    <h2 id="create-en">Create one</h2>
+    <p>Not applicable: the provider's server generates the list; you do not write it.</p>
+
+    <h2 id="host-en">Hosting</h2>
+    <p>Not applicable: your provider hosts the list, the guide and the streams.</p>
+
+    <h2 id="add-en">Add it in TS IPTV</h2>
+    <p>TS IPTV has <strong>no separate Xtream login screen</strong>. You add the account as a playlist link:</p>
+    <ol>
+      <li>Build the link: <code>http(s)://&lt;server&gt;:&lt;port&gt;/get.php?username=U&amp;password=P&amp;type=m3u_plus&amp;output=ts</code>, replacing the server, the port, <code>U</code> (username) and <code>P</code> (password) with your provider's details. Many providers send this link ready-made.</li>
+      <li>Open <strong>Add IPTV Source</strong>, enter a <strong>Source Name</strong>, paste the link into <strong>Source Link</strong> and choose <strong>Add IPTV</strong>.</li>
+      <li>Programme guide: some providers add a <code>url-tvg</code> or <code>x-tvg-url</code> that points to <code>xmltv.php</code>, and then the guide loads automatically. If yours does not, TS IPTV has no separate guide URL field yet: download the list, add <code>x-tvg-url="…/xmltv.php?username=U&amp;password=P"</code> to its <code>#EXTM3U</code> line and use <strong>Import from file</strong> (see the <a href="/guides/xmltv/#add-en">XMLTV guide</a>).</li>
+    </ol>
+    <p>TS IPTV does not send this link to analytics.</p>
+
+    <h2 id="mistakes-en">Common mistakes</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Mistake</th><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>Using <code>type=m3u</code></td><td>Channels without groups, logos or guide</td><td>Use <code>type=m3u_plus</code>.</td></tr>
+          <tr><td>Pasting the <code>player_api.php</code> link</td><td>Not recognised as a playlist</td><td>That is a JSON API, not a playlist; use <code>get.php</code>.</td></tr>
+          <tr><td>Wrong port, or <code>https</code> when the server only speaks <code>http</code> (or the reverse)</td><td>Cannot connect</td><td>Use exactly the server, port and protocol your provider gave you.</td></tr>
+          <tr><td>The account has expired or is suspended</td><td>An empty list, or “The server refused this stream”</td><td>Check the account with your provider.</td></tr>
+          <tr><td>Too many connections (several devices watching)</td><td>Channels stop or are refused</td><td>Stop playback on the other device.</td></tr>
+          <tr><td>Channels do not play on iOS with <code>output=ts</code></td><td>Playback error</td><td>Try <code>output=m3u8</code> (HLS).</td></tr>
+          <tr><td>Sharing the link, or a screenshot that shows it</td><td>Someone else uses your account</td><td>Change your password with the provider.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support-en">What TS IPTV supports</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><code>get.php</code> playlists (<code>m3u</code>, <code>m3u_plus</code>)</td><td><span class="badge yes">Supported</span> on every platform</td></tr>
+          <tr><td>The <code>xmltv.php</code> guide through the list's <code>url-tvg</code>/<code>x-tvg-url</code></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>A separate Xtream login screen (server, username, password)</td><td><span class="badge no">Not available</span> Use the <code>get.php</code> link.</td></tr>
+          <tr><td>Films and series through <code>player_api.php</code></td><td><span class="badge no">Not supported</span> Only the entries in the M3U list.</td></tr>
+          <tr><td>Catch-up (<code>catchup="xc"</code>)</td><td><span class="badge partial">Stored, playback coming later</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related-en">Related guides</h2>
+      <ul>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/xmltv/">XMLTV</a></li>
+        <li><a href="/guides/">All guides</a></li>
+      </ul>
+    </section>

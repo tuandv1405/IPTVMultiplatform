@@ -1,0 +1,574 @@
+    <h1>TS IPTV Source format</h1>
+    <p class="lead">A TS IPTV Source is one JSON file that describes a complete, branded collection: who made it, its colours, its home screen layout, live TV and radio channels, movies, series with seasons and episodes, programme guides, and links to other playlists, guides and addons. It is open, documented on this page, and checked by a published JSON Schema.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels and no sources.</strong> A TS IPTV Source contains only the links its creator puts in it; TS IPTV does not list, host or recommend any. Every example on this page uses <code>example.com</code> placeholders, a public test stream, public-domain films from archive.org, or TS IPTV's own example files on <code>tsiptv-8bdd6.web.app</code>.</p>
+    </div>
+
+    <p><strong>Files:</strong> <a href="/schema/tsiptv-source-v1.json">JSON Schema</a> (<code>https://tsiptv-8bdd6.web.app/schema/tsiptv-source-v1.json</code>, draft 2020-12) · examples <a href="/examples/minimal-live.tsiptv.json">minimal-live</a>, <a href="/examples/vod-catalog.tsiptv.json">vod-catalog</a>, <a href="/examples/composed-includes.tsiptv.json">composed-includes</a> · <a href="/guides/tsiptv-source/validate/">browser validator</a>.</p>
+
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+        <li><a href="#what-en">What it is</a></li>
+        <li><a href="#quick-en">Quick start</a></li>
+        <li><a href="#syntax-en">The format, part by part</a></li>
+        <li><a href="#validation-en">Validation: errors and warnings</a></li>
+        <li><a href="#example-en">Complete examples</a></li>
+        <li><a href="#create-en">Create your own, step by step</a></li>
+        <li><a href="#host-en">Host it</a></li>
+        <li><a href="#add-en">Add it in TS IPTV</a></li>
+        <li><a href="#mistakes-en">Common mistakes</a></li>
+        <li><a href="#support-en">What TS IPTV supports</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what-en">What it is</h2>
+    <p>M3U describes a list of channels. A TS IPTV Source describes a whole collection, and how its home screen should look. Use it when you want movies and series with posters and episodes, your own sections and colours, several streams per item, or when you want to combine existing M3U playlists, XMLTV guides, Stremio-compatible addons and other sources into one.</p>
+    <p>The format follows five rules:</p>
+    <ol>
+      <li><strong>Data, never code.</strong> No scripts, expressions, HTML or Markdown. Every text is plain text; TS IPTV never runs anything from a source.</li>
+      <li><strong>Links, not content.</strong> The file carries the links its creator supplies. The format, the schema and the app ship no content.</li>
+      <li><strong>Easy by hand.</strong> The smallest valid file is ten lines. Shorthands cover the common cases (<code>url</code> instead of <code>streams</code>, a plain string instead of a translated object).</li>
+      <li><strong>Forward compatible.</strong> Unknown fields are ignored and unknown values fall back in a defined way, so an older app keeps reading newer files. Only a breaking change raises <code>version</code>.</li>
+      <li><strong>Same meaning as M3U.</strong> Headers, DRM and catch-up mean exactly what they mean in <a href="/guides/kodi/">Kodi-style M3U</a>, so a channel plays the same in both formats.</li>
+    </ol>
+    <p>This page is the public reference of version 1. The JSON Schema is stricter than the app, so a file that passes it is almost always accepted. The exceptions are things the schema cannot see: a file larger than 5 MiB; <code>format</code> placed after the first 64 KiB; impossible calendar dates such as <code>2026-02-30</code> (TS IPTV warns and ignores the field); duplicate ids and references to missing items (checked by the app and by the validator); and includes that fail or form a cycle (<code>E_INCLUDE</code>, <code>E_INCLUDE_CYCLE</code>, and <code>E_EMPTY</code> if nothing else is left).</p>
+
+    <h2 id="quick-en">Quick start</h2>
+    <p>The smallest useful file: one channel that really plays (the Mux public test stream, Big Buck Bunny © Blender Foundation, CC BY 3.0).</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>{
+  "$schema": "https://tsiptv-8bdd6.web.app/schema/tsiptv-source-v1.json",
+  "format": "tsiptv-source",
+  "version": 1,
+  "id": "com.example.my-channels",
+  "meta": { "name": "My Channels" },
+  "channels": [
+    { "id": "test-hls", "name": "HLS Test Channel", "url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" }
+  ]
+}</code></pre>
+    </div>
+    <p>Save it as <code>my-channels.tsiptv.json</code> (UTF-8), put it on any HTTPS host, and add the link in TS IPTV. The <code>$schema</code> line makes editors such as VS Code check the file and suggest fields as you type.</p>
+
+    <h2 id="syntax-en">The format, part by part</h2>
+
+    <h3 id="file-en">The file</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Property</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td>Encoding</td><td>UTF-8. A leading BOM is tolerated but should not be written.</td></tr>
+          <tr><td>Syntax</td><td>JSON: no comments, no trailing commas. The root is an object.</td></tr>
+          <tr><td>Detection</td><td>A file is a TS IPTV Source when its top-level <code>"format"</code> is <code>"tsiptv-source"</code>. The file name and the server's content type do not matter. TS IPTV looks for <code>format</code> in the first 64 KiB of the file, so put it near the top (right after <code>$schema</code>).</td></tr>
+          <tr><td>Extension</td><td><code>.tsiptv.json</code> is suggested (for example <code>my-channels.tsiptv.json</code>).</td></tr>
+          <tr><td>Size</td><td>At most <strong>5 MiB</strong> after decompression, for the file itself and for every included source.</td></tr>
+          <tr><td>Compression</td><td>HTTP <code>Content-Encoding: gzip</code>, or a gzip-compressed file, are both accepted.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="top-en">Top level</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Field</th><th>Required</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>$schema</code></td><td>no</td><td>The schema URL, for editors. TS IPTV never fetches it.</td></tr>
+          <tr><td><code>format</code></td><td><strong>yes</strong></td><td>Exactly <code>"tsiptv-source"</code>.</td></tr>
+          <tr><td><code>version</code></td><td><strong>yes</strong></td><td><code>1</code>. A higher number means “needs a newer TS IPTV”.</td></tr>
+          <tr><td><code>id</code></td><td><strong>yes</strong></td><td>Stable identifier of the source, an <a href="#ids-en">Id</a>. Reverse-DNS is recommended (<code>com.example.news</code>). The same <code>id</code> from the same link is an update.</td></tr>
+          <tr><td><code>revision</code></td><td>no</td><td>Integer ≥ 0 that you increase when you publish a change (default 0).</td></tr>
+          <tr><td><code>meta</code></td><td><strong>yes</strong></td><td><a href="#meta-en">Metadata</a>.</td></tr>
+          <tr><td><code>appearance</code></td><td>no</td><td><a href="#appearance-en">Colours and card style</a>.</td></tr>
+          <tr><td><code>layout</code></td><td>no</td><td><a href="#layout-en">Home screen sections</a>. Without it, a <a href="#default-layout-en">default layout</a> is used.</td></tr>
+          <tr><td><code>channels</code></td><td>no</td><td>Live TV and radio, at most 10,000.</td></tr>
+          <tr><td><code>movies</code></td><td>no</td><td>At most 5,000.</td></tr>
+          <tr><td><code>series</code></td><td>no</td><td>At most 1,000 (and 20,000 episodes in total).</td></tr>
+          <tr><td><code>epg</code></td><td>no</td><td>XMLTV guide links, at most 10.</td></tr>
+          <tr><td><code>includes</code></td><td>no</td><td>Remote documents, at most 20.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A file must contain at least one non-empty <code>channels</code>, <code>movies</code>, <code>series</code> or <code>includes</code>.</p>
+
+    <h3 id="rules-en">General rules</h3>
+    <ul>
+      <li><strong><code>x-</code> members</strong>: any field whose name starts with <code>x-</code> is yours (notes, tool data). TS IPTV ignores it and the format will never define one. This does not apply to header names, language keys or DRM key ids, which are data.</li>
+      <li><strong><code>null</code></strong> is the same as leaving the field out.</li>
+      <li><strong>Unknown fields</strong> are ignored by the app, but the schema reports them so you catch typos.</li>
+      <li><strong>Text</strong> is trimmed; a value that is empty after trimming is invalid. Lengths count characters (Unicode code points).</li>
+      <li><strong>Control characters</strong>: the schema allows none in texts, except line breaks in long texts (descriptions). TS IPTV is lenient here: a line break or control character in a one-line text is replaced by a space and reported as a warning, not an error. URLs and catch-up sources must contain none; header values allow only tab.</li>
+    </ul>
+
+    <h3 id="meta-en"><code>meta</code></h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Field</th><th>Required</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>name</code></td><td><strong>yes</strong></td><td><a href="#text-en">Text</a>: the source's display name.</td></tr>
+          <tr><td><code>description</code></td><td>no</td><td>Long text.</td></tr>
+          <tr><td><code>author</code></td><td>no</td><td><code>{ "name" (required, 1–100), "url"?, "email"? }</code>.</td></tr>
+          <tr><td><code>logo</code></td><td>no</td><td>Square image URL, 256×256 or larger.</td></tr>
+          <tr><td><code>homepage</code></td><td>no</td><td>Shown in “About this source”; TS IPTV asks before opening it.</td></tr>
+          <tr><td><code>language</code></td><td>no</td><td>Language of plain-string texts and the fallback language (default <code>en</code>).</td></tr>
+          <tr><td><code>languages</code></td><td>no</td><td>Languages of the content, for display (at most 20).</td></tr>
+          <tr><td><code>updatedAt</code></td><td>no</td><td>Date-time such as <code>2026-09-27T10:00:00Z</code>.</td></tr>
+          <tr><td><code>adult</code></td><td>no</td><td><code>true</code> if the source contains adult content. Any value that is not <code>true</code> or <code>false</code> also counts as adult. TS IPTV then warns and asks “I am 18 or older” before importing.</td></tr>
+          <tr><td><code>license</code></td><td>no</td><td>Licence of the listing (not of the streams), free text or an SPDX id, up to 200 characters.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="text-en">Texts and translations</h3>
+    <p>Every visible text is either a plain string, in the language of <code>meta.language</code>, or an object that maps language tags to strings:</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>"name": "Movies"
+"name": { "en": "Movies", "vi": "Phim lẻ", "zh-CN": "电影" }</code></pre>
+    </div>
+    <ul>
+      <li><strong>Text</strong> (names, titles): 1–200 characters, one line. <strong>Long text</strong> (descriptions): 1–5,000 characters; line breaks allowed (LF, CR or CRLF).</li>
+      <li>Language tags: <code>en</code>, <code>vi</code>, <code>zh-CN</code>, <code>pt-BR</code> (pattern <code>^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$</code>); at most 30 per object.</li>
+      <li>TS IPTV picks, in order: the app's language exactly (<code>zh-CN</code>), then its main language (<code>zh</code>, then any <code>zh-…</code>), then <code>meta.language</code>, then <code>en</code>, then the first entry.</li>
+      <li>Texts are shown as written: no HTML, no Markdown.</li>
+    </ul>
+
+    <h3 id="ids-en">Ids, URLs, headers, colours</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Type</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td>Id</td><td><code>^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$</code>: letters, digits, <code>.</code>, <code>_</code>, <code>-</code>, case-sensitive, <strong>no <code>:</code></strong> (the colon is reserved for included items, <code>includeId:itemId</code>). Every id of a channel, movie, series, episode and include must be unique in the file. The first one wins, in this order: channels, movies, series (each followed by its episodes), includes; an item that is dropped does not claim its id.</td></tr>
+          <tr><td>URL</td><td>Absolute <code>http://</code> or <code>https://</code>, at most 2,048 characters, no spaces or control characters. Every URL in the file (streams, images, includes, licence servers) follows this rule; <code>rtmp:</code>, <code>udp:</code>, <code>file:</code>, <code>data:</code> and all other schemes are invalid. Prefer <code>https</code>.</td></tr>
+          <tr><td>Headers</td><td>An object of header name → value, for example <code>{ "User-Agent": "Mozilla/5.0", "Referer": "https://example.com/" }</code>. At most 20. Values are sent exactly as written (not URL-decoded), up to 4,096 characters. <code>Host</code>, <code>Content-Length</code>, <code>Connection</code> and <code>Transfer-Encoding</code> are forbidden. Headers go with every request of the stream (manifests, segments, keys), not with the DRM licence request.</td></tr>
+          <tr><td>Colour</td><td><code>#RRGGBB</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="appearance-en"><code>appearance</code></h3>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>"appearance": {
+  "accent": "#FFB300",
+  "accentSecondary": "#FF7043",
+  "background": { "gradient": ["#101014", "#1C1C24"], "image": "https://example.com/bg.jpg", "imageDim": 0.7 },
+  "card": { "style": "poster", "corner": "medium", "showTitles": true }
+}</code></pre>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Field</th><th>Default</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>accent</code></td><td>app accent</td><td>Focus rings, selected chips, buttons, progress bars.</td></tr>
+          <tr><td><code>accentSecondary</code></td><td>app secondary</td><td>Gradients on buttons and badges.</td></tr>
+          <tr><td><code>background.color</code></td><td>app background</td><td>Solid background.</td></tr>
+          <tr><td><code>background.gradient</code></td><td>none</td><td>2–3 colours, top to bottom; replaces <code>color</code>.</td></tr>
+          <tr><td><code>background.image</code></td><td>none</td><td>Image behind the home, under a dark scrim.</td></tr>
+          <tr><td><code>background.imageDim</code></td><td><code>0.6</code></td><td>Scrim opacity, 0.3–1.0.</td></tr>
+          <tr><td><code>card</code></td><td><code>{ "style": "auto" }</code></td><td>Default card style for every section.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Card style</strong>: <code>style</code> is <code>auto</code>, <code>poster</code> (2:3), <code>landscape</code> (16:9), <code>square</code>, <code>logo</code> (channel logo tile) or <code>list</code> (one line: logo, name, programme now on); <code>auto</code> means poster for movies and series, logo for TV, square for radio, landscape for episodes, and the item's own <code>posterShape</code> for items from a Stremio-compatible catalogue. <code>corner</code> is <code>none</code>, <code>small</code>, <code>medium</code> or <code>large</code>. <code>showTitles</code> hides names on cards when <code>false</code> (channels and lists always show them).</p>
+    <p><strong>Legibility.</strong> TS IPTV keeps its own light text colour. If your background colour (or a gradient stop) gives a contrast below 4.5:1 with that text, TS IPTV uses its own background (a background image is kept). If the accent has a contrast below 3:1 with the background, both accents are replaced by the app's. Appearance applies to the source's home and detail pages only; the player, dialogs and settings keep the app theme.</p>
+
+    <h3 id="layout-en"><code>layout</code>: the home screen</h3>
+    <p><code>layout.home</code> is a list of 1–30 sections, drawn top to bottom.</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>"layout": {
+  "home": [
+    { "type": "hero", "query": { "from": "movies", "limit": 5 } },
+    { "type": "row", "title": { "en": "Continue watching", "vi": "Xem tiếp" }, "query": { "from": "continueWatching" } },
+    { "type": "row", "title": "News", "query": { "from": "channels", "groups": ["News"] }, "card": { "style": "logo" } },
+    { "type": "grid", "title": "All channels", "query": { "from": "channels", "sort": "number" }, "groupChips": true }
+  ]
+}</code></pre>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Section field</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>type</code> (required)</td><td><code>hero</code> (banner carousel, 1–10 items), <code>row</code> (one horizontal line, default 20 items, at most 100) or <code>grid</code> (all matching items, loaded in pages).</td></tr>
+          <tr><td><code>id</code></td><td>Lets TS IPTV remember the scroll and focus position of the section.</td></tr>
+          <tr><td><code>title</code>, <code>subtitle</code></td><td>Heading and smaller line (not shown on a hero).</td></tr>
+          <tr><td><code>query</code></td><td>What the section shows (required, except a hero with <code>items</code>).</td></tr>
+          <tr><td><code>items</code></td><td>Hero only: hand-made banners <code>{ "image" (16:9, required), "title", "subtitle", "target", "autoplay" }</code>. A hero has <code>query</code> or <code>items</code>, not both.</td></tr>
+          <tr><td><code>card</code></td><td>Card style for this section (ignored by a hero).</td></tr>
+          <tr><td><code>seeAll</code></td><td>Row only (default <code>true</code>): a “See all” action opening the whole query as a grid.</td></tr>
+          <tr><td><code>groupChips</code></td><td>Grid of <code>channels</code> or <code>radio</code> only: group filter chips above the grid.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A hero with a query uses each item's <code>backdrop</code>, else <code>poster</code>, else <code>logo</code>, and skips items without an image. A banner's <code>target</code> is the id of a channel, movie, series or episode (included items as <code>includeId:itemId</code>); without a target the banner is decorative. <code>autoplay: true</code> plays the target instead of opening its page (channels, movies and episodes only). Banners cannot open websites. A section that finds no items is not drawn.</p>
+
+    <h4 id="query-en">Queries</h4>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Query field</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>from</code> (required)</td><td><code>channels</code>, <code>radio</code>, <code>movies</code>, <code>series</code>, <code>catalog</code> (a catalogue of a Stremio-compatible addon include), <code>continueWatching</code>, <code>favorites</code>.</td></tr>
+          <tr><td><code>include</code></td><td>Only items from the include with this id. Required for <code>catalog</code>, where it names the <code>stremio</code> include.</td></tr>
+          <tr><td><code>catalog</code></td><td>For <code>from: "catalog"</code>: <code>{ "type", "id", "genre"? }</code> of a catalogue declared in that addon's manifest.</td></tr>
+          <tr><td><code>ids</code></td><td>Only these items, in this order (1–500; included items as <code>includeId:itemId</code>). Unknown ids are skipped.</td></tr>
+          <tr><td><code>groups</code>, <code>genres</code>, <code>tags</code></td><td>Items whose groups (channels), genres (movies, series) or tags contain any of these; case-insensitive.</td></tr>
+          <tr><td><code>sort</code></td><td><code>source</code> (file order; included items after your own), <code>name</code>, <code>number</code>, <code>year</code>, <code>yearDesc</code>, <code>recent</code> (Continue watching).</td></tr>
+          <tr><td><code>limit</code></td><td>1–500 items.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Filters combine with AND between fields and OR inside a field. A filter that does not apply (for example <code>genres</code> on channels) is ignored. For <code>catalog</code>, only <code>catalog.genre</code> filters and the addon's own order is kept. <code>continueWatching</code> (partly watched movies and episodes, recently played channels) and <code>favorites</code> (favourite channels) come from the viewer's own history, never from the file; they stay hidden until they have items.</p>
+
+    <h4 id="default-layout-en">Default layout</h4>
+    <p>Without <code>layout</code>, TS IPTV shows: Continue watching; a hero of movies (only if a movie has a <code>backdrop</code>); Movies; Series; Radio; and a grid of Channels sorted by number with group chips. Empty sections are left out.</p>
+
+    <h3 id="content-en">Channels, movies and series</h3>
+    <p><strong>Playable fields</strong>, shared by channels, movies and episodes. An item has <strong>exactly one</strong> of <code>url</code> and <code>streams</code>:</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>url</code></td><td>One stream. Short for <code>"streams": [{ "url": … }]</code>.</td></tr>
+          <tr><td><code>streams</code></td><td>1–10 alternatives, best first. TS IPTV plays the first one the device supports and lets the viewer pick another.</td></tr>
+          <tr><td><code>headers</code></td><td>Headers for every stream of the item; a stream's own headers win, name by name.</td></tr>
+          <tr><td><code>mimeType</code></td><td>Stream type hint for every stream.</td></tr>
+          <tr><td><code>drm</code></td><td>DRM for every stream; a stream's own <code>drm</code> replaces it.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4 id="channel-en">Channel</h4>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>{
+  "id": "example-news",
+  "name": { "en": "Example News", "vi": "Tin tức Ví dụ" },
+  "number": 101,
+  "logo": "https://example.com/logos/news.png",
+  "groups": ["News", "HD"],
+  "epgId": "ExampleNews.us",
+  "url": "https://cdn.example.com/news/index.m3u8",
+  "headers": { "Referer": "https://example.com/" },
+  "catchup": { "mode": "shift", "days": 3 }
+}</code></pre>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code>, <code>name</code> (required)</td><td>Id and Text.</td></tr>
+          <tr><td><code>type</code></td><td><code>tv</code> (default) or <code>radio</code>.</td></tr>
+          <tr><td><code>number</code></td><td>0–99,999, shown on cards and used by <code>sort: "number"</code>.</td></tr>
+          <tr><td><code>logo</code></td><td>Logo URL (transparent PNG recommended).</td></tr>
+          <tr><td><code>groups</code></td><td>0–10 group names (1–100 characters). Matched case-insensitively and shown as written; they are not translated.</td></tr>
+          <tr><td><code>epgId</code></td><td>The XMLTV <code>&lt;channel id&gt;</code> of this channel. Without it, the guide is matched by name.</td></tr>
+          <tr><td><code>epgShiftHours</code></td><td>−12 … +14 hours added to this channel's guide times.</td></tr>
+          <tr><td><code>description</code>, <code>tags</code></td><td>Long text; 0–20 tags of 1–50 characters.</td></tr>
+          <tr><td><code>catchup</code></td><td><a href="#catchup-en">Catch-up</a>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4 id="movie-en">Movie</h4>
+    <p><code>id</code> and <code>name</code> are required, plus the playable fields. Optional: <code>originalName</code>, <code>poster</code> (2:3), <code>backdrop</code> (16:9, used by heroes and detail pages), <code>logo</code> (title logo), <code>description</code>, <code>year</code> (1870–2100), <code>releaseDate</code> (<code>YYYY-MM-DD</code>), <code>runtimeMinutes</code> (1–1,440), <code>genres</code> (0–10), <code>cast</code> (0–50), <code>directors</code> (0–20), <code>countries</code> (ISO codes such as <code>US</code>), <code>languages</code>, <code>ageRating</code> (as printed, for example <code>PG-13</code>), <code>tags</code>, <code>subtitles</code> (0–30).</p>
+
+    <h4 id="series-en">Series, seasons, episodes</h4>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>{
+  "id": "fleischer-superman",
+  "name": "Fleischer Superman",
+  "year": 1941,
+  "endYear": 1943,
+  "seasons": [
+    {
+      "number": 1,
+      "episodes": [
+        { "id": "fleischer-superman-s1e1", "number": 1, "name": "The Mechanical Monsters",
+          "url": "https://archive.org/download/superman_the_mechanical_monsters/superman_the_mechanical_monsters_512kb.mp4" }
+      ]
+    }
+  ]
+}</code></pre>
+    </div>
+    <ul>
+      <li>A series has <code>id</code> and <code>name</code> (required), <code>originalName</code>, <code>poster</code>, <code>backdrop</code>, <code>logo</code>, <code>description</code>, <code>year</code> (first year), <code>endYear</code> (last year, not before <code>year</code>; absent = ongoing), <code>genres</code>, <code>cast</code>, <code>countries</code>, <code>languages</code>, <code>ageRating</code>, <code>tags</code> and <code>seasons</code> (1–100). It has no playable fields, and no <code>directors</code>, <code>releaseDate</code>, <code>runtimeMinutes</code> or <code>subtitles</code>.</li>
+      <li>A season has <code>number</code> (0–999, unique in the series; <code>0</code> = Specials, listed last), optional <code>name</code>, <code>poster</code>, <code>description</code>, and <code>episodes</code> (1–500).</li>
+      <li>An episode has <code>id</code> (unique in the whole file; used for watch progress), <code>number</code> (unique in the season), <code>name</code>, the playable fields, and optional <code>description</code>, <code>thumbnail</code> (16:9), <code>releaseDate</code> (a future date means “upcoming”, listed but not playable), <code>runtimeMinutes</code>, <code>subtitles</code>.</li>
+    </ul>
+
+    <h4 id="stream-en">Stream</h4>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>url</code> (required)</td><td>HLS <code>.m3u8</code>, DASH <code>.mpd</code>, MP4, WebM, MKV, MPEG-TS, or audio (AAC, MP3, Opus).</td></tr>
+          <tr><td><code>name</code></td><td>Label in the stream picker, such as <code>1080p</code> or <code>Backup</code>.</td></tr>
+          <tr><td><code>headers</code>, <code>drm</code></td><td>As above; merged over, or replacing, the item's.</td></tr>
+          <tr><td><code>mimeType</code></td><td>When the URL has no telling extension: <code>application/x-mpegURL</code> or <code>application/vnd.apple.mpegurl</code> (HLS), <code>application/dash+xml</code>, <code>video/mp4</code>, <code>video/mp2t</code>, <code>video/webm</code>, <code>video/x-matroska</code>, <code>audio/aac</code>, <code>audio/mpeg</code>, <code>audio/ogg</code>.</td></tr>
+          <tr><td><code>quality</code>, <code>language</code></td><td>Badges: <code>HD</code>, <code>720p</code>; audio language tag.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4 id="drm-en">DRM</h4>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>"drm": { "system": "widevine", "licenseUrl": "https://license.example.com/widevine", "licenseHeaders": { "X-Example": "1" } }
+"drm": { "system": "clearkey", "keys": { "000102030405060708090a0b0c0d0e0f": "00112233445566778899aabbccddeeff" } }</code></pre>
+    </div>
+    <ul>
+      <li><code>system</code>: <code>widevine</code>, <code>playready</code> (licence URL required) or <code>clearkey</code> (a licence URL, or <code>keys</code>: 1–20 pairs of 32-hex key id → 32-hex key).</li>
+      <li>TS IPTV sends the raw challenge to <code>licenseUrl</code> and expects the raw licence back; <code>licenseHeaders</code> go with that request only. Wrapped or JSON licence protocols are not part of version 1.</li>
+      <li>Widevine and PlayReady play on Android; ClearKey on Android for DASH only. iPhone, iPad and desktop show “DRM is not supported on this device” and try the item's next stream without DRM, if there is one.</li>
+      <li>Publish only keys and licence servers you are entitled to share.</li>
+    </ul>
+
+    <h4 id="catchup-en">Catch-up</h4>
+    <p><code>catchup</code> uses the same modes and placeholders as <a href="/guides/kodi/#catchup-en">Kodi M3U catch-up</a>: <code>{ "mode", "source"?, "days"? (1–60, default 7), "correctionHours"? (−24 … +24) }</code>. <code>mode</code> is <code>default</code> (<code>source</code> is a full URL template starting with <code>http://</code> or <code>https://</code>), <code>append</code> (<code>source</code> is appended to the live URL, for example <code>?utc={utc}&amp;lutc={lutc}</code>), <code>shift</code>, <code>flussonic</code>, <code>flussonic-ts</code> or <code>xc</code>. For <code>default</code> and <code>append</code>, <code>source</code> is required and never trimmed: any space or control character makes it invalid (<code>W_FIELD</code>), the catch-up is dropped and the channel plays live only. The other modes build the URL from the live link and ignore <code>source</code>. <strong>TS IPTV stores catch-up information; playback of past programmes comes later.</strong></p>
+
+    <h4 id="subtitle-en">Subtitles</h4>
+    <p><code>{ "url" (WebVTT or SubRip), "language" (required), "label"?, "format"? ("vtt" or "srt") }</code>. TS IPTV offers them on Android and desktop; iPhone and iPad do not show them yet.</p>
+
+    <h3 id="includes-en"><code>epg</code> and <code>includes</code></h3>
+    <p><code>epg</code> is a list of XMLTV guide links, each a URL string or <code>{ "url", "refreshHours"? }</code> (1–720, default 24). Guides may be gzip-compressed. Programmes are matched to channels by <code>epgId</code>, then by name.</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>"includes": [
+  { "id": "news", "type": "m3u", "url": "https://example.com/playlists/news.m3u", "name": "Partner news" },
+  { "id": "guide", "type": "xmltv", "url": "https://example.com/epg/guide.xml.gz", "refreshHours": 12 },
+  { "id": "sampler", "type": "stremio", "url": "https://addon.example.com/manifest.json" },
+  { "id": "archive", "type": "tsiptv-source", "url": "https://example.com/archive.tsiptv.json" }
+]</code></pre>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Include field</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code> (required)</td><td>Unique Id; prefixes the included items (<code>news:ExampleTV.us</code>). Must not start with <code>epg-</code> (reserved for <code>epg</code> links).</td></tr>
+          <tr><td><code>type</code> (required)</td><td><code>m3u</code>, <code>xmltv</code>, <code>stremio</code> or <code>tsiptv-source</code>.</td></tr>
+          <tr><td><code>url</code> (required)</td><td>For <code>stremio</code>, the manifest link ending in <code>/manifest.json</code>.</td></tr>
+          <tr><td><code>name</code></td><td>Shown in “About this source” and in error messages.</td></tr>
+          <tr><td><code>refreshHours</code></td><td>Minimum hours between automatic fetches (1–720, default 24).</td></tr>
+          <tr><td><code>headers</code></td><td>Sent when fetching an <code>m3u</code>, <code>xmltv</code> or <code>tsiptv-source</code> document; not sent to addons or streams.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Type</th><th>What it adds</th><th>Item ids</th></tr></thead>
+        <tbody>
+          <tr><td><code>m3u</code></td><td>Channels (radio entries go to radio), read with TS IPTV's <a href="/guides/m3u/">M3U</a> reader including headers and DRM; its <code>x-tvg-url</code> guides join the guide set.</td><td><code>includeId:</code> + the channel's <code>tvg-id</code> (or name), characters outside the Id set replaced by <code>_</code>: <code>ExampleTV.us@HD</code> → <code>live:ExampleTV.us_HD</code>.</td></tr>
+          <tr><td><code>xmltv</code></td><td>Guide data only; cannot be used in a query.</td><td>—</td></tr>
+          <tr><td><code>stremio</code></td><td>Nothing in the pools; its catalogues are shown with <code>from: "catalog"</code>. Only <code>url</code> streams play (see <a href="/guides/stremio-addons/">Stremio-compatible addons</a>).</td><td>The addon's own ids.</td></tr>
+          <tr><td><code>tsiptv-source</code></td><td>Its channels, radio, movies, series and guide links. Its <code>meta</code>, <code>appearance</code> and <code>layout</code> are ignored.</td><td><code>includeId:</code> + its item id (chains: <code>archive:partner:item</code>).</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul>
+      <li><strong>Depth and cycles</strong>: the root is depth 1; included sources may include others down to depth 3. An include of any type below depth 3, or one whose URL is already on the path, is refused (<code>E_INCLUDE_CYCLE</code>).</li>
+      <li><strong>Totals per refresh</strong>: at most 20 includes in the whole tree (guide links not counted), 50 MiB fetched (all documents including the root; a <code>304</code> counts 0), and 20,000 channels, 5,000 movies and 1,000 series after merging. An M3U include may be up to 20 MiB, an XMLTV include up to 100 MiB, a TS IPTV Source include up to 5 MiB.</li>
+      <li><strong>Failures</strong>: a failing include never fails your source. TS IPTV keeps the last good copy; without one, sections using that include are hidden.</li>
+      <li><strong>Adult content</strong>: if any included source has <code>meta.adult: true</code> (or any value that is not a boolean), or any addon's manifest declares adult content, TS IPTV asks for the 18+ confirmation for the whole source before storing anything. If a later refresh makes a source you have not confirmed adult, the new content of the include that caused it is held back (the previous copy stays) until you confirm in “About this source”.</li>
+    </ul>
+
+    <h3 id="limits-en">Limits</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>What</th><th>Limit</th></tr></thead>
+        <tbody>
+          <tr><td>File size</td><td>5 MiB per document after decompression; 50 MiB per refresh for the whole tree</td></tr>
+          <tr><td>Items</td><td>10,000 channels, 5,000 movies, 1,000 series, 20,000 episodes per document; 20,000 / 5,000 / 1,000 after merging</td></tr>
+          <tr><td>Series</td><td>100 seasons, 500 episodes per season</td></tr>
+          <tr><td>Streams, subtitles</td><td>10 streams per item; 30 subtitles</td></tr>
+          <tr><td>Headers</td><td>20 per map (also after merging item and stream headers); values up to 4,096 characters</td></tr>
+          <tr><td>Layout</td><td>30 sections; 10 hero items; query <code>limit</code> and <code>ids</code> up to 500; rows show at most 100</td></tr>
+          <tr><td>Includes</td><td>20 per document and in the tree; depth 3; 10 <code>epg</code> links per document</td></tr>
+          <tr><td>Texts</td><td>200 characters (Text), 5,000 (long text), 30 languages per text; URLs 2,048</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="security-en">Security and privacy</h3>
+    <ul>
+      <li>TS IPTV never runs, evaluates or renders as markup anything from a source.</li>
+      <li>Only <code>http</code> and <code>https</code> links are ever opened.</li>
+      <li>A source cannot open websites, install anything or download files. Importing fetches only the file and its includes; images load when shown; streams load only when the viewer presses play.</li>
+      <li>URLs and headers may carry tokens. TS IPTV does not send them to analytics, crash reports or its own servers, and does not log them in release builds.</li>
+      <li>Home servers on your local network are allowed.</li>
+      <li>Adult content always needs the 18+ confirmation (root or includes).</li>
+    </ul>
+
+    <h3 id="versioning-en">Versions and unknown values</h3>
+    <p>New optional fields and new values are added to version 1 over time, at the same schema URL. When TS IPTV meets a value it does not know yet, it falls back instead of failing:</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Unknown value in</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>section <code>type</code>, query <code>from</code></td><td>The section is skipped.</td></tr>
+          <tr><td>query <code>sort</code></td><td><code>source</code> order.</td></tr>
+          <tr><td>card <code>style</code> / <code>corner</code></td><td><code>auto</code> / <code>medium</code>.</td></tr>
+          <tr><td>channel <code>type</code></td><td>Treated as <code>tv</code>.</td></tr>
+          <tr><td>include <code>type</code></td><td>The include is skipped (<code>E_INCLUDE</code>).</td></tr>
+          <tr><td>stream <code>mimeType</code></td><td>The hint is ignored.</td></tr>
+          <tr><td><code>drm.system</code></td><td>The stream is never played without DRM; it is unplayable on that device.</td></tr>
+          <tr><td><code>catchup.mode</code></td><td>No catch-up; live playback works.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A change that would alter the meaning of existing files will be version 2, with a new schema (<code>tsiptv-source-v2.json</code>); the version 1 schema stays published.</p>
+
+    <h2 id="validation-en">Validation: errors and warnings</h2>
+    <p>TS IPTV checks a source on three levels. <strong>Document errors</strong> reject the file. <strong>Item errors</strong> drop the item or field and import the rest. <strong>Warnings</strong> change nothing but are listed. Every problem is reported as <code>path — message</code>, for example <code>channels[3].url — must start with http:// or https://</code> (illustrative; the exact wording may differ).</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Code</th><th>Level</th><th>When</th><th>What the viewer sees</th></tr></thead>
+        <tbody>
+          <tr><td><code>E_NOT_JSON</code></td><td>document</td><td>Not JSON, or the root is not an object</td><td>“This file is not valid JSON.”</td></tr>
+          <tr><td><code>E_NOT_SOURCE</code></td><td>document</td><td><code>format</code> missing or wrong</td><td>“This is not a TS IPTV Source file.”</td></tr>
+          <tr><td><code>E_VERSION</code></td><td>document</td><td><code>version</code> missing, not an integer ≥ 1, or newer than the app</td><td>“This source needs a newer version of TS IPTV.”</td></tr>
+          <tr><td><code>E_TOO_LARGE</code></td><td>document</td><td>Over 5 MiB</td><td>“This source is larger than 5 MB.”</td></tr>
+          <tr><td><code>E_ID</code>, <code>E_META</code></td><td>document</td><td><code>id</code>, <code>meta</code> or <code>meta.name</code> missing or invalid</td><td>“This source is missing its id or name.”</td></tr>
+          <tr><td><code>E_EMPTY</code></td><td>document</td><td>No items and no includes (or all were dropped)</td><td>“This source has nothing that TS IPTV can show.”</td></tr>
+          <tr><td><code>E_ITEM_ID</code></td><td>item</td><td>Missing or invalid id; season or episode number missing or out of range; an entry that is not an object</td><td rowspan="6">Before import: “N items will be skipped” with <strong>Details</strong>. After import: the count in the success message. On refresh: listed in “About this source”.</td></tr>
+          <tr><td><code>E_DUPLICATE_ID</code></td><td>item</td><td>Id (or season/episode number) already used</td></tr>
+          <tr><td><code>E_ITEM_NAME</code></td><td>item</td><td>Missing or invalid <code>name</code></td></tr>
+          <tr><td><code>E_NO_STREAM</code></td><td>item</td><td>No <code>url</code>/<code>streams</code>, both, or no valid stream left; a series or season with nothing valid inside</td></tr>
+          <tr><td><code>E_INCLUDE</code></td><td>include</td><td>Invalid include, a rejected included source, or a failed fetch (the last good copy is kept)</td></tr>
+          <tr><td><code>E_INCLUDE_CYCLE</code></td><td>include</td><td>A cycle, or deeper than 3</td></tr>
+          <tr><td><code>E_URL</code></td><td>field / item</td><td>Invalid URL (the stream, image or banner is dropped)</td><td rowspan="3">Listed under <strong>Details</strong>; not counted in “N items will be skipped”. The item stays, unless it has nothing playable left (then <code>E_NO_STREAM</code>).</td></tr>
+          <tr><td><code>E_HEADER_FORBIDDEN</code></td><td>field</td><td>Forbidden or invalid header name; only that header is dropped</td></tr>
+          <tr><td><code>E_DRM</code></td><td>stream</td><td>Invalid DRM (missing licence URL, bad key); the stream is dropped</td></tr>
+          <tr><td><code>W_UNKNOWN_TYPE</code></td><td>warning</td><td>An unknown value was replaced by its fallback</td><td rowspan="6">Listed under <strong>Details</strong>; nothing is dropped except where stated.</td></tr>
+          <tr><td><code>W_QUERY_REF</code></td><td>warning</td><td>A query names an unknown include or an <code>xmltv</code> include, a <code>catalog</code> query names an include that is not <code>stremio</code>, or the catalogue is not declared by the addon; the section is skipped</td></tr>
+          <tr><td><code>W_LIMIT</code></td><td>warning</td><td>A count limit was reached; extra items were dropped</td></tr>
+          <tr><td><code>W_CONTRAST</code></td><td>warning</td><td>A colour was replaced for legibility</td></tr>
+          <tr><td><code>W_TEXT</code></td><td>warning</td><td>A text was too long (cut); a line break or control character in a one-line text was replaced by a space; a language key was invalid, or there were more than 30 languages (those entries are ignored)</td></tr>
+          <tr><td><code>W_FIELD</code></td><td>warning</td><td>An optional field had the wrong type or range, an invalid header value, an invalid catch-up source, a broken section, or a tolerated misuse; the field is dropped</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The <a href="/guides/tsiptv-source/validate/">browser validator</a> runs the JSON Schema and the reference checks on your file before you publish it.</p>
+
+    <h2 id="example-en">Complete examples</h2>
+    <h3 id="ex-minimal-en">Minimal live list</h3>
+    <p>One channel that really plays, one placeholder channel with headers and a guide id, and one placeholder radio station.</p>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/minimal-live.tsiptv.json" download>Download minimal-live.tsiptv.json</a></div>
+      <pre data-copy data-example="/examples/minimal-live.tsiptv.json" tabindex="0"><code></code></pre>
+    </div>
+    <p>No <code>layout</code>, so TS IPTV uses the default: a Radio row and a Channels grid with group chips.</p>
+
+    <h3 id="ex-vod-en">Movies and a series, with appearance and layout</h3>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/vod-catalog.tsiptv.json" download>Download vod-catalog.tsiptv.json</a></div>
+      <pre data-copy data-example="/examples/vod-catalog.tsiptv.json" tabindex="0"><code></code></pre>
+    </div>
+    <ul>
+      <li>Texts in English and Vietnamese; the <code>appearance</code> uses an amber accent, a dark gradient and large-cornered posters.</li>
+      <li>The layout: a hero with two hand-made banners (<code>target</code> opens the film or the series), Continue watching, a Movies row sorted newest first, a Series row, and a Comedy grid filtered by genre with landscape cards.</li>
+      <li>His Girl Friday has one stream with a name, quality and language; Big Buck Bunny uses the <code>url</code> shorthand; the series has one season with one episode.</li>
+    </ul>
+
+    <h3 id="ex-includes-en">A source built from includes</h3>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/composed-includes.tsiptv.json" download>Download composed-includes.tsiptv.json</a></div>
+      <pre data-copy data-example="/examples/composed-includes.tsiptv.json" tabindex="0"><code></code></pre>
+    </div>
+    <ul>
+      <li>No items of its own: an <a href="/examples/playlist.m3u">M3U playlist</a> (<code>live</code>), an <a href="/examples/guide.xml">XMLTV guide</a> (<code>guide</code>), the <a href="/examples/stremio-sampler/manifest.json">sample addon</a> (<code>sampler</code>) and the vod-catalog source above (<code>cinema</code>).</li>
+      <li>The hero shows movies from <code>cinema</code>; “On air” lists the M3U channels as a list with the programme now on; a row shows the addon's movie catalogue; <code>ids</code> picks two films by their namespaced ids (<code>cinema:big-buck-bunny</code>); the last grid shows every channel with group chips.</li>
+    </ul>
+
+    <h2 id="create-en">Create your own, step by step</h2>
+    <ol>
+      <li><strong>Start from the minimal file.</strong> Download <a href="/examples/minimal-live.tsiptv.json">minimal-live.tsiptv.json</a> and open it in VS Code (the <code>$schema</code> line gives you autocompletion and red underlines for mistakes). Change <code>id</code> to a reverse-DNS name of your own (<code>com.example.mytv</code>) and <code>meta.name</code>.</li>
+      <li><strong>Add your channels.</strong> One object each, with <code>id</code>, <code>name</code>, <code>url</code>, and optionally <code>number</code>, <code>logo</code>, <code>groups</code>, <code>epgId</code> and <code>headers</code>:
+        <div class="codeblock">
+          <pre data-copy tabindex="0"><code>{ "id": "news-hd", "name": "Example News HD", "number": 10, "groups": ["News"],
+  "logo": "https://example.com/logos/news.png", "epgId": "ExampleNews.us",
+  "url": "https://cdn.example.com/news/index.m3u8",
+  "headers": { "User-Agent": "Mozilla/5.0", "Referer": "https://example.com/" } }</code></pre>
+        </div>
+        Add the guide with <code>"epg": ["https://example.com/guide.xml.gz"]</code>.</li>
+      <li><strong>Add movies and a series.</strong> Movies need <code>id</code>, <code>name</code> and <code>url</code> (or <code>streams</code>); add <code>poster</code>, <code>backdrop</code>, <code>year</code>, <code>genres</code> and <code>description</code> for a good detail page. A series needs <code>seasons</code> → <code>episodes</code>, each episode with its own unique <code>id</code>, a <code>number</code>, a <code>name</code> and a <code>url</code>.</li>
+      <li><strong>Add appearance and a layout.</strong> Pick an accent that stands out on a dark background, then list your sections:
+        <div class="codeblock">
+          <pre data-copy tabindex="0"><code>"appearance": { "accent": "#FFB300", "card": { "style": "poster", "corner": "large" } },
+"layout": { "home": [
+  { "type": "hero", "query": { "from": "movies", "limit": 5 } },
+  { "type": "row", "title": "News", "query": { "from": "channels", "groups": ["News"] }, "card": { "style": "logo" } },
+  { "type": "row", "title": "New movies", "query": { "from": "movies", "sort": "yearDesc" } },
+  { "type": "grid", "title": "All channels", "query": { "from": "channels", "sort": "number" }, "groupChips": true }
+] }</code></pre>
+        </div></li>
+      <li><strong>Translate.</strong> Replace a plain string with <code>{ "en": "…", "vi": "…" }</code> wherever you want another language, and set <code>meta.language</code> to the language of your plain strings.</li>
+      <li><strong>Validate.</strong> Fix everything VS Code underlines, or paste the file into the <a href="/guides/tsiptv-source/validate/">validator</a>. Check that every id is unique and has no <code>:</code>.</li>
+      <li><strong>Host it</strong> (next section), <strong>add it in TS IPTV</strong>, and read the preview: the counts, the list of servers, and any skipped items. When you publish a change later, keep the same link and <code>id</code>, and increase <code>revision</code>.</li>
+    </ol>
+    <p>Already have an M3U playlist? You do not need to convert it: add it as an <code>m3u</code> include and place its channels with queries.</p>
+
+    <h2 id="host-en">Host it</h2>
+    <ul>
+      <li><strong>Any static HTTPS host</strong> that returns the file itself works: <code>https://raw.githubusercontent.com/&lt;user&gt;/&lt;repo&gt;/&lt;branch&gt;/my.tsiptv.json</code>, <code>https://&lt;user&gt;.github.io/&lt;repo&gt;/my.tsiptv.json</code>, <code>https://www.example.com/my.tsiptv.json</code>. Share pages and GitHub <code>blob/</code> links do not work; see <a href="/guides/m3u/#host-en">hosting an M3U file</a>. You can also skip hosting and use <strong>Import from file</strong>.</li>
+      <li><strong>HTTPS</strong> is recommended; <code>http</code> links work but are not encrypted.</li>
+      <li><strong>Content type</strong>: <code>application/json</code> (or <code>text/plain</code>); TS IPTV detects the format by content anyway.</li>
+      <li><strong>Compression</strong>: <code>Content-Encoding: gzip</code> is welcome for large files. The 5 MiB limit applies after decompression.</li>
+      <li><strong>Caching</strong>: TS IPTV refreshes the root like a playlist (when older than 24 hours, or on Refresh) and each include after its <code>refreshHours</code>. For the file itself and for each include it sends <code>If-None-Match</code> / <code>If-Modified-Since</code> when your server gave an <code>ETag</code> or <code>Last-Modified</code>; answering <code>304 Not Modified</code> saves bandwidth and counts 0 towards the 50 MiB budget.</li>
+      <li><strong>CORS</strong> is not needed by TS IPTV. Add <code>Access-Control-Allow-Origin: *</code> only if web tools should read the file.</li>
+      <li><strong>Keep the link stable.</strong> The same <code>id</code> from the same link is an update; from another link, TS IPTV asks whether to replace the existing source.</li>
+    </ul>
+
+    <h2 id="add-en">Add it in TS IPTV</h2>
+    <ol>
+      <li>Open <strong>Add IPTV Source</strong>, paste the link into <strong>Source Link</strong> and choose <strong>Add IPTV</strong>, or choose <strong>Import from file</strong>. TS IPTV recognises the format by its content.</li>
+      <li>A preview opens (nothing is stored yet): logo, name, author, description, the numbers of channels, radio, movies and series, <strong>“This source contacts these servers”</strong> (the hosts of the file and every include), “N items will be skipped” with <strong>Details</strong> if some entries are invalid, the notice that the source was made by a third party, and the 18+ confirmation if the source is marked adult.</li>
+      <li>Choose <strong>Import</strong>. TS IPTV loads the includes (“Loading 2 of 4…”), stores everything and opens the source's home. On phones, the Home tab has <strong>Home</strong> (your layout) and <strong>Channels</strong> (the usual channel list); on TV the rail starts with <strong>Home</strong>.</li>
+      <li>Search, Continue watching and favourites work inside the source. <strong>About this source</strong> shows the author, homepage (opened only after you confirm), each include's status, the last refresh and its details, <strong>Refresh</strong> and <strong>Remove source</strong>.</li>
+    </ol>
+    <p>If the file has a document error, TS IPTV shows “Can't add this source” with the message from the table above and a <strong>Details</strong> action with the code and path. If every include fails and the file has no items of its own, it shows “None of this source's content could be loaded. Try again later.”</p>
+
+    <h2 id="mistakes-en">Common mistakes</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Mistake</th><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td><code>url</code> and <code>streams</code> on the same item</td><td>Item skipped (<code>E_NO_STREAM</code>)</td><td>Use one: <code>url</code> for a single stream, <code>streams</code> for alternatives.</td></tr>
+          <tr><td><code>:</code> in an id (<code>news:hd</code>)</td><td>Item skipped (<code>E_ITEM_ID</code>; for an include, <code>E_INCLUDE</code>)</td><td>Use <code>-</code>, <code>_</code> or <code>.</code>; the colon is reserved for included items.</td></tr>
+          <tr><td>The same id twice (also across channels, movies, episodes and includes)</td><td>The second is skipped (<code>E_DUPLICATE_ID</code>)</td><td>Make every id unique in the file.</td></tr>
+          <tr><td><code>rtmp://</code>, <code>rtsp://</code> or <code>udp://</code> streams</td><td>The stream is dropped (<code>E_URL</code>); an item whose only stream it was is skipped (<code>E_NO_STREAM</code>)</td><td>Only http(s) is allowed here. Put such channels in an M3U playlist and add it as an <code>m3u</code> include; whether they play then depends on each platform's player.</td></tr>
+          <tr><td>A hero with both <code>items</code> and <code>query</code></td><td><code>items</code> are used (<code>W_FIELD</code>)</td><td>Keep one.</td></tr>
+          <tr><td><code>groupChips</code> on a movies grid or a row</td><td>No chips</td><td>Group chips work on grids of <code>channels</code> or <code>radio</code> only.</td></tr>
+          <tr><td>Low-contrast colours (a light background, a dark accent)</td><td>Your colours are replaced (<code>W_CONTRAST</code>)</td><td>Use a dark background and an accent with at least 3:1 contrast against it.</td></tr>
+          <tr><td>A query on an include id that does not exist, or on an <code>xmltv</code> include</td><td>Section not shown (<code>W_QUERY_REF</code>)</td><td>Use the include's exact <code>id</code>; guides cannot be sections.</td></tr>
+          <tr><td>A misspelt field (<code>nmae</code>)</td><td>Ignored by the app; the required field is then missing</td><td>Use the <code>$schema</code> line or the validator; they report unknown fields.</td></tr>
+          <tr><td>Comments or trailing commas</td><td>“This file is not valid JSON.”</td><td>Remove them; use <code>x-</code> fields for notes.</td></tr>
+          <tr><td><code>http://</code> images on hosts that redirect or block them</td><td>Missing posters</td><td>Use <code>https</code> image URLs.</td></tr>
+          <tr><td>An include id starting with <code>epg-</code></td><td>Include dropped (<code>E_INCLUDE</code>)</td><td>That prefix is reserved for <code>epg</code> links.</td></tr>
+          <tr><td>A <code>stremio</code> include URL without <code>/manifest.json</code></td><td>Include dropped (<code>E_INCLUDE</code>)</td><td>Use the addon's manifest link.</td></tr>
+          <tr><td>Spaces in a catch-up <code>source</code> (<code>default</code> or <code>append</code> mode)</td><td>Catch-up dropped, channel plays live (<code>W_FIELD</code>)</td><td>Encode spaces as <code>%20</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support-en">What TS IPTV supports</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Feature</th><th>Android</th><th>iOS</th><th>Desktop</th></tr></thead>
+        <tbody>
+          <tr><td>Import by link or file, preview, layout, appearance, search, Continue watching</td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>Channels, radio, movies, series; several streams per item</td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>Headers</td><td><span class="badge yes">All headers</span></td><td><span class="badge partial">Best effort</span></td><td><span class="badge partial">User-Agent and Referer only</span></td></tr>
+          <tr><td>DRM (Widevine, PlayReady; ClearKey for DASH)</td><td><span class="badge yes">Android only</span></td><td><span class="badge no">Not supported</span></td><td><span class="badge no">Not supported</span></td></tr>
+          <tr><td>Subtitles (VTT, SRT)</td><td><span class="badge yes">Supported</span></td><td><span class="badge no">Not yet</span></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>Includes: <code>m3u</code>, <code>xmltv</code>, <code>stremio</code>, <code>tsiptv-source</code></td><td colspan="3"><span class="badge yes">Supported</span> Stremio-compatible addons play <code>url</code> streams only.</td></tr>
+          <tr><td>Catch-up</td><td colspan="3"><span class="badge partial">Stored, playback coming later</span></td></tr>
+          <tr><td>Links that open websites from banners</td><td colspan="3"><span class="badge no">Not part of the format</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related-en">Related guides</h2>
+      <ul>
+        <li><a href="/guides/tsiptv-source/validate/">Validate a TS IPTV Source</a></li>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/json/">JSON playlists</a></li>
+        <li><a href="/guides/stremio-addons/">Stremio-compatible addons</a></li>
+        <li><a href="/guides/">All guides</a></li>
+      </ul>
+    </section>

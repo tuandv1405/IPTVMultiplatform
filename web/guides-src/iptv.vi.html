@@ -1,0 +1,77 @@
+    <h1>IPTV là gì?</h1>
+    <p class="lead">IPTV (Internet Protocol Television) là truyền hình và video được truyền qua mạng IP, tức là qua Internet hoặc mạng nội bộ, thay vì qua ăng-ten, vệ tinh hay cáp truyền hình.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV không có sẵn kênh nào.</strong> Đây là một trình phát: nó chỉ phát các danh sách phát và nguồn do bạn thêm vào.</p>
+    </div>
+
+    <nav class="toc" aria-label="Trên trang này">
+      <p class="toc-title">Trên trang này</p>
+      <ol>
+        <li><a href="#pieces">Ba thành phần: luồng, danh sách phát, lịch phát sóng</a></li>
+        <li><a href="#glossary">Thuật ngữ</a></li>
+        <li><a href="#sources">Luồng hợp pháp đến từ đâu</a></li>
+        <li><a href="#tsiptv">TS IPTV là gì và không phải là gì</a></li>
+        <li><a href="#next">Bước tiếp theo</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="pieces">Ba thành phần: luồng, danh sách phát, lịch phát sóng</h2>
+    <ol>
+      <li><strong>Luồng (stream)</strong> là video hoặc âm thanh được gửi tới thiết bị của bạn qua một đường dẫn, ví dụ <code>https://cdn.example.com/news/index.m3u8</code>. Mỗi kênh là một luồng.</li>
+      <li><strong>Danh sách phát (playlist)</strong> là một tệp liệt kê các kênh: tên kênh, logo, nhóm và đường dẫn tới luồng của từng kênh. Định dạng phổ biến nhất là <a href="/guides/m3u/">M3U</a>.</li>
+      <li><strong>Lịch phát sóng (EPG)</strong> là một tệp khác cho biết kênh nào đang và sắp phát chương trình gì. Định dạng thông dụng là <a href="/guides/xmltv/">XMLTV</a>. Danh sách phát trỏ tới lịch phát sóng, và mỗi kênh được khớp với lịch của nó qua một mã định danh.</li>
+    </ol>
+    <p>Khi bạn thêm một danh sách phát vào TS IPTV, ứng dụng tải tệp đó về, hiển thị các kênh theo nhóm, tải lịch phát sóng nếu danh sách phát có trỏ tới, và phát luồng của kênh bạn chọn.</p>
+
+    <h2 id="glossary">Thuật ngữ</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Thuật ngữ</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td>Danh sách phát (playlist)</td><td>Tệp liệt kê kênh hoặc video cùng đường dẫn của chúng. Ví dụ: M3U, XSPF, JSON.</td></tr>
+          <tr><td>Luồng (stream)</td><td>Nội dung video hoặc âm thanh được truyền liên tục qua một đường dẫn.</td></tr>
+          <tr><td>HLS</td><td>HTTP Live Streaming: luồng được chia thành các đoạn ngắn, kèm một tệp chỉ mục <code>.m3u8</code>. Dạng luồng phổ biến nhất, chạy trên mọi nền tảng.</td></tr>
+          <tr><td>DASH</td><td>MPEG-DASH: tương tự HLS nhưng tệp chỉ mục là <code>.mpd</code>. Hay dùng cho nội dung có DRM.</td></tr>
+          <tr><td>MPEG-TS</td><td>Định dạng truyền tải của truyền hình số, thường gặp ở các đường dẫn kết thúc bằng <code>.ts</code>.</td></tr>
+          <tr><td>EPG / XMLTV</td><td>Electronic Programme Guide, tức lịch phát sóng điện tử. XMLTV là định dạng tệp phổ biến nhất cho lịch này.</td></tr>
+          <tr><td>DRM</td><td>Quản lý bản quyền kỹ thuật số: luồng được mã hoá, và trình phát phải xin giấy phép từ máy chủ của nhà cung cấp để giải mã. Ví dụ: Widevine, PlayReady, ClearKey.</td></tr>
+          <tr><td>Xem lại (catch-up)</td><td>Xem lại chương trình đã phát trong vài ngày qua, nếu máy chủ của nhà cung cấp có lưu trữ.</td></tr>
+          <tr><td>VOD</td><td>Video theo yêu cầu: phim và tập phim bạn xem bất cứ lúc nào, thay vì kênh phát trực tiếp.</td></tr>
+          <tr><td>User-Agent / Referer</td><td>Các header HTTP mà trình phát gửi kèm khi yêu cầu luồng. Một số máy chủ chỉ phục vụ khi có đúng giá trị; danh sách phát có thể khai báo chúng cho từng kênh.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="sources">Luồng hợp pháp đến từ đâu</h2>
+    <p>Nói chung, các nguồn hợp pháp gồm:</p>
+    <ul>
+      <li>nhà mạng truyền hình hoặc nhà cung cấp Internet của bạn, nếu họ cung cấp dịch vụ IPTV và cho phép dùng trình phát riêng;</li>
+      <li>đài truyền hình phát kênh của họ trực tuyến;</li>
+      <li>máy chủ media tại nhà của chính bạn, ví dụ một bộ thu truyền hình qua mạng hoặc một thư viện video cá nhân;</li>
+      <li>kho lưu trữ nội dung thuộc phạm vi công cộng (public domain).</li>
+    </ul>
+    <p>TS IPTV không giới thiệu, liệt kê hay liên kết tới bất kỳ nguồn cụ thể nào.</p>
+
+    <h2 id="tsiptv">TS IPTV là gì và không phải là gì</h2>
+    <ul>
+      <li>TS IPTV là một <strong>trình phát</strong> cho Android, Android TV, iOS và máy tính. Nó đọc danh sách phát và lịch phát sóng ở các định dạng được mô tả trong <a href="/guides/">các hướng dẫn này</a>.</li>
+      <li>TS IPTV <strong>không cung cấp kênh truyền hình</strong>. Ứng dụng không đi kèm bất kỳ danh sách phát nào, không lưu trữ và không phát lại nội dung của bên thứ ba.</li>
+      <li>Bạn chịu trách nhiệm về các nguồn mình thêm vào và phải có quyền sử dụng hợp pháp đối với chúng.</li>
+    </ul>
+
+    <h2 id="next">Bước tiếp theo</h2>
+    <ul>
+      <li>Tự viết danh sách phát đầu tiên của bạn: <a href="/guides/m3u/">hướng dẫn M3U / M3U8</a>.</li>
+      <li>Thêm lịch phát sóng cho các kênh: <a href="/guides/xmltv/">hướng dẫn XMLTV</a>.</li>
+    </ul>
+
+    <section class="related">
+      <h2 id="related">Hướng dẫn liên quan</h2>
+      <ul>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/xmltv/">XMLTV</a></li>
+        <li><a href="/guides/xtream-codes/">Đường dẫn kiểu Xtream Codes</a></li>
+        <li><a href="/guides/">Tất cả hướng dẫn</a></li>
+      </ul>
+    </section>

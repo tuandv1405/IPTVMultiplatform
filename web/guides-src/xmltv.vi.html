@@ -1,0 +1,178 @@
+    <h1>Lịch phát sóng XMLTV</h1>
+    <p class="lead">XMLTV là định dạng tệp XML phổ biến nhất cho lịch phát sóng điện tử (EPG): nó liệt kê các kênh và chương trình của từng kênh, với giờ bắt đầu, giờ kết thúc, tiêu đề và mô tả.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV không có sẵn kênh hay lịch phát sóng nào.</strong> Ứng dụng chỉ đọc các danh sách phát và lịch do bạn thêm vào.</p>
+    </div>
+
+    <nav class="toc" aria-label="Trên trang này">
+      <p class="toc-title">Trên trang này</p>
+      <ol>
+        <li><a href="#what">XMLTV là gì</a></li>
+        <li><a href="#syntax">Cú pháp</a></li>
+        <li><a href="#link">Lịch liên kết với danh sách phát ra sao</a></li>
+        <li><a href="#example">Ví dụ đầy đủ</a></li>
+        <li><a href="#create">Tự viết một tệp</a></li>
+        <li><a href="#host">Đưa tệp lên mạng</a></li>
+        <li><a href="#add">Thêm vào TS IPTV</a></li>
+        <li><a href="#mistakes">Lỗi thường gặp</a></li>
+        <li><a href="#support">TS IPTV hỗ trợ những gì</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what">XMLTV là gì</h2>
+    <p>XMLTV xuất phát từ một dự án mã nguồn mở gồm các công cụ thu thập lịch truyền hình; cấu trúc tệp được mô tả trong <a href="https://github.com/XMLTV/xmltv/blob/master/xmltv.dtd">tệp DTD chính thức</a>. Ngày nay hầu hết trình phát IPTV đều đọc XMLTV. Một danh sách phát cho biết <em>có những kênh nào</em>; tệp XMLTV cho biết <em>kênh đó đang và sắp phát gì</em>.</p>
+
+    <h2 id="syntax">Cú pháp</h2>
+    <p>Phần tử gốc là <code>&lt;tv&gt;</code>. Bên trong, mọi phần tử <code>&lt;channel&gt;</code> đứng trước, sau đó đến các phần tử <code>&lt;programme&gt;</code>:</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>&lt;tv&gt;
+  &lt;channel id="…"&gt;            (không hoặc nhiều)
+    &lt;display-name&gt;…&lt;/display-name&gt;
+    &lt;icon src="…"/&gt;
+  &lt;/channel&gt;
+  &lt;programme start="…" stop="…" channel="…"&gt;   (không hoặc nhiều)
+    &lt;title&gt;…&lt;/title&gt;
+    &lt;sub-title&gt;…&lt;/sub-title&gt;
+    &lt;desc&gt;…&lt;/desc&gt;
+    &lt;category&gt;…&lt;/category&gt;
+    &lt;episode-num system="…"&gt;…&lt;/episode-num&gt;
+    &lt;rating system="…"&gt;&lt;value&gt;…&lt;/value&gt;&lt;/rating&gt;
+  &lt;/programme&gt;
+&lt;/tv&gt;</code></pre>
+    </div>
+
+    <h3 id="tv-el"><code>&lt;tv&gt;</code></h3>
+    <p>Phần tử gốc. Thuộc tính tuỳ chọn: <code>date</code>, <code>generator-info-name</code>, <code>generator-info-url</code>, <code>source-info-name</code>, <code>source-info-url</code>, <code>source-data-url</code>.</p>
+
+    <h3 id="channel-el"><code>&lt;channel&gt;</code></h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Phần tử / thuộc tính</th><th>Bắt buộc</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><strong>có</strong></td><td>Mã kênh. Danh sách phát dùng đúng mã này trong <code>tvg-id</code>.</td></tr>
+          <tr><td><code>&lt;display-name lang="…"&gt;</code></td><td><strong>ít nhất 1</strong></td><td>Tên kênh.</td></tr>
+          <tr><td><code>&lt;icon src="…"/&gt;</code></td><td>không</td><td>Logo kênh.</td></tr>
+          <tr><td><code>&lt;url&gt;</code></td><td>không</td><td>Trang web của kênh.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="programme-el"><code>&lt;programme&gt;</code></h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Phần tử / thuộc tính</th><th>Bắt buộc</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>channel</code></td><td><strong>có</strong></td><td>Phải trùng với một <code>&lt;channel id&gt;</code>.</td></tr>
+          <tr><td><code>start</code></td><td><strong>có</strong></td><td>Giờ bắt đầu (xem định dạng thời gian bên dưới).</td></tr>
+          <tr><td><code>stop</code></td><td>nên có</td><td>Giờ kết thúc. TS IPTV cần giá trị này, nên hãy luôn ghi <code>stop</code>.</td></tr>
+          <tr><td><code>&lt;title lang="…"&gt;</code></td><td><strong>ít nhất 1</strong></td><td>Tên chương trình.</td></tr>
+          <tr><td><code>&lt;sub-title&gt;</code></td><td>không</td><td>Tên tập.</td></tr>
+          <tr><td><code>&lt;desc lang="…"&gt;</code></td><td>không</td><td>Mô tả. Đây là phần tử duy nhất được phép xuống dòng.</td></tr>
+          <tr><td><code>&lt;category lang="…"&gt;</code></td><td>không, lặp được</td><td>Thể loại.</td></tr>
+          <tr><td><code>&lt;icon src="…"/&gt;</code></td><td>không</td><td>Ảnh của chương trình.</td></tr>
+          <tr><td><code>&lt;credits&gt;</code></td><td>không</td><td>Đạo diễn (<code>&lt;director&gt;</code>), diễn viên (<code>&lt;actor&gt;</code>)…</td></tr>
+          <tr><td><code>&lt;episode-num system="…"&gt;</code></td><td>không</td><td>Số mùa và số tập (xem bên dưới).</td></tr>
+          <tr><td><code>&lt;rating system="…"&gt;&lt;value&gt;</code></td><td>không</td><td>Phân loại độ tuổi, ví dụ <code>system="MPAA"</code>, <code>PG</code>.</td></tr>
+          <tr><td><code>&lt;star-rating&gt;&lt;value&gt;</code></td><td>không</td><td>Điểm đánh giá, ví dụ <code>7 / 10</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="time">Định dạng thời gian</h3>
+    <p><code>start</code> và <code>stop</code> có dạng <code>YYYYMMDDhhmmss</code>, theo sau là độ lệch múi giờ: <code>20260927183000 +0700</code> là 18:30:00 ngày 27/09/2026 giờ Việt Nam. Theo DTD, thiếu độ lệch nghĩa là <strong>giờ UTC</strong>; nhưng hiện tại TS IPTV đọc những giờ như vậy theo múi giờ của thiết bị. Vì thế hãy luôn ghi rõ độ lệch. Khoảng thời gian là nửa mở: chương trình bắt đầu đúng lúc <code>start</code> và kết thúc ngay trước <code>stop</code>, nên <code>stop</code> của chương trình này nên bằng <code>start</code> của chương trình kế tiếp.</p>
+
+    <h3 id="episode">Số tập: <code>episode-num</code></h3>
+    <ul>
+      <li><code>system="xmltv_ns"</code>: <code>mùa.tập.phần</code>, <strong>đếm từ 0</strong>. <code>2.4.</code> nghĩa là mùa 3, tập 5. Mỗi phần có thể ghi <code>X/Y</code>: <code>0.11/12.0/2</code> là mùa 1, tập 12 trên 12, phần 1 trên 2. Phần chưa biết để trống.</li>
+      <li><code>system="onscreen"</code>: chữ tự do như trên màn hình, ví dụ <code>S03E05</code>. Đây là giá trị mặc định khi không ghi <code>system</code>.</li>
+    </ul>
+
+    <h2 id="link">Lịch liên kết với danh sách phát ra sao</h2>
+    <ul>
+      <li><strong>Đường dẫn</strong>: danh sách phát M3U trỏ tới lịch bằng <code>#EXTM3U x-tvg-url="https://…/guide.xml"</code> (hoặc tên cũ <code>url-tvg</code>); danh sách JSON dùng trường <code>epgUrl</code>. Có thể ghi nhiều lịch, cách nhau bằng dấu phẩy: TS IPTV tải tối đa 5 lịch và gộp chương trình lại, bỏ các mục trùng.</li>
+      <li><strong>Mã kênh</strong>: kênh <code>tvg-id="ExampleNews.us"</code> trong danh sách phát nhận chương trình của <code>&lt;channel id="ExampleNews.us"&gt;</code>. Hãy chép mã y hệt, phân biệt hoa thường.</li>
+      <li><strong>Lệch giờ</strong>: nếu lịch lệch với giờ thật, thêm <code>tvg-shift="+1"</code> (tính bằng giờ) vào kênh, hoặc vào dòng <code>#EXTM3U</code> cho mọi kênh.</li>
+    </ul>
+
+    <h2 id="example">Ví dụ đầy đủ</h2>
+    <p>Đây là lịch ví dụ mà <a href="/guides/m3u/#example">danh sách phát M3U ví dụ</a> trỏ tới. Nó có hai kênh: <code>HlsTest.example</code> và <code>ExampleNews.us</code>.</p>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/guide.xml" download>Tải guide.xml</a></div>
+      <pre data-copy data-example="/examples/guide.xml" tabindex="0"><code></code></pre>
+    </div>
+    <ol>
+      <li><strong>Hai phần tử <code>&lt;channel&gt;</code></strong> đứng trước mọi chương trình, mỗi kênh một <code>&lt;display-name&gt;</code>.</li>
+      <li><strong>Hai chương trình có ngày giờ cụ thể</strong> (tối 31/12/2025, giờ UTC) cho thấy các phần tử tuỳ chọn: <code>sub-title</code>, <code>category</code>, <code>episode-num</code> ở cả hai hệ, và <code>rating</code>.</li>
+      <li><strong>“Test pattern”</strong>: mỗi kênh có một chương trình kéo dài từ 01/01/2026 tới hết năm 2030. Đó là mẹo cho tệp ví dụ: bất cứ lúc nào bạn mở, lịch vẫn có một chương trình “đang phát”. Lịch thật dùng các chương trình ngắn, nối tiếp nhau.</li>
+    </ol>
+
+    <h2 id="create">Tự viết một tệp</h2>
+    <p>Phần lớn mọi người không viết XMLTV bằng tay: nhà cung cấp đưa sẵn đường dẫn lịch, hoặc lịch được tạo bằng công cụ thu thập. Với một danh sách nhỏ của riêng bạn, tự viết vẫn dễ:</p>
+    <ol>
+      <li>Chép ví dụ ở trên vào một trình soạn thảo văn bản thuần (Notepad, TextEdit ở chế độ văn bản thuần, VS Code).</li>
+      <li>Mỗi kênh một <code>&lt;channel id="…"&gt;</code>, với mã trùng <code>tvg-id</code> trong danh sách phát.</li>
+      <li>Thêm các <code>&lt;programme&gt;</code> sau mọi <code>&lt;channel&gt;</code>, luôn có <code>start</code>, <code>stop</code> và độ lệch múi giờ.</li>
+      <li>Viết <code>&amp;</code> thành <code>&amp;amp;</code>, <code>&lt;</code> thành <code>&amp;lt;</code> trong tiêu đề và mô tả.</li>
+      <li>Lưu với mã hoá UTF-8, đuôi <code>.xml</code>.</li>
+      <li>Lịch lớn nên được nén <strong>gzip</strong> thành <code>guide.xml.gz</code>: dùng lệnh <code>gzip -k guide.xml</code> (macOS, Linux), hoặc 7-Zip › <em>Add to archive</em> › định dạng <em>gzip</em> (Windows). Không dùng <code>.zip</code>: đó là định dạng khác.</li>
+    </ol>
+
+    <h2 id="host">Đưa tệp lên mạng</h2>
+    <p>Giống như danh sách phát M3U: mọi đường dẫn HTTPS trả về chính nội dung tệp đều dùng được, ví dụ <code>https://raw.githubusercontent.com/&lt;user&gt;/&lt;repo&gt;/&lt;branch&gt;/guide.xml.gz</code>, <code>https://&lt;user&gt;.github.io/&lt;repo&gt;/guide.xml</code> hoặc <code>https://www.example.com/guide.xml.gz</code>. Trang chia sẻ của Google Drive/OneDrive và đường dẫn <code>blob/</code> của GitHub không dùng được. Chi tiết: <a href="/guides/m3u/#host">đưa tệp M3U lên mạng</a>.</p>
+    <ul>
+      <li>TS IPTV nhận ra tệp gzip qua nội dung, nên không phụ thuộc máy chủ gửi <code>Content-Type: application/gzip</code> hay <code>Content-Encoding: gzip</code>.</li>
+      <li>HTTPS được khuyến nghị; CORS không cần cho TS IPTV.</li>
+      <li>Hãy cập nhật tệp đều đặn: lịch chỉ có các ngày đã qua thì không còn gì để hiển thị.</li>
+    </ul>
+
+    <h2 id="add">Thêm vào TS IPTV</h2>
+    <ol>
+      <li>Thêm đường dẫn lịch vào dòng đầu tiên của danh sách phát M3U: <code>#EXTM3U x-tvg-url="https://www.example.com/guide.xml.gz"</code> (với JSON: trường <code>epgUrl</code>).</li>
+      <li>Thêm danh sách phát đó vào TS IPTV (hoặc làm mới nếu đã có). Lịch được tải cùng lúc.</li>
+      <li>Mở danh sách chương trình của một kênh để xem chương trình đang và sắp phát. Dùng <strong>Cập nhật lịch phát sóng</strong> để tải lại lịch.</li>
+    </ol>
+    <p>TS IPTV hiện chưa có ô riêng để nhập đường dẫn lịch; lịch luôn đi kèm danh sách phát. Nếu danh sách phát của bạn không có <code>x-tvg-url</code> và bạn không sửa được nó ở nơi lưu trữ, hãy tải tệp về, thêm dòng trên, rồi dùng <strong>Nhập từ tệp</strong>.</p>
+
+    <h2 id="mistakes">Lỗi thường gặp</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Lỗi</th><th>Biểu hiện</th><th>Cách sửa</th></tr></thead>
+        <tbody>
+          <tr><td>Không ghi độ lệch múi giờ ở <code>start</code>/<code>stop</code></td><td>Lịch lệch vài giờ</td><td>Luôn thêm <code>+hhmm</code>. Theo DTD giờ thiếu độ lệch là UTC, nhưng TS IPTV hiện đọc nó theo múi giờ của thiết bị.</td></tr>
+          <tr><td><code>channel</code> không trùng <code>&lt;channel id&gt;</code> hoặc <code>tvg-id</code></td><td>Lịch trống</td><td>Dùng cùng một chuỗi ở cả ba chỗ.</td></tr>
+          <tr><td>Ký tự <code>&amp;</code> chưa được viết thành <code>&amp;amp;</code></td><td>Lỗi đọc XML, mất cả lịch</td><td>Viết <code>&amp;amp;</code>.</td></tr>
+          <tr><td><code>&lt;programme&gt;</code> đứng trước <code>&lt;channel&gt;</code></td><td>Một số trình đọc bỏ qua kênh</td><td>Đặt mọi <code>&lt;channel&gt;</code> lên trước (đúng thứ tự trong DTD).</td></tr>
+          <tr><td>Chương trình chồng lên nhau hoặc trùng nhau</td><td>Hàng bị nhấp nháy hoặc lặp</td><td>Cho <code>stop</code> bằng <code>start</code> của chương trình sau.</td></tr>
+          <tr><td>Tệp gzip bị nén hai lần, hoặc nén <code>.zip</code></td><td>“Lịch không hợp lệ”</td><td>Nén gzip đúng một lần.</td></tr>
+          <tr><td>Lịch chỉ có các ngày đã qua</td><td>“Chưa có lịch phát sóng”</td><td>Tạo lại lịch mỗi ngày.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support">TS IPTV hỗ trợ những gì</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Tính năng</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+          <tr><td>XMLTV <code>.xml</code> và nén gzip <code>.xml.gz</code></td><td><span class="badge yes">Hỗ trợ</span> trên mọi nền tảng</td></tr>
+          <tr><td>Nén XZ <code>.xml.xz</code></td><td><span class="badge no">Không hỗ trợ</span></td></tr>
+          <tr><td>Mọi múi giờ trong <code>start</code>/<code>stop</code></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Nhiều lịch trong <code>x-tvg-url</code> (tối đa 5), gộp và bỏ trùng</td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td><code>tvg-shift</code> theo kênh hoặc cho cả danh sách</td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Hiển thị tiêu đề, mô tả, thể loại, ảnh, đạo diễn và diễn viên</td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td><code>sub-title</code>, <code>episode-num</code>, <code>rating</code>, <code>star-rating</code></td><td><span class="badge partial">Được chấp nhận, chưa hiển thị</span></td></tr>
+          <tr><td>Ô riêng để nhập đường dẫn lịch</td><td><span class="badge no">Chưa có</span> Dùng <code>x-tvg-url</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related">Hướng dẫn liên quan</h2>
+      <ul>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/json/">JSON</a></li>
+        <li><a href="/guides/xtream-codes/">Đường dẫn kiểu Xtream Codes</a></li>
+        <li><a href="/guides/">Tất cả hướng dẫn</a></li>
+      </ul>
+    </section>

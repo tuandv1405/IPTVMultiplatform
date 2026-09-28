@@ -1,0 +1,188 @@
+    <h1>Kodi formats in TS IPTV</h1>
+    <p class="lead">Many IPTV playlists are written for Kodi. TS IPTV reads their <strong>formats</strong>: the M3U attributes, <code>#KODIPROP</code>, headers, DRM, catch-up information and <code>.strm</code> files. TS IPTV cannot run Kodi add-ons.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels</strong> and recommends no Kodi add-on, repository or playlist. Every example uses <code>example.com</code> placeholders, a public test stream, or TS IPTV's own example files on <code>tsiptv-8bdd6.web.app</code>.</p>
+    </div>
+
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+        <li><a href="#what-en">Kodi and PVR IPTV Simple</a></li>
+        <li><a href="#syntax-en">What TS IPTV understands</a></li>
+        <li><a href="#cannot-en">What TS IPTV cannot run</a></li>
+        <li><a href="#example-en">Complete example</a></li>
+        <li><a href="#create-en">Write it by hand</a></li>
+        <li><a href="#host-en">Host it</a></li>
+        <li><a href="#add-en">Moving from Kodi to TS IPTV</a></li>
+        <li><a href="#mistakes-en">Common mistakes</a></li>
+        <li><a href="#support-en">What TS IPTV supports</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what-en">Kodi and PVR IPTV Simple</h2>
+    <p>Kodi is an open-source media player. Its official <strong>PVR IPTV Simple Client</strong> add-on reads M3U playlists and XMLTV guides; its <a href="https://github.com/kodi-pvr/pvr.iptvsimple">README</a> is the most widely quoted description of IPTV M3U attributes. The DRM and header properties come from <a href="https://github.com/xbmc/inputstream.adaptive/wiki">inputstream.adaptive</a>, Kodi's adaptive-streaming player. TS IPTV reuses those <strong>data formats</strong>, because they are plain text; it does not reuse Kodi's program code.</p>
+
+    <h2 id="syntax-en">What TS IPTV understands</h2>
+    <p>The basics (<code>#EXTINF</code> attributes, several groups with <code>;</code>, <code>#EXTGRP</code>, <code>#EXTVLCOPT</code>, headers after <code>|</code>, <code>x-tvg-url</code>) are in the <a href="/guides/m3u/#syntax-en">M3U guide</a>. This section covers what is specific to Kodi.</p>
+
+    <h3 id="kodiprop-en"><code>#KODIPROP</code></h3>
+    <p>Each <code>#KODIPROP:key=value</code> line sits between <code>#EXTINF</code> and the link and applies to that channel only. Keys are case-insensitive; the value runs to the end of the line (JSON is allowed).</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Key</th><th>What TS IPTV does</th></tr></thead>
+        <tbody>
+          <tr><td><code>inputstream</code>, <code>inputstreamaddon</code>, <code>inputstreamclass</code></td><td>Ignored: they only select a decoder inside Kodi.</td></tr>
+          <tr><td><code>mimetype</code></td><td>Stream type hint: <code>application/dash+xml</code> (DASH), <code>application/vnd.apple.mpegurl</code> or <code>application/x-mpegurl</code> (HLS), <code>application/vnd.ms-sstr+xml</code> (Smooth Streaming), <code>video/mp2t</code> (MPEG-TS). Useful when the link has no <code>.mpd</code>/<code>.m3u8</code> extension.</td></tr>
+          <tr><td><code>inputstream.adaptive.manifest_type</code></td><td><code>mpd</code>, <code>hls</code>, <code>ism</code>: a stream type hint, as above.</td></tr>
+          <tr><td><code>inputstream.adaptive.common_headers</code>, <code>manifest_headers</code>, <code>stream_headers</code></td><td>Headers as <code>name=url-encoded-value&amp;name=…</code>. All three are merged and sent with every request of the channel.</td></tr>
+          <tr><td><code>inputstream.adaptive.license_type</code>, <code>license_key</code>, <code>drm_legacy</code>, <code>drm</code></td><td>DRM configuration (see below).</td></tr>
+          <tr><td>other keys</td><td>Stored, no effect.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="drm-en">DRM</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>DRM system</th><th>Value in the playlist</th><th>Android</th><th>iOS</th><th>Desktop</th></tr></thead>
+        <tbody>
+          <tr><td>Widevine</td><td><code>com.widevine.alpha</code> (or <code>widevine</code>)</td><td><span class="badge yes">Supported</span></td><td><span class="badge no">Not supported</span></td><td><span class="badge no">Not supported</span></td></tr>
+          <tr><td>PlayReady</td><td><code>com.microsoft.playready</code> (or <code>playready</code>)</td><td><span class="badge yes">Supported</span></td><td><span class="badge no">Not supported</span></td><td><span class="badge no">Not supported</span></td></tr>
+          <tr><td>ClearKey</td><td><code>org.w3.clearkey</code> (or <code>clearkey</code>)</td><td><span class="badge partial">DASH streams only</span></td><td><span class="badge no">Not supported</span></td><td><span class="badge no">Not supported</span></td></tr>
+          <tr><td>WisePlay</td><td><code>com.huawei.wiseplay</code></td><td><span class="badge no">Not supported</span></td><td><span class="badge no">Not supported</span></td><td><span class="badge no">Not supported</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>On iOS and desktop, a DRM channel shows “DRM is not supported on this device” before the stream is requested, and you can still switch to other channels. Ordinary AES-128 encrypted HLS needs no DRM properties and plays on every platform.</p>
+    <p>Kodi has three ways to write a DRM configuration. When a channel has several, the newest wins: <code>drm</code>, then <code>drm_legacy</code>, then <code>license_type</code> + <code>license_key</code>.</p>
+    <p><strong>1. <code>license_type</code> + <code>license_key</code></strong> (the old way). <code>license_key</code> has four fields joined with <code>|</code>: <code>URL|headers|request-body|response</code>.</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha
+#KODIPROP:inputstream.adaptive.license_key=https://license.example.com/widevine|Content-Type=application%2Foctet-stream|R{SSM}|R</code></pre>
+    </div>
+    <ul>
+      <li>Field 1: the licence server URL.</li>
+      <li>Field 2: headers as <code>name=value&amp;…</code>, URL-encoded. Leave it empty if there are none.</li>
+      <li>Field 3 may only be empty or <code>R{SSM}</code>; field 4 may only be empty or <code>R</code>. Other values (<code>b{SSM}</code>, <code>B{SSM}</code>, <code>J…</code> responses, <code>{HASH}</code> in the URL) need special handling TS IPTV does not have yet: the channel is imported, but playing it shows “This channel's DRM setup is not supported yet”.</li>
+      <li>With <code>license_type=clearkey</code>, <code>license_key</code> may be <code>kid:key</code> pairs, a <code>{"keys":[…]}</code> JWKS, a <code>data:</code> URI or a URL.</li>
+    </ul>
+    <p><strong>2. <code>drm_legacy</code></strong>: <code>key-system|URL-or-keys|headers</code>, 1 to 3 fields.</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>#KODIPROP:inputstream.adaptive.drm_legacy=com.widevine.alpha|https://license.example.com/widevine|User-Agent=Mozilla%2F5.0
+#KODIPROP:inputstream.adaptive.drm_legacy=org.w3.clearkey|000102030405060708090a0b0c0d0e0f:00112233445566778899aabbccddeeff</code></pre>
+    </div>
+    <p><strong>3. <code>drm</code></strong> (JSON). TS IPTV uses the first supported key system whose configuration only uses <code>license.server_url</code>, <code>license.req_headers</code> and <code>license.keyids</code>.</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>#KODIPROP:inputstream.adaptive.drm={"com.widevine.alpha":{"license":{"server_url":"https://license.example.com/widevine","req_headers":"X-Example=1"}}}</code></pre>
+    </div>
+    <p><strong>ClearKey keys</strong>: the KID and the key are 32 hex characters; the UUID form with dashes (<code>00010203-0405-…</code>) is accepted, and non-hex values are read as base64 of 16 bytes. TS IPTV ships no keys and no tools to obtain keys: DRM support is for content you are entitled to watch, for example an operator's playlist.</p>
+
+    <h3 id="catchup-en">Catch-up</h3>
+    <p>TS IPTV reads and <strong>stores</strong> all the catch-up information below. Playing past programmes comes in a later update; there is no catch-up button or badge yet.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th><code>catchup=</code></th><th>How the catch-up URL is built</th></tr></thead>
+        <tbody>
+          <tr><td><code>default</code></td><td><code>catchup-source</code> is the whole URL.</td></tr>
+          <tr><td><code>append</code></td><td>The channel URL + <code>catchup-source</code>.</td></tr>
+          <tr><td><code>shift</code> (or the older <code>timeshift="N"</code>)</td><td>The channel URL + <code>?utc={utc}&amp;lutc={lutc}</code> (or <code>&amp;utc=…</code> if the URL already has a <code>?</code>).</td></tr>
+          <tr><td><code>flussonic</code>, <code>flussonic-hls</code>, <code>flussonic-ts</code>, <code>fs</code></td><td>Following the Flussonic server's URL convention.</td></tr>
+          <tr><td><code>xc</code></td><td>Following the <code>/timeshift/…</code> convention of <a href="/guides/xtream-codes/">Xtream Codes style APIs</a>.</td></tr>
+          <tr><td><code>vod</code></td><td>Plays <code>catchup-source</code> only.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Related attributes: <code>catchup-days</code> (or <code>tvg-rec</code>) is the archive length in days; <code>catchup-correction</code> is a number of hours to add. Placeholders in <code>catchup-source</code>: <code>{utc}</code> (programme start, Unix seconds), <code>{utcend}</code>, <code>{lutc}</code> (now), <code>{Y}</code> <code>{m}</code> <code>{d}</code> <code>{H}</code> <code>{M}</code> <code>{S}</code> (in the device's local time, as in Kodi), <code>{duration}</code>, <code>{duration:60}</code> (minutes), <code>{offset:X}</code>, <code>{catchup-id}</code> and the formatted form <code>{utc:YmdHM}</code>.</p>
+
+    <h3 id="strm-en"><code>.strm</code> files</h3>
+    <p>A <code>.strm</code> file is a text file with <strong>exactly one</strong> stream URL, optionally preceded by <code>#KODIPROP</code> or <code>#EXTVLCOPT</code> lines and optionally followed by headers after <code>|</code>. TS IPTV imports it as a one-channel playlist named after the file (without the extension). A <code>.strm</code> file that points to <code>plugin://</code> is refused.</p>
+
+    <h2 id="cannot-en">What TS IPTV cannot run</h2>
+    <ul>
+      <li><strong>Kodi video add-ons</strong> and any <code>plugin://…</code> link;</li>
+      <li><strong>add-on repositories</strong> and <code>addons.xml</code> files;</li>
+      <li><strong>installs from zip files</strong>;</li>
+      <li><strong>web-page scraping</strong> with <code>#WEBPROP</code> or links that start with <code>@</code>.</li>
+    </ul>
+    <p>The reason: Kodi add-ons are Python programs that only run inside Kodi, on top of Kodi's own libraries; they are not data another player can read. Running code downloaded from arbitrary sources is also a security risk, and app store rules do not allow it. When you import a playlist, such entries are skipped and listed under <strong>Details</strong>; the rest of the playlist is imported.</p>
+
+    <h2 id="example-en">Complete example</h2>
+    <p>TS IPTV's example M3U file has two channels that use Kodi-style features: <strong>Example Sports</strong> sends a header with the <code>|</code> suffix, and <strong>Example Protected</strong> declares Widevine DRM with <code>#KODIPROP</code>. The licence URL is a placeholder, so that channel is for illustration only.</p>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/playlist.m3u" download>Download playlist.m3u</a></div>
+      <pre data-copy data-example="/examples/playlist.m3u" tabindex="0"><code></code></pre>
+    </div>
+    <ol>
+      <li><code>license_type=com.widevine.alpha</code>: the DRM system is Widevine.</li>
+      <li><code>license_key=…|Content-Type=application%2Foctet-stream|R{SSM}|R</code>: send licence requests to <code>license.example.com</code> with a <code>Content-Type</code> header, raw body and raw response.</li>
+      <li><code>mimetype=application/dash+xml</code>: the stream is DASH.</li>
+      <li><code>catchup="shift" catchup-days="3"</code> on the last channel: catch-up information, stored.</li>
+    </ol>
+    <p>And a <code>.strm</code> file pointing to the Mux public test stream (Big Buck Bunny © Blender Foundation, CC BY 3.0):</p>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/channel.strm" download>Download channel.strm</a></div>
+      <pre data-copy data-example="/examples/channel.strm" tabindex="0"><code></code></pre>
+    </div>
+
+    <h2 id="create-en">Write it by hand</h2>
+    <ol>
+      <li>Write the M3U list as in the <a href="/guides/m3u/#create-en">M3U guide</a>.</li>
+      <li>Add the <code>#KODIPROP</code> lines right after the channel's <code>#EXTINF</code>, before the link line, one property per line.</li>
+      <li>URL-encode header values (<code>/</code> → <code>%2F</code>, <code>:</code> → <code>%3A</code>).</li>
+      <li>For <code>.strm</code>: create a text file with only the stream URL (plus <code>#KODIPROP</code> lines if needed) and save it as UTF-8 with the extension <code>.strm</code>. The file name becomes the channel name.</li>
+    </ol>
+
+    <h2 id="host-en">Host it</h2>
+    <p>Kodi-style M3U lists are hosted like any M3U file: see <a href="/guides/m3u/#host-en">hosting an M3U file</a>. <code>.strm</code> files are usually imported directly from the device with <strong>Import from file</strong>; if you host one, the server may send it as <code>text/plain</code>.</p>
+
+    <h2 id="add-en">Moving from Kodi to TS IPTV</h2>
+    <ol>
+      <li>In Kodi, open the settings of <strong>PVR IPTV Simple Client</strong>. In the general section, copy the <strong>M3U playlist URL</strong> (or note the local file path). In the EPG section, copy the <strong>XMLTV URL</strong>.</li>
+      <li>In TS IPTV, open <strong>Add IPTV Source</strong>, paste the playlist URL into <strong>Source Link</strong> and choose <strong>Add IPTV</strong>; or choose <strong>Import from file</strong> for a local file or a <code>.strm</code> file.</li>
+      <li>If the playlist has no <code>x-tvg-url</code>, add <code>x-tvg-url="&lt;XMLTV URL&gt;"</code> to its <code>#EXTM3U</code> line (see the <a href="/guides/xmltv/#add-en">XMLTV guide</a>).</li>
+      <li>Read the import message: entries that need a Kodi add-on or web-page scraping are counted under <strong>Details</strong>.</li>
+    </ol>
+
+    <h2 id="mistakes-en">Common mistakes</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Case</th><th>Symptom</th><th>What to do</th></tr></thead>
+        <tbody>
+          <tr><td>Headers attached with <code>|</code> to a manifest URL</td><td>No error: TS IPTV accepts it</td><td>Kodi recommends <code>*_headers</code>; TS IPTV reads both.</td></tr>
+          <tr><td><code>license_key</code> with a special body or response (<code>b{SSM}</code>, <code>J…</code>, <code>{HASH}</code>)</td><td>“This channel's DRM setup is not supported yet”</td><td>Ask your provider for a standard licence setup (<code>R{SSM}|R</code>).</td></tr>
+          <tr><td>ClearKey on an HLS stream</td><td>Does not play; a DRM message is shown</td><td>ClearKey works with DASH streams on Android only.</td></tr>
+          <tr><td>WisePlay (<code>com.huawei.wiseplay</code>)</td><td>“This channel's DRM setup is not supported yet”</td><td>Not supported.</td></tr>
+          <tr><td>A DRM channel on iPhone, iPad or desktop</td><td>“DRM is not supported on this device”</td><td>Watch that channel on Android.</td></tr>
+          <tr><td>The licence server refuses</td><td>“The DRM licence server refused this device”</td><td>Check that your subscription is active.</td></tr>
+          <tr><td><code>plugin://…</code> entries</td><td>Skipped, listed under Details</td><td>They need a Kodi add-on; they cannot run in TS IPTV.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support-en">What TS IPTV supports</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Feature</th><th>Android</th><th>iOS</th><th>Desktop</th></tr></thead>
+        <tbody>
+          <tr><td>PVR IPTV Simple M3U attributes</td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td><code>mimetype</code>, <code>manifest_type</code></td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>Headers (<code>*_headers</code>, <code>#EXTVLCOPT</code>, <code>|</code>)</td><td><span class="badge yes">All headers</span></td><td><span class="badge partial">Best effort</span></td><td><span class="badge partial">User-Agent and Referer only</span></td></tr>
+          <tr><td>Widevine, PlayReady</td><td><span class="badge yes">Android only</span></td><td><span class="badge no">Not supported</span></td><td><span class="badge no">Not supported</span></td></tr>
+          <tr><td>ClearKey</td><td><span class="badge partial">DASH only</span></td><td><span class="badge no">Not supported</span></td><td><span class="badge no">Not supported</span></td></tr>
+          <tr><td>Catch-up</td><td colspan="3"><span class="badge partial">Stored, playback coming later</span></td></tr>
+          <tr><td><code>.strm</code> files</td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>Kodi add-ons, <code>plugin://</code>, repositories, <code>#WEBPROP</code></td><td colspan="3"><span class="badge no">Not supported</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related-en">Related guides</h2>
+      <ul>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/xmltv/">XMLTV</a></li>
+        <li><a href="/guides/xtream-codes/">Xtream Codes style links</a></li>
+        <li><a href="/guides/">All guides</a></li>
+      </ul>
+    </section>
