@@ -190,8 +190,8 @@ kotlin {
 // the encoding leaves room for major versions up to 2100 before Play's
 // versionCode ceiling of 2,100,000,000 is a concern.
 val versionMajor = 1
-val versionMinor = 0
-val versionPatch = 1
+val versionMinor = 1
+val versionPatch = 0
 
 // 1.0.1 -> 1_000_001. Strictly increasing as long as the three parts only go up,
 // and already above the 26301 this replaced.
