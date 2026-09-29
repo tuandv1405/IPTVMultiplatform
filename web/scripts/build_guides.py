@@ -15,6 +15,9 @@ import pathlib
 import re
 import sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import site_nav  # noqa: E402  (shared header nav + speculation rules)
+
 WEB = pathlib.Path(__file__).resolve().parent.parent
 SRC = WEB / "guides-src"
 PUBLIC = WEB / "public"
@@ -209,7 +212,7 @@ def render_all():
         # The English description (den) is kept for reviewers; the <head> carries the
         # Vietnamese description because Vietnamese is the default pane.
         target = OUT / slug / "index.html" if slug else OUT / "index.html"
-        pages[target] = fill_examples(page)
+        pages[target] = site_nav.normalize(fill_examples(page), url[len(BASE):])
     return pages
 
 

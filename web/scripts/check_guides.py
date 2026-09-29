@@ -22,6 +22,7 @@ What is checked
   7. The header nav and the footer of every page of the site link to /guides/.
   8. Every generated page equals what web/scripts/build_guides.py produces from web/guides-src.
   9. The browser validator passes web/scripts/test_validator.js (when Node is installed).
+ 10. Every page has the shared header nav and speculation rules of web/scripts/site_nav.py.
 
 Requires Python 3.9+ and `jsonschema` (pip install jsonschema).
 """
@@ -473,8 +474,10 @@ def check_guide_page(path: pathlib.Path, page: Page, pages: dict):
         if target_path and not target.is_file():
             fail(where, f"internal link does not resolve: {href}")
             continue
-        if target_path.startswith("/playlists"):
-            fail(where, "guide pages must not link to /playlists/")
+        if target_path.startswith("/playlists") and pane is not None:
+            # AC-W6: guide *content* (the language panes) must not link to the directory; the
+            # shared site nav in the header is site chrome (web/scripts/site_nav.py).
+            fail(where, "guide content must not link to /playlists/")
         if parts.fragment:
             ids = page.ids_all if target == path else pages.get(target, set())
             if target.suffix == ".html" and target not in pages and target != path:
@@ -527,6 +530,16 @@ def main():
 
     for target in build_guides.stale_pages():
         fail(rel(target), "out of date vs web/guides-src (run python web/scripts/build_guides.py)")
+
+    # One header nav + speculation rules on every page (web/scripts/site_nav.py).
+    import site_nav
+    for path in site_nav.pages():
+        text = path.read_text(encoding="utf-8")
+        if site_nav.is_redirect_stub(text):
+            continue
+        if site_nav.normalize(text, site_nav.url_path_of(path)) != text.replace("\r\n", "\n"):
+            fail(rel(path), "header nav or speculation rules differ (run python web/scripts/site_nav.py, "
+                            "or build_guides.py for guide pages)")
 
     check_examples_and_schema()
     check_denylist()
