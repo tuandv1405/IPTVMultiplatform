@@ -13,6 +13,7 @@ concurrency:
 
 permissions:
   contents: read
+  id-token: write # Workload Identity Federation (keyless Google auth)
 
 jobs:
   distribute:
@@ -77,19 +78,19 @@ jobs:
           } > release-notes.txt
           cat release-notes.txt
 
+      # Keyless: GitHub's OIDC token is exchanged for the service account's credentials
+      # (the organisation policy iam.disableServiceAccountKeyCreation forbids JSON keys).
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
       - name: Upload to Firebase App Distribution
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_APP_ID: ${{ vars.FIREBASE_ANDROID_APP_ID || '1:234600934735:android:c8d65b7ef4741dacd4a93a' }}
           TESTER_GROUPS: ${{ vars.FIREBASE_TESTER_GROUPS || 'testers' }}
         run: |
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "::error::Secret FIREBASE_SERVICE_ACCOUNT_JSON is not set (see docs/ci-firebase-distribution.md)"
-            exit 1
-          fi
-          creds="$RUNNER_TEMP/firebase-sa.json"
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$creds"
-          export GOOGLE_APPLICATION_CREDENTIALS="$creds"
           npx --yes firebase-tools@14 appdistribution:distribute "${{ steps.aab.outputs.file }}" \
             --app "$FIREBASE_APP_ID" \
             --groups "$TESTER_GROUPS" \
@@ -104,4 +105,4 @@ jobs:
 
       - name: Clean up secrets
         if: always()
-        run: rm -f "$TSIPTV_STORE_FILE" "$RUNNER_TEMP/firebase-sa.json"
+        run: rm -f "$TSIPTV_STORE_FILE"

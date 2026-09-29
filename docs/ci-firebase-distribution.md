@@ -23,7 +23,9 @@ Vào GitHub › repo › **Settings › Secrets and variables › Actions › Ne
 | `TSIPTV_STORE_PASSWORD` | `storePassword` trong `composeApp/keystore.properties` |
 | `TSIPTV_KEY_ALIAS` | `keyAlias` |
 | `TSIPTV_KEY_PASSWORD` | `keyPassword` |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | Toàn bộ nội dung file JSON của service account (bước 2) |
+
+Không cần secret cho Google: workflow đăng nhập Google Cloud bằng Workload Identity Federation (bước 2),
+nên không có file key JSON nào.
 
 Mã hoá keystore sang base64 trên Windows (PowerShell):
 
@@ -33,13 +35,47 @@ Mã hoá keystore sang base64 trên Windows (PowerShell):
 
 Dán nội dung clipboard vào secret. Không commit file `.jks` hay chuỗi base64 này.
 
-### 2. Service account cho App Distribution
+### 2. Đăng nhập Google không cần key (Workload Identity Federation)
 
-1. Mở Google Cloud Console › project **tsiptv-8bdd6** › **IAM & Admin › Service Accounts** › **Create service account**,
-   đặt tên ví dụ `github-app-distribution`.
-2. Cấp role **Firebase App Distribution Admin**.
-3. Vào tab **Keys › Add key › JSON** để tải file JSON, dán toàn bộ nội dung vào secret `FIREBASE_SERVICE_ACCOUNT_JSON`,
-   rồi xoá file JSON khỏi máy.
+Tổ chức Google Cloud của bạn bật policy `iam.disableServiceAccountKeyCreation`, nên không tạo được key JSON.
+Vì vậy GitHub Actions đổi token OIDC của GitHub lấy quyền của một service account. Cách này không cần key, và chỉ
+repo `tuandv1405/IPTVMultiplatform` được dùng.
+
+Chạy các lệnh sau một lần trong Cloud Shell (hoặc máy có `gcloud`, đăng nhập bằng tài khoản owner của project):
+
+```bash
+PROJECT_ID=tsiptv-8bdd6
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+REPO=tuandv1405/IPTVMultiplatform
+SA=github-app-distribution@$PROJECT_ID.iam.gserviceaccount.com
+
+gcloud services enable iamcredentials.googleapis.com sts.googleapis.com \
+  firebaseappdistribution.googleapis.com --project $PROJECT_ID
+
+gcloud iam service-accounts create github-app-distribution --project $PROJECT_ID \
+  --display-name "GitHub Actions: App Distribution"
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member "serviceAccount:$SA" --role roles/firebaseappdistro.admin
+
+gcloud iam workload-identity-pools create github --project $PROJECT_ID \
+  --location global --display-name "GitHub Actions"
+gcloud iam workload-identity-pools providers create-oidc github-oidc --project $PROJECT_ID \
+  --location global --workload-identity-pool github --display-name "GitHub OIDC" \
+  --issuer-uri https://token.actions.githubusercontent.com \
+  --attribute-mapping "google.subject=assertion.sub,attribute.repository=assertion.repository" \
+  --attribute-condition "assertion.repository=='$REPO'"
+
+gcloud iam service-accounts add-iam-policy-binding $SA --project $PROJECT_ID \
+  --role roles/iam.workloadIdentityUser \
+  --member "principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/$REPO"
+
+echo "GCP_WORKLOAD_IDENTITY_PROVIDER = projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/providers/github-oidc"
+echo "GCP_SERVICE_ACCOUNT            = $SA"
+```
+
+Sau đó vào GitHub › **Settings › Secrets and variables › Actions › Variables** và tạo hai **variable**
+(không phải secret) với đúng hai giá trị mà hai lệnh `echo` cuối in ra: `GCP_WORKLOAD_IDENTITY_PROVIDER` và
+`GCP_SERVICE_ACCOUNT`. Hai giá trị này không phải bí mật.
 
 ### 3. Firebase App Distribution
 
