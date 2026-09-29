@@ -23,9 +23,7 @@ Vào GitHub › repo › **Settings › Secrets and variables › Actions › Ne
 | `TSIPTV_STORE_PASSWORD` | `storePassword` trong `composeApp/keystore.properties` |
 | `TSIPTV_KEY_ALIAS` | `keyAlias` |
 | `TSIPTV_KEY_PASSWORD` | `keyPassword` |
-
-Không cần secret cho Google: workflow đăng nhập Google Cloud bằng Workload Identity Federation (bước 2),
-nên không có file key JSON nào.
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Toàn bộ nội dung file key JSON của service account (bước 2) |
 
 Mã hoá keystore sang base64 trên Windows (PowerShell):
 
@@ -35,7 +33,21 @@ Mã hoá keystore sang base64 trên Windows (PowerShell):
 
 Dán nội dung clipboard vào secret. Không commit file `.jks` hay chuỗi base64 này.
 
-### 2. Đăng nhập Google không cần key (Workload Identity Federation)
+### 2. Service account và key JSON cho App Distribution
+
+1. Google Cloud Console › project **tsiptv-8bdd6** › **IAM & Admin › Service Accounts** › **Create service account**,
+   ví dụ đặt tên `github-app-distribution`.
+2. Cấp role **Firebase App Distribution Admin** (`roles/firebaseappdistro.admin`).
+3. Vào tab **Keys › Add key › Create new key › JSON**. Dán toàn bộ nội dung file vào secret
+   `FIREBASE_SERVICE_ACCOUNT_JSON`, rồi xoá file khỏi máy. Không commit file này.
+4. Bật API: `gcloud services enable firebaseappdistribution.googleapis.com --project tsiptv-8bdd6`.
+
+Khi đã có secret này, workflow dùng key và bỏ qua cách không cần key ở dưới.
+
+### 2b. Cách khác: không cần key (Workload Identity Federation)
+
+Chỉ dùng khi không tạo được key, ví dụ khi tổ chức bật policy `iam.disableServiceAccountKeyCreation`.
+Nếu đã có `FIREBASE_SERVICE_ACCOUNT_JSON` thì bỏ qua mục này.
 
 Tổ chức Google Cloud của bạn bật policy `iam.disableServiceAccountKeyCreation`, nên không tạo được key JSON.
 Vì vậy GitHub Actions đổi token OIDC của GitHub lấy quyền của một service account. Cách này không cần key, và chỉ
