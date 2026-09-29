@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import tss.t.tsiptv.core.firebase.analystics.AnalyticsConstants
+import tss.t.tsiptv.core.firebase.analystics.AnalyticsLinks
 import tss.t.tsiptv.core.stremio.AddonPreview
 import tss.t.tsiptv.core.stremio.AddonPreviewResult
 import tss.t.tsiptv.core.stremio.AddonRefreshResult
@@ -99,7 +100,14 @@ class AddonsViewModel(private val repository: AddonRepository) : ViewModel() {
                 return@launch
             }
             _addState.value = AddAddonState.Idle
-            Firebase.analytics.logEvent(AnalyticsConstants.EVENT_ADD_ADDON, emptyMap())
+            // Host and scheme only: addon paths hold the user's configuration (service keys).
+            Firebase.analytics.logEvent(
+                AnalyticsConstants.EVENT_ADD_ADDON,
+                mapOf(
+                    AnalyticsConstants.PARAMS_LINK_HOST to preview.transport.host.take(AnalyticsLinks.MAX_VALUE_LENGTH),
+                    AnalyticsConstants.PARAMS_URL_SCHEME to preview.transport.scheme,
+                )
+            )
             _messages.send(AddonsMessage.Added)
         }
     }

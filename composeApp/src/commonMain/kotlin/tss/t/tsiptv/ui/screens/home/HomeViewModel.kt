@@ -29,6 +29,7 @@ import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.Playlist
+import tss.t.tsiptv.core.model.PlaylistSourceType
 import tss.t.tsiptv.core.parser.model.IPTVProgram
 import tss.t.tsiptv.core.parser.model.SkipReason
 import tss.t.tsiptv.core.repository.IHistoryRepository
@@ -253,14 +254,20 @@ class HomeViewModel(
     private suspend fun onSourceStored(result: TsiptvStoreResult, fromRefresh: Boolean) {
         val playlist = result.playlist
         rememberPrevious(playlist.id)
-        // Format and size only (no names or links).
-        Firebase.analytics.logEvent(
-            AnalyticsConstants.EVENT_ADD_IPTV,
-            mapOf(
-                AnalyticsConstants.PARAMS_IPTV_FORMAT to tss.t.tsiptv.core.parser.model.IPTVFormat.TSIPTV_SOURCE.name,
-                AnalyticsConstants.PARAMS_IPTV_CHANNEL_COUNT to result.channelCount,
+        // Format, size and the sanitized link (AnalyticsLinks); never names or the raw link.
+        if (!fromRefresh) {
+            Firebase.analytics.logEvent(
+                AnalyticsConstants.EVENT_ADD_IPTV,
+                mapOf(
+                    AnalyticsConstants.PARAMS_IPTV_FORMAT to tss.t.tsiptv.core.parser.model.IPTVFormat.TSIPTV_SOURCE.name,
+                    AnalyticsConstants.PARAMS_IPTV_CHANNEL_COUNT to result.channelCount,
+                ) + AnalyticsConstants.addSourceParams(
+                    rawLink = playlist.url.takeIf { playlist.sourceType == PlaylistSourceType.URL },
+                    hasEpg = result.hasGuide,
+                    includeCount = result.includeCount,
+                )
             )
-        )
+        }
         _uiState.update {
             it.copy(
                 isLoading = false,
@@ -327,13 +334,16 @@ class HomeViewModel(
     private suspend fun onImported(result: ImportResult) {
         val playlist = result.playlist
         rememberPrevious(playlist.id)
-        // Format and size only: playlist links carry tokens and |Authorization= suffixes,
-        // and the name the user typed can identify them.
+        // Format, size and the sanitized link: raw links carry tokens and |Authorization=
+        // suffixes (AnalyticsLinks strips them), and the name the user typed is never sent.
         Firebase.analytics.logEvent(
             AnalyticsConstants.EVENT_ADD_IPTV,
             mapOf(
                 AnalyticsConstants.PARAMS_IPTV_FORMAT to result.format.name,
                 AnalyticsConstants.PARAMS_IPTV_CHANNEL_COUNT to result.channelCount,
+            ) + AnalyticsConstants.addSourceParams(
+                rawLink = playlist.url.takeIf { playlist.sourceType == PlaylistSourceType.URL },
+                hasEpg = playlist.epgUrls.isNotEmpty(),
             )
         )
         _uiState.update {

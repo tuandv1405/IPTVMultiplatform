@@ -82,11 +82,21 @@ not read the device photo library. If you would rather not declare this, strip
 **user ID** (the email, set when tracking permission is granted); the events
 themselves are not gated. They carry the detected playlist format and channel
 count (`add_iptv_playlist`, `HomeViewModel`) and the hour of play
-(`play_iptv_channel`, `PlayerViewModel`). Playlist and stream URLs, the name
-typed for a playlist and channel names are never sent: links carry access
-tokens and `|Authorization=` headers, and names can identify a private source
-(removed in F1, see docs/prd-kodi-m3u-compat.md §9). Imported files are read on
-the device only, and nothing about them is sent.*
+(`play_iptv_channel`, `PlayerViewModel`). Since 1.1, `add_iptv_playlist` also
+carries `source_kind` (link/file), `url_scheme`, `has_epg`, `include_count`, and
+for links added by URL the host (`link_host`) and a **sanitized** link (`link`):
+scheme, host, port and path only, built by `AnalyticsLinks`. Usernames and
+passwords (`user:pass@`), the query string (e.g. Xtream `?username=&password=`),
+the fragment, `|Authorization=`-style header suffixes and secret-looking path
+segments are removed before sending, and the value is capped at 100 characters.
+`add_addon` carries only the addon's host and scheme (addon paths hold the user's
+configuration). Stream URLs, the name typed for a playlist and channel names are
+never sent. Imported files are read on the device only; for them only
+`source_kind=file` is sent.
+
+Play Console: because a host or sanitized link can point to a private server,
+declare **App activity › Other user-generated content** (or "Other actions") as
+collected for Analytics, not shared, and mention it in the privacy policy.*
 
 ### App info and performance → Crash logs
 
