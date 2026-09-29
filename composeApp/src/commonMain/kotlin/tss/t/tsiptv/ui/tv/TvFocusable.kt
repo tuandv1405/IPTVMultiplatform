@@ -59,6 +59,9 @@ object TvDefaults {
  * highlighted (scale + accent border) while it holds focus, since a TV has no
  * touch feedback to tell the user where they are.
  */
+/** F3: the focus ring colour; a TS IPTV Source's screens use its accent. */
+val LocalFocusRingColor = androidx.compose.runtime.compositionLocalOf { TvDefaults.focusBorderColor }
+
 @Composable
 fun TvFocusableSurface(
     onClick: () -> Unit,
@@ -91,7 +94,7 @@ fun TvFocusableSurface(
             .background(background, shape)
             .border(
                 width = 2.dp,
-                color = if (focused) TvDefaults.focusBorderColor else Color.Transparent,
+                color = if (focused) LocalFocusRingColor.current else Color.Transparent,
                 shape = shape
             )
             .clickable(

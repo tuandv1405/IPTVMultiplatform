@@ -1,0 +1,7 @@
+{
+  "format": "tsiptv-source",
+  "version": 2,
+  "id": "qa.tsiptv.future",
+  "meta": { "name": "From the future" },
+  "channels": [{ "id": "a", "name": "A", "url": "https://cdn.example.com/a.m3u8" }]
+}

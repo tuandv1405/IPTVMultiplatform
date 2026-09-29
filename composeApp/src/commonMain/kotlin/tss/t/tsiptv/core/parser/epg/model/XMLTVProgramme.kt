@@ -18,10 +18,11 @@ data class XMLTVProgramme(
     val channelNumber: String? = null,
     val start: String,
     val stop: String,
+    // One per language is allowed, and common in multi-language guides.
     @XmlElement(true)
-    val title: XMLTVTitle? = null,
+    val title: List<XMLTVTitle> = emptyList(),
     @XmlElement(true)
-    val desc: XMLTVDesc? = null,
+    val desc: List<XMLTVDesc> = emptyList(),
     @XmlElement(true)
     val category: List<XMLTVCategory>? = null,
     @XmlElement(true)
@@ -32,7 +33,10 @@ data class XMLTVProgramme(
     /**
      * Convert to IPTVProgram model
      */
-    fun toIPTVProgram(): IPTVProgram? {
+    /**
+     * @param preferredLanguage `lang` of the title / description to prefer; otherwise the first
+     */
+    fun toIPTVProgram(preferredLanguage: String? = null): IPTVProgram? {
         val startTime = parseXMLTVDateTime(start)
         val endTime = parseXMLTVDateTime(stop)
 
@@ -41,11 +45,15 @@ data class XMLTVProgramme(
         }
         val programId = "${channel}_${startTime}"
 
+        fun <T> List<T>.pick(lang: (T) -> String?): T? =
+            firstOrNull { preferredLanguage != null && lang(it).equals(preferredLanguage, ignoreCase = true) }
+                ?: firstOrNull()
+
         return IPTVProgram(
             id = programId,
             channelId = channel,
-            title = title?.value ?: "Unknown Program",
-            description = desc?.value,
+            title = title.pick { it.lang }?.value ?: "Unknown Program",
+            description = desc.pick { it.lang }?.value,
             startTime = startTime,
             endTime = endTime,
             category = category?.map {

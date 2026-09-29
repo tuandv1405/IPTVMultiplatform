@@ -1,0 +1,17 @@
+{
+  "streams": [
+    { "name": "HLS", "url": "https://live.example.org/news/index.m3u8?token=abc" },
+    { "name": "DASH", "url": "https://live.example.org/news/manifest.mpd" },
+    { "name": "RTMP", "url": "rtmp://live.example.org/app/stream" },
+    { "name": "Local server", "url": "http://127.0.0.1:11470/5d640678/0" },
+    { "name": "Usenet", "nzbUrl": "https://indexer.example.org/get.nzb", "servers": ["nntps://u:p@news.example.org:563/4"] },
+    { "name": "Archive", "rarUrls": [ { "url": "https://files.example.org/a.rar" } ] },
+    { "name": "Frame", "playerFrameUrl": "https://player.example.org/embed/1" },
+    { "name": "Deep link", "externalUrl": "stremio:///detail/movie/tt0000001" },
+    { "name": "Mailto", "externalUrl": "mailto:someone@example.org" },
+    { "name": "Nothing" },
+    "garbage entry",
+    { "name": "Both url and infoHash", "url": "https://media.example.org/b.mp4", "infoHash": "abc" },
+    { "name": "Empty url falls through", "url": "", "externalUrl": "https://watch.example.org/x" }
+  ]
+}

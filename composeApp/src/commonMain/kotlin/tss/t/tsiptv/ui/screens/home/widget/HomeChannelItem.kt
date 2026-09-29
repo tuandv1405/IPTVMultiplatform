@@ -39,6 +39,8 @@ import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.ChannelHistory
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
+import tss.t.tsiptv.ui.widgets.channels.RadioBadge
+import tss.t.tsiptv.ui.widgets.channels.displayTitle
 import tss.t.tsiptv.utils.formatDateTime
 import tss.t.tsiptv.utils.formatDynamic
 import tss.t.tsiptv.utils.isToday
@@ -74,11 +76,6 @@ fun HomeChannelItem(
             modifier = Modifier.size(48.dp)
                 .clip(TSShapes.roundedShape8),
             contentScale = ContentScale.Inside,
-            onError = {
-                it.result.throwable.let {
-                    println(it.message)
-                }
-            },
             error = painterResource(Res.drawable.ic_loading_gradient_overlay),
         )
         Spacer(modifier = Modifier.size(16.dp))
@@ -86,12 +83,19 @@ fun HomeChannelItem(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = channel.name,
-                color = TSColors.TextPrimary,
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp
-            )
+            Row(verticalAlignment = CenterVertically) {
+                Text(
+                    text = channel.displayTitle(),
+                    color = TSColors.TextPrimary,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                if (channel.isRadio) {
+                    Spacer(modifier = Modifier.size(8.dp))
+                    RadioBadge()
+                }
+            }
             Text(
                 text = channel.id,
                 color = TSColors.TextSecondaryLight,
@@ -161,11 +165,6 @@ fun HomeChannelHistoryItem(
             modifier = Modifier.size(48.dp)
                 .clip(TSShapes.roundedShape8),
             contentScale = ContentScale.Inside,
-            onError = {
-                it.result.throwable.let {
-                    println(it.message)
-                }
-            },
             error = painterResource(Res.drawable.ic_loading_gradient_overlay),
         )
         Spacer(modifier = Modifier.size(16.dp))

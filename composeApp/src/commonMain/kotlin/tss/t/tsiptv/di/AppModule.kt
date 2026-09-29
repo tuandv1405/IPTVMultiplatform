@@ -53,6 +53,7 @@ import tss.t.tsiptv.ui.screens.player.PlayerViewModel
 import tss.t.tsiptv.ui.screens.programs.ProgramViewModel
 import tss.t.tsiptv.ui.screens.programs.details.ProgramDetailViewModel
 import tss.t.tsiptv.usecase.di.useCaseModule
+import tss.t.tsiptv.core.stremio.di.stremioModule
 
 /**
  * Common module for shared dependencies
@@ -178,5 +179,8 @@ val commonModule = module {
 fun getCommonModules(): List<Module> = listOf(
     commonModule,
     authModule,
-    useCaseModule
+    useCaseModule,
+    stremioModule,
+    tss.t.tsiptv.core.tsiptv.di.tsiptvModule,
+    tss.t.tsiptv.ui.screens.source.tsiptvUiModule,
 )

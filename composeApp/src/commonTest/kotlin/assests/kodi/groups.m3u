@@ -1,0 +1,26 @@
+#EXTM3U catchup="shift"
+#EXTINF:-1 tvg-name="A, B" group-title="News",Channel, with comma
+https://cdn.example.com/comma.m3u8
+#EXTINF:-1 tvg-ID="X" ch-number="5",Upper-case id
+https://cdn.example.com/x.m3u8
+#EXTGRP:Movies
+#EXTINF:-1,Sticky one
+https://cdn.example.com/s1.m3u8
+#EXTINF:-1,Sticky two
+https://cdn.example.com/s2.m3u8
+#EXTINF:-1 group-title="Sports",Own group
+https://cdn.example.com/own.m3u8
+#EXTGRP:
+#EXTINF:-1,After reset
+https://cdn.example.com/reset.m3u8
+#EXTINF:-1 catchup="append" catchup-source="&cutv={Y}-{m}-{d}T{H}:{M}:{S}" catchup-days="3",Append
+https://cdn.example.com/append.m3u8
+#EXTINF:-1 timeshift="2",Legacy timeshift
+https://cdn.example.com/timeshift.m3u8
+#EXTINF:-1 tvg-chno="abc",Bad number
+https://cdn.example.com/bad.m3u8
+#EXTINF:-1 group-title="A; B ;;A",Split groups
+#EXT-X-PLAYLIST-TYPE:VOD
+https://cdn.example.com/vod.mp4
+#EXTINF:-1 tvg-name="Guide name",
+https://cdn.example.com/unnamed.m3u8

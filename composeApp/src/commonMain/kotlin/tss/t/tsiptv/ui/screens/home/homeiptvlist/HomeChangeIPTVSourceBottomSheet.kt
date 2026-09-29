@@ -1,5 +1,8 @@
 package tss.t.tsiptv.ui.screens.home.homeiptvlist
 
+import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.foundation.layout.width
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -157,9 +160,21 @@ private fun PlaylistItem(
             ),
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
+            // F3: a TS IPTV Source has its own icon.
+            if (tss.t.tsiptv.core.tsiptv.TsiptvSourceIds.isSourcePlaylist(playlist.playlist.id)) {
+                androidx.compose.material3.Icon(
+                    androidx.compose.material.icons.Icons.Rounded.Dashboard,
+                    contentDescription = null,
+                    tint = TSColors.AccentCyan,
+                    modifier = Modifier.padding(end = 6.dp).size(16.dp),
+                )
+            }
             Text(
                 text = playlist.playlist.name,
-                style = TSTextStyles.semiBold13
+                style = TSTextStyles.semiBold13,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
             )
             Spacer(Modifier.weight(1f))
             Text(
@@ -172,15 +187,21 @@ private fun PlaylistItem(
         }
         Spacer(Modifier.height(2.dp))
         Row {
+            // Long links (tokens, source roots) end in an ellipsis; the date stays on one line.
             Text(
                 playlist.playlist.url,
-                style = TSTextStyles.normal13.copy(TSColors.GradientGreen)
+                style = TSTextStyles.normal13.copy(TSColors.GradientGreen),
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
             )
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.width(8.dp))
             Text(
                 playlist.playlist
                     .lastUpdated.formatDynamic(TimeStampFormat.yyyyMMdd_HHmmss.formatStr),
-                style = TSTextStyles.normal11
+                style = TSTextStyles.normal11,
+                maxLines = 1,
+                softWrap = false,
             )
         }
     }

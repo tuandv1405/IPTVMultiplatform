@@ -36,7 +36,10 @@ import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDidEnterBackgroundNotification
 import platform.UIKit.UIApplicationWillEnterForegroundNotification
 import platform.UIKit.UIImage
+import platform.AVFoundation.AVURLAsset
 import tss.t.tsiptv.player.models.MediaItem
+import tss.t.tsiptv.player.models.PlaybackError
+import tss.t.tsiptv.player.models.PlaybackPreflight
 import tss.t.tsiptv.player.models.PlaybackState
 import kotlin.math.roundToLong
 
@@ -75,6 +78,9 @@ class IOSMediaPlayer(
 
     private val _isMuted = MutableStateFlow(false)
     override val isMuted: StateFlow<Boolean> = _isMuted.asStateFlow()
+
+    private val _playbackError = MutableStateFlow<PlaybackError?>(null)
+    override val playbackError: StateFlow<PlaybackError?> = _playbackError.asStateFlow()
 
     private var avPlayer: AVPlayer? = AVPlayer()
     override val isPlaying: StateFlow<Boolean>
@@ -229,13 +235,36 @@ class IOSMediaPlayer(
     @OptIn(ExperimentalForeignApi::class)
     override suspend fun prepare(mediaItem: MediaItem) {
         _currentMedia.value = mediaItem
+        _currentPosition.value = 0L
+        _duration.value = 0L
+
+        // AVPlayer offers FairPlay only: refuse DRM channels before the stream is requested,
+        // and stop the previous channel so it does not keep playing under the message.
+        _playbackError.value = PlaybackPreflight.check(mediaItem, platformSupportsDrm = false)
+        if (_playbackError.value != null) {
+            avPlayer?.pause()
+            avPlayer?.replaceCurrentItemWithPlayerItem(null)
+            _isBuffering.value = false
+            _playbackState.value = PlaybackState.ERROR
+            return
+        }
         _isBuffering.value = true
 
         // Create URL from the media item URI
         val url = NSURL.URLWithString(mediaItem.uri)
 
-        // Create AVPlayerItem
-        val playerItem = url?.let { AVPlayerItem.playerItemWithURL(it) }
+        // Headers through AVURLAsset's undocumented options key: widely used, best effort.
+        val playerItem = url?.let {
+            if (mediaItem.headers.isEmpty()) {
+                AVPlayerItem.playerItemWithURL(it)
+            } else {
+                val asset = AVURLAsset.URLAssetWithURL(
+                    it,
+                    mapOf<Any?, Any?>("AVURLAssetHTTPHeaderFieldsKey" to mediaItem.headers)
+                )
+                AVPlayerItem.playerItemWithAsset(asset)
+            }
+        }
         // Create or reuse AVPlayer
         if (avPlayer == null && playerItem != null) {
             avPlayer = AVPlayer.playerWithPlayerItem(playerItem)
@@ -281,6 +310,7 @@ class IOSMediaPlayer(
                             player.play()
                         }
                     } else if (item.status == AVPlayerItemStatusFailed) { //
+                        _playbackError.value = PlaybackError.STREAM_FAILED
                         _playbackState.value = PlaybackState.ERROR
                     }
 
@@ -317,6 +347,8 @@ class IOSMediaPlayer(
     }
 
     override suspend fun play() {
+        // A refused channel has no item loaded; nothing to play.
+        if (_playbackError.value != null) return
         avPlayer?.let { player ->
             // Ensure volume is set correctly before playing
             val currentVolume = if (_isMuted.value) 0f else _volume.value
@@ -410,7 +442,7 @@ class IOSMediaPlayer(
 
     override suspend fun pause() {
         avPlayer?.pause()
-        _playbackState.value = PlaybackState.PAUSED
+        if (_playbackError.value == null) _playbackState.value = PlaybackState.PAUSED
     }
 
     @OptIn(ExperimentalForeignApi::class)

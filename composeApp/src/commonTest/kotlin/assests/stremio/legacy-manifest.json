@@ -1,0 +1,22 @@
+{
+  "id": "org.example.legacy",
+  "version": 2,
+  "name": "Legacy catalog form",
+  "resources": [
+    "catalog",
+    { "name": "meta", "types": ["movie"], "idPrefixes": ["lg_"] },
+    { "name": "stream" },
+    { "name": "subtitles", "types": ["movie", "series"] },
+    42,
+    { "types": ["movie"] }
+  ],
+  "types": ["movie", "series"],
+  "catalogs": [
+    { "type": "movie", "id": "legacy", "name": "Legacy",
+      "extraSupported": ["genre", "search", "skip"], "extraRequired": ["genre"],
+      "genres": ["Drama", "Horror"] },
+    { "type": "movie", "id": "noname" },
+    { "type": "movie", "id": "skipopts", "extra": [ { "name": "skip", "isRequired": true, "options": ["5"], "optionsLimit": 3 } ] }
+  ],
+  "behaviorHints": { "adult": "true", "p2p": 1, "configurable": true, "configurationRequired": false }
+}

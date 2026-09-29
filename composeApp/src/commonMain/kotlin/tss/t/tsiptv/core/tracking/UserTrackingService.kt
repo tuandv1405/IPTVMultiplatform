@@ -51,7 +51,7 @@ class DefaultUserTrackingService(
                     // Permission granted - set user email as Firebase Analytics user ID
                     user?.email?.let { email ->
                         Firebase.analytics.setUserId(email)
-                        println("[UserTrackingService] ATT permission granted - set user ID: $email")
+                        println("[UserTrackingService] ATT permission granted - set user ID")
                     }
                 }
                 PermissionResult.DENIED, PermissionResult.PERMANENTLY_DENIED -> {
@@ -61,7 +61,7 @@ class DefaultUserTrackingService(
                 }
             }
         } catch (e: Exception) {
-            println("[UserTrackingService] Error requesting tracking permission: ${e.message}")
+            println("[UserTrackingService] Error requesting tracking permission: ${e::class.simpleName}")
             // On error, don't set user ID to be safe
             Firebase.analytics.setUserId(null)
         }
@@ -72,7 +72,7 @@ class DefaultUserTrackingService(
             // Only set user ID if tracking is allowed
             user?.email?.let { email ->
                 Firebase.analytics.setUserId(email)
-                println("[UserTrackingService] Tracking allowed - updated user ID: $email")
+                println("[UserTrackingService] Tracking allowed - updated user ID")
             }
         } else {
             // Clear user ID if tracking is not allowed

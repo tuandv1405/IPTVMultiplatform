@@ -1,0 +1,18 @@
+{
+  "streams": [
+    { "name": "1080p", "description": "Direct MP4\nline two",
+      "url": "https://media.example.org/film/1080.mp4",
+      "behaviorHints": { "filename": "film.1080p.mkv", "bingeGroup": "fixture-1080p", "countryWhitelist": ["USA", "gbr"],
+                         "notWebReady": true,
+                         "proxyHeaders": { "request": { "User-Agent": "Fixture/1.0", "Referer": "https://example.org/", "X-Num": 5,
+                                                        "Bad Header": "x", "X-Inject": "a\r\nEvil: 1" },
+                                           "response": { "Content-Type": "video/mp4" } },
+                         "videoSize": "123456", "someFutureHint": { "a": 1 } } },
+    { "name": "P2P", "title": "legacy title field", "infoHash": "5d640678eae57c72c0d096904fd7d7405ece6653", "fileIdx": 1 },
+    { "name": "Trailer", "ytId": "abcdefghijk" },
+    { "name": "Web", "description": "Opens a web page", "externalUrl": "https://watch.example.org/title/1" }
+  ],
+  "cacheMaxAge": 604800,
+  "staleRevalidate": 7776000,
+  "staleError": 31104000
+}

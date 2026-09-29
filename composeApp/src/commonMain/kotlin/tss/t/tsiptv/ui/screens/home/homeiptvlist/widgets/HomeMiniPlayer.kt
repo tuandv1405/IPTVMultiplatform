@@ -37,6 +37,7 @@ import dev.chrisbanes.haze.hazeEffect
 import org.koin.compose.viewmodel.koinViewModel
 import tss.t.tsiptv.core.parser.model.IPTVProgram
 import tss.t.tsiptv.player.models.MediaItem
+import tss.t.tsiptv.ui.screens.player.isAddonItemId
 import tss.t.tsiptv.player.ui.MediaPlayerContent
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
@@ -120,7 +121,9 @@ fun BoxScope.HomeMiniPlayer(
                     fontSize = 16.sp
                 )
                 Text(
-                    text = program?.title ?: mediaItem.id,
+                    // Addon items (F2) are not channels: the programme belongs to the last channel,
+                    // and the raw id is internal. Show the episode label, if any.
+                    text = if (isAddonItemId(mediaItem.id)) mediaItem.artist else program?.title ?: mediaItem.id,
                     color = TSColors.TextSecondaryLight,
                     fontWeight = FontWeight.Companion.Normal,
                     fontSize = 13.sp,

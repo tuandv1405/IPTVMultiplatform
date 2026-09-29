@@ -139,7 +139,7 @@
         <tbody>
           <tr><td>Id</td><td><code>^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$</code>: chữ cái, chữ số, <code>.</code>, <code>_</code>, <code>-</code>, phân biệt hoa thường, <strong>không có <code>:</code></strong> (dấu hai chấm dành cho mục được include, <code>includeId:itemId</code>). Mọi id của kênh, phim lẻ, phim bộ, tập và include phải là duy nhất trong tệp. Id xuất hiện trước được giữ, theo thứ tự: kênh, phim lẻ, phim bộ (mỗi phim bộ kèm các tập của nó), include; mục bị bỏ thì không giữ id của nó.</td></tr>
           <tr><td>URL</td><td>Tuyệt đối, <code>http://</code> hoặc <code>https://</code>, tối đa 2.048 ký tự, không khoảng trắng hay ký tự điều khiển. Mọi URL trong tệp (luồng, ảnh, include, máy chủ giấy phép) đều theo quy tắc này; <code>rtmp:</code>, <code>udp:</code>, <code>file:</code>, <code>data:</code> và mọi giao thức khác đều không hợp lệ. Nên dùng <code>https</code>.</td></tr>
-          <tr><td>Header</td><td>Đối tượng tên header → giá trị, ví dụ <code>{ "User-Agent": "Mozilla/5.0", "Referer": "https://example.com/" }</code>. Tối đa 20. Giá trị được gửi đúng như viết (không giải mã URL), tối đa 4.096 ký tự. Cấm <code>Host</code>, <code>Content-Length</code>, <code>Connection</code> và <code>Transfer-Encoding</code>. Header đi kèm mọi yêu cầu của luồng (manifest, đoạn video, khoá), không đi kèm yêu cầu giấy phép DRM.</td></tr>
+          <tr><td>Header</td><td>Đối tượng tên header → giá trị, ví dụ <code>{ "User-Agent": "Mozilla/5.0", "Referer": "https://example.com/" }</code>. Tối đa 20. Giá trị được gửi đúng như viết (không giải mã URL), tối đa 4.096 ký tự. Cấm <code>Host</code>, <code>Content-Length</code>, <code>Connection</code> và <code>Transfer-Encoding</code>. Header đi kèm mọi yêu cầu của luồng (manifest, đoạn video, khoá), không đi kèm yêu cầu giấy phép DRM và không đi kèm tệp phụ đề.</td></tr>
           <tr><td>Màu</td><td><code>#RRGGBB</code>.</td></tr>
         </tbody>
       </table>
@@ -198,7 +198,7 @@
         </tbody>
       </table>
     </div>
-    <p>Hero dùng truy vấn sẽ lấy <code>backdrop</code> của từng mục, nếu không có thì <code>poster</code>, rồi <code>logo</code>, và bỏ qua mục không có ảnh. <code>target</code> của banner là id của một kênh, phim lẻ, phim bộ hoặc tập phim (mục được include viết dạng <code>includeId:itemId</code>); không có target thì banner chỉ để trang trí. <code>autoplay: true</code> phát ngay nội dung thay vì mở trang của nó (chỉ với kênh, phim lẻ và tập phim). Banner không thể mở trang web. Mục không tìm thấy nội dung nào sẽ không được vẽ.</p>
+    <p>Hero dùng truy vấn sẽ lấy <code>backdrop</code> của từng mục, nếu không có thì <code>poster</code>, rồi <code>logo</code>, và bỏ qua mục không có ảnh. <code>target</code> của banner là id của một kênh, phim lẻ, phim bộ hoặc tập phim (mục được include viết dạng <code>includeId:itemId</code>); không có target thì banner chỉ để trang trí. <code>autoplay: true</code> bắt đầu phát nội dung (chỉ với kênh, phim lẻ và tập phim): kênh phát ngay; phim lẻ mở trang chi tiết của nó, tập phim mở trang chi tiết của phim bộ chứa nó, rồi phát luôn, nên bấm Quay lại sẽ về trang chi tiết đó. Banner không thể mở trang web. Mục không tìm thấy nội dung nào sẽ không được vẽ.</p>
 
     <h4 id="query">Truy vấn</h4>
     <div class="scroll-x">
@@ -227,7 +227,7 @@
         <thead><tr><th>Trường</th><th>Nghĩa</th></tr></thead>
         <tbody>
           <tr><td><code>url</code></td><td>Một luồng. Viết tắt của <code>"streams": [{ "url": … }]</code>.</td></tr>
-          <tr><td><code>streams</code></td><td>1–10 lựa chọn, tốt nhất xếp trước. TS IPTV phát luồng đầu tiên mà thiết bị hỗ trợ và cho người xem chọn luồng khác.</td></tr>
+          <tr><td><code>streams</code></td><td>1–10 lựa chọn, tốt nhất xếp trước. Với <strong>kênh</strong>, TS IPTV phát luồng đầu tiên mà thiết bị hỗ trợ, và người xem có thể chọn luồng khác ở mục “Luồng” trong “Tuỳ chọn phát” của trình phát (điện thoại: nút cài đặt của trình phát; TV: ▶, hoặc phím MENU, phím phụ đề hay phím Settings). Với <strong>phim lẻ hoặc tập phim</strong>, trang chi tiết liệt kê các luồng và người xem chọn ở đó; “Tuỳ chọn phát” của chúng chỉ có phụ đề. Trên TV, phần tuỳ chọn chỉ mở khi có gì đó để chọn.</td></tr>
           <tr><td><code>headers</code></td><td>Header cho mọi luồng của mục; header riêng của luồng được ưu tiên theo từng tên.</td></tr>
           <tr><td><code>mimeType</code></td><td>Gợi ý loại luồng cho mọi luồng.</td></tr>
           <tr><td><code>drm</code></td><td>DRM cho mọi luồng; <code>drm</code> riêng của luồng thay thế nó.</td></tr>
@@ -258,7 +258,7 @@
           <tr><td><code>number</code></td><td>0–99.999, hiện trên thẻ và dùng cho <code>sort: "number"</code>.</td></tr>
           <tr><td><code>logo</code></td><td>URL logo (nên dùng PNG nền trong suốt).</td></tr>
           <tr><td><code>groups</code></td><td>0–10 tên nhóm (1–100 ký tự). So khớp không phân biệt hoa thường và hiện đúng như viết; tên nhóm không được dịch.</td></tr>
-          <tr><td><code>epgId</code></td><td><code>&lt;channel id&gt;</code> XMLTV của kênh. Không có thì lịch được khớp theo tên.</td></tr>
+          <tr><td><code>epgId</code></td><td><code>&lt;channel id&gt;</code> XMLTV của kênh. Không có thì lịch được khớp theo tên (không phân biệt hoa thường, dấu và khoảng trắng).</td></tr>
           <tr><td><code>epgShiftHours</code></td><td>−12 … +14 giờ cộng vào giờ trong lịch của kênh.</td></tr>
           <tr><td><code>description</code>, <code>tags</code></td><td>Chữ dài; 0–20 thẻ, mỗi thẻ 1–50 ký tự.</td></tr>
           <tr><td><code>catchup</code></td><td><a href="#catchup">Xem lại</a>.</td></tr>
@@ -315,7 +315,7 @@
     <ul>
       <li><code>system</code>: <code>widevine</code>, <code>playready</code> (bắt buộc có đường dẫn giấy phép) hoặc <code>clearkey</code> (một đường dẫn giấy phép, hoặc <code>keys</code>: 1–20 cặp mã khoá 32 ký tự hex → khoá 32 ký tự hex).</li>
       <li>TS IPTV gửi yêu cầu thô tới <code>licenseUrl</code> và chờ giấy phép thô trả về; <code>licenseHeaders</code> chỉ đi kèm yêu cầu đó. Các giao thức giấy phép bọc hoặc dạng JSON không thuộc phiên bản 1.</li>
-      <li>Widevine và PlayReady phát trên Android; ClearKey phát trên Android với luồng DASH. iPhone, iPad và máy tính báo “Thiết bị này không hỗ trợ DRM” và thử luồng tiếp theo của mục nếu luồng đó không có DRM.</li>
+      <li>Widevine phát trên Android; PlayReady phát trên thiết bị Android có hỗ trợ (có PlayReady CDM, chủ yếu là TV); ClearKey chỉ phát trên Android với luồng DASH. Trên iPhone, iPad và máy tính, <strong>kênh</strong> bỏ qua luồng có DRM và phát luồng tiếp theo không có DRM; nếu không có, TS IPTV báo “Kênh này được bảo vệ bằng DRM. Thiết bị này không hỗ trợ DRM.” Với <strong>phim lẻ hoặc tập phim</strong>, chọn một luồng có DRM ở trang chi tiết sẽ hiện đúng thông báo đó, nên hãy cho các mục này thêm một luồng không có DRM.</li>
       <li>Chỉ công bố khoá và máy chủ giấy phép mà bạn có quyền chia sẻ.</li>
     </ul>
 
@@ -323,10 +323,10 @@
     <p><code>catchup</code> dùng cùng các chế độ và chỗ trống như <a href="/guides/kodi/#catchup">xem lại trong M3U kiểu Kodi</a>: <code>{ "mode", "source"?, "days"? (1–60, mặc định 7), "correctionHours"? (−24 … +24) }</code>. <code>mode</code> là <code>default</code> (<code>source</code> là mẫu URL đầy đủ, bắt đầu bằng <code>http://</code> hoặc <code>https://</code>), <code>append</code> (<code>source</code> được nối vào sau đường dẫn phát trực tiếp, ví dụ <code>?utc={utc}&amp;lutc={lutc}</code>), <code>shift</code>, <code>flussonic</code>, <code>flussonic-ts</code> hoặc <code>xc</code>. Với <code>default</code> và <code>append</code>, <code>source</code> là bắt buộc và không bao giờ được cắt khoảng trắng: có dấu cách hay ký tự điều khiển là không hợp lệ (<code>W_FIELD</code>), phần xem lại bị bỏ và kênh chỉ phát trực tiếp. Các chế độ khác dựng URL từ đường dẫn phát trực tiếp và bỏ qua <code>source</code>. <strong>TS IPTV lưu thông tin xem lại; tính năng phát lại chương trình đã phát sẽ có sau.</strong></p>
 
     <h4 id="subtitle">Phụ đề</h4>
-    <p><code>{ "url" (WebVTT hoặc SubRip), "language" (bắt buộc), "label"?, "format"? ("vtt" hoặc "srt") }</code>. TS IPTV hiện phụ đề trên Android và máy tính; iPhone và iPad chưa hiện.</p>
+    <p><code>{ "url" (WebVTT hoặc SubRip), "language" (bắt buộc), "label"?, "format"? ("vtt" hoặc "srt") }</code>. Phụ đề mặc định <strong>Tắt</strong>: người xem bật một phụ đề ở mục “Phụ đề” trong “Tuỳ chọn phát” của trình phát (xem <a href="#stream">luồng</a>). Trên Android, phụ đề không có <code>label</code> hiện tên ngôn ngữ, và tệp phụ đề được tải <strong>không</strong> kèm header của luồng, nên hãy đặt chúng ở nơi không cần mã truy cập hay Referer. Trên máy tính, phụ đề vẫn tải được, nhưng cách đặt tên và việc có gửi header hay không chưa được kiểm chứng. iPhone và iPad chưa hiện phụ đề.</p>
 
     <h3 id="includes"><code>epg</code> và <code>includes</code></h3>
-    <p><code>epg</code> là danh sách đường dẫn lịch phát sóng XMLTV, mỗi mục là một chuỗi URL hoặc <code>{ "url", "refreshHours"? }</code> (1–720, mặc định 24). Lịch có thể nén gzip. Chương trình được khớp với kênh theo <code>epgId</code>, rồi theo tên.</p>
+    <p><code>epg</code> là danh sách đường dẫn lịch phát sóng XMLTV, mỗi mục là một chuỗi URL hoặc <code>{ "url", "refreshHours"? }</code> (1–720, mặc định 24). Lịch có thể nén gzip. Chương trình được khớp với kênh theo <code>epgId</code>; kênh không có <code>epgId</code> được khớp theo tên (không phân biệt hoa thường, dấu và khoảng trắng).</p>
     <div class="codeblock">
       <pre data-copy tabindex="0"><code>"includes": [
   { "id": "news", "type": "m3u", "url": "https://example.com/playlists/news.m3u", "name": "Partner news" },
@@ -413,7 +413,7 @@
     <p>Thay đổi làm đổi ý nghĩa của các tệp hiện có sẽ là phiên bản 2, với schema mới (<code>tsiptv-source-v2.json</code>); schema phiên bản 1 vẫn được giữ.</p>
 
     <h2 id="validation">Kiểm tra: lỗi và cảnh báo</h2>
-    <p>TS IPTV kiểm tra một nguồn ở ba mức. <strong>Lỗi tài liệu</strong> khiến tệp bị từ chối. <strong>Lỗi mục</strong> bỏ mục hoặc trường đó và nhập phần còn lại. <strong>Cảnh báo</strong> không thay đổi gì nhưng được liệt kê. Mỗi vấn đề được báo dạng <code>đường dẫn — thông báo</code>, ví dụ <code>channels[3].url — must start with http:// or https://</code> (chỉ để minh hoạ; câu chữ thực tế có thể khác).</p>
+    <p>TS IPTV kiểm tra một nguồn ở ba mức. <strong>Lỗi tài liệu</strong> khiến tệp bị từ chối. <strong>Lỗi mục</strong> bỏ mục hoặc trường đó và nhập phần còn lại. <strong>Cảnh báo</strong> không thay đổi gì nhưng được liệt kê. Mỗi vấn đề được liệt kê dạng <code>đường dẫn — MÃ: giải thích</code>, ví dụ <code>channels[3].url — E_URL: …</code> (phần giải thích là một câu ngắn theo ngôn ngữ của ứng dụng).</p>
     <div class="scroll-x">
       <table>
         <thead><tr><th>Mã</th><th>Mức</th><th>Khi nào</th><th>Người xem thấy gì</th></tr></thead>
@@ -424,7 +424,7 @@
           <tr><td><code>E_TOO_LARGE</code></td><td>tài liệu</td><td>Lớn hơn 5 MiB</td><td>“Nguồn này lớn hơn 5 MB.”</td></tr>
           <tr><td><code>E_ID</code>, <code>E_META</code></td><td>tài liệu</td><td>Thiếu hoặc sai <code>id</code>, <code>meta</code> hay <code>meta.name</code></td><td>“Nguồn này thiếu id hoặc tên.”</td></tr>
           <tr><td><code>E_EMPTY</code></td><td>tài liệu</td><td>Không có mục và include nào (hoặc tất cả đều bị bỏ)</td><td>“Nguồn này không có nội dung nào TS IPTV hiển thị được.”</td></tr>
-          <tr><td><code>E_ITEM_ID</code></td><td>mục</td><td>Thiếu hoặc sai id; số mùa hay số tập bị thiếu hoặc ngoài khoảng; một phần tử không phải đối tượng</td><td rowspan="6">Trước khi nhập: “N mục sẽ bị bỏ qua” kèm <strong>Chi tiết</strong>. Sau khi nhập: số lượng nằm trong thông báo thành công. Khi làm mới: liệt kê trong “Giới thiệu nguồn”.</td></tr>
+          <tr><td><code>E_ITEM_ID</code></td><td>mục</td><td>Thiếu hoặc sai id; số mùa hay số tập bị thiếu hoặc ngoài khoảng; một phần tử không phải đối tượng</td><td rowspan="6">Trước khi nhập: “N mục sẽ bị bỏ qua” kèm <strong>Chi tiết</strong>. Sau khi nhập: thông báo thành công, ví dụ “Đã thêm nguồn: 3 kênh, 1 phim lẻ, 0 phim bộ”, kèm “Đã bỏ qua N mục”. Khi làm mới: đếm trong “Giới thiệu nguồn” (“Số vấn đề ở lần làm mới gần nhất: N”) và liệt kê trong “Các vấn đề tìm thấy”.</td></tr>
           <tr><td><code>E_DUPLICATE_ID</code></td><td>mục</td><td>Id (hoặc số mùa, số tập) đã được dùng</td></tr>
           <tr><td><code>E_ITEM_NAME</code></td><td>mục</td><td>Thiếu hoặc sai <code>name</code></td></tr>
           <tr><td><code>E_NO_STREAM</code></td><td>mục</td><td>Không có <code>url</code>/<code>streams</code>, có cả hai, hoặc không còn luồng hợp lệ; phim bộ hay mùa không còn gì hợp lệ bên trong</td></tr>
@@ -516,9 +516,10 @@
     <h2 id="add">Thêm vào TS IPTV</h2>
     <ol>
       <li>Mở <strong>Thêm nguồn IPTV</strong>, dán đường dẫn vào <strong>Liên kết nguồn</strong> rồi chọn <strong>Thêm IPTV</strong>, hoặc chọn <strong>Nhập từ tệp</strong>. TS IPTV nhận ra định dạng qua nội dung.</li>
-      <li>Màn hình xem trước mở ra (chưa lưu gì): logo, tên, tác giả, mô tả, số kênh, radio, phim lẻ và phim bộ, <strong>“Nguồn này kết nối tới các máy chủ sau”</strong> (máy chủ của tệp và của mọi include), “N mục sẽ bị bỏ qua” kèm <strong>Chi tiết</strong> nếu có mục không hợp lệ, thông báo rằng nguồn do bên thứ ba tạo, và ô xác nhận 18+ nếu nguồn được đánh dấu người lớn.</li>
-      <li>Chọn <strong>Nhập</strong>. TS IPTV tải các include (“Đang tải 2 trên 4…”), lưu mọi thứ rồi mở trang chủ của nguồn. Trên điện thoại, thẻ Trang chủ có hai phần <strong>Trang chủ</strong> (bố cục của bạn) và <strong>Kênh</strong> (danh sách kênh quen thuộc); trên TV, thanh bên bắt đầu bằng <strong>Trang chủ</strong>.</li>
-      <li>Tìm kiếm, Xem tiếp và kênh yêu thích hoạt động trong phạm vi nguồn. <strong>Giới thiệu nguồn</strong> hiện tác giả, trang chủ (chỉ mở sau khi bạn xác nhận), trạng thái từng include, lần làm mới gần nhất và chi tiết của nó, cùng nút <strong>Làm mới</strong> và <strong>Gỡ nguồn</strong>.</li>
+      <li>Hộp thoại xem trước <strong>“Thêm nguồn này?”</strong> mở ra (chưa lưu gì): logo, tên, tác giả, mô tả, số kênh, radio, phim lẻ và phim bộ, <strong>“Nguồn này kết nối tới các máy chủ sau”</strong> (máy chủ của tệp và của mọi include), “N mục sẽ bị bỏ qua” kèm <strong>Chi tiết</strong> (mở “Chi tiết nhập”) nếu có mục không hợp lệ, thông báo rằng nguồn do bên thứ ba tạo, và ô “Tôi đủ 18 tuổi trở lên” nếu nguồn được đánh dấu người lớn.</li>
+      <li>Chọn <strong>Nhập</strong>. TS IPTV tải các include (“Đang tải 2 trên 4…”). Nếu một include hoá ra có nội dung người lớn, ứng dụng hỏi lại (“Một phần nội dung của nguồn này đến từ nguồn hoặc addon có nội dung người lớn.” kèm “Tôi đủ 18 tuổi trở lên”); chọn <strong>Hủy</strong> thì không lưu gì. Sau đó ứng dụng lưu mọi thứ, báo ví dụ “Đã thêm nguồn: 3 kênh, 1 phim lẻ, 0 phim bộ” (kèm “Đã bỏ qua N mục” nếu có) rồi mở trang chủ của nguồn. Trên điện thoại, thẻ Trang chủ có hai phần <strong>Trang chủ</strong> (bố cục của bạn) và <strong>Kênh</strong> (danh sách kênh quen thuộc); trên TV, thanh bên bắt đầu bằng <strong>Trang chủ</strong>.</li>
+      <li>Tìm kiếm, Xem tiếp và kênh yêu thích hoạt động trong phạm vi nguồn. <strong>Giới thiệu nguồn</strong> (điện thoại: trong menu của trang chủ nguồn; TV: một mục trên thanh bên) hiện tác giả; nút <strong>Trang web</strong>, hỏi “Mở … trong trình duyệt?” (trên TV không có trình duyệt, đường dẫn được hiện dưới dạng chữ); trạng thái từng include (“Đã cập nhật”, “Không làm mới được — đang hiện bản từ …”, “Không tải được”, hoặc “Đang tạm giữ cho tới khi xác nhận 18+” kèm nút <strong>Xác nhận</strong>); lần làm mới gần nhất với “Số vấn đề ở lần làm mới gần nhất: N” và nút <strong>Chi tiết</strong> (“Các vấn đề tìm thấy”); cùng nút <strong>Làm mới</strong> và <strong>Gỡ nguồn</strong>.</li>
+      <li>Nếu làm mới chính tệp nguồn bị lỗi, phần giới thiệu thêm dòng “Lần thử gần nhất: …”; sau khi bạn tự bấm <strong>Làm mới</strong>, trang chủ còn báo “Không làm mới được nguồn này. Đang hiện bản đã lưu.”. TS IPTV sẽ thử lại theo lịch bình thường.</li>
     </ol>
     <p>Nếu tệp có lỗi tài liệu, TS IPTV báo “Không thể thêm nguồn này” với thông báo trong bảng ở trên và nút <strong>Chi tiết</strong> cho biết mã và đường dẫn. Nếu mọi include đều lỗi và tệp không có mục riêng nào, ứng dụng báo “Không tải được nội dung nào của nguồn này. Hãy thử lại sau.”</p>
 
@@ -550,17 +551,18 @@
       <table>
         <thead><tr><th>Tính năng</th><th>Android</th><th>iOS</th><th>Máy tính</th></tr></thead>
         <tbody>
-          <tr><td>Nhập bằng đường dẫn hoặc tệp, xem trước, bố cục, giao diện, tìm kiếm, Xem tiếp</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
-          <tr><td>Kênh, radio, phim lẻ, phim bộ; nhiều luồng mỗi mục</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
-          <tr><td>Header</td><td><span class="badge yes">Mọi header</span></td><td><span class="badge partial">Cố gắng tối đa</span></td><td><span class="badge partial">Chỉ User-Agent và Referer</span></td></tr>
+          <tr><td>Nhập bằng đường dẫn hoặc tệp, xem trước, bố cục, giao diện, tìm kiếm, Xem tiếp</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge partial">Chưa kiểm chứng</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Kênh, radio, phim lẻ, phim bộ; nhiều luồng mỗi mục (kênh: “Tuỳ chọn phát”; phim lẻ và tập phim: trang chi tiết)</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge partial">Chưa kiểm chứng</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Header</td><td><span class="badge yes">Mọi header</span></td><td><span class="badge partial">Chưa kiểm chứng</span></td><td><span class="badge partial">Chỉ User-Agent và Referer</span></td></tr>
           <tr><td>DRM (Widevine, PlayReady; ClearKey cho DASH)</td><td><span class="badge yes">Chỉ Android</span></td><td><span class="badge no">Không hỗ trợ</span></td><td><span class="badge no">Không hỗ trợ</span></td></tr>
-          <tr><td>Phụ đề (VTT, SRT)</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge no">Chưa có</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Phụ đề (VTT, SRT), mặc định tắt</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge no">Chưa có</span></td><td><span class="badge partial">Chưa kiểm chứng</span></td></tr>
           <tr><td>Include: <code>m3u</code>, <code>xmltv</code>, <code>stremio</code>, <code>tsiptv-source</code></td><td colspan="3"><span class="badge yes">Hỗ trợ</span> Addon tương thích Stremio chỉ phát luồng <code>url</code>.</td></tr>
           <tr><td>Xem lại (catch-up)</td><td colspan="3"><span class="badge partial">Được lưu, phát lại sẽ có sau</span></td></tr>
           <tr><td>Banner mở trang web</td><td colspan="3"><span class="badge no">Không thuộc định dạng</span></td></tr>
         </tbody>
       </table>
     </div>
+    <p>iOS: phần hỗ trợ TS IPTV Source chưa được build và kiểm tra trên iPhone và iPad, nên các ô đó ghi “Chưa kiểm chứng”. DRM không có trên iOS theo thiết kế. Máy tính: các tính năng ghi “Hỗ trợ” đã được build, nhưng ứng dụng máy tính chưa được kiểm tra với TS IPTV Source; phụ đề trên máy tính “Chưa kiểm chứng”.</p>
 
     <section class="related">
       <h2 id="related">Hướng dẫn liên quan</h2>

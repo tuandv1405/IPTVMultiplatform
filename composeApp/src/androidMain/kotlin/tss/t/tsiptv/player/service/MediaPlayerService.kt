@@ -21,13 +21,18 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
-import androidx.media3.exoplayer.drm.DrmSessionManager
+import androidx.media3.exoplayer.drm.DefaultDrmSessionManagerProvider
+import androidx.media3.exoplayer.drm.DrmSessionManagerProvider
 import androidx.media3.exoplayer.drm.FrameworkMediaDrm
-import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
+import androidx.media3.exoplayer.drm.LocalMediaDrmCallback
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.MediaSource
+import kotlinx.serialization.json.Json
+import tss.t.tsiptv.core.parser.model.playback.DrmSpec
+import tss.t.tsiptv.core.parser.model.playback.DrmSystem
+import tss.t.tsiptv.core.parser.model.playback.clearKeyJwks
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.ui.PlayerNotificationManager
@@ -44,10 +49,10 @@ import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
-import java.util.UUID
 import tss.t.tsiptv.player.models.MediaItem as AppMediaItem
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import tss.t.tsiptv.player.network.playerHttpDataSourceFactory
 import kotlin.math.log
@@ -66,10 +71,23 @@ class MediaPlayerService : MediaSessionService() {
         private const val CHANNEL_ID = "media_playback_channel"
         private const val CHANNEL_NAME = "Media Playback"
         private const val NOTIFICATION_ID = 1234
+        private const val EXTRA_MEDIA_ITEM = "media_item_json"
+        private const val EXTRA_SEQUENCE = "start_sequence"
 
-        // DRM-related constants
-        private val WIDEVINE_UUID = UUID.fromString("edef8ba9-79d6-4ace-a3c8-27dcd51d21ed")
-        private const val DRM_LICENSE_URL = "https://license.widevine.com/getlicense"
+        /**
+         * Sequence of the latest start request. onStartCommand runs asynchronously: when the user zaps
+         * fast, an older intent (channel A) must not start after a newer request (B, or a refusal).
+         */
+        private val latestSequence = java.util.concurrent.atomic.AtomicLong(0)
+
+        /** Makes every start intent still in flight stale (e.g. the new item was refused). */
+        fun invalidatePendingStarts() {
+            latestSequence.incrementAndGet()
+        }
+        private const val USER_AGENT = "User-Agent"
+
+        /** Ids of items the service could not even build a MediaSource for. */
+        val sourceFailures = MutableSharedFlow<String>(extraBufferCapacity = 1)
 
         private var instance: MediaPlayerService? = null
         private var exoPlayer: ExoPlayer? = null
@@ -82,11 +100,11 @@ class MediaPlayerService : MediaSessionService() {
          * Start the media service with the given media item
          */
         fun startService(context: Context, mediaItem: AppMediaItem) {
+            // The whole item, headers and DRM included: the service builds the channel's own
+            // data source from it. The intent is explicit, so the extras stay in the app.
             val intent = Intent(context, MediaPlayerService::class.java).apply {
-                putExtra("media_uri", mediaItem.uri)
-                putExtra("media_title", mediaItem.title)
-                putExtra("media_artist", mediaItem.artist)
-                putExtra("media_artwork_uri", mediaItem.artworkUri)
+                putExtra(EXTRA_MEDIA_ITEM, Json.encodeToString(AppMediaItem.serializer(), mediaItem))
+                putExtra(EXTRA_SEQUENCE, latestSequence.incrementAndGet())
             }
             context.startService(intent)
         }
@@ -209,12 +227,9 @@ class MediaPlayerService : MediaSessionService() {
             .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
             .build()
 
-        // Create DRM session manager for Widevine
-        val drmSessionManager = createDrmSessionManager()
-
-        // Create media source factory with DRM support
+        // Items from onStartCommand get their own MediaSource (channel headers and DRM, see
+        // createMediaSource); this default covers anything a session controller sets.
         val mediaSourceFactory = DefaultMediaSourceFactory(this)
-            .setDrmSessionManagerProvider { drmSessionManager }
             .setDataSourceFactory(playerHttpDataSourceFactory())
 
         player = ExoPlayer.Builder(this)
@@ -290,21 +305,13 @@ class MediaPlayerService : MediaSessionService() {
                     val artworkUri = currentArtworkUri
 
                     // If we have a cached bitmap and the URI hasn't changed, return the cached bitmap
+                    // Never log artwork URLs: addon and playlist links can carry tokens.
                     if (cachedArtworkBitmap != null && artworkUri == lastLoadedArtworkUri) {
-                        Log.d(
-                            "MediaPlayerService",
-                            "Using cached artwork bitmap for URI: $artworkUri"
-                        )
                         return cachedArtworkBitmap
                     }
 
                     // If we have a new URI, load the bitmap
                     if (artworkUri != null) {
-                        android.util.Log.d(
-                            "MediaPlayerService",
-                            "Loading new artwork bitmap for URI: $artworkUri"
-                        )
-
                         // Update the last loaded URI
                         lastLoadedArtworkUri = artworkUri
 
@@ -312,21 +319,13 @@ class MediaPlayerService : MediaSessionService() {
                         serviceScope.launch(Dispatchers.IO) {
                             val bitmap = loadBitmapFromUrl(artworkUri)
                             if (bitmap != null) {
-                                Log.d(
-                                    "MediaPlayerService",
-                                    "Successfully loaded artwork bitmap for URI: $artworkUri"
-                                )
-
                                 // Cache the bitmap
                                 cachedArtworkBitmap = bitmap
 
                                 // Notify the callback when the bitmap is loaded
                                 callback.onBitmap(bitmap)
                             } else {
-                                Log.e(
-                                    "MediaPlayerService",
-                                    "Failed to load artwork bitmap for URI: $artworkUri"
-                                )
+                                Log.w("MediaPlayerService", "Artwork could not be loaded (host: ${runCatching { java.net.URI(artworkUri).host }.getOrNull()})")
                             }
                         }
                     }
@@ -378,15 +377,20 @@ class MediaPlayerService : MediaSessionService() {
         if (intent == null) {
             return START_STICKY
         }
-
-        val mediaUri = intent.getStringExtra("media_uri")
-        if (mediaUri == null) {
-            return result
+        // A newer start (or a refusal) was requested after this intent: ignore it.
+        val sequence = intent.getLongExtra(EXTRA_SEQUENCE, -1L)
+        if (sequence != -1L && sequence != latestSequence.get()) {
+            return START_STICKY
         }
 
-        val mediaTitle = intent.getStringExtra("media_title") ?: "Unknown Title"
-        val mediaArtist = intent.getStringExtra("media_artist") ?: "Unknown Artist"
-        val artworkUri = intent.getStringExtra("media_artwork_uri")
+        val appItem = intent.getStringExtra(EXTRA_MEDIA_ITEM)
+            ?.let { runCatching { Json.decodeFromString(AppMediaItem.serializer(), it) }.getOrNull() }
+            ?: return result
+        val mediaUri = appItem.uri
+
+        val mediaTitle = appItem.title.ifEmpty { "Unknown Title" }
+        val mediaArtist = appItem.artist.ifEmpty { "Unknown Artist" }
+        val artworkUri = appItem.artworkUri
 
         // Store media info for notification
         currentMediaTitle = mediaTitle
@@ -408,33 +412,115 @@ class MediaPlayerService : MediaSessionService() {
             .setArtist(mediaArtist)
             .setArtworkUri(artworkUri?.toUri())
             .setDisplayTitle(mediaTitle)
-            .setMediaType(MediaMetadata.MEDIA_TYPE_VIDEO)
+            .setMediaType(
+                if (appItem.isRadio) MediaMetadata.MEDIA_TYPE_RADIO_STATION else MediaMetadata.MEDIA_TYPE_VIDEO
+            )
             .build()
 
-        // Build the media item, adding DRM configuration if needed
         val mediaItemBuilder = MediaItem.Builder()
             .setUri(mediaUri)
-            .setMediaId(mediaUri)
+            .setMediaId(appItem.id.ifEmpty { mediaUri })
             .setMediaMetadata(metadata)
-
-        // Check if this is a DRM-protected stream
-        if (isDrmProtected(mediaUri)) {
-            // Add DRM configuration
-            mediaItemBuilder.setDrmConfiguration(
-                MediaItem.DrmConfiguration.Builder(WIDEVINE_UUID)
-                    .setLicenseUri(DRM_LICENSE_URL)
-                    .build()
+        appItem.mimeType?.let { mediaItemBuilder.setMimeType(it) }
+        // No DrmSpec, no DRM configuration: guessing from the URL sent licence requests for
+        // clear streams. HLS AES-128 needs none; Media3 handles #EXT-X-KEY itself.
+        drmConfiguration(appItem.drm)?.let { mediaItemBuilder.setDrmConfiguration(it) }
+        // F3: side-loaded WebVTT / SubRip subtitles (TS IPTV Source movies and episodes). They are
+        // fetched with the item's headers by the same data source factory.
+        if (appItem.subtitles.isNotEmpty()) {
+            mediaItemBuilder.setSubtitleConfigurations(
+                appItem.subtitles.map { track ->
+                    MediaItem.SubtitleConfiguration.Builder(track.url.toUri())
+                        .setMimeType(
+                            if (track.mimeType == tss.t.tsiptv.player.models.SubtitleTrack.MIME_SRT) {
+                                androidx.media3.common.MimeTypes.APPLICATION_SUBRIP
+                            } else androidx.media3.common.MimeTypes.TEXT_VTT
+                        )
+                        .setLanguage(track.language)
+                        .setLabel(track.label ?: track.language)
+                        // Not selected by default (the spec asks for no preselection): Off until
+                        // the viewer picks one in the player's track menu.
+                        .setSelectionFlags(0)
+                        .build()
+                }
             )
         }
 
-        val mediaItem = mediaItemBuilder.build()
-
-        // Set the media item to the player
-        player.setMediaItem(mediaItem)
+        val source = try {
+            createMediaSource(mediaItemBuilder.build(), appItem)
+        } catch (e: Exception) {
+            // An item Media3 cannot build a source for (unknown container, bad DRM data) must not
+            // take the service down with it. Only the type is logged: the URI may hold a token.
+            Log.e("MediaPlayerService", "Cannot create media source: ${e.javaClass.simpleName}")
+            player.stop()
+            player.clearMediaItems()
+            sourceFailures.tryEmit(appItem.id)
+            return START_STICKY
+        }
+        player.setMediaSource(source)
         player.prepare()
         player.playWhenReady = true
 
         return START_STICKY
+    }
+
+    /**
+     * A MediaSource for this item only: its headers reach the manifest, variant, segment and
+     * key requests and the licence server (some check User-Agent / Referer), and nothing
+     * carries over to the next channel.
+     */
+    private fun createMediaSource(mediaItem: MediaItem, appItem: AppMediaItem): MediaSource {
+        val dataSourceFactory = playerHttpDataSourceFactory(appItem.headers)
+        val drm = appItem.drm
+        val drmProvider: DrmSessionManagerProvider =
+            if (drm?.system == DrmSystem.CLEARKEY && drm.clearKeys.isNotEmpty()) {
+                // Keys from the playlist: answer the CDM's key request locally.
+                val manager = DefaultDrmSessionManager.Builder()
+                    .setUuidAndExoMediaDrmProvider(C.CLEARKEY_UUID, FrameworkMediaDrm.DEFAULT_PROVIDER)
+                    .build(LocalMediaDrmCallback(drm.clearKeyJwks().toByteArray(Charsets.UTF_8)))
+                DrmSessionManagerProvider { manager }
+            } else {
+                // OkHttpDataSource sends its own user agent and would add a second one from
+                // the request properties, so a licence User-Agent goes into the factory instead.
+                val licenseUserAgent = drm?.licenseHeaders?.entries
+                    ?.firstOrNull { it.key.equals(USER_AGENT, ignoreCase = true) }?.value
+                val licenseFactory = if (licenseUserAgent == null) {
+                    dataSourceFactory
+                } else {
+                    playerHttpDataSourceFactory(
+                        appItem.headers.filterKeys { !it.equals(USER_AGENT, ignoreCase = true) } +
+                                (USER_AGENT to licenseUserAgent)
+                    )
+                }
+                DefaultDrmSessionManagerProvider().apply { setDrmHttpDataSourceFactory(licenseFactory) }
+            }
+        // Subtitle files never get the stream's headers (they may carry tokens; spec §12).
+        val subtitleUris = appItem.subtitles.map { it.url.toUri().toString() }.toSet()
+        val sourceFactory = if (subtitleUris.isEmpty()) dataSourceFactory
+        else tss.t.tsiptv.player.network.SubtitleAwareDataSourceFactory(dataSourceFactory, playerHttpDataSourceFactory(), subtitleUris)
+        return DefaultMediaSourceFactory(this)
+            .setDataSourceFactory(sourceFactory)
+            .setDrmSessionManagerProvider(drmProvider)
+            .createMediaSource(mediaItem)
+    }
+
+    /** Preflight has already refused unsupported specs; this only maps supported ones. */
+    private fun drmConfiguration(drm: DrmSpec?): MediaItem.DrmConfiguration? {
+        if (drm == null || !drm.isSupported) return null
+        val scheme = when (drm.system) {
+            DrmSystem.WIDEVINE -> C.WIDEVINE_UUID
+            DrmSystem.PLAYREADY -> C.PLAYREADY_UUID
+            DrmSystem.CLEARKEY -> C.CLEARKEY_UUID
+            null -> return null
+        }
+        return MediaItem.DrmConfiguration.Builder(scheme).apply {
+            drm.licenseUrl?.let {
+                setLicenseUri(it)
+                // The playlist's licence server overrides one named in the manifest, as in Kodi.
+                setForceDefaultLicenseUri(true)
+            }
+            setLicenseRequestHeaders(drm.licenseHeaders.filterKeys { !it.equals(USER_AGENT, ignoreCase = true) })
+        }.build()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
@@ -533,41 +619,6 @@ class MediaPlayerService : MediaSessionService() {
     }
 
     /**
-     * Creates a DRM session manager for Widevine DRM.
-     * This is used to handle DRM-protected content.
-     */
-    private fun createDrmSessionManager(): DrmSessionManager {
-        // Create a data source factory for HTTP requests
-        val dataSourceFactory = DefaultHttpDataSource.Factory()
-            .setAllowCrossProtocolRedirects(true)
-
-        // Create a callback for the DRM license server
-        val drmCallback = HttpMediaDrmCallback(DRM_LICENSE_URL, dataSourceFactory)
-
-        // Create and return the DRM session manager
-        return DefaultDrmSessionManager.Builder()
-            .setUuidAndExoMediaDrmProvider(
-                WIDEVINE_UUID,
-                FrameworkMediaDrm.DEFAULT_PROVIDER
-            )
-            .setMultiSession(false)
-            .build(drmCallback)
-    }
-
-    /**
-     * Checks if a media URI is DRM-protected.
-     * This is a simple check based on URI patterns.
-     * In a real app, you might have more sophisticated detection.
-     */
-    private fun isDrmProtected(uri: String): Boolean {
-        // Check for common DRM indicators in the URI
-        return uri.contains("drm") ||
-                uri.contains("encrypted") ||
-                uri.contains("protected") ||
-                uri.contains("widevine")
-    }
-
-    /**
      * Loads a bitmap from a URL.
      * This is used to load artwork for the notification.
      *
@@ -586,11 +637,9 @@ class MediaPlayerService : MediaSessionService() {
             inputStream.close()
 
             bitmap
-        } catch (e: IOException) {
-            e.printStackTrace()
-            null
         } catch (e: Exception) {
-            e.printStackTrace()
+            // Type only: the exception message holds the artwork URL (FileNotFoundException(<url>)).
+            Log.w("MediaPlayerService", "Artwork download failed: ${e.javaClass.simpleName}")
             null
         }
     }

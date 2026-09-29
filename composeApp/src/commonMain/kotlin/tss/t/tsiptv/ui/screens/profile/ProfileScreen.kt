@@ -54,6 +54,8 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.addons_title
+import tsiptv.composeapp.generated.resources.ic_addons
 import tsiptv.composeapp.generated.resources.account_group_title
 import tsiptv.composeapp.generated.resources.btn_deactivate_cancel
 import tsiptv.composeapp.generated.resources.btn_deactivate_ok
@@ -123,6 +125,8 @@ enum class ProfileScreenActions(val value: Int) {
     Settings(5),
     RateApp(6),
     BecomeContributor(7),
+    /** F2: Profile → Addons (the addon manager). */
+    Addons(8),
     Logout(10);
 
 }
@@ -170,6 +174,11 @@ fun ProfileScreen(
 
     val preferencesGroupItems = remember(showRateApp) {
         listOfNotNull(
+            ProfileItem(
+                title = Res.string.addons_title,
+                icon = Res.drawable.ic_addons,
+                action = ProfileScreenActions.Addons
+            ),
             ProfileItem(
                 title = Res.string.profile_notification_title,
                 icon = Res.drawable.ic_notification,

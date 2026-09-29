@@ -1,38 +1,42 @@
 package tss.t.tsiptv.core.parser.iptv.iptvorg
 
 import kotlinx.serialization.json.Json
-import tss.t.tsiptv.core.network.NetworkClient
+import tss.t.tsiptv.core.parser.IPTVParser
+import tss.t.tsiptv.core.parser.iptv.iptvorg.models.IptvOrgRawDTO
+import tss.t.tsiptv.core.parser.iptv.m3u.HeaderSuffixParser
+import tss.t.tsiptv.core.parser.iptv.m3u.IdAllocator
+import tss.t.tsiptv.core.parser.iptv.m3u.M3UChannelBuilder
 import tss.t.tsiptv.core.parser.model.IPTVChannel
 import tss.t.tsiptv.core.parser.model.IPTVFormat
-import tss.t.tsiptv.core.parser.IPTVParser
 import tss.t.tsiptv.core.parser.model.IPTVPlaylist
-import tss.t.tsiptv.core.parser.iptv.iptvorg.models.IptvOrgRawDTO
 
 class IptvOrgParser(
-    val name: String,
-    val networkClient: NetworkClient,
+    val name: String = "",
 ) : IPTVParser {
+    private val json = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
+
     override fun parse(content: String): IPTVPlaylist {
-        val listIptv: List<IptvOrgRawDTO>? = Json.decodeFromString(content)
-        val channels = listIptv?.map { channel ->
+        val listIptv: List<IptvOrgRawDTO> = json.decodeFromString(content)
+        val ids = IdAllocator()
+        val channels = listIptv.map { channel ->
+            val base = channel.channel?.takeIf { it.isNotBlank() } ?: M3UChannelBuilder.slug(channel.title)
             IPTVChannel(
-                id = channel.channel ?: "",
-                name = channel.channel ?: "",
+                id = ids.allocate(base),
+                name = channel.title,
                 url = channel.url,
-                logoUrl = "",
+                logoUrl = null,
                 groupTitle = channel.feed,
                 groupId = channel.feed ?: "",
-                epgId = "",
-                attributes = channel.referrer?.let {
-                    mapOf(
-                        "Referer" to it
-                    )
-                } ?: emptyMap()
+                epgId = channel.channel,
+                headers = HeaderSuffixParser.sanitize(buildMap {
+                    channel.userAgent?.takeIf { it.isNotBlank() }?.let { put("User-Agent", it) }
+                    channel.referrer?.takeIf { it.isNotBlank() }?.let { put("Referer", it) }
+                }),
             )
         }
         return IPTVPlaylist(
             name = name,
-            channels = channels ?: emptyList(),
+            channels = channels,
             programs = listOf(),
             groups = listOf()
         )

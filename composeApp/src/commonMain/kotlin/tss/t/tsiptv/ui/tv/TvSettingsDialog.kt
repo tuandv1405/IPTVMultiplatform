@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.automirrored.rounded.Login
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.ChangeCircle
@@ -39,6 +40,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.addons_title
+import androidx.compose.material.icons.rounded.Extension
 import tsiptv.composeapp.generated.resources.bottom_sheet_change_language
 import tsiptv.composeapp.generated.resources.bottom_sheet_import_playlist
 import tsiptv.composeapp.generated.resources.bottom_sheet_refresh_channel
@@ -82,6 +85,7 @@ fun TvSettingsDialog(
     onLogout: () -> Unit,
     onDismissRequest: () -> Unit,
     onRateApp: (() -> Unit)? = null,
+    onOpenAddons: (() -> Unit)? = null,
 ) {
     var page by remember { mutableStateOf(TvSettingsPage.MENU) }
 
@@ -112,6 +116,12 @@ fun TvSettingsDialog(
                 {
                     onDismissRequest()
                     rate()
+                }
+            },
+            onAddons = onOpenAddons?.let { open ->
+                {
+                    onDismissRequest()
+                    open()
                 }
             },
             onDismissRequest = onDismissRequest,
@@ -183,6 +193,7 @@ private fun SettingsMenu(
     onLogout: () -> Unit,
     onRateApp: (() -> Unit)?,
     onDismissRequest: () -> Unit,
+    onAddons: (() -> Unit)? = null,
 ) {
     val firstItem = remember { FocusRequester() }
     TvDialogPanel(
@@ -213,6 +224,14 @@ private fun SettingsMenu(
                     title = stringResource(Res.string.bottom_sheet_refresh_channel),
                     icon = Icons.Rounded.Refresh,
                     onClick = onRefresh
+                )
+            }
+            // F2: Settings → Addons (the addon manager, TV layout).
+            if (onAddons != null) {
+                TvMenuItem(
+                    title = stringResource(Res.string.addons_title),
+                    icon = Icons.Rounded.Extension,
+                    onClick = onAddons
                 )
             }
             TvMenuItem(
@@ -274,7 +293,10 @@ private fun PlaylistPicker(
                 TvMenuItem(
                     title = item.playlist.name,
                     description = stringResource(Res.string.channel_count_format, item.channelCount),
-                    icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
+                    // F3: a TS IPTV Source has its own icon.
+                    icon = if (tss.t.tsiptv.core.tsiptv.TsiptvSourceIds.isSourcePlaylist(item.playlist.id)) {
+                        androidx.compose.material.icons.Icons.Rounded.Dashboard
+                    } else Icons.AutoMirrored.Rounded.PlaylistPlay,
                     selected = isCurrent,
                     modifier = if (isCurrent) Modifier.focusRequester(currentItem) else Modifier,
                     onClick = { onPick(item) },

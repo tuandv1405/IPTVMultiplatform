@@ -19,12 +19,18 @@ import okio.use
  * Common implementation of NetworkClient using Ktor.
  * This class provides a base implementation that can be extended by platform-specific implementations.
  */
+/** A response the caller must not treat as content. Carries no URL: links may hold tokens. */
+class HttpStatusException(val status: Int, message: String = "HTTP $status") : Exception(message)
+
 abstract class KtorNetworkClient : NetworkClient {
     /**
      * The Ktor HttpClient instance to use for network requests.
      * This should be provided by platform-specific implementations.
      */
     protected abstract val client: HttpClient
+
+    /** The platform client (engine + base plugins), for clients derived with `HttpClient.config {}`. */
+    val httpClient: HttpClient get() = client
 
     override suspend fun get(url: String, headers: Map<String, String>): String {
         val response = client.get(url) {
@@ -41,11 +47,16 @@ abstract class KtorNetworkClient : NetworkClient {
                 header(key, value)
             }
         }
+        // An error page must not be parsed as the playlist: a refresh would replace every
+        // channel with nothing.
+        if (!response.status.isSuccess()) throw HttpStatusException(response.status.value)
         val body = response.bodyAsBytes()
-        val isGzip = isGzipCompressed(body)
-        println("Gzip: $isGzip")
-        return if (isGzip) {
-            decompressGzip(body)
+        return if (isGzipCompressed(body)) {
+            try {
+                decompressGzip(body)
+            } catch (e: okio.IOException) {
+                throw HttpStatusException(response.status.value, "Truncated or corrupt gzip body")
+            }
         } else {
             body.decodeToString()
         }

@@ -25,11 +25,8 @@ class IosUrlOpener : UrlOpener {
     }
 
     override suspend fun canHandleUrl(url: String): Boolean {
-        val nsUrl = NSURL.URLWithString(url) ?: return false.also {
-            println("Cannot handle url")
-        }
-        println("Handle url: $nsUrl")
-        println("canOpenURL: ${UIApplication.sharedApplication.canOpenURL(nsUrl)}")
+        // Never print the URL: addon and playlist links can carry tokens.
+        val nsUrl = NSURL.URLWithString(url) ?: return false
         return UIApplication.sharedApplication.canOpenURL(nsUrl)
     }
 }

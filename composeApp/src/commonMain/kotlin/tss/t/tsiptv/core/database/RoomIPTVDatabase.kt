@@ -18,11 +18,10 @@ import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.ChannelHistory
 import tss.t.tsiptv.core.model.Playlist
-import tss.t.tsiptv.core.network.NetworkClient
-import tss.t.tsiptv.core.parser.IPTVParserFactory
 import tss.t.tsiptv.core.parser.model.IPTVProgram
+import androidx.room.immediateTransaction
+import androidx.room.useWriterConnection
 import kotlin.time.Clock
-import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
 
 /**
@@ -30,11 +29,9 @@ import kotlin.time.ExperimentalTime
  * This implementation uses Room to persist data between app restarts.
  *
  * @property database The Room database instance
- * @property networkClient The network client to use for fetching playlists
  */
 class RoomIPTVDatabase(
     private val database: AppDatabase,
-    private val networkClient: NetworkClient,
 ) : IPTVDatabase {
 
     override val playlistDao
@@ -47,6 +44,8 @@ class RoomIPTVDatabase(
         get() = database.channelAttributeDao()
     override val programDao
         get() = database.programDao()
+    override val stremioStores: tss.t.tsiptv.core.stremio.StremioStores by lazy { RoomStremioStores(database) }
+    override val tsiptvStore: tss.t.tsiptv.core.tsiptv.TsiptvStore by lazy { RoomTsiptvStore(database, this) }
     override val channelHistoryDao
         get() = database.channelHistoryDao()
 
@@ -73,7 +72,11 @@ class RoomIPTVDatabase(
     }
 
     override fun getChannelsByCategory(categoryId: String): Flow<List<Channel>> {
-        return channelDao.getChannelsByCategory(categoryId).map { channelEntities ->
+        // The pattern matches the JSON text of groupsJson, where `\` is stored as `\\` and `"`
+        // as `\"`; then every `\`, `%` and `_` is escaped for LIKE … ESCAPE '\'.
+        val escaped = categoryId.replace("\\", "\\\\\\\\").replace("\"", "\\\\\"")
+            .replace("%", "\\%").replace("_", "\\_")
+        return channelDao.getChannelsByCategory(categoryId, escaped).map { channelEntities ->
             channelEntities.map { it.toChannel() }
         }
     }
@@ -138,81 +141,90 @@ class RoomIPTVDatabase(
         }
     }
 
-    @OptIn(ExperimentalTime::class)
     override suspend fun getPlaylistById(id: String): Playlist? {
-        val playlist = playlistDao.getPlaylistById(id)?.toPlaylist() ?: return null
+        return playlistDao.getPlaylistById(id)?.toPlaylist()
+    }
 
-        // Check if playlist needs to be updated (older than 1 day)
-        val oneDayInMillis = 1.days.inWholeMilliseconds
-        val currentTime = Clock.System.now().toEpochMilliseconds()
-
-        if (currentTime - playlist.lastUpdated > oneDayInMillis) {
-            // Playlist is too old, update it from the network
-            try {
-                val content = networkClient.get(playlist.url)
-                val format = IPTVParserFactory.detectFormat(content)
-                val parser = IPTVParserFactory.createParser(format)
-                val parsedPlaylist = parser.parse(content)
-
-                // Delete old channel and categories
-                channelDao.deleteChannelsByPlaylist(playlist.id)
-                categoryDao.deleteCategoriesByPlaylist(playlist.id)
-
-                // Insert new playlist with updated timestamp
-                val updatedPlaylist = playlist.copy(lastUpdated = currentTime)
-                insertPlaylist(updatedPlaylist)
-
-                // Insert new categories
-                val categories = parsedPlaylist.groups.map { group ->
-                    Category(
-                        id = group.id,
-                        name = group.title,
-                        playlistId = playlist.id
-                    )
-                }
-                insertCategories(categories)
-
-                // Insert new channel
-                val channels = parsedPlaylist.channels.map { channel ->
-                    Channel(
-                        id = channel.id,
-                        name = channel.name,
-                        url = channel.url,
-                        logoUrl = channel.logoUrl,
-                        categoryId = channel.groupTitle,
-                        playlistId = playlist.id,
-                        isFavorite = false,
-                        lastWatched = null
-                    )
-                }
-                insertChannels(channels)
-
-                // Insert channel attributes
-                for (channel in parsedPlaylist.channels) {
-                    val attributes = channel.attributes.map { (key, value) ->
-                        ChannelAttributeEntity(
-                            channelId = channel.id,
-                            attrKey = key,
-                            attrValue = value
-                        )
-                    }
-                    channelAttributeDao.insertAttributes(attributes)
-                }
-
-                return updatedPlaylist
-            } catch (e: Exception) {
-                println(e.message)
-                e.printStackTrace()
-                // If update fails, return the existing playlist
-                return playlist
+    override suspend fun replacePlaylistContent(
+        playlist: Playlist,
+        categories: List<Category>,
+        channels: List<Channel>,
+        attributes: Map<String, Map<String, String>>,
+        legacyIds: Map<String, String>,
+    ) {
+        database.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                replacePlaylistContentLocked(playlist, categories, channels, attributes, legacyIds)
             }
         }
+    }
 
-        return playlist
+    /** The body of [replacePlaylistContent]; must run inside a writer transaction. */
+    internal suspend fun replacePlaylistContentLocked(
+        playlist: Playlist,
+        categories: List<Category>,
+        channels: List<Channel>,
+        attributes: Map<String, Map<String, String>>,
+        legacyIds: Map<String, String>,
+    ) {
+        run {
+            run {
+                val stored = channelDao.getChannelsInPlaylistOnce(playlist.id)
+                val previous = stored.associateBy { it.id }
+                val continues = matchPreviousChannels(
+                    stored.map { StoredChannel(it.id, it.url) },
+                    channels.map { NewChannel(it.id, it.url, legacyIds[it.id]) },
+                )
+                playlistDao.upsertPlaylist(playlist.toPlaylistEntity())
+                channelAttributeDao.deleteAttributesForPlaylist(playlist.id)
+                channelDao.deleteChannelsByPlaylist(playlist.id)
+                categoryDao.deleteCategoriesByPlaylist(playlist.id)
+                categoryDao.insertCategories(categories.map { it.toCategoryEntity() })
+
+                // Two steps, so a chain of renames (a → b, b → c) cannot merge rows.
+                val moved = continues.filter { (newId, oldId) -> newId != oldId }
+                moved.forEach { (newId, oldId) ->
+                    channelHistoryDao.moveHistory(oldId, TEMP_ID_PREFIX + newId, playlist.id)
+                }
+                moved.keys.forEach { newId ->
+                    val temp = TEMP_ID_PREFIX + newId
+                    channelHistoryDao.moveHistory(temp, newId, playlist.id)
+                    // Still there only when newId already had history: merge it in.
+                    channelHistoryDao.mergeHistoryInto(temp, newId, playlist.id)
+                    channelHistoryDao.deleteHistoryRow(temp, playlist.id)
+                }
+
+                channelDao.insertChannels(channels.map { channel ->
+                    val old = continues[channel.id]?.let(previous::get)
+                    channel.copy(
+                        isFavorite = old?.isFavorite ?: channel.isFavorite,
+                        lastWatched = old?.lastWatched ?: channel.lastWatched,
+                    ).toChannelEntity()
+                })
+                channelAttributeDao.insertAttributes(
+                    attributes.flatMap { (channelId, values) ->
+                        values.map { (key, value) ->
+                            ChannelAttributeEntity(channelId = channelId, attrKey = key, attrValue = value)
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    private companion object {
+        // Plain text: a NUL character is not safe in SQLite text comparisons.
+        const val TEMP_ID_PREFIX = "::tsiptv-moving::"
+    }
+
+    override suspend fun getChannelAttributes(channelId: String): Map<String, String> {
+        return channelAttributeDao.getAttributesForChannelOnce(channelId)
+            .associate { it.attrKey to it.attrValue }
     }
 
     override suspend fun insertPlaylist(playlist: Playlist) {
-        playlistDao.insertPlaylist(playlist.toPlaylistEntity())
+        // Upsert, not REPLACE: replacing the row would cascade-delete its history.
+        playlistDao.upsertPlaylist(playlist.toPlaylistEntity())
     }
 
     override suspend fun insertPlaylists(playlists: List<Playlist>) {
@@ -242,6 +254,9 @@ class RoomIPTVDatabase(
         }
     }
 
+    override suspend fun getChannelsWithValidProgramCounts(playlistId: String, timeStamp: Long) =
+        programDao.getChannelsWithValidProgramCounts(playlistId, timeStamp)
+
     @OptIn(ExperimentalTime::class)
     override suspend fun countValidPrograms(playlistId: String): Int {
         val timestamp = Clock.System.now().toEpochMilliseconds()
@@ -253,7 +268,7 @@ class RoomIPTVDatabase(
     }
 
     override suspend fun getProgramsForChannel(channelId: String): List<IPTVProgram> {
-        return programDao.getProgramsForChannel(channelId).map { it.toIPTVProgram() }
+        return programDao.getProgramsForChannel(channelId).map { it.toIPTVProgram() }.distinctProgrammes()
     }
 
     override suspend fun getProgramsForChannelInTimeRange(
@@ -262,7 +277,7 @@ class RoomIPTVDatabase(
         endTime: Long,
     ): List<IPTVProgram> {
         return programDao.getProgramsForChannelInTimeRange(channelId, startTime, endTime)
-            .map { it.toIPTVProgram() }
+            .map { it.toIPTVProgram() }.distinctProgrammes()
     }
 
     override suspend fun getCurrentAndUpcomingProgramsForChannel(
@@ -270,7 +285,7 @@ class RoomIPTVDatabase(
         currentTime: Long,
     ): List<IPTVProgram> {
         return programDao.getCurrentAndUpcomingProgramsForChannel(channelId, currentTime)
-            .map { it.toIPTVProgram() }
+            .map { it.toIPTVProgram() }.distinctProgrammes()
     }
 
     override suspend fun getCurrentProgramForChannel(

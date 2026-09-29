@@ -1,0 +1,19 @@
+#EXTM3U x-tvg-url="https://a.example/1.xml, https://a.example/2.xml.gz" url-tvg="https://a.example/ignored.xml"
+#EXTINF:-1 tvg-id="encoded",Encoded suffix
+https://cdn.example.com/a.m3u8|User-Agent=Mozilla%2F5.0&Referer=https%3A%2F%2Fexample.com%2F
+#EXTINF:-1 tvg-id="plain",Plain suffix
+https://cdn.example.com/b.m3u8|user-agent=Mozilla/5.0 (Windows NT 10.0)
+#EXTINF:-1 tvg-id="priority",VLC option and suffix
+#EXTVLCOPT:http-user-agent=UA1
+#EXTVLCOPT:http-referrer=R
+https://cdn.example.com/c.m3u8|User-Agent=UA2
+#EXTINF:-1 tvg-id="kodiprop",Kodi properties
+#KODIPROP:inputstream.adaptive.stream_headers=X-Token=abc%3D
+#KODIPROP:mimetype=application/dash+xml
+https://cdn.example.com/d/manifest
+#EXTINF:-1 tvg-id="layers" user-agent="AttrUA" referrer="https://attr.example.com/",All layers
+#KODIPROP:inputstream.adaptive.common_headers=X-Common=1&User-Agent=KodiUA
+#EXTVLCOPT--http-referer=https://vlc.example.com/
+https://cdn.example.com/e.m3u8|!X-Custom=yes&cookies=a%3D1&seekable=0
+#EXTINF:-1 tvg-id="qc-ua",QC header check
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8|User-Agent=TSIPTV-QC/1.0

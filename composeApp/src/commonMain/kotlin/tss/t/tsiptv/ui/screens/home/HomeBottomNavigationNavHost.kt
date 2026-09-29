@@ -34,6 +34,12 @@ import tsiptv.composeapp.generated.resources.open_link_failed
 import tss.t.tsiptv.core.rating.AppRatingController
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.screens.profile.ProfileScreenActions
+import androidx.compose.foundation.layout.statusBarsPadding
+import tss.t.tsiptv.core.stremio.MediaHistoryRepository
+import tss.t.tsiptv.ui.screens.discover.DiscoverContent
+import tss.t.tsiptv.ui.screens.discover.DiscoverNav
+import tss.t.tsiptv.ui.screens.discover.DiscoverViewModel
+import tss.t.tsiptv.ui.screens.history.mediaHistorySection
 import tss.t.tsiptv.ui.widgets.TSDialog
 import tss.t.tsiptv.utils.AppLinks
 import tss.t.tsiptv.utils.getUrlOpener
@@ -56,6 +62,19 @@ import tss.t.tsiptv.ui.screens.programs.ChannelXProgramListScreen
 import tss.t.tsiptv.ui.screens.programs.ProgramViewModel
 import tss.t.tsiptv.ui.screens.programs.uimodel.ProgramEvent
 import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.runtime.saveable.rememberSaveable
+import tss.t.tsiptv.ui.screens.source.SourceHomeActions
+import tss.t.tsiptv.ui.screens.source.SourceHomeContent
+import tss.t.tsiptv.ui.screens.source.SourceHomeSwitch
+import tss.t.tsiptv.ui.screens.source.SourceHomeViewModel
+import tss.t.tsiptv.ui.screens.source.toColors
 
 /**
  * Navigation host for the Home screen sections.
@@ -92,27 +111,67 @@ fun HomeBottomNavigationNavHost(
             var showBottomSheet by remember { mutableStateOf(false) }
             var showChangeBottomSheet by remember { mutableStateOf(false) }
 
-            HomeIPTVPlaylistScreen(
-                navController = navController,
-                parentNavController = rootNavController,
-                hazeState = hazeState,
-                homeUiState = homeUiState,
-                onHomeEvent = {
-                    when (it) {
-                        HomeEvent.OnHomeFeedSettingPressed -> {
-                            showBottomSheet = true
-                        }
+            val channelList = @Composable {
+                HomeIPTVPlaylistScreen(
+                    navController = navController,
+                    parentNavController = rootNavController,
+                    hazeState = hazeState,
+                    homeUiState = homeUiState,
+                    onHomeEvent = {
+                        when (it) {
+                            HomeEvent.OnHomeFeedSettingPressed -> {
+                                showBottomSheet = true
+                            }
 
-                        HomeEvent.OnHomeFeedNotificationPressed -> {
-                            showBottomSheet = true
-                        }
+                            HomeEvent.OnHomeFeedNotificationPressed -> {
+                                showBottomSheet = true
+                            }
 
-                        else -> onHomeEvent(it)
+                            else -> onHomeEvent(it)
+                        }
+                    },
+                    contentPadding = contentPadding,
+                    playerUIState = playerUIState
+                )
+            }
+            // F3: a TS IPTV Source shows its Home; a switch leads to the plain channel list.
+            val sourcePlaylistId = homeUiState.playListId?.takeIf { homeUiState.isSourcePlaylist }
+            if (sourcePlaylistId == null) {
+                channelList()
+            } else {
+                val sourceViewModel = koinViewModel<SourceHomeViewModel>(viewModelStoreOwner = viewModelStoreOwner)
+                val sourceState by sourceViewModel.state.collectAsStateWithLifecycle()
+                var showChannels by rememberSaveable(sourcePlaylistId) { mutableStateOf(false) }
+                if (showChannels && sourceState.hasChannels) {
+                    Column(Modifier.fillMaxSize()) {
+                        androidx.compose.runtime.CompositionLocalProvider(
+                            tss.t.tsiptv.ui.screens.addons.LocalAddonAccent provides sourceState.effective.toColors().accent,
+                        ) {
+                            SourceHomeSwitch(true, onChange = { showChannels = it }, modifier = Modifier.statusBarsPadding())
+                        }
+                        Box(Modifier.weight(1f).consumeWindowInsets(WindowInsets.statusBars)) { channelList() }
                     }
-                },
-                contentPadding = contentPadding,
-                playerUIState = playerUIState
-            )
+                } else {
+                    SourceHomeContent(
+                        modifier = Modifier.statusBarsPadding(),
+                        playlistId = sourcePlaylistId,
+                        viewModel = sourceViewModel,
+                        actions = SourceHomeActions(
+                            onPlayChannel = { channel, zap -> onHomeEvent(HomeEvent.OnPlaySourceChannel(channel, zap)) },
+                            onNavigate = { rootNavController.navigate(it) },
+                            onOpenAbout = { rootNavController.navigate(NavRoutes.SourceAbout(sourcePlaylistId)) },
+                            onRefresh = { onHomeEvent(HomeEvent.RefreshIPTVSource) },
+                            onOpenSettings = { showBottomSheet = true },
+                        ),
+                        contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
+                        // Always emitted (QC F3 r2 #1): an item that appears after the first load would
+                        // sit above the viewport, the list staying anchored on the next item.
+                        header = {
+                            if (sourceState.hasChannels) SourceHomeSwitch(false, onChange = { showChannels = it })
+                        },
+                    )
+                }
+            }
 
             if (showBottomSheet) {
                 HomeSettingOptionsBottomSheet(
@@ -147,8 +206,22 @@ fun HomeBottomNavigationNavHost(
             }
         }
 
+        // F2: Discover tab (shown only while an addon is enabled, see HomeBottomNavigationScreen).
+        composable(route = NavRoutes.HomeScreens.DISCOVER) {
+            val discoverViewModel = koinViewModel<DiscoverViewModel>(viewModelStoreOwner = viewModelStoreOwner)
+            DiscoverContent(
+                viewModel = discoverViewModel,
+                onNavigate = { rootNavController.navigate(it) },
+                modifier = Modifier.statusBarsPadding(),
+                contentPadding = contentPadding,
+            )
+        }
+
         composable(route = NavRoutes.HomeScreens.HISTORY) {
             val mediaItem by playerViewModel.mediaItemState.collectAsStateWithLifecycle()
+            val mediaHistory: MediaHistoryRepository = koinInject()
+            val mediaRecords by mediaHistory.history.collectAsStateWithLifecycle(emptyList())
+            val historyScope = rememberCoroutineScope()
 
             HistoryScreen(
                 hazeState = hazeState,
@@ -164,7 +237,16 @@ fun HomeBottomNavigationNavHost(
                 },
                 onPause = { channel ->
                     onHomeEvent(HomeEvent.OnPauseNowPlaying(channel))
-                }
+                },
+                hasMediaHistory = mediaRecords.isNotEmpty(),
+                mediaSection = {
+                    mediaHistorySection(
+                        records = mediaRecords,
+                        onOpen = { rootNavController.navigate(DiscoverNav.continueWatching(it)) },
+                        onRemove = { historyScope.launch { mediaHistory.remove(it) } },
+                        onClear = { historyScope.launch { mediaHistory.clear() } },
+                    )
+                },
             )
         }
 
@@ -185,6 +267,8 @@ fun HomeBottomNavigationNavHost(
                     ProfileScreenActions.RateApp -> scope.launch {
                         if (!appRating.openStoreListing()) showOpenFailed = true
                     }
+
+                    ProfileScreenActions.Addons -> rootNavController.navigate(NavRoutes.Addons)
 
                     ProfileScreenActions.BecomeContributor -> scope.launch {
                         if (!getUrlOpener().openUrl(AppLinks.CONTRIBUTOR_URL)) {

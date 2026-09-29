@@ -27,3 +27,6 @@ play-store/screenshots/demo-server/
 
 # Firebase CLI deploy cache
 .firebase/
+
+# Python bytecode from web/scripts
+__pycache__/

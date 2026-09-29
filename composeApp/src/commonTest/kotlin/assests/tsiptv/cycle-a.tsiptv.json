@@ -1,0 +1,8 @@
+{
+  "format": "tsiptv-source",
+  "version": 1,
+  "id": "qa.tsiptv.cycle-a",
+  "meta": { "name": "Cycle A" },
+  "channels": [{ "id": "a1", "name": "A1", "url": "https://cdn.example.com/a1.m3u8" }],
+  "includes": [{ "id": "b", "type": "tsiptv-source", "url": "https://qa.example.com/cycle-b.tsiptv.json" }]
+}

@@ -10,6 +10,9 @@ import tss.t.tsiptv.core.database.entity.ChannelEntity
 
 /**
  * DAO for accessing channel data in the database.
+ *
+ * Lists follow the playlist's own order (`sortIndex`). Rows written before v4 all have
+ * `sortIndex = 0` until their playlist is re-parsed, so `rowid` keeps them in insertion order.
  */
 @Dao
 interface ChannelDao {
@@ -18,7 +21,7 @@ interface ChannelDao {
      *
      * @return A flow of all channel
      */
-    @Query("SELECT * FROM channel")
+    @Query("SELECT * FROM channel ORDER BY sortIndex, rowid")
     fun getAllChannels(): Flow<List<ChannelEntity>>
 
     /**
@@ -36,17 +39,30 @@ interface ChannelDao {
      * @param playlistId The ID of the playlist to get channel for
      * @return A flow of channel in the given playlist
      */
-    @Query("SELECT * FROM channel WHERE playlistId = :playlistId")
+    @Query("SELECT * FROM channel WHERE playlistId = :playlistId ORDER BY sortIndex, rowid")
     fun getChannelsInPlaylist(playlistId: String): Flow<List<ChannelEntity>>
 
+    /** One-shot read of a playlist's channels, for use inside a transaction. */
+    @Query("SELECT * FROM channel WHERE playlistId = :playlistId ORDER BY sortIndex, rowid")
+    suspend fun getChannelsInPlaylistOnce(playlistId: String): List<ChannelEntity>
+
     /**
-     * Gets channel by category.
+     * Gets channel by category: its primary group, or any of its other groups
+     * (`groupsJson` is a JSON array of titles, so the title appears quoted).
      *
      * @param categoryId The ID of the category to get channel for
+     * @param escapedCategoryId [categoryId] with `\`, `%` and `_` escaped by `\`, so a group
+     *   name containing a LIKE wildcard matches only itself
      * @return A flow of channel in the given category
      */
-    @Query("SELECT * FROM channel WHERE categoryId = :categoryId")
-    fun getChannelsByCategory(categoryId: String): Flow<List<ChannelEntity>>
+    @Query(
+        """
+        SELECT * FROM channel
+        WHERE categoryId = :categoryId OR groupsJson LIKE '%"' || :escapedCategoryId || '"%' ESCAPE '\'
+        ORDER BY sortIndex, rowid
+    """
+    )
+    fun getChannelsByCategory(categoryId: String, escapedCategoryId: String): Flow<List<ChannelEntity>>
 
     /**
      * Gets channel by playlist.
@@ -54,7 +70,7 @@ interface ChannelDao {
      * @param playlistId The ID of the playlist to get channel for
      * @return A flow of channel in the given playlist
      */
-    @Query("SELECT * FROM channel WHERE playlistId = :playlistId")
+    @Query("SELECT * FROM channel WHERE playlistId = :playlistId ORDER BY sortIndex, rowid")
     fun getChannelsByPlaylist(playlistId: String): Flow<List<ChannelEntity>>
 
     /**
@@ -63,7 +79,7 @@ interface ChannelDao {
      * @param query The search query
      * @return A flow of channel matching the search query
      */
-    @Query("SELECT * FROM channel WHERE name LIKE '%' || :query || '%'")
+    @Query("SELECT * FROM channel WHERE name LIKE '%' || :query || '%' ORDER BY sortIndex, rowid")
     fun searchChannels(query: String): Flow<List<ChannelEntity>>
 
     /**

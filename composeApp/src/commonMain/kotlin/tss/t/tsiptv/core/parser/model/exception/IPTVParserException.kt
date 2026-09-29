@@ -5,4 +5,4 @@ package tss.t.tsiptv.core.parser.model.exception
  *
  * @property message The error message
  */
-class IPTVParserException(override val message: String) : Exception(message)
+open class IPTVParserException(override val message: String) : Exception(message)

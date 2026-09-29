@@ -1,0 +1,7 @@
+{
+  "format": "tsiptv",
+  "version": 1,
+  "id": "qa.tsiptv.not-source",
+  "meta": { "name": "Wrong format value" },
+  "channels": [{ "id": "a", "name": "A", "url": "https://cdn.example.com/a.m3u8" }]
+}

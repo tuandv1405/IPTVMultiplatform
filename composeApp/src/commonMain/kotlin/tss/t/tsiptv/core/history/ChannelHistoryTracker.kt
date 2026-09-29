@@ -28,6 +28,16 @@ class ChannelHistoryTracker(
     private var isScreenOn: Boolean = true
     private var trackingJob: Job? = null
 
+    init {
+        // Watch time counts only while the player really plays: a channel behind an error
+        // overlay (403, DRM refused) or still buffering is not being watched.
+        scope.launch {
+            mediaPlayer.isPlaying.collect { playing ->
+                if (playing) onPlaybackResumed() else onPlaybackPaused()
+            }
+        }
+    }
+
     /**
      * Called when a channel starts playing.
      */
@@ -46,13 +56,13 @@ class ChannelHistoryTracker(
         currentPlaylistId = playlistId
         playStartTime = Clock.System.now().toEpochMilliseconds()
         totalPlayedTime = 0
-        isPlaying = true
+        // Counting starts when the player reports it is playing (see init), not on request.
+        isPlaying = mediaPlayer.isPlaying.value
 
         // Record the play event in database
         database.recordChannelPlay(channel.id, playlistId, playStartTime)
 
-        // Start tracking play time
-        startPlayTimeTracking()
+        if (isPlaying) startPlayTimeTracking() else stopPlayTimeTracking()
     }
 
     /**
@@ -132,7 +142,9 @@ class ChannelHistoryTracker(
                 )
             }
 
-            // Also update current position and duration
+            // Position and duration belong to whatever the player holds now; once it has
+            // moved on to another channel they are not this channel's any more.
+            if (mediaPlayer.currentMedia.value?.id != channel.id) return
             val currentPosition = mediaPlayer.currentPosition.value
             val totalDuration = mediaPlayer.duration.value
 

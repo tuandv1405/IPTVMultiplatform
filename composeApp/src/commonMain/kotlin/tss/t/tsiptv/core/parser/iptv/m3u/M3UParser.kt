@@ -1,98 +1,123 @@
 package tss.t.tsiptv.core.parser.iptv.m3u
 
+import tss.t.tsiptv.core.parser.IPTVParser
 import tss.t.tsiptv.core.parser.model.IPTVChannel
 import tss.t.tsiptv.core.parser.model.IPTVFormat
 import tss.t.tsiptv.core.parser.model.IPTVGroup
-import tss.t.tsiptv.core.parser.IPTVParser
-import tss.t.tsiptv.core.parser.model.exception.IPTVParserException
 import tss.t.tsiptv.core.parser.model.IPTVPlaylist
+import tss.t.tsiptv.core.parser.model.SkipReason
+import tss.t.tsiptv.core.parser.model.SkippedEntry
+import tss.t.tsiptv.core.parser.model.exception.IPTVParserException
 
 /**
- * Implementation of IPTVParser for M3U format.
+ * Implementation of IPTVParser for M3U, in the dialect of Kodi's PVR IPTV Simple Client
+ * (docs/research/kodi.md §1): header guide URLs and defaults, quote-aware names, `;` groups,
+ * sticky `#EXTGRP`, `#KODIPROP`, `#EXTVLCOPT`, `|` header suffixes and per-channel DRM.
  */
 class M3UParser : IPTVParser {
     override fun parse(content: String): IPTVPlaylist {
-        // Accept playlists that omit the #EXTM3U header but start straight at an entry,
-        // while still rejecting content that merely happens to mention #EXTINF somewhere.
-        val firstMeaningfulLine = content.lineSequence()
-            .map { it.trim() }
-            .firstOrNull { it.isNotEmpty() }
-            .orEmpty()
-            .dropWhile { it.code == 0xFEFF }
+        val lines = content.removePrefix("﻿").lines()
 
-        if (!firstMeaningfulLine.startsWith("#EXTM3U") &&
-            !firstMeaningfulLine.startsWith("#EXTINF")
-        ) {
+        // Accept playlists that omit #EXTM3U, or open with #KODIPROP lines or comments, while
+        // still rejecting text that merely happens to mention #EXTINF after some prose.
+        val meaningful = lines.map { it.trim().dropWhile { c -> c.code == 0xFEFF } }.filter { it.isNotEmpty() }
+        val firstEntry = meaningful.indexOfFirst { it.startsWith("#EXTM3U") || it.startsWith("#EXTINF") }
+        if (firstEntry < 0 || meaningful.take(firstEntry).any { !it.startsWith("#") }) {
             throw IPTVParserException("Invalid M3U format: missing #EXTM3U header")
         }
 
-        val lines = content.lines()
         val channels = mutableListOf<IPTVChannel>()
-        val groups = mutableSetOf<IPTVGroup>()
+        val skipped = mutableListOf<SkippedEntry>()
+        val ids = IdAllocator()
         var playlistName = "IPTV Playlist"
-        var epgUrl: String? = null
+        var header = M3UHeader()
+        var stickyGroups = emptyList<String>()
 
-        var currentExtInf: String? = null
-        var currentAttributes = mutableMapOf<String, String>()
+        // Directives seen since the last URL line. Some lists put #KODIPROP before #EXTINF,
+        // so the stanza starts at whichever comes first.
+        var stanza: M3UStanza? = null
 
-        // Extract EPG URL from the header line
-        val headerLine = lines.firstOrNull { it.trim().startsWith("#EXTM3U") }
-        if (headerLine != null) {
-            val urlTvgMatch = "url-tvg=\"([^\"]+)\"".toRegex().find(headerLine)
-            if (urlTvgMatch != null && urlTvgMatch.groupValues.size > 1) {
-                epgUrl = urlTvgMatch.groupValues[1]
-            }
-        }
+        lines.forEachIndexed { index, line ->
+            val lineNumber = index + 1
+            val trimmed = line.trim()
+            when {
+                trimmed.isEmpty() -> Unit
 
-        for (line in lines) {
-            val trimmedLine = line.trim()
-            if (trimmedLine.isEmpty()) continue
-
-            if (trimmedLine.startsWith("#EXTINF:")) {
-                currentExtInf = trimmedLine
-                currentAttributes = parseExtInfAttributes(trimmedLine)
-            } else if (trimmedLine.startsWith("#EXTGRP:")) {
-                val groupTitle = trimmedLine.substring("#EXTGRP:".length).trim()
-                currentAttributes["group-title"] = groupTitle
-            } else if (trimmedLine.startsWith("#PLAYLIST:")) {
-                playlistName = trimmedLine.substring("#PLAYLIST:".length).trim()
-            } else if (!trimmedLine.startsWith("#") && currentExtInf != null) {
-                // This is a URL line
-                val url = trimmedLine
-                val name = currentAttributes["tvg-name"] ?: extractNameFromExtInf(currentExtInf)
-                ?: "Unknown Channel"
-                val logoUrl = currentAttributes["tvg-logo"]
-                val groupTitle = currentAttributes["group-title"]
-                val epgId = currentAttributes["tvg-id"]
-                val id = epgId ?: name.replace(" ", "_").lowercase()
-
-                if (groupTitle != null) {
-                    val groupId = groupTitle.replace(" ", "_").lowercase()
-                    groups.add(IPTVGroup(id = groupId, title = groupTitle))
+                trimmed.startsWith("#EXTM3U") -> {
+                    header = M3UHeader(header.attributes + M3UChannelBuilder.parseAttributes(trimmed))
                 }
 
-                val channel = IPTVChannel(
-                    id = id,
-                    name = name,
-                    url = url,
-                    logoUrl = logoUrl,
-                    groupTitle = groupTitle,
-                    groupId = groupTitle?.replace(" ", "_")?.lowercase(),
-                    epgId = epgId,
-                    attributes = currentAttributes.toMap()
-                )
-                channels.add(channel)
-                // Reset for next channel
-                currentExtInf = null
-                currentAttributes = mutableMapOf()
+                trimmed.startsWith("#EXTINF:") -> {
+                    val current = stanza
+                    if (current?.extInf != null) {
+                        skipped += SkippedEntry(SkipReason.NO_URL, current.lineNumber)
+                        stanza = null
+                    }
+                    val open = stanza ?: M3UStanza(lineNumber).also { stanza = it }
+                    open.extInf = M3UChannelBuilder.parseExtInf(trimmed)
+                }
+
+                trimmed.startsWith("#EXTGRP:") -> {
+                    val value = trimmed.substringAfter(':').trim()
+                    val open = stanza
+                    if (open?.extInf != null) {
+                        open.extGrp = value
+                    } else {
+                        // Before an #EXTINF it is a begin directive for every following channel.
+                        stickyGroups = M3UChannelBuilder.splitGroups(value)
+                    }
+                }
+
+                trimmed.startsWith("#KODIPROP:") ->
+                    (stanza ?: M3UStanza(lineNumber).also { stanza = it }).addKodiProp(trimmed)
+
+                trimmed.startsWith("#EXTVLCOPT") ->
+                    (stanza ?: M3UStanza(lineNumber).also { stanza = it }).addVlcOpt(trimmed)
+
+                trimmed.startsWith("#WEBPROP:") ->
+                    (stanza ?: M3UStanza(lineNumber).also { stanza = it }).webProp = true
+
+                trimmed.startsWith("#EXT-X-PLAYLIST-TYPE:") -> {
+                    if (trimmed.substringAfter(':').trim().equals("VOD", ignoreCase = true)) {
+                        (stanza ?: M3UStanza(lineNumber).also { stanza = it }).vodMarker = true
+                    }
+                }
+
+                trimmed.startsWith("#PLAYLIST:") -> playlistName = trimmed.substringAfter(':').trim()
+
+                trimmed.startsWith("#") -> Unit
+
+                else -> {
+                    val current = stanza
+                    // A URL with no #EXTINF is not a channel entry in an M3U; ignore it, as before.
+                    if (current?.extInf != null) {
+                        when (val result = M3UChannelBuilder.build(
+                            stanza = current,
+                            urlLine = trimmed,
+                            header = header,
+                            stickyGroups = stickyGroups,
+                            fallbackName = UNKNOWN_CHANNEL,
+                            id = ids::allocate,
+                        )) {
+                            is StanzaResult.Built -> channels += result.channel
+                            is StanzaResult.Skipped -> skipped += SkippedEntry(result.reason, current.lineNumber)
+                        }
+                    }
+                    stanza = null
+                }
             }
+        }
+        stanza?.takeIf { it.extInf != null }?.let {
+            skipped += SkippedEntry(SkipReason.NO_URL, it.lineNumber)
         }
 
         return IPTVPlaylist(
             name = playlistName,
             channels = channels,
-            groups = groups.toList(),
-            epgUrl = epgUrl
+            groups = groupsOf(channels),
+            epgUrl = header.epgUrls.firstOrNull(),
+            epgUrls = header.epgUrls,
+            skipped = skipped,
         )
     }
 
@@ -100,46 +125,82 @@ class M3UParser : IPTVParser {
         return IPTVFormat.M3U
     }
 
-    /**
-     * Parses attributes from an EXTINF line.
-     *
-     * @param extInf The EXTINF line
-     * @return A map of attribute names to values
-     */
-    private fun parseExtInfAttributes(extInf: String): MutableMap<String, String> {
-        val attributes = mutableMapOf<String, String>()
+    companion object {
+        const val UNKNOWN_CHANNEL = "Unknown channel"
 
-        // Extract duration
-        val durationRegex = "#EXTINF:(-?\\d+)".toRegex()
-        val durationMatch = durationRegex.find(extInf)
-        if (durationMatch != null) {
-            attributes["duration"] = durationMatch.groupValues[1]
+        internal fun groupsOf(channels: List<IPTVChannel>): List<IPTVGroup> =
+            channels.asSequence()
+                .flatMap { it.groups }
+                .distinct()
+                .map { IPTVGroup(id = M3UChannelBuilder.slug(it), title = it) }
+                .distinctBy { it.id }
+                .toList()
+    }
+}
+
+/**
+ * Two or more stream URLs, one per line, with no `#EXTINF`. Each URL is a channel named
+ * after the last segment of its path.
+ */
+class PlainUrlListParser : IPTVParser {
+    override fun parse(content: String): IPTVPlaylist {
+        val channels = mutableListOf<IPTVChannel>()
+        val skipped = mutableListOf<SkippedEntry>()
+        val ids = IdAllocator()
+        var stanza: M3UStanza? = null
+        var streamNumber = 0
+
+        content.removePrefix("﻿").lines().forEachIndexed { index, line ->
+            val trimmed = line.trim()
+            when {
+                trimmed.isEmpty() -> Unit
+                trimmed.startsWith("#KODIPROP:") ->
+                    (stanza ?: M3UStanza(index + 1).also { stanza = it }).addKodiProp(trimmed)
+
+                trimmed.startsWith("#EXTVLCOPT") ->
+                    (stanza ?: M3UStanza(index + 1).also { stanza = it }).addVlcOpt(trimmed)
+
+                trimmed.startsWith("#") -> Unit
+                else -> {
+                    streamNumber++
+                    val current = stanza ?: M3UStanza(index + 1)
+                    val url = HeaderSuffixParser.split(trimmed).url
+                    when (val result = M3UChannelBuilder.build(
+                        stanza = current,
+                        urlLine = trimmed,
+                        header = M3UHeader(),
+                        stickyGroups = emptyList(),
+                        fallbackName = nameFromUrl(url) ?: "Stream $streamNumber",
+                        id = ids::allocate,
+                    )) {
+                        is StanzaResult.Built -> channels += result.channel
+                        is StanzaResult.Skipped -> skipped += SkippedEntry(result.reason, current.lineNumber)
+                    }
+                    stanza = null
+                }
+            }
         }
-
-        // Extract other attributes
-        val attrRegex = "(\\w+(?:-\\w+)?)\\s*=\\s*\"([^\"]*)\"".toRegex()
-        val matches = attrRegex.findAll(extInf)
-        for (match in matches) {
-            val key = match.groupValues[1]
-            val value = match.groupValues[2]
-            attributes[key] = value
-        }
-
-        return attributes
+        return IPTVPlaylist(
+            name = "IPTV Playlist",
+            channels = channels,
+            groups = emptyList(),
+            skipped = skipped,
+        )
     }
 
-    /**
-     * Extracts the channel name from an EXTINF line.
-     *
-     * @param extInf The EXTINF line
-     * @return The channel name, or null if not found
-     */
-    private fun extractNameFromExtInf(extInf: String): String? {
-        // The name is typically after the last comma
-        val lastCommaIndex = extInf.lastIndexOf(',')
-        if (lastCommaIndex != -1 && lastCommaIndex < extInf.length - 1) {
-            return extInf.substring(lastCommaIndex + 1).trim()
+    override fun getSupportedFormat(): IPTVFormat = IPTVFormat.M3U_PLAIN
+
+    companion object {
+        /** Last path segment without its extension: `…/live/news-hd.m3u8?x=1` → `news-hd`. */
+        fun nameFromUrl(url: String): String? {
+            val path = url.substringAfter("://", url)
+                .substringBefore('?')
+                .substringBefore('#')
+                .substringAfter('/', "")
+            val segment = path.trimEnd('/').substringAfterLast('/')
+            val decoded = HeaderSuffixParser.percentDecode(segment)
+            val base = if ('.' in decoded) decoded.substringBeforeLast('.') else decoded
+            return base.trim().takeIf { it.isNotEmpty() }
         }
-        return null
     }
 }

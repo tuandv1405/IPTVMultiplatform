@@ -1,0 +1,22 @@
+#EXTM3U tvg-shift="-4.5" x-tvg-url="http://guide.example.com/guide.xml" catchup-correction="-2.5"
+#EXTINF:0 tvg-id="channel-x" tvg-name="Channel_X" group-title="Entertainment" tvg-chno="10" tvg-logo="http://icons.example.com/channel-x.png" radio="true" tvg-shift="-3.5",Channel X
+#EXTVLCOPT:program=745
+#KODIPROP:key=val
+http://stream.example.com/live/channel-x.ts
+#EXTINF:0 tvg-id="channel-x" tvg-name="Channel-X-HD" group-title="Entertainment;HD Channels",Channel X HD
+http://stream.example.com/live/channel-x-hd.ts
+#EXTINF:0 tvg-id="channel-y" tvg-name="Channel_Y",Channel Y
+#EXTGRP:Entertainment
+http://stream.example.com/live/channel-y.ts
+#EXTINF:0 catchup="default" catchup-source="http://stream.example.com/live/catchup-b.ts&cutv={Y}-{m}-{d}T{H}:{M}:{S}" catchup-days="3",Channel B
+http://stream.example.com/live/channel-b.ts
+#EXTINF:0 catchup="append" catchup-source="&cutv={Y}-{m}-{d}T{H}:{M}:{S}" catchup-days="3" catchup-correction="-4.0",Channel C
+http://stream.example.com/live/channel-c.ts
+#EXTINF:0 tvg-id="channel-d" catchup="shift" catchup-days="3",Channel D
+http://stream.example.com/live/channel-d.ts
+#EXTINF:-1 catchup="fs",Channel G
+http://list.example.com:8888/325/mono.m3u8?token=secret
+#EXTINF:-1 catchup="xc",Channel I
+http://list.example.com:8080/live/my@account.xc/my_password/1477.m3u8
+#EXTINF:-1 media="true",Channel M
+http://stream.example.com/live/channel-m.mkv

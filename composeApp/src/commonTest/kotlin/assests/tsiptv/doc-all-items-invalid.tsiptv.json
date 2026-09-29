@@ -1,0 +1,13 @@
+{
+  "format": "tsiptv-source",
+  "version": 1,
+  "id": "qa.tsiptv.all-invalid",
+  "meta": { "name": "Every item is dropped" },
+  "epg": ["https://example.com/guide.xml"],
+  "channels": [
+    { "id": "no-stream", "name": "No stream" },
+    { "id": "file", "name": "File URL", "url": "file:///sdcard/video.mp4" }
+  ],
+  "movies": [{ "id": "nameless", "url": "https://cdn.example.com/m.mp4" }],
+  "includes": [{ "id": "bad", "type": "m3u", "url": "ftp://example.com/list.m3u" }]
+}

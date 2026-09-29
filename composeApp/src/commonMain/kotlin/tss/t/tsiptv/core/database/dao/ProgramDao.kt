@@ -22,17 +22,20 @@ interface ProgramDao {
     @Query("SELECT * FROM programs")
     fun getAllPrograms(): Flow<List<ProgramEntity>>
 
+    // F3 (QC r3): one programme per (channel, start, title): a source's guides store the same
+    // programme under different per-guide ids.
     @Query(
-        "SELECT COUNT(*) FROM programs WHERE " +
+        "SELECT COUNT(*) FROM (SELECT DISTINCT channelId, startTime, title FROM programs WHERE " +
                 "playlistId == :playListId AND " +
-                "(startTime <= :timeStamp OR endTime <= :timeStamp)"
+                "(startTime <= :timeStamp OR endTime <= :timeStamp))"
     )
     suspend fun countValidPrograms(playListId: String, timeStamp: Long): Int
 
     @Query(
         "SELECT * FROM programs WHERE " +
                 "playlistId == :playListId AND " +
-                "(startTime <= :timeStamp OR endTime <= :timeStamp) LIMIT :limit OFFSET :offset"
+                "(startTime <= :timeStamp OR endTime <= :timeStamp) " +
+                "GROUP BY channelId, startTime, title ORDER BY startTime LIMIT :limit OFFSET :offset"
     )
     suspend fun getValidPrograms(
         playListId: String,
@@ -77,11 +80,13 @@ interface ProgramDao {
      */
     @Query(
         """
-        SELECT p.channelId, c.name, c.categoryId, c.logoUrl, c.isFavorite, COUNT(p.id) as programCount
+        SELECT p.channelId, MIN(c.name) AS name, MIN(c.categoryId) AS categoryId, MIN(c.logoUrl) AS logoUrl,
+            MAX(c.isFavorite) AS isFavorite, COUNT(DISTINCT p.startTime || '|' || p.title) AS programCount
         FROM programs p
-        LEFT JOIN channel c ON p.channelId = c.id
+        LEFT JOIN channel c ON c.playlistId = p.playlistId
+            AND (c.epgId = p.channelId OR (c.epgId IS NULL AND c.id = p.channelId))
         WHERE p.playlistId = :playlistId AND (p.startTime <= :timeStamp OR p.endTime >= :timeStamp)
-        GROUP BY  p.channelId, c.name, c.categoryId, c.logoUrl
+        GROUP BY p.channelId
     """
     )
     suspend fun getChannelsWithValidProgramCounts(
@@ -174,4 +179,12 @@ interface ProgramDao {
      */
     @Query("DELETE FROM programs WHERE playlistId = :playlistId")
     suspend fun deleteProgramsForPlaylist(playlistId: String)
+
+    /** F3: one guide's programmes of a source (ids start with `tsg:{playlistId}#{guidePath}#`). */
+    @Query("DELETE FROM programs WHERE playlistId = :playlistId AND substr(id, 1, length(:prefix)) = :prefix")
+    suspend fun deleteProgramsWithPrefix(playlistId: String, prefix: String)
+
+    /** F3: programmes of a source stored before per-guide ids (no `tsg:` prefix). */
+    @Query("DELETE FROM programs WHERE playlistId = :playlistId AND substr(id, 1, 4) != 'tsg:'")
+    suspend fun deleteUnprefixedPrograms(playlistId: String)
 }

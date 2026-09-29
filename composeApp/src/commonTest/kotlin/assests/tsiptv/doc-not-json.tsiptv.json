@@ -1,0 +1,8 @@
+{
+  // comments are not JSON
+  "format": "tsiptv-source",
+  "version": 1,
+  "id": "qa.tsiptv.not-json",
+  "meta": { "name": "Trailing comma", },
+  "channels": [{ "id": "a", "name": "A", "url": "https://cdn.example.com/a.m3u8" }],
+}

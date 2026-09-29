@@ -1,0 +1,33 @@
+#EXTM3U x-tvg-url="https://tsiptv-8bdd6.web.app/examples/guide.xml"
+#EXTINF:-1 tvg-id="QcHeaders.example" tvg-chno="1" group-title="QC;Headers",QC with User-Agent
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8|User-Agent=TSIPTV-QC/1.0&Referer=https%3A%2F%2Fexample.com%2F
+#EXTINF:-1 tvg-id="QcPlain.example" tvg-chno="2" group-title="QC",QC without headers
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+#EXTINF:-1 tvg-id="QcVlcopt.example" tvg-chno="3" group-title="QC;Headers",QC with EXTVLCOPT
+#EXTVLCOPT:http-user-agent=TSIPTV-QC-VLC/1.0
+#EXTVLCOPT:http-referrer=https://example.com/vlc
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+#EXTINF:-1 tvg-id="QcDrmWord.example" tvg-chno="4" group-title="QC",QC clear stream, drm in URL
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8?label=drm-encrypted-protected-widevine
+#EXTINF:-1 tvg-id="QcRadio.example" tvg-chno="5" radio="true" tvg-logo="https://example.com/logos/radio.png" group-title="QC;Radio",QC radio layout
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+#EXTINF:-1 tvg-id="QcWidevine.example" tvg-chno="6" group-title="QC;DRM",QC Widevine licence request
+#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha
+#KODIPROP:inputstream.adaptive.license_key=https://license.example.com/widevine|User-Agent=TSIPTV-QC-LIC%2F1.0&X-QC=1|R{SSM}|R
+#KODIPROP:mimetype=application/dash+xml
+https://cdn.example.com/protected/manifest.mpd
+#EXTINF:-1 tvg-id="QcDrmUnsupported.example" tvg-chno="7" group-title="QC;DRM",QC unsupported DRM setup
+#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha
+#KODIPROP:inputstream.adaptive.license_key=https://license.example.com/widevine||b{SSM}|JBlicense
+https://cdn.example.com/protected/manifest.mpd
+#EXTINF:-1 tvg-id="QcClearKeyHls.example" tvg-chno="8" group-title="QC;DRM",QC ClearKey on HLS
+#KODIPROP:inputstream.adaptive.drm_legacy=org.w3.clearkey|000102030405060708090a0b0c0d0e0f:00112233445566778899aabbccddeeff
+https://cdn.example.com/clearkey/index.m3u8
+#EXTINF:-1 tvg-id="QcForbidden.example" tvg-chno="9" group-title="QC",QC 403 with headers
+https://example.com/does-not-exist/index.m3u8|User-Agent=TSIPTV-QC/1.0
+#EXTINF:-1 tvg-id="QcAddon.example" group-title="QC",QC skipped add-on
+plugin://plugin.video.example/?channel=1
+#EXTINF:-1 tvg-id="QcScrape.example" group-title="QC",QC skipped scraping
+#WEBPROP:web-regex=src="(.*?)"
+@https://www.example.com/watch
+#EXTINF:-1 tvg-id="QcNoUrl.example" group-title="QC",QC skipped, no link

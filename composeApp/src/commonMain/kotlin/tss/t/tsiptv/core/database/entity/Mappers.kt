@@ -8,18 +8,37 @@ import kotlinx.serialization.json.Json
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.Playlist
-import tss.t.tsiptv.core.parser.model.IPTVFormat
+import tss.t.tsiptv.core.model.PlaylistSourceType
 import tss.t.tsiptv.core.parser.model.IPTVProgram
+import tss.t.tsiptv.core.parser.model.playback.CatchupSpec
+import tss.t.tsiptv.core.parser.model.playback.DrmSpec
 import kotlin.time.ExperimentalTime
 
 
+/**
+ * Lenient on read: a row written by a newer build (or damaged) must still load as a channel,
+ * just without the field that failed.
+ */
+private val entityJson = Json {
+    ignoreUnknownKeys = true
+    coerceInputValues = true
+}
+
+private inline fun <reified T> String?.decodeOrNull(): T? =
+    this?.let { runCatching { entityJson.decodeFromString<T>(it) }.getOrNull() }
+
 fun PlaylistEntity.toPlaylist(): Playlist {
+    val urls = epgUrlsJson.decodeOrNull<List<String>>()
+        ?: listOfNotNull(epgUrl?.takeIf { it.isNotBlank() })
     return Playlist(
         id = id,
         name = name,
         url = url,
         lastUpdated = lastUpdated,
-        epgUrl = epgUrl
+        epgUrl = epgUrl?.takeIf { it.isNotBlank() } ?: urls.firstOrNull(),
+        sourceType = PlaylistSourceType.fromStored(sourceType),
+        epgUrls = urls,
+        format = format,
     )
 }
 
@@ -29,8 +48,10 @@ fun Playlist.toPlaylistEntity(): PlaylistEntity {
         name = name,
         url = url,
         lastUpdated = lastUpdated,
-        format = IPTVFormat.UNKNOWN.name, // This will be updated when the playlist is parsed,
-        epgUrl = epgUrl ?: ""
+        format = format,
+        epgUrl = epgUrl ?: epgUrls.firstOrNull() ?: "",
+        sourceType = sourceType.name,
+        epgUrlsJson = epgUrls.takeIf { it.isNotEmpty() }?.let { entityJson.encodeToString(it) },
     )
 }
 
@@ -43,7 +64,23 @@ fun ChannelEntity.toChannel(): Channel {
         categoryId = categoryId,
         playlistId = playlistId,
         isFavorite = isFavorite,
-        lastWatched = lastWatched
+        lastWatched = lastWatched,
+        number = channelNumber,
+        groups = groupsJson.decodeOrNull<List<String>>() ?: listOfNotNull(categoryId),
+        isRadio = isRadio,
+        isVod = isVod,
+        headers = headersJson.decodeOrNull<Map<String, String>>().orEmpty(),
+        mimeType = mimeType,
+        drm = drmJson.decodeOrNull<DrmSpec>(),
+        catchup = catchupJson.decodeOrNull<CatchupSpec>(),
+        epgShiftHours = epgShiftHours,
+        sortIndex = sortIndex,
+        epgId = epgId,
+        nameJson = nameJson,
+        originIncludePath = originIncludePath,
+        tagsJson = tagsJson,
+        descriptionJson = descriptionJson,
+        streamsJson = streamsJson,
     )
 }
 
@@ -56,7 +93,23 @@ fun Channel.toChannelEntity(): ChannelEntity {
         categoryId = categoryId,
         playlistId = playlistId,
         isFavorite = isFavorite,
-        lastWatched = lastWatched
+        lastWatched = lastWatched,
+        channelNumber = number,
+        groupsJson = groups.takeIf { it.isNotEmpty() }?.let { entityJson.encodeToString(it) },
+        isRadio = isRadio,
+        isVod = isVod,
+        headersJson = headers.takeIf { it.isNotEmpty() }?.let { entityJson.encodeToString(it) },
+        mimeType = mimeType,
+        drmJson = drm?.let { entityJson.encodeToString(it) },
+        catchupJson = catchup?.let { entityJson.encodeToString(it) },
+        epgShiftHours = epgShiftHours,
+        sortIndex = sortIndex,
+        epgId = epgId,
+        nameJson = nameJson,
+        originIncludePath = originIncludePath,
+        tagsJson = tagsJson,
+        descriptionJson = descriptionJson,
+        streamsJson = streamsJson,
     )
 }
 
@@ -125,6 +178,24 @@ fun ProgramEntity.toIPTVProgram(): IPTVProgram {
 
 private val format = LocalDateTime.Format {
     hour();chars(":");minute()
+}
+
+/**
+ * The programme moved by a channel's `tvg-shift`, with its display times recomputed. The
+ * guide stores XMLTV times as published; the shift is applied where a programme is matched to
+ * "now" and shown, so one guide can serve channels with different shifts.
+ */
+@OptIn(ExperimentalTime::class)
+fun IPTVProgram.shiftedBy(shiftMs: Long): IPTVProgram {
+    if (shiftMs == 0L) return this
+    return copy(startTime = startTime + shiftMs, endTime = endTime + shiftMs).apply {
+        startTimeStr = format.format(
+            Instant.fromEpochMilliseconds(startTime).toLocalDateTime(TimeZone.currentSystemDefault())
+        )
+        endTimeStr = format.format(
+            Instant.fromEpochMilliseconds(endTime).toLocalDateTime(TimeZone.currentSystemDefault())
+        )
+    }
 }
 
 fun IPTVProgram.toProgramEntity(playlistId: String): ProgramEntity {

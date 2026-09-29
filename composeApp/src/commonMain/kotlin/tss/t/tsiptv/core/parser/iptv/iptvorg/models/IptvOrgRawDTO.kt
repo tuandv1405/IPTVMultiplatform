@@ -1,16 +1,19 @@
 package tss.t.tsiptv.core.parser.iptv.iptvorg.models
 
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+/** One entry of iptv-org's `streams.json`. */
+@Serializable
 data class IptvOrgRawDTO(
     @SerialName("channel")
-    val channel: String?,
+    val channel: String? = null,
     @SerialName("feed")
-    val feed: String?,
+    val feed: String? = null,
     @SerialName("quality")
-    val quality: String?,
+    val quality: String? = null,
     @SerialName("referrer")
-    val referrer: String?,
+    val referrer: String? = null,
     @SerialName("title")
     val title: String,
     @SerialName("url")

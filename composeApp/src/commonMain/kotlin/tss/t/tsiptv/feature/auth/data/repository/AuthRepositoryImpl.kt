@@ -67,10 +67,9 @@ class AuthRepositoryImpl(
     init {
         CoroutineScope(Dispatchers.IO).launch {
             firebaseAuth.currentUser.collect { user ->
-                println("User: $user")
+                // No logging here: the user and the token are personal data and a credential.
                 if (user != null) {
                     val token = getAuthToken()
-                    println("Token: $token")
                     _authState.value = AuthState(
                         isAuthenticated = true,
                         user = user,
@@ -463,7 +462,7 @@ class AuthRepositoryImpl(
     override suspend fun sendPasswordResetEmail(email: String): AuthResult {
         return try {
             firebaseAuth.sendPasswordResetEmail(email)
-            println("$LOG_TAG accepted by Firebase for $email")
+            println("$LOG_TAG accepted by Firebase")
             AuthResult.PasswordResetEmailSent
         } catch (e: FirebaseAuthException) {
             // "This address has no account" is an answer we must not give to the
@@ -471,14 +470,14 @@ class AuthRepositoryImpl(
             // outcome as a successful send, but log the truth, because otherwise
             // "no account" and "delivered" look identical while debugging.
             if (e.code in EMAIL_ENUMERATION_CODES) {
-                println("$LOG_TAG NOT sent: no account for $email (reported to the UI as sent)")
+                println("$LOG_TAG NOT sent: no account for the address (reported to the UI as sent)")
                 AuthResult.PasswordResetEmailSent
             } else {
-                println("$LOG_TAG failed for $email: ${e.code} - ${e.message}")
+                println("$LOG_TAG failed: ${e.code}")
                 AuthResult.Error(e.message ?: "Failed to send password reset email", e)
             }
         } catch (e: Exception) {
-            println("$LOG_TAG failed for $email: ${e::class.simpleName} - ${e.message}")
+            println("$LOG_TAG failed: ${e::class.simpleName}")
             AuthResult.Error(
                 "Failed to send password reset email: ${e.message}",
                 FirebaseAuthException(

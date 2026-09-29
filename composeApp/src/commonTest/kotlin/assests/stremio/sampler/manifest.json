@@ -1,0 +1,16 @@
+{
+  "id": "org.tsiptv.publicdomain.static",
+  "version": "1.0.0",
+  "name": "Public Domain Sampler (static)",
+  "description": "Public-domain films and cartoons from archive.org, plus a public HLS test channel. Static JSON on GitHub Pages.",
+  "resources": ["catalog", "meta", "stream"],
+  "types": ["movie", "series", "tv"],
+  "idPrefixes": ["tspd_"],
+  "catalogs": [
+    { "type": "movie",  "id": "tspd-movie",  "name": "Public Domain Movies",
+      "extra": [ { "name": "genre", "isRequired": false, "options": ["Comedy"] } ] },
+    { "type": "series", "id": "tspd-series", "name": "Public Domain Cartoons" },
+    { "type": "tv",     "id": "tspd-tv",     "name": "Test Channels" }
+  ],
+  "behaviorHints": { "adult": false, "p2p": false }
+}

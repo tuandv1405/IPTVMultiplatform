@@ -41,10 +41,11 @@ class OkHttpKtorNetworkClient() : KtorNetworkClient() {
             xml()
         }
 
-        // Add logging for debug builds
+        // Request lines, headers and bodies here are playlist links, tokens and whole
+        // playlists; none of it may reach logcat. Raise the level locally when debugging.
         install(Logging) {
             logger = Logger.ANDROID
-            level = LogLevel.ALL
+            level = LogLevel.NONE
             this.format = LoggingFormat.Default
         }
 

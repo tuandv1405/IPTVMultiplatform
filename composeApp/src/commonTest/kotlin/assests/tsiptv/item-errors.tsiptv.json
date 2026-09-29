@@ -1,0 +1,54 @@
+{
+  "format": "tsiptv-source",
+  "version": 1,
+  "id": "qa.tsiptv.item-errors",
+  "meta": { "name": "One item per item error code" },
+  "channels": [
+    { "id": "ok-1", "name": "Valid channel", "url": "https://cdn.example.com/ok-1.m3u8" },
+    { "id": "rtmp-url", "name": "RTMP stream", "url": "rtmp://live.example.com/app/stream" },
+    { "name": "No id", "url": "https://cdn.example.com/no-id.m3u8" },
+    { "id": "bad:id", "name": "Colon in id", "url": "https://cdn.example.com/colon.m3u8" },
+    { "id": "ok-1", "name": "Duplicate id", "url": "https://cdn.example.com/dup.m3u8" },
+    { "id": "no-name", "url": "https://cdn.example.com/no-name.m3u8" },
+    {
+      "id": "url-and-streams",
+      "name": "Both url and streams",
+      "url": "https://cdn.example.com/a.m3u8",
+      "streams": [{ "url": "https://cdn.example.com/b.m3u8" }]
+    },
+    {
+      "id": "forbidden-header",
+      "name": "Sets Host",
+      "url": "https://cdn.example.com/host.m3u8",
+      "headers": { "Host": "evil.example.com", "Referer": "https://example.com/" }
+    },
+    {
+      "id": "drm-no-license",
+      "name": "Widevine without licence URL",
+      "url": "https://cdn.example.com/wv.mpd",
+      "drm": { "system": "widevine" }
+    },
+    {
+      "id": "one-bad-stream",
+      "name": "First stream has bad ClearKey keys",
+      "streams": [
+        { "url": "https://cdn.example.com/ck.mpd", "drm": { "system": "clearkey", "keys": { "zz": "00112233445566778899aabbccddeeff" } } },
+        { "url": "https://cdn.example.com/clear.m3u8", "name": "Backup" }
+      ]
+    }
+  ],
+  "movies": [
+    {
+      "id": "movie-bad-poster",
+      "name": "Movie with a javascript: poster",
+      "poster": "javascript:alert(1)",
+      "url": "https://cdn.example.com/movie.mp4"
+    }
+  ],
+  "includes": [
+    { "id": "ftp-list", "type": "ftp-list", "url": "https://example.com/list.txt" },
+    { "id": "live", "type": "m3u", "url": "https://example.com/live.m3u" },
+    { "id": "addon", "type": "stremio", "url": "https://addon.example.com/catalog.json" },
+    { "id": "self", "type": "tsiptv-source", "url": "https://example.com/item-errors.tsiptv.json" }
+  ]
+}

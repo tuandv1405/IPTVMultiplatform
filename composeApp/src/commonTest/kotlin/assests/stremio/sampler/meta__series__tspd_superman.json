@@ -1,0 +1,13 @@
+{
+  "meta": {
+    "id": "tspd_superman", "type": "series", "name": "Fleischer Superman (1941-43)",
+    "poster": "https://archive.org/services/img/superman_the_mechanical_monsters",
+    "releaseInfo": "1941-1943", "genres": ["Animation"],
+    "description": "Fleischer Studios Superman cartoons, public domain.",
+    "videos": [
+      { "id": "tspd_superman_s1e1", "title": "The Mechanical Monsters",
+        "season": 1, "episode": 1, "released": "1941-11-28T00:00:00.000Z",
+        "thumbnail": "https://archive.org/services/img/superman_the_mechanical_monsters" }
+    ]
+  }
+}

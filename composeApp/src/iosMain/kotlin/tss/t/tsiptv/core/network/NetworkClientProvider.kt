@@ -28,10 +28,10 @@ class IosKtorNetworkClient : KtorNetworkClient() {
             xml()
         }
 
-        // Add logging for debug builds
+        // INFO logs every request URL, and playlist links carry tokens: keep it off.
         install(Logging) {
             logger = Logger.DEFAULT
-            level = LogLevel.INFO
+            level = LogLevel.NONE
         }
 
 
