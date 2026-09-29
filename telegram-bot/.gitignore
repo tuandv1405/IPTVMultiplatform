@@ -4,3 +4,6 @@ node_modules/
 !.env.example
 service-account*.json
 *.key.json
+
+# Runtime data (SQLite store and its WAL/SHM files)
+data/

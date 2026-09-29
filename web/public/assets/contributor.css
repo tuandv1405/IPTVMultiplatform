@@ -39,7 +39,7 @@
 .ghost[disabled] { opacity: 0.5; cursor: wait; }
 .row .btn, .row .ghost { margin-top: 1.25rem; }
 .linklike { background: none; border: 0; padding: 0; color: var(--accent-cyan); cursor: pointer; font: inherit; text-decoration: underline; }
-header.site nav .linklike { text-decoration: none; font-size: 0.9rem; }
+header.site .linklike { text-decoration: none; font-size: 0.88rem; padding: 0.35rem 0.85rem; border: 1px solid var(--stroke); border-radius: 999px; }
 
 .err { color: #f87171; min-height: 1em; margin: 0.6rem 0 0; }
 .hint { color: var(--text-dim); font-size: 0.88rem; margin: 0.35rem 0 0; }

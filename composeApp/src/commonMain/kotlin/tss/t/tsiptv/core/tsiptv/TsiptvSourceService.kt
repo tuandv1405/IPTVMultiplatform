@@ -98,6 +98,10 @@ class TsiptvStoreResult(
     /** "N items will be skipped" of the whole tree (root + includes). */
     val skippedCount: Int,
     val report: TsiptvValidationReport,
+    /** Includes in the stored tree (analytics only). */
+    val includeCount: Int = 0,
+    /** Whether any guide is part of the tree (analytics only). */
+    val hasGuide: Boolean = false,
 )
 
 sealed interface TsiptvRefreshResult {
@@ -392,6 +396,8 @@ class TsiptvSourceService(
             seriesCount = resolved.vodItems.count { it.kind == TsiptvVodItemRecord.KIND_SERIES },
             skippedCount = report.skippedItemCount,
             report = report,
+            includeCount = resolved.includes.size,
+            hasGuide = resolved.includes.any { it.type == tss.t.tsiptv.core.parser.tsiptv.TsiptvIncludeType.XMLTV.wireName } || resolved.guides.replace.isNotEmpty(),
         )
     }
 

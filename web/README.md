@@ -95,6 +95,12 @@ Hosting → Custom domains and update the URLs in the Play Console listing.
 
 ## Editing
 
+- **Header navigation** is generated: `python web/scripts/site_nav.py` writes the same
+  `<nav class="site-nav">` (icon pills, bilingual labels, `aria-current` on the current section)
+  and the inline `<script type="speculationrules">` into every hand-written page; guide pages get
+  them from `build_guides.py`. Edit the nav only in `scripts/site_nav.py`, then run it.
+  `check_guides.py` fails if a page's nav differs. Sticky header, smooth scrolling and
+  cross-page view transitions are CSS in `site.css` (disabled under `prefers-reduced-motion`).
 - Shared styling lives in `public/assets/site.css`; the palette mirrors
   `composeApp/src/commonMain/kotlin/tss/t/tsiptv/ui/themes/TSColors.kt`.
 - The language toggle is `public/assets/lang.js`; panes are marked with

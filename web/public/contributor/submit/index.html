@@ -15,13 +15,14 @@
   <div class="wrap">
     <img src="/assets/app-icon.png" alt="">
     <span class="name">TS IPTV</span>
-    <nav>
-      <a href="/guides/">Hướng dẫn / Guides</a>
-      <a href="/contributor/" data-i18n="nav_policy">Chính sách</a>
-      <a href="/contributor/request/" data-i18n="nav_request">Đăng ký</a>
-      <a href="/playlists/" data-i18n="nav_directory">Danh sách công khai</a>
-      <button type="button" class="linklike" id="signOut" hidden data-i18n="sign_out">Đăng xuất</button>
+    <nav class="site-nav" aria-label="Trang / Pages">
+      <a href="/guides/"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg><span class="nav-label"><span lang="vi">Hướng dẫn</span><span lang="en">Guides</span></span></a>
+      <a href="/playlists/"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6h12M9 12h12M9 18h8"/><path d="M4 6h.01M4 12h.01M4 18h.01"/><path d="m18 16 3 2-3 2z"/></svg><span class="nav-label"><span lang="vi">Danh sách cộng đồng</span><span lang="en">Community playlists</span></span></a>
+      <a href="/contributor/" aria-current="page"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20.5 4.6 13.2A4.9 4.9 0 0 1 12 6.8a4.9 4.9 0 0 1 7.4 6.4"/><path d="M18 15v6M15 18h6"/></svg><span class="nav-label"><span lang="vi">Đóng góp</span><span lang="en">Contribute</span></span></a>
+      <a href="/privacy/"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg><span class="nav-label"><span lang="vi">Quyền riêng tư</span><span lang="en">Privacy</span></span></a>
+      <a href="/delete-account/"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="m17 8 5 5M22 8l-5 5"/></svg><span class="nav-label"><span lang="vi">Xoá tài khoản</span><span lang="en">Delete account</span></span></a>
     </nav>
+    <button type="button" class="linklike" id="signOut" hidden data-i18n="sign_out">Đăng xuất</button>
   </div>
 </header>
 
@@ -118,5 +119,11 @@
 </footer>
 
 <script type="module" src="/assets/contributor-submit.js"></script>
+<script type="speculationrules">
+{"prefetch": [{"where": {"and": [
+  {"href_matches": "/*"},
+  {"not": {"selector_matches": "[href*='?'], [href*='#'], [href^='/contributor/admin'], [download]"}}
+]}, "eagerness": "moderate"}]}
+</script>
 </body>
 </html>
