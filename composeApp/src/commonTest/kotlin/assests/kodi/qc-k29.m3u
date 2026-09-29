@@ -1,0 +1,17 @@
+#EXTM3U
+#EXTINF:-1 tvg-name="CNN_US" group-title="News",CNN
+https://cdn.example.com/s.m3u8?c=cnn
+#EXTINF:-1 group-title="News",News, Weather
+https://cdn.example.com/s.m3u8?c=weather
+#EXTINF:-1 tvg-ID="Mixed.Case" group-title="News",Mixed
+https://cdn.example.com/s.m3u8?c=mixed
+#EXTINF:-1 tvg-id="dup" group-title="Dup",Dup A
+https://cdn.example.com/s.m3u8?c=dupA
+#EXTINF:-1 tvg-id="dup" group-title="Dup",Dup B
+https://cdn.example.com/s.m3u8?c=dupB
+#EXTINF:-1 tvg-id="tok" group-title="Tok",Token channel
+https://cdn.example.com/s.m3u8?token=NEW2
+#EXTINF:-1 tvg-id="plain" group-title="Tok",Plain
+https://cdn.example.com/s.m3u8?c=plain
+#EXTINF:-1 tvg-id="intruder" group-title="Tok",Intruder (new channel, reuses the old stream link)
+https://cdn.example.com/s.m3u8?token=NEW

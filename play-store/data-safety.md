@@ -75,10 +75,18 @@ not read the device photo library. If you would rather not declare this, strip
 | --- | --- |
 | Collected | Yes |
 | Shared | No |
-| Required or optional | Optional — user can decline tracking |
+| Required or optional | **Required** — events are sent whether or not tracking is allowed; only the user ID depends on it |
 | Purposes | Analytics |
 
-*Source: Firebase Analytics, gated by `UserTrackingService`.*
+*Source: Firebase Analytics. `UserTrackingService` gates only the Analytics
+**user ID** (the email, set when tracking permission is granted); the events
+themselves are not gated. They carry the detected playlist format and channel
+count (`add_iptv_playlist`, `HomeViewModel`) and the hour of play
+(`play_iptv_channel`, `PlayerViewModel`). Playlist and stream URLs, the name
+typed for a playlist and channel names are never sent: links carry access
+tokens and `|Authorization=` headers, and names can identify a private source
+(removed in F1, see docs/prd-kodi-m3u-compat.md §9). Imported files are read on
+the device only, and nothing about them is sent.*
 
 ### App info and performance → Crash logs
 

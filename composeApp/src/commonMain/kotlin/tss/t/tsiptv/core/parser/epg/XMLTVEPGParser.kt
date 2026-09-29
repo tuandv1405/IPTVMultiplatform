@@ -18,11 +18,26 @@ import kotlin.time.ExperimentalTime
  * Implementation of EPGParser for XMLTV format.
  * XMLTV is a common format for TV listings.
  */
-class XMLTVEPGParser : EPGParser {
-    override fun parse(content: String): List<IPTVProgram> {
+class XMLTVEPGParser(
+    /** `lang` to prefer when a programme has titles in several languages. */
+    private val preferredLanguage: String? = null,
+) : EPGParser {
+    override fun parse(content: String): List<IPTVProgram> = parseDocument(content).first
+
+    /**
+     * Programmes plus each `<channel>`'s display names (display name → channel id), for guides
+     * that are matched to channels by name when a channel has no guide id (F3 spec §8.1).
+     */
+    fun parseDocument(content: String): Pair<List<IPTVProgram>, Map<String, String>> {
         val xml = XML {
-            autoPolymorphic = true
             isCollectingNSAttributes = false
+            defaultPolicy {
+                autoPolymorphic = true
+                // XMLTV has many optional elements and attributes this app does not read
+                // (sub-title, episode-num, rating, star-rating, url, …). Failing on the first
+                // unknown one used to throw away the whole guide.
+                ignoreUnknownChildren()
+            }
         }
 
         // Pre-process the XML content to escape unescaped '&' characters
@@ -30,9 +45,17 @@ class XMLTVEPGParser : EPGParser {
         val processedContent = escapeUnescapedAmpersands(content)
 
         val xmltvDocument = xml.decodeFromString<XMLTVDocument>(processedContent)
-        return xmltvDocument.programme.mapNotNull {
-            it.toIPTVProgram()
+        val programs = xmltvDocument.programme.mapNotNull {
+            it.toIPTVProgram(preferredLanguage)
         }
+        val names = LinkedHashMap<String, String>()
+        for (channel in xmltvDocument.channel) {
+            for (name in channel.displayName) {
+                val key = name.value?.trim()?.takeIf { it.isNotEmpty() } ?: continue
+                names.putIfAbsent(key, channel.id)
+            }
+        }
+        return programs to names
     }
 
     /**

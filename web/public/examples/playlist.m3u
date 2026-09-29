@@ -1,0 +1,18 @@
+#EXTM3U x-tvg-url="https://tsiptv-8bdd6.web.app/examples/guide.xml"
+#EXTINF:-1 tvg-id="HlsTest.example" tvg-chno="1" group-title="Test",HLS Test Channel
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+#EXTINF:-1 tvg-id="ExampleNews.us" tvg-chno="2" tvg-logo="https://example.com/logos/news.png" group-title="News;HD",Example News
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+#EXTVLCOPT:http-referrer=https://example.com/
+https://cdn.example.com/news/index.m3u8
+#EXTINF:-1 tvg-id="ExampleSports.us" tvg-chno="3" group-title="Sports",Example Sports
+https://cdn.example.com/sports/index.m3u8|Referer=https%3A%2F%2Fexample.com%2F
+#EXTINF:-1 tvg-id="ExampleRadio.us" tvg-chno="4" radio="true" group-title="Radio",Example Radio
+https://cdn.example.com/radio/stream.aac
+#EXTINF:-1 tvg-id="ExampleProtected.us" tvg-chno="5" group-title="DRM demo",Example Protected
+#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha
+#KODIPROP:inputstream.adaptive.license_key=https://license.example.com/widevine|Content-Type=application%2Foctet-stream|R{SSM}|R
+#KODIPROP:mimetype=application/dash+xml
+https://cdn.example.com/protected/manifest.mpd
+#EXTINF:-1 tvg-id="ExampleArchive.us" tvg-chno="6" catchup="shift" catchup-days="3" group-title="Archive",Example Archive
+https://cdn.example.com/archive/index.m3u8

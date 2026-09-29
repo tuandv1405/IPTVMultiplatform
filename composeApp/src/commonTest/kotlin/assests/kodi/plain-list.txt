@@ -1,0 +1,3 @@
+# Two bare links, no #EXTINF
+https://cdn.example.com/live/news-hd.m3u8?token=abc
+https://cdn.example.com/

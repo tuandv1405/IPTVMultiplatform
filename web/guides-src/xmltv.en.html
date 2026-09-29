@@ -1,0 +1,178 @@
+    <h1>XMLTV programme guides</h1>
+    <p class="lead">XMLTV is the most common XML format for electronic programme guides (EPG): it lists channels and each channel's programmes, with start and stop times, titles and descriptions.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels and no guides.</strong> It reads only the playlists and guides you add.</p>
+    </div>
+
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+        <li><a href="#what-en">What XMLTV is</a></li>
+        <li><a href="#syntax-en">Syntax</a></li>
+        <li><a href="#link-en">How a guide links to a playlist</a></li>
+        <li><a href="#example-en">Complete example</a></li>
+        <li><a href="#create-en">Create one by hand</a></li>
+        <li><a href="#host-en">Host it</a></li>
+        <li><a href="#add-en">Add it in TS IPTV</a></li>
+        <li><a href="#mistakes-en">Common mistakes</a></li>
+        <li><a href="#support-en">What TS IPTV supports</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what-en">What XMLTV is</h2>
+    <p>XMLTV comes from an open-source project of TV listings tools; the file structure is defined in its <a href="https://github.com/XMLTV/xmltv/blob/master/xmltv.dtd">official DTD</a>. Today almost every IPTV player reads XMLTV. A playlist says <em>which channels exist</em>; an XMLTV file says <em>what is on them now and next</em>.</p>
+
+    <h2 id="syntax-en">Syntax</h2>
+    <p>The root element is <code>&lt;tv&gt;</code>. Inside it, all <code>&lt;channel&gt;</code> elements come first, then the <code>&lt;programme&gt;</code> elements:</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>&lt;tv&gt;
+  &lt;channel id="…"&gt;            (zero or more)
+    &lt;display-name&gt;…&lt;/display-name&gt;
+    &lt;icon src="…"/&gt;
+  &lt;/channel&gt;
+  &lt;programme start="…" stop="…" channel="…"&gt;   (zero or more)
+    &lt;title&gt;…&lt;/title&gt;
+    &lt;sub-title&gt;…&lt;/sub-title&gt;
+    &lt;desc&gt;…&lt;/desc&gt;
+    &lt;category&gt;…&lt;/category&gt;
+    &lt;episode-num system="…"&gt;…&lt;/episode-num&gt;
+    &lt;rating system="…"&gt;&lt;value&gt;…&lt;/value&gt;&lt;/rating&gt;
+  &lt;/programme&gt;
+&lt;/tv&gt;</code></pre>
+    </div>
+
+    <h3 id="tv-el-en"><code>&lt;tv&gt;</code></h3>
+    <p>The root element. Optional attributes: <code>date</code>, <code>generator-info-name</code>, <code>generator-info-url</code>, <code>source-info-name</code>, <code>source-info-url</code>, <code>source-data-url</code>.</p>
+
+    <h3 id="channel-el-en"><code>&lt;channel&gt;</code></h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Element / attribute</th><th>Required</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><strong>yes</strong></td><td>Channel id. The playlist uses exactly this value in <code>tvg-id</code>.</td></tr>
+          <tr><td><code>&lt;display-name lang="…"&gt;</code></td><td><strong>at least 1</strong></td><td>Channel name.</td></tr>
+          <tr><td><code>&lt;icon src="…"/&gt;</code></td><td>no</td><td>Channel logo.</td></tr>
+          <tr><td><code>&lt;url&gt;</code></td><td>no</td><td>The channel's website.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="programme-el-en"><code>&lt;programme&gt;</code></h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Element / attribute</th><th>Required</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>channel</code></td><td><strong>yes</strong></td><td>Must equal a <code>&lt;channel id&gt;</code>.</td></tr>
+          <tr><td><code>start</code></td><td><strong>yes</strong></td><td>Start time (see the time format below).</td></tr>
+          <tr><td><code>stop</code></td><td>should be present</td><td>Stop time. TS IPTV needs it, so always write <code>stop</code>.</td></tr>
+          <tr><td><code>&lt;title lang="…"&gt;</code></td><td><strong>at least 1</strong></td><td>Programme title.</td></tr>
+          <tr><td><code>&lt;sub-title&gt;</code></td><td>no</td><td>Episode title.</td></tr>
+          <tr><td><code>&lt;desc lang="…"&gt;</code></td><td>no</td><td>Description. The only element where line breaks are allowed.</td></tr>
+          <tr><td><code>&lt;category lang="…"&gt;</code></td><td>no, repeatable</td><td>Genre.</td></tr>
+          <tr><td><code>&lt;icon src="…"/&gt;</code></td><td>no</td><td>Programme artwork.</td></tr>
+          <tr><td><code>&lt;credits&gt;</code></td><td>no</td><td>Director (<code>&lt;director&gt;</code>), actors (<code>&lt;actor&gt;</code>) and so on.</td></tr>
+          <tr><td><code>&lt;episode-num system="…"&gt;</code></td><td>no</td><td>Season and episode number (see below).</td></tr>
+          <tr><td><code>&lt;rating system="…"&gt;&lt;value&gt;</code></td><td>no</td><td>Age rating, for example <code>system="MPAA"</code>, <code>PG</code>.</td></tr>
+          <tr><td><code>&lt;star-rating&gt;&lt;value&gt;</code></td><td>no</td><td>Score, for example <code>7 / 10</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="time-en">Time format</h3>
+    <p><code>start</code> and <code>stop</code> are <code>YYYYMMDDhhmmss</code> followed by a time-zone offset: <code>20260927183000 +0700</code> is 18:30:00 on 27 September 2026 in UTC+7. The DTD says that a time without an offset is <strong>UTC</strong>, but TS IPTV currently reads such times in the device's time zone. So always write the offset. Intervals are half-open: a programme starts at <code>start</code> and ends just before <code>stop</code>, so one programme's <code>stop</code> should equal the next one's <code>start</code>.</p>
+
+    <h3 id="episode-en">Episode numbers: <code>episode-num</code></h3>
+    <ul>
+      <li><code>system="xmltv_ns"</code>: <code>season.episode.part</code>, <strong>counted from zero</strong>. <code>2.4.</code> means season 3, episode 5. Each part may be <code>X/Y</code>: <code>0.11/12.0/2</code> is season 1, episode 12 of 12, part 1 of 2. Unknown parts are left empty.</li>
+      <li><code>system="onscreen"</code>: free text as shown on screen, for example <code>S03E05</code>. This is the default when <code>system</code> is omitted.</li>
+    </ul>
+
+    <h2 id="link-en">How a guide links to a playlist</h2>
+    <ul>
+      <li><strong>The URL</strong>: an M3U playlist points to its guide with <code>#EXTM3U x-tvg-url="https://…/guide.xml"</code> (or the older <code>url-tvg</code>); a JSON playlist uses the <code>epgUrl</code> field. Several guides may be separated by commas: TS IPTV downloads up to 5 and merges their programmes, dropping duplicates.</li>
+      <li><strong>The channel id</strong>: the playlist channel <code>tvg-id="ExampleNews.us"</code> gets the programmes of <code>&lt;channel id="ExampleNews.us"&gt;</code>. Copy the id exactly; it is case-sensitive.</li>
+      <li><strong>Time shift</strong>: if the guide is off by some hours, add <code>tvg-shift="+1"</code> (in hours) to the channel, or to the <code>#EXTM3U</code> line for every channel.</li>
+    </ul>
+
+    <h2 id="example-en">Complete example</h2>
+    <p>This is the guide that the <a href="/guides/m3u/#example-en">example M3U playlist</a> points to. It has two channels: <code>HlsTest.example</code> and <code>ExampleNews.us</code>.</p>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/guide.xml" download>Download guide.xml</a></div>
+      <pre data-copy data-example="/examples/guide.xml" tabindex="0"><code></code></pre>
+    </div>
+    <ol>
+      <li><strong>Two <code>&lt;channel&gt;</code> elements</strong> come before every programme, each with one <code>&lt;display-name&gt;</code>.</li>
+      <li><strong>Two dated programmes</strong> (the evening of 31 December 2025, UTC) show the optional elements: <code>sub-title</code>, <code>category</code>, <code>episode-num</code> in both systems, and <code>rating</code>.</li>
+      <li><strong>“Test pattern”</strong>: each channel has one programme running from 1 January 2026 to the end of 2030. It is a trick for an example file: whenever you open it, the guide has something “on now”. Real guides use short programmes that follow each other.</li>
+    </ol>
+
+    <h2 id="create-en">Create one by hand</h2>
+    <p>Most people do not write XMLTV by hand: the provider gives a guide URL, or the guide is generated by a grabber tool. For a small personal list, writing one is still easy:</p>
+    <ol>
+      <li>Copy the example above into a plain-text editor (Notepad, TextEdit in plain text mode, VS Code).</li>
+      <li>Add one <code>&lt;channel id="…"&gt;</code> per channel, with an id equal to the playlist's <code>tvg-id</code>.</li>
+      <li>Add <code>&lt;programme&gt;</code> elements after all the <code>&lt;channel&gt;</code> elements, always with <code>start</code>, <code>stop</code> and a time-zone offset.</li>
+      <li>Write <code>&amp;</code> as <code>&amp;amp;</code> and <code>&lt;</code> as <code>&amp;lt;</code> in titles and descriptions.</li>
+      <li>Save as UTF-8 with the extension <code>.xml</code>.</li>
+      <li>Compress large guides with <strong>gzip</strong> to <code>guide.xml.gz</code>: <code>gzip -k guide.xml</code> (macOS, Linux), or 7-Zip › <em>Add to archive</em> › format <em>gzip</em> (Windows). Do not use <code>.zip</code>: that is a different format.</li>
+    </ol>
+
+    <h2 id="host-en">Host it</h2>
+    <p>Just like an M3U playlist: any HTTPS link that returns the file itself works, for example <code>https://raw.githubusercontent.com/&lt;user&gt;/&lt;repo&gt;/&lt;branch&gt;/guide.xml.gz</code>, <code>https://&lt;user&gt;.github.io/&lt;repo&gt;/guide.xml</code> or <code>https://www.example.com/guide.xml.gz</code>. Google Drive/OneDrive share pages and GitHub <code>blob/</code> links do not work. Details: <a href="/guides/m3u/#host-en">hosting an M3U file</a>.</p>
+    <ul>
+      <li>TS IPTV recognises gzip by its content, so it does not matter whether the server sends <code>Content-Type: application/gzip</code> or <code>Content-Encoding: gzip</code>.</li>
+      <li>HTTPS is recommended; CORS is not needed for TS IPTV.</li>
+      <li>Update the file regularly: a guide that only covers past days has nothing to show.</li>
+    </ul>
+
+    <h2 id="add-en">Add it in TS IPTV</h2>
+    <ol>
+      <li>Add the guide URL to the first line of your M3U playlist: <code>#EXTM3U x-tvg-url="https://www.example.com/guide.xml.gz"</code> (for JSON: the <code>epgUrl</code> field).</li>
+      <li>Add that playlist in TS IPTV (or refresh it if it is already there). The guide is downloaded with it.</li>
+      <li>Open a channel's programme list to see what is on now and next. Use <strong>Refresh EPG</strong> to download the guide again.</li>
+    </ol>
+    <p>TS IPTV has no separate field for a guide URL yet; the guide always comes with a playlist. If your playlist has no <code>x-tvg-url</code> and you cannot edit it where it is hosted, download the file, add the line above, and use <strong>Import from file</strong>.</p>
+
+    <h2 id="mistakes-en">Common mistakes</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Mistake</th><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>No time-zone offset on <code>start</code>/<code>stop</code></td><td>Guide shifted by some hours</td><td>Always add <code>+hhmm</code>. The DTD reads a missing offset as UTC, but TS IPTV currently uses the device's time zone.</td></tr>
+          <tr><td><code>channel</code> does not equal <code>&lt;channel id&gt;</code> or <code>tvg-id</code></td><td>Empty guide</td><td>Use the same string in all three places.</td></tr>
+          <tr><td><code>&amp;</code> not written as <code>&amp;amp;</code></td><td>XML error, the whole guide is lost</td><td>Write <code>&amp;amp;</code>.</td></tr>
+          <tr><td><code>&lt;programme&gt;</code> before <code>&lt;channel&gt;</code></td><td>Some readers skip the channels</td><td>Put all <code>&lt;channel&gt;</code> elements first (DTD order).</td></tr>
+          <tr><td>Overlapping or duplicate programmes</td><td>Flickering or repeated rows</td><td>Make <code>stop</code> equal the next <code>start</code>.</td></tr>
+          <tr><td>A gzip file compressed twice, or a <code>.zip</code></td><td>“Invalid guide”</td><td>Compress with gzip exactly once.</td></tr>
+          <tr><td>The guide only covers past days</td><td>“No programme guide”</td><td>Regenerate it daily.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support-en">What TS IPTV supports</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>XMLTV <code>.xml</code> and gzip <code>.xml.gz</code></td><td><span class="badge yes">Supported</span> on every platform</td></tr>
+          <tr><td>XZ <code>.xml.xz</code></td><td><span class="badge no">Not supported</span></td></tr>
+          <tr><td>Any time-zone offset in <code>start</code>/<code>stop</code></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>Several guides in <code>x-tvg-url</code> (up to 5), merged without duplicates</td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td><code>tvg-shift</code> per channel or for the whole playlist</td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>Shows title, description, category, artwork, director and actors</td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td><code>sub-title</code>, <code>episode-num</code>, <code>rating</code>, <code>star-rating</code></td><td><span class="badge partial">Accepted, not shown yet</span></td></tr>
+          <tr><td>A separate field for a guide URL</td><td><span class="badge no">Not yet</span> Use <code>x-tvg-url</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related-en">Related guides</h2>
+      <ul>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/json/">JSON</a></li>
+        <li><a href="/guides/xtream-codes/">Xtream Codes style links</a></li>
+        <li><a href="/guides/">All guides</a></li>
+      </ul>
+    </section>

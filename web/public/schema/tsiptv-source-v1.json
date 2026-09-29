@@ -1,0 +1,515 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tsiptv-8bdd6.web.app/schema/tsiptv-source-v1.json",
+  "title": "TS IPTV Source, version 1",
+  "description": "One JSON document describing a self-branded collection of live channels, radio, movies and series, with appearance, home layout and remote includes. Normative specification: docs/tsiptv-source-format.md. This schema is stricter than readers: it rejects unknown members (except those starting with 'x-') so that creators catch typos. Id uniqueness across channels, movies, series, episodes and includes cannot be expressed in JSON Schema and is checked by readers.",
+  "type": "object",
+  "required": ["format", "version", "id", "meta"],
+  "properties": {
+    "$schema": { "type": "string", "description": "Schema URL for editors. Readers never fetch it." },
+    "format": { "const": "tsiptv-source" },
+    "version": { "const": 1, "description": "Major version of the format. Additive changes keep version 1." },
+    "id": { "$ref": "#/$defs/id", "description": "Stable identifier of the source. Reverse-DNS recommended, e.g. com.example.my-channels." },
+    "revision": { "type": "integer", "minimum": 0, "description": "Creator-maintained counter, informational." },
+    "meta": { "$ref": "#/$defs/meta" },
+    "appearance": { "$ref": "#/$defs/appearance" },
+    "layout": { "$ref": "#/$defs/layout" },
+    "channels": { "type": "array", "maxItems": 10000, "items": { "$ref": "#/$defs/channel" } },
+    "movies": { "type": "array", "maxItems": 5000, "items": { "$ref": "#/$defs/movie" } },
+    "series": { "type": "array", "maxItems": 1000, "items": { "$ref": "#/$defs/series" } },
+    "epg": { "type": "array", "maxItems": 10, "items": { "$ref": "#/$defs/epgLink" } },
+    "includes": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/include" } }
+  },
+  "patternProperties": { "^x-": true },
+  "unevaluatedProperties": false,
+  "anyOf": [
+    { "required": ["channels"], "properties": { "channels": { "minItems": 1 } } },
+    { "required": ["movies"], "properties": { "movies": { "minItems": 1 } } },
+    { "required": ["series"], "properties": { "series": { "minItems": 1 } } },
+    { "required": ["includes"], "properties": { "includes": { "minItems": 1 } } }
+  ],
+
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+      "description": "Letters, digits, '.', '_' and '-'; 1-128 characters; must start with a letter or digit. ':' is reserved for include namespacing."
+    },
+    "itemRef": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}(:[A-Za-z0-9][A-Za-z0-9._-]{0,127}){0,3}$",
+      "description": "An item id, or includeId:itemId for items that come from an include."
+    },
+    "httpUrl": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048,
+      "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://[^\\s/?#\\u0000-\\u001F\\u007F-\\u009F]+[^\\s\\u0000-\\u001F\\u007F-\\u009F]*$",
+      "description": "Absolute http:// or https:// URL. No other scheme is allowed anywhere in the document."
+    },
+    "languageTag": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
+      "description": "BCP 47 subset, e.g. en, vi, zh-CN, pt-BR."
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$",
+      "description": "#RRGGBB"
+    },
+    "fullDate": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "text": {
+      "description": "Plain string in meta.language, or an object mapping language tags to strings.",
+      "oneOf": [
+        { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 30,
+          "propertyNames": { "$ref": "#/$defs/languageTag" },
+          "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" }
+        }
+      ]
+    },
+    "longText": {
+      "description": "Like text, up to 5000 characters per value; line breaks allowed.",
+      "oneOf": [
+        { "type": "string", "minLength": 1, "maxLength": 5000, "pattern": "^[^\\u0000-\\u0009\\u000B\\u000C\\u000E-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u0009\\u000B\\u000C\\u000E-\\u001F]*$" },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 30,
+          "propertyNames": { "$ref": "#/$defs/languageTag" },
+          "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 5000, "pattern": "^[^\\u0000-\\u0009\\u000B\\u000C\\u000E-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u0009\\u000B\\u000C\\u000E-\\u001F]*$" }
+        }
+      ]
+    },
+    "shortStrings": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" }
+    },
+    "names": {
+      "type": "array",
+      "maxItems": 50,
+      "items": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" }
+    },
+    "headers": {
+      "type": "object",
+      "description": "HTTP headers sent with every request of the stream (manifests, segments, keys). Max 20.",
+      "maxProperties": 20,
+      "propertyNames": {
+        "maxLength": 100,
+        "pattern": "^[!#$%&'*+.^_`|~0-9A-Za-z-]+$",
+        "not": {
+          "pattern": "^(?:[Hh][Oo][Ss][Tt]|[Cc][Oo][Nn][Tt][Ee][Nn][Tt]-[Ll][Ee][Nn][Gg][Tt][Hh]|[Cc][Oo][Nn][Nn][Ee][Cc][Tt][Ii][Oo][Nn]|[Tt][Rr][Aa][Nn][Ss][Ff][Ee][Rr]-[Ee][Nn][Cc][Oo][Dd][Ii][Nn][Gg])$"
+        }
+      },
+      "additionalProperties": { "type": "string", "maxLength": 4096, "pattern": "^[^\\u0000-\\u0008\\u000A-\\u001F\\u007F-\\u009F]*$" }
+    },
+    "mimeType": {
+      "type": "string",
+      "pattern": "^[a-z]+/[A-Za-z0-9.+-]+$",
+      "examples": ["application/x-mpegURL", "application/vnd.apple.mpegurl", "application/dash+xml", "video/mp4", "video/mp2t", "video/webm", "video/x-matroska", "audio/aac", "audio/mpeg", "audio/ogg"]
+    },
+
+    "meta": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "$ref": "#/$defs/text" },
+        "description": { "$ref": "#/$defs/longText" },
+        "author": {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" },
+            "url": { "$ref": "#/$defs/httpUrl" },
+            "email": { "type": "string", "maxLength": 254, "pattern": "^[^@\\s]+@[^@\\s]+$" }
+          },
+          "patternProperties": { "^x-": true },
+          "unevaluatedProperties": false
+        },
+        "logo": { "$ref": "#/$defs/httpUrl" },
+        "homepage": { "$ref": "#/$defs/httpUrl" },
+        "language": { "$ref": "#/$defs/languageTag", "default": "en" },
+        "languages": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/languageTag" } },
+        "updatedAt": { "type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" },
+        "adult": { "type": "boolean", "default": false },
+        "license": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false
+    },
+
+    "cardStyle": {
+      "type": "object",
+      "properties": {
+        "style": { "enum": ["auto", "poster", "landscape", "square", "logo", "list"], "default": "auto" },
+        "corner": { "enum": ["none", "small", "medium", "large"], "default": "medium" },
+        "showTitles": { "type": "boolean", "default": true }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false
+    },
+
+    "appearance": {
+      "type": "object",
+      "properties": {
+        "accent": { "$ref": "#/$defs/color" },
+        "accentSecondary": { "$ref": "#/$defs/color" },
+        "background": {
+          "type": "object",
+          "properties": {
+            "color": { "$ref": "#/$defs/color" },
+            "gradient": { "type": "array", "minItems": 2, "maxItems": 3, "items": { "$ref": "#/$defs/color" } },
+            "image": { "$ref": "#/$defs/httpUrl" },
+            "imageDim": { "type": "number", "minimum": 0.3, "maximum": 1, "default": 0.6 }
+          },
+          "patternProperties": { "^x-": true },
+          "unevaluatedProperties": false
+        },
+        "card": { "$ref": "#/$defs/cardStyle" }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false
+    },
+
+    "layout": {
+      "type": "object",
+      "required": ["home"],
+      "properties": {
+        "home": { "type": "array", "minItems": 1, "maxItems": 30, "items": { "$ref": "#/$defs/section" } }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false
+    },
+
+    "section": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["hero", "row", "grid"] },
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "$ref": "#/$defs/text" },
+        "subtitle": { "$ref": "#/$defs/text" },
+        "query": { "$ref": "#/$defs/query" },
+        "items": { "type": "array", "minItems": 1, "maxItems": 10, "items": { "$ref": "#/$defs/heroItem" } },
+        "card": { "$ref": "#/$defs/cardStyle" },
+        "seeAll": { "type": "boolean" },
+        "groupChips": { "type": "boolean" }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "hero" } } },
+          "then": {
+            "oneOf": [ { "required": ["query"] }, { "required": ["items"] } ],
+            "not": { "anyOf": [ { "required": ["seeAll"] }, { "required": ["groupChips"] } ] }
+          },
+          "else": {
+            "required": ["query"],
+            "not": { "required": ["items"] }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "grid" } } },
+          "then": { "not": { "required": ["seeAll"] } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "row" } } },
+          "then": { "not": { "required": ["groupChips"] } }
+        },
+        {
+          "if": { "required": ["groupChips"], "properties": { "groupChips": { "const": true } } },
+          "then": { "properties": { "query": { "properties": { "from": { "enum": ["channels", "radio"] } } } } }
+        }
+      ]
+    },
+
+    "query": {
+      "type": "object",
+      "required": ["from"],
+      "properties": {
+        "from": { "enum": ["channels", "radio", "movies", "series", "catalog", "continueWatching", "favorites"] },
+        "include": { "$ref": "#/$defs/id" },
+        "catalog": {
+          "type": "object",
+          "required": ["type", "id"],
+          "properties": {
+            "type": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" },
+            "id": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" },
+            "genre": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" }
+          },
+          "patternProperties": { "^x-": true },
+          "unevaluatedProperties": false
+        },
+        "ids": { "type": "array", "minItems": 1, "maxItems": 500, "items": { "$ref": "#/$defs/itemRef" } },
+        "groups": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" } },
+        "genres": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" } },
+        "tags": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" } },
+        "sort": { "enum": ["source", "name", "number", "year", "yearDesc", "recent"], "default": "source" },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 500 }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "from": { "const": "catalog" } } },
+          "then": { "required": ["include", "catalog"] },
+          "else": { "not": { "required": ["catalog"] } }
+        }
+      ]
+    },
+
+    "heroItem": {
+      "type": "object",
+      "required": ["image"],
+      "properties": {
+        "image": { "$ref": "#/$defs/httpUrl" },
+        "title": { "$ref": "#/$defs/text" },
+        "subtitle": { "$ref": "#/$defs/text" },
+        "target": { "$ref": "#/$defs/itemRef" },
+        "autoplay": { "type": "boolean", "default": false }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false
+    },
+
+    "drm": {
+      "type": "object",
+      "required": ["system"],
+      "properties": {
+        "system": { "enum": ["widevine", "playready", "clearkey"] },
+        "licenseUrl": { "$ref": "#/$defs/httpUrl" },
+        "licenseHeaders": { "$ref": "#/$defs/headers" },
+        "keys": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 20,
+          "propertyNames": { "pattern": "^[0-9A-Fa-f]{32}$" },
+          "additionalProperties": { "type": "string", "pattern": "^[0-9A-Fa-f]{32}$" }
+        }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "system": { "enum": ["widevine", "playready"] } } },
+          "then": { "required": ["licenseUrl"], "not": { "required": ["keys"] } }
+        },
+        {
+          "if": { "properties": { "system": { "const": "clearkey" } } },
+          "then": { "anyOf": [ { "required": ["licenseUrl"] }, { "required": ["keys"] } ] }
+        }
+      ]
+    },
+
+    "catchup": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["default", "append", "shift", "flussonic", "flussonic-ts", "xc"] },
+        "source": { "type": "string", "minLength": 1, "maxLength": 2048, "pattern": "^[^\\s\\u0000-\\u001F\\u007F-\\u009F]+$", "description": "default: http(s) URL template; append: text appended to the live URL (may contain nested URLs); ignored by the other modes." },
+        "days": { "type": "integer", "minimum": 1, "maximum": 60, "default": 7 },
+        "correctionHours": { "type": "number", "minimum": -24, "maximum": 24, "default": 0 }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "mode": { "const": "default" } } },
+          "then": { "required": ["source"], "properties": { "source": { "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://" } } }
+        },
+        {
+          "if": { "properties": { "mode": { "const": "append" } } },
+          "then": { "required": ["source"] }
+        }
+      ]
+    },
+
+    "subtitle": {
+      "type": "object",
+      "required": ["url", "language"],
+      "properties": {
+        "url": { "$ref": "#/$defs/httpUrl" },
+        "language": { "$ref": "#/$defs/languageTag" },
+        "label": { "$ref": "#/$defs/text" },
+        "format": { "enum": ["vtt", "srt"] }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false
+    },
+
+    "stream": {
+      "type": "object",
+      "required": ["url"],
+      "properties": {
+        "url": { "$ref": "#/$defs/httpUrl" },
+        "name": { "$ref": "#/$defs/text" },
+        "headers": { "$ref": "#/$defs/headers" },
+        "mimeType": { "$ref": "#/$defs/mimeType" },
+        "drm": { "$ref": "#/$defs/drm" },
+        "quality": { "type": "string", "minLength": 1, "maxLength": 32, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" },
+        "language": { "$ref": "#/$defs/languageTag" }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false
+    },
+
+    "playable": {
+      "description": "Exactly one of url or streams. headers, mimeType and drm are defaults for every stream of the item.",
+      "properties": {
+        "url": { "$ref": "#/$defs/httpUrl" },
+        "streams": { "type": "array", "minItems": 1, "maxItems": 10, "items": { "$ref": "#/$defs/stream" } },
+        "headers": { "$ref": "#/$defs/headers" },
+        "mimeType": { "$ref": "#/$defs/mimeType" },
+        "drm": { "$ref": "#/$defs/drm" }
+      },
+      "oneOf": [ { "required": ["url"] }, { "required": ["streams"] } ]
+    },
+
+    "channel": {
+      "type": "object",
+      "required": ["id", "name"],
+      "$ref": "#/$defs/playable",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "$ref": "#/$defs/text" },
+        "type": { "enum": ["tv", "radio"], "default": "tv" },
+        "number": { "type": "integer", "minimum": 0, "maximum": 99999 },
+        "logo": { "$ref": "#/$defs/httpUrl" },
+        "groups": { "type": "array", "maxItems": 10, "items": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" } },
+        "epgId": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" },
+        "epgShiftHours": { "type": "number", "minimum": -12, "maximum": 14 },
+        "description": { "$ref": "#/$defs/longText" },
+        "tags": { "$ref": "#/$defs/shortStrings" },
+        "catchup": { "$ref": "#/$defs/catchup" }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false
+    },
+
+    "vodCommon": {
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "$ref": "#/$defs/text" },
+        "originalName": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" },
+        "poster": { "$ref": "#/$defs/httpUrl" },
+        "backdrop": { "$ref": "#/$defs/httpUrl" },
+        "logo": { "$ref": "#/$defs/httpUrl" },
+        "description": { "$ref": "#/$defs/longText" },
+        "year": { "type": "integer", "minimum": 1870, "maximum": 2100 },
+        "genres": { "type": "array", "maxItems": 10, "items": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" } },
+        "cast": { "$ref": "#/$defs/names" },
+        "countries": { "type": "array", "maxItems": 20, "items": { "type": "string", "pattern": "^[A-Z]{2}$" } },
+        "languages": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/languageTag" } },
+        "ageRating": { "type": "string", "minLength": 1, "maxLength": 16, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" },
+        "tags": { "$ref": "#/$defs/shortStrings" }
+      }
+    },
+
+    "movie": {
+      "type": "object",
+      "required": ["id", "name"],
+      "allOf": [ { "$ref": "#/$defs/vodCommon" }, { "$ref": "#/$defs/playable" } ],
+      "properties": {
+        "releaseDate": { "$ref": "#/$defs/fullDate" },
+        "runtimeMinutes": { "type": "integer", "minimum": 1, "maximum": 1440 },
+        "directors": { "type": "array", "maxItems": 20, "items": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[^\\u0000-\\u001F]*[^\\s\\u0000-\\u001F][^\\u0000-\\u001F]*$" } },
+        "subtitles": { "type": "array", "maxItems": 30, "items": { "$ref": "#/$defs/subtitle" } }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false
+    },
+
+    "episode": {
+      "type": "object",
+      "required": ["id", "number", "name"],
+      "$ref": "#/$defs/playable",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "number": { "type": "integer", "minimum": 0, "maximum": 9999 },
+        "name": { "$ref": "#/$defs/text" },
+        "description": { "$ref": "#/$defs/longText" },
+        "thumbnail": { "$ref": "#/$defs/httpUrl" },
+        "releaseDate": { "$ref": "#/$defs/fullDate" },
+        "runtimeMinutes": { "type": "integer", "minimum": 1, "maximum": 1440 },
+        "subtitles": { "type": "array", "maxItems": 30, "items": { "$ref": "#/$defs/subtitle" } }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false
+    },
+
+    "season": {
+      "type": "object",
+      "required": ["number", "episodes"],
+      "properties": {
+        "number": { "type": "integer", "minimum": 0, "maximum": 999, "description": "0 = Specials." },
+        "name": { "$ref": "#/$defs/text" },
+        "poster": { "$ref": "#/$defs/httpUrl" },
+        "description": { "$ref": "#/$defs/longText" },
+        "episodes": { "type": "array", "minItems": 1, "maxItems": 500, "items": { "$ref": "#/$defs/episode" } }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false
+    },
+
+    "series": {
+      "type": "object",
+      "required": ["id", "name", "seasons"],
+      "$ref": "#/$defs/vodCommon",
+      "properties": {
+        "endYear": { "type": "integer", "minimum": 1870, "maximum": 2100 },
+        "seasons": { "type": "array", "minItems": 1, "maxItems": 100, "items": { "$ref": "#/$defs/season" } }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false
+    },
+
+    "epgLink": {
+      "oneOf": [
+        { "$ref": "#/$defs/httpUrl" },
+        {
+          "type": "object",
+          "required": ["url"],
+          "properties": {
+            "url": { "$ref": "#/$defs/httpUrl" },
+            "refreshHours": { "type": "integer", "minimum": 1, "maximum": 720, "default": 24 }
+          },
+          "patternProperties": { "^x-": true },
+          "unevaluatedProperties": false
+        }
+      ]
+    },
+
+    "include": {
+      "type": "object",
+      "required": ["id", "type", "url"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id", "not": { "pattern": "^epg-" }, "description": "The prefix epg- is reserved for the implicit ids of epg links." },
+        "type": { "enum": ["m3u", "xmltv", "stremio", "tsiptv-source"] },
+        "url": { "$ref": "#/$defs/httpUrl" },
+        "name": { "$ref": "#/$defs/text" },
+        "refreshHours": { "type": "integer", "minimum": 1, "maximum": 720, "default": 24 },
+        "headers": { "$ref": "#/$defs/headers" }
+      },
+      "patternProperties": { "^x-": true },
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "stremio" } } },
+          "then": {
+            "properties": { "url": { "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://[^?#]*/manifest\\.json(\\?[^#]*)?$" } },
+            "not": { "required": ["headers"] }
+          }
+        }
+      ]
+    }
+  }
+}

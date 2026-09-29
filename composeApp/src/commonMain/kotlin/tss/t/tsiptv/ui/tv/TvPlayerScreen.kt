@@ -35,6 +35,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -61,17 +62,49 @@ import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.all_channels_title
 import tsiptv.composeapp.generated.resources.tv_player_hint
+import tsiptv.composeapp.generated.resources.tv_player_hint_options
+import tsiptv.composeapp.generated.resources.tv_player_hint_options_vod
+import tsiptv.composeapp.generated.resources.tv_player_hint_vod
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.ui.MediaPlayerContent
+import tss.t.tsiptv.player.ui.PlaybackErrorOverlay
+import tss.t.tsiptv.player.ui.RadioArtwork
 import tss.t.tsiptv.ui.screens.home.HomeUiState
 import tss.t.tsiptv.ui.screens.player.PlayerEvent
+import tss.t.tsiptv.ui.screens.player.isAddonItemId
+import androidx.compose.material3.LinearProgressIndicator
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.utils.KeepScreenOnState
 import tss.t.tsiptv.utils.getScreenOrientationUtils
 
 private const val INFO_VISIBLE_MS = 4_000L
+private const val SEEK_STEP_MS = 10_000L
+
+/** F2: position / duration bar under the banner for addon VOD items. */
+@Composable
+private fun VodProgressBar(position: Long, duration: Long) {
+    fun time(ms: Long): String {
+        val s = (ms / 1000).coerceAtLeast(0)
+        val mmss = "${((s % 3600) / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}"
+        return if (s >= 3600) "${s / 3600}:$mmss" else mmss
+    }
+    Row(
+        Modifier.fillMaxWidth().background(Color.Black.copy(alpha = 0.6f))
+            .padding(horizontal = TvDefaults.overscanHorizontal, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(time(position), color = TSColors.TextPrimary, fontSize = 16.sp)
+        LinearProgressIndicator(
+            progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
+            modifier = Modifier.weight(1f).padding(horizontal = 16.dp).height(6.dp),
+            color = TSColors.AccentCyan,
+            trackColor = Color.White.copy(alpha = 0.25f),
+        )
+        Text(time(duration), color = TSColors.TextPrimary, fontSize = 16.sp)
+    }
+}
 
 /**
  * Full-screen player for the TV layout. There are no on-screen controls to reach
@@ -90,10 +123,30 @@ fun TvPlayerScreen(
     homeUIState: HomeUiState,
     mediaPlayer: MediaPlayer,
     onEvent: (PlayerEvent) -> Unit,
+    /** F3: the options dialog (streams, subtitles) is open; focus returns here when it closes. */
+    optionsVisible: Boolean = false,
+    /** F3: the channel playing has several streams to choose from. */
+    hasStreamChoice: Boolean = false,
 ) {
+    // F3 (QC r2 #2): options only when there is something to choose; otherwise the keys keep
+    // showing the banner, as before.
+    val hasTextTracks by produceState(false, mediaItem.id, mediaPlayer) {
+        while (true) {
+            value = mediaPlayer.textTracks().isNotEmpty()
+            delay(1_000)
+        }
+    }
+    val hasOptions = hasStreamChoice || hasTextTracks
+    val latestHasOptions by rememberUpdatedState(hasOptions)
     val isPlaying by mediaPlayer.isPlaying.collectAsState()
     val isBuffering by mediaPlayer.isBuffering.collectAsState()
-    val channels = homeUIState.listChannels
+    val playbackError by mediaPlayer.playbackError.collectAsState()
+    // F2: addon movies/episodes/tv items are not channels: no zapping or channel list;
+    // ◀ / ▶ seek ±10 s (VOD), OK toggles play/pause, and a progress bar replaces the banner.
+    val isAddonItem = isAddonItemId(mediaItem.id)
+    val position by mediaPlayer.currentPosition.collectAsState()
+    val duration by mediaPlayer.duration.collectAsState()
+    val channels = if (isAddonItem) emptyList() else (homeUIState.zapChannels ?: homeUIState.listChannels)
     val currentIndex = remember(channels, mediaItem.id) {
         channels.indexOfFirst { it.id == mediaItem.id }
     }
@@ -139,8 +192,8 @@ fun TvPlayerScreen(
     // Back goes to the back dispatcher, not to the view's key events.
     BackHandler(enabled = showChannelList) { showChannelList = false }
 
-    LaunchedEffect(showChannelList) {
-        if (!showChannelList) rootFocus.requestFocusAfterLayout()
+    LaunchedEffect(showChannelList, optionsVisible) {
+        if (!showChannelList && !optionsVisible) rootFocus.requestFocusAfterLayout()
     }
 
     Box(
@@ -152,6 +205,12 @@ fun TvPlayerScreen(
             player = mediaPlayer,
             modifier = Modifier.fillMaxSize()
         )
+        if (mediaItem.isRadio) {
+            RadioArtwork(mediaItem = mediaItem, modifier = Modifier.fillMaxSize(), logoSize = 220.dp)
+        }
+        // Text only, never focusable: ▲ / ▼ must keep zapping away from a channel that
+        // cannot play, and Back still leaves.
+        playbackError?.let { PlaybackErrorOverlay(error = it, modifier = Modifier.fillMaxSize()) }
 
         // Key target while the channel list is closed. Sits above the video
         // (an AndroidView, which would otherwise take focus) but draws nothing.
@@ -163,11 +222,33 @@ fun TvPlayerScreen(
                     if (showChannelList || event.type != KeyEventType.KeyDown) {
                         return@onPreviewKeyEvent false
                     }
+                    // F3: streams and subtitles (MENU / captions keys everywhere; ▶ on channels, ▲ on VOD).
+                    if (latestHasOptions && (event.key == Key.Menu || event.key == Key.Captions || event.key == Key.Settings)) {
+                        onEvent(PlayerEvent.OnSettings)
+                        return@onPreviewKeyEvent true
+                    }
+                    if (isAddonItem) {
+                        when (event.key) {
+                            Key.DirectionLeft, Key.MediaRewind -> { if (duration > 0) onEvent(PlayerEvent.SeekBy(-SEEK_STEP_MS)); infoRequest++ }
+                            Key.DirectionRight, Key.MediaFastForward -> { if (duration > 0) onEvent(PlayerEvent.SeekBy(SEEK_STEP_MS)); infoRequest++ }
+                            Key.DirectionCenter, Key.Enter, Key.NumPadEnter, Key.MediaPlayPause, Key.Spacebar -> {
+                                onEvent(if (latestIsPlaying) PlayerEvent.Pause else PlayerEvent.Play)
+                                infoRequest++
+                            }
+                            Key.DirectionUp -> if (latestHasOptions) onEvent(PlayerEvent.OnSettings) else infoRequest++
+                            Key.DirectionDown, Key.Info, Key.Guide -> infoRequest++
+                            Key.MediaPlay -> onEvent(PlayerEvent.Play)
+                            Key.MediaPause, Key.MediaStop -> onEvent(PlayerEvent.Pause)
+                            else -> return@onPreviewKeyEvent false
+                        }
+                        return@onPreviewKeyEvent true
+                    }
                     when (event.key) {
                         Key.DirectionUp, Key.ChannelUp, Key.PageUp -> zap(-1)
                         Key.DirectionDown, Key.ChannelDown, Key.PageDown -> zap(+1)
                         Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> showChannelList = true
-                        Key.DirectionLeft, Key.DirectionRight, Key.Info, Key.Guide -> infoRequest++
+                        Key.DirectionRight -> if (latestHasOptions) onEvent(PlayerEvent.OnSettings) else infoRequest++
+                        Key.DirectionLeft, Key.Info, Key.Guide -> infoRequest++
 
                         Key.MediaPlayPause, Key.Spacebar -> {
                             onEvent(if (latestIsPlaying) PlayerEvent.Pause else PlayerEvent.Play)
@@ -183,7 +264,9 @@ fun TvPlayerScreen(
                 .focusable()
         )
 
-        if (isBuffering) {
+        if (playbackError != null) {
+            // The overlay explains; a spinner or pause icon would contradict it.
+        } else if (isBuffering) {
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center).size(56.dp),
                 color = TSColors.AccentCyan
@@ -208,11 +291,27 @@ fun TvPlayerScreen(
             exit = fadeOut(),
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            ChannelBanner(
-                mediaItem = mediaItem,
-                programTitle = homeUIState.currentProgram?.title,
-                position = if (currentIndex >= 0) "${currentIndex + 1}/${channels.size}" else null,
-            )
+            Column {
+                ChannelBanner(
+                    mediaItem = mediaItem,
+                    channelNumber = channels.getOrNull(currentIndex)?.number,
+                    programTitle = if (isAddonItem) mediaItem.artist.ifBlank { null } else homeUIState.currentProgram?.title,
+                    position = if (currentIndex >= 0) "${currentIndex + 1}/${channels.size}" else null,
+                    optionsHint = when {
+                        !hasOptions -> null
+                        isAddonItem -> Res.string.tv_player_hint_options_vod
+                        else -> Res.string.tv_player_hint_options
+                    },
+                    hintRes = when {
+                        !isAddonItem -> Res.string.tv_player_hint
+                        duration > 0 -> Res.string.tv_player_hint_vod
+                        else -> null
+                    },
+                )
+                if (isAddonItem && duration > 0) {
+                    VodProgressBar(position = position, duration = duration)
+                }
+            }
         }
 
         AnimatedVisibility(
@@ -242,8 +341,12 @@ fun TvPlayerScreen(
 @Composable
 private fun ChannelBanner(
     mediaItem: MediaItem,
+    channelNumber: Int?,
     programTitle: String?,
     position: String?,
+    /** Key hint: channels zap; addon VOD seeks; addon live items have no hint (no zapping, no seeking). */
+    hintRes: org.jetbrains.compose.resources.StringResource? = Res.string.tv_player_hint,
+    optionsHint: org.jetbrains.compose.resources.StringResource? = null,
 ) {
     Row(
         modifier = Modifier
@@ -286,7 +389,7 @@ private fun ChannelBanner(
                     Spacer(Modifier.width(12.dp))
                 }
                 Text(
-                    text = mediaItem.title,
+                    text = channelNumber?.let { "$it  ${mediaItem.title}" } ?: mediaItem.title,
                     color = TSColors.TextPrimary,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
@@ -304,12 +407,14 @@ private fun ChannelBanner(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = stringResource(Res.string.tv_player_hint),
-                color = TSColors.TextSecondary,
-                fontSize = 14.sp
-            )
+            if (hintRes != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(hintRes) + (optionsHint?.let { " · " + stringResource(it) } ?: ""),
+                    color = TSColors.TextSecondary,
+                    fontSize = 14.sp
+                )
+            }
         }
     }
 }

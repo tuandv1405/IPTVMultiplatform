@@ -18,7 +18,7 @@ import nl.adaptivity.xmlutil.serialization.XmlSerialName
 data class XMLTVCredits(
     @XmlElement(true)
     @SerialName("director")
-    val director: String?,
+    val director: String? = null,
     @XmlElement(true)
     @SerialName("actor")
     val actor: List<String>? = null,

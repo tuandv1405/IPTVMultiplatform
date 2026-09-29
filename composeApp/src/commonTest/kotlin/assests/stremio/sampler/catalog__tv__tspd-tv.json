@@ -1,0 +1,7 @@
+{
+  "metas": [
+    { "id": "tspd_test_hls", "type": "tv", "name": "HLS Test Channel (Mux test stream)",
+      "poster": "https://archive.org/services/img/his_girl_friday", "posterShape": "square",
+      "behaviorHints": { "isLive": true } }
+  ]
+}

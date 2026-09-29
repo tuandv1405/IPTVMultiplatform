@@ -24,7 +24,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
@@ -50,11 +56,20 @@ import tsiptv.composeapp.generated.resources.cancel_parsing_btn_ok
 import tsiptv.composeapp.generated.resources.cancel_parsing_message
 import tsiptv.composeapp.generated.resources.cancel_parsing_title
 import tsiptv.composeapp.generated.resources.error_dialog_title
+import tsiptv.composeapp.generated.resources.import_file_unavailable_tv
+import tsiptv.composeapp.generated.resources.import_from_file_title
 import tsiptv.composeapp.generated.resources.ok
+import tss.t.tsiptv.platform.rememberPlaylistFilePicker
+import tss.t.tsiptv.ui.widgets.GrayButton
 import tsiptv.composeapp.generated.resources.tips_add_iptv_source_desc
 import tsiptv.composeapp.generated.resources.tips_add_iptv_source_title
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.screens.home.HomeUiState
+import tss.t.tsiptv.ui.screens.home.SourceImportState
+import tss.t.tsiptv.ui.screens.source.SourceAdultIncludeDialog
+import tss.t.tsiptv.ui.screens.source.SourceErrorDialog
+import tss.t.tsiptv.ui.screens.source.SourceFetchingDialog
+import tss.t.tsiptv.ui.screens.source.SourcePreviewDialog
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.widgets.AppLogoCircle
@@ -78,14 +93,48 @@ fun ImportIPTVScreen(
     onEvent: (HomeEvent) -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
-    // Explicit focus order for the D-pad: back → name → link → add. The top bar
-    // sits in a separate Scaffold slot, and 2D search from it never reached the
-    // fields below on Android TV.
+    // Explicit focus order for the D-pad: back → name → link → add → import from file.
+    // The top bar sits in a separate Scaffold slot, and 2D search from it never reached
+    // the fields below on Android TV.
     val nameFocus = remember { FocusRequester() }
     val urlFocus = remember { FocusRequester() }
     val addButtonFocus = remember { FocusRequester() }
+    val fileButtonFocus = remember { FocusRequester() }
     var inputSourceName by remember { mutableStateOf(initSourceName) }
     var inputSourceUrl by remember { mutableStateOf(initSourceUrl) }
+    val filePicker = rememberPlaylistFilePicker { picked ->
+        onEvent(HomeEvent.OnImportFile(inputSourceName.trim(), picked))
+    }
+
+    homeUiState.pendingSingleStream?.let {
+        SingleStreamDialog(
+            onAdd = { onEvent(HomeEvent.OnConfirmSingleStream) },
+            onCancel = { onEvent(HomeEvent.OnCancelSingleStream) },
+        )
+    }
+    homeUiState.pendingFileReplace?.let { displayName ->
+        ReplacePlaylistDialog(
+            displayName = displayName,
+            onReplace = { onEvent(HomeEvent.OnConfirmReplaceFile) },
+            onCancel = { onEvent(HomeEvent.OnCancelReplaceFile) },
+        )
+    }
+
+    // F3: TS IPTV Source import (preview, includes, 18+, errors).
+    when (val source = homeUiState.sourceImport) {
+        is SourceImportState.Preview -> SourcePreviewDialog(
+            preview = source.preview,
+            onImport = { onEvent(HomeEvent.OnSourceImport(it)) },
+            onCancel = { onEvent(HomeEvent.OnSourceImportDismiss) },
+        )
+        is SourceImportState.Fetching -> SourceFetchingDialog(source.done, source.total, onCancel = { onEvent(HomeEvent.OnSourceImportDismiss) })
+        SourceImportState.AdultInclude -> SourceAdultIncludeDialog(
+            onConfirm = { onEvent(HomeEvent.OnSourceAdultIncludeConfirmed) },
+            onCancel = { onEvent(HomeEvent.OnSourceImportDismiss) },
+        )
+        is SourceImportState.Rejected -> SourceErrorDialog(source.report, onDismiss = { onEvent(HomeEvent.OnSourceImportDismiss) })
+        null -> Unit
+    }
 
     val showProgress = remember(homeUiState.isLoading) {
         homeUiState.isLoading
@@ -114,12 +163,15 @@ fun ImportIPTVScreen(
     if (showError) {
         TSDialog(
             title = stringResource(Res.string.error_dialog_title),
-            message = homeUiState.error?.message ?: "",
+            message = homeUiState.error?.let { importErrorMessage(it) } ?: "",
             positiveButtonText = stringResource(Res.string.ok),
+            // Both clear the error in the view model, or it reappears on Home.
             onPositiveClick = {
                 showError = false
+                onEvent(HomeEvent.OnDismissErrorDialog)
             },
             onDismissRequest = {
+                showError = false
                 onEvent(HomeEvent.OnDismissErrorDialog)
             }
         )
@@ -192,6 +244,10 @@ fun ImportIPTVScreen(
                 TSTextField(
                     modifier = Modifier.padding(top = 52.dp)
                         .padding(horizontal = 20.dp)
+                        .dpadVertical(
+                            onUp = { focusManager.moveFocus(FocusDirection.Up) },
+                            onDown = { urlFocus.requestFocus() },
+                        )
                         .focusRequester(nameFocus),
                     value = inputSourceName,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -214,6 +270,10 @@ fun ImportIPTVScreen(
                 TSTextField(
                     modifier = Modifier.padding(top = 12.dp)
                         .padding(horizontal = 20.dp)
+                        .dpadVertical(
+                            onUp = { nameFocus.requestFocus() },
+                            onDown = { addButtonFocus.requestFocus() },
+                        )
                         .focusRequester(urlFocus),
                     value = inputSourceUrl,
                     keyboardOptions = KeyboardOptions(
@@ -244,7 +304,8 @@ fun ImportIPTVScreen(
                         .padding(top = 20.dp)
                         .padding(horizontal = 24.dp)
                         .fillMaxWidth()
-                        .focusRequester(addButtonFocus),
+                        .focusRequester(addButtonFocus)
+                        .focusProperties { if (filePicker.isAvailable) down = fileButtonFocus },
                     text = stringResource(Res.string.btn_add_iptv_source_title),
                     icon = progressIndicator,
                 ) {
@@ -255,6 +316,34 @@ fun ImportIPTVScreen(
                     }
                 }
 
+            }
+
+            item("BtnImportFile") {
+                if (filePicker.isAvailable) {
+                    GrayButton(
+                        text = stringResource(Res.string.import_from_file_title),
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .padding(horizontal = 24.dp)
+                            .fillMaxWidth()
+                            .focusRequester(fileButtonFocus)
+                            .focusProperties { up = addButtonFocus },
+                        onClick = {
+                            if (!showProgress) filePicker.launch() else showCancelDialog = true
+                        },
+                    )
+                } else {
+                    // Most Android TVs ship without a document picker.
+                    Text(
+                        text = stringResource(Res.string.import_file_unavailable_tv),
+                        color = TSColors.TextSecondary,
+                        fontSize = 13.sp,
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .padding(horizontal = 24.dp)
+                            .fillMaxWidth()
+                    )
+                }
             }
 
             item("Tips") {
@@ -269,3 +358,18 @@ fun ImportIPTVScreen(
         }
     }
 }
+
+/**
+ * A text field keeps ▲ / ▼ for its cursor even when no keyboard is showing, so on a TV the
+ * D-pad could not leave the name and link fields. Move focus explicitly instead; the fields
+ * are single-line, so nothing is lost.
+ */
+private fun Modifier.dpadVertical(onUp: () -> Unit, onDown: () -> Unit): Modifier =
+    onPreviewKeyEvent { event ->
+        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+        when (event.key) {
+            Key.DirectionUp -> { onUp(); true }
+            Key.DirectionDown -> { onDown(); true }
+            else -> false
+        }
+    }

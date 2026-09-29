@@ -143,3 +143,149 @@ footer.site {
 footer.site .wrap { padding-block: 1.75rem; }
 
 [hidden] { display: none !important; }
+
+/* ---- format guides (F4) --------------------------------------------------
+   Additions only; nothing above this line was changed. */
+
+header.site nav { flex-wrap: wrap; row-gap: 0.25rem; }
+header.site nav a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+
+@media (max-width: 400px) {
+  .wrap { padding-left: 1rem; padding-right: 1rem; }
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+h2[id], h3[id] { scroll-margin-top: 1rem; }
+
+code, pre, kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.88em;
+}
+
+:not(pre) > code {
+  background: var(--navy-700);
+  border: 1px solid var(--stroke);
+  border-radius: 6px;
+  padding: 0.05em 0.35em;
+  overflow-wrap: anywhere;
+}
+
+pre {
+  background: var(--navy-700);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  margin: 0 0 1rem;
+  max-width: 100%;
+  overflow-x: auto;
+  tab-size: 2;
+  line-height: 1.55;
+}
+
+pre code { background: none; border: 0; padding: 0; font-size: inherit; white-space: pre; }
+
+main p a, main li a, main td a { overflow-wrap: anywhere; }
+
+.breadcrumb { font-size: 0.88rem; color: var(--text-dim); margin: 0 0 0.75rem; }
+.breadcrumb a { color: var(--text-dim); }
+.breadcrumb a:hover { color: var(--accent); }
+
+.lead { font-size: 1.05rem; }
+
+.toc {
+  background: var(--navy-800);
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+}
+.toc .toc-title { margin: 0 0 0.25rem; font-weight: 600; color: var(--text-dim); font-size: 0.9rem; }
+.toc ol { margin: 0; }
+.toc li { margin: 0.2rem 0; }
+
+.card.callout { border-color: #0e7490; background: #04161c; }
+.card.callout p:last-child { margin-bottom: 0; }
+.card.callout p:first-child { margin-top: 0; }
+
+.badge {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.badge.yes { color: #00f5a0; }
+.badge.no { color: #fca5a5; }
+.badge.partial { color: #fcd34d; }
+
+.codeblock { margin: 1rem 0 1.25rem; }
+.codeblock pre { margin: 0; }
+.codebar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin: 0 0 0.4rem;
+}
+.copy-btn, .dl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.45rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: var(--navy-800);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+.copy-btn:hover, .dl-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.features { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.features .card { margin: 0; }
+.features h3 { margin-top: 0; }
+.features .card p:last-child { margin-bottom: 0; }
+
+.related { margin-top: 3rem; border-top: 1px solid var(--stroke); padding-top: 0.5rem; }
+
+/* ---- TS IPTV Source validator (F4 wave C) --------------------------------- */
+
+h4[id] { scroll-margin-top: 1rem; }
+h4 { font-size: 0.95rem; margin: 1.5rem 0 0.5rem; }
+
+.validator { margin: 1.5rem 0; }
+.validator label { display: block; font-weight: 600; margin: 0 0 0.4rem; }
+.validator textarea {
+  width: 100%;
+  min-height: 14rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: var(--navy-800);
+  color: var(--text);
+  font: 0.88rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  tab-size: 2;
+  resize: vertical;
+}
+.validator-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin: 0.75rem 0; }
+.validator-actions .vfile-label { margin: 0; font-weight: 400; }
+.validator-actions input[type=file] { min-height: 44px; max-width: 100%; color: var(--text-dim); }
+.validator-actions .btn { border: 0; font: inherit; font-weight: 700; cursor: pointer; min-height: 44px; }
+.vresult { border-radius: 14px; padding: 0.25rem 1.2rem; margin: 1rem 0; border: 1px solid var(--stroke); background: var(--navy-800); }
+.vresult:empty { display: none; }
+.vresult-ok { border-color: #00f5a0; }
+.vresult-bad { border-color: #f87171; }
+.vresult-head { font-weight: 700; }
+.vresult-list { padding-left: 1.1rem; }
+.vresult-list li { overflow-wrap: anywhere; }
+
+/* Code names in tables stay on one line at 360 px; tables scroll inside .scroll-x. */
+td code { white-space: nowrap; overflow-wrap: normal; }

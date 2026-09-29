@@ -7,7 +7,7 @@
     <string name="email">E-mail</string>
     <string name="password">Mot de passe</string>
     <string name="forgot_password">Mot de passe oublié?</string>
-    <string name="sign_up">S\'inscrire</string>
+    <string name="sign_up">S’inscrire</string>
     <string name="email_invalid">E-mail invalide</string>
 
     <!-- Common -->
@@ -17,7 +17,7 @@
     <string name="cancel">Annuler</string>
     <string name="save">Enregistrer</string>
     <string name="error">Erreur</string>
-    <string name="error_occurred">Une erreur s\'est produite</string>
+    <string name="error_occurred">Une erreur s’est produite</string>
     <string name="success">Succès</string>
     <string name="loading">Chargement...</string>
     <string name="or_continue_with">Ou continuer avec</string>
@@ -42,13 +42,13 @@
     <string name="preferences_group_title">Préférences</string>
     <string name="profile_edit_title">Modifier le profil</string>
     <string name="profile_change_password_title">Changer le mot de passe</string>
-    <string name="profile_subscription_title">Informations d\'abonnement</string>
+    <string name="profile_subscription_title">Informations d’abonnement</string>
     <string name="profile_notification_title">Notifications</string>
 
     <string name="empty_iptv_source_title">Aucune source IPTV connectée</string>
     <string name="btn_add_iptv_source_title">Ajouter IPTV</string>
-    <string name="iptv_help_title">Besoin d\'aide pour trouver une source?</string>
-    <string name="what_is_iptv_title">Qu\'est-ce qu\'une source IPTV?</string>
+    <string name="iptv_help_title">Besoin d’aide pour trouver une source?</string>
+    <string name="what_is_iptv_title">Qu’est-ce qu’une source IPTV?</string>
     <string name="what_is_iptv_desc">Une source IPTV est un fichier de playlist (.m3u ou .m3u8) avec un format supporté XML ou JSON qui contient des liens vers des chaînes de télévision en direct. Vous pouvez les obtenir auprès de votre fournisseur IPTV.</string>
 
     <string name="logout_dialog_title">Se déconnecter</string>
@@ -62,16 +62,16 @@
     <string name="add_iptv_source_url_label_title">Lien de la source</string>
     <string name="add_iptv_source_url_placeholder_title">ex. https://sampleiptv.m3u</string>
     <string name="tips_add_iptv_source_title">Conseils rapides:</string>
-    <string name="tips_add_iptv_source_desc">• Utilisez un nom descriptif pour une identification facile\n• Assurez-vous que votre lien M3U est valide et accessible\n• Testez la source avant d\'ajouter plusieurs chaînes</string>
+    <string name="tips_add_iptv_source_desc">• Utilisez un nom descriptif pour une identification facile\n• Assurez-vous que votre lien M3U est valide et accessible\n• Testez la source avant d’ajouter plusieurs chaînes</string>
     <string name="cancel_parsing_title">Analyse en cours!</string>
-    <string name="cancel_parsing_message">Le processus d\'analyse est en cours d\'exécution. L\'annuler maintenant peut entraîner des données incomplètes. Voulez-vous toujours annuler?</string>
+    <string name="cancel_parsing_message">Le processus d’analyse est en cours d’exécution. L’annuler maintenant peut entraîner des données incomplètes. Voulez-vous toujours annuler?</string>
     <string name="cancel_parsing_btn_ok">Oui, annuler</string>
-    <string name="cancel_parsing_btn_cancel">Non, continuer l\'analyse</string>
+    <string name="cancel_parsing_btn_cancel">Non, continuer l’analyse</string>
 
     <string name="now_playing_title">En cours de lecture</string>
     <string name="all_channels_title">Toutes les chaînes</string>
 
-    <string name="today_format">Aujourd\'hui, %1$s</string>
+    <string name="today_format">Aujourd’hui, %1$s</string>
     <string name="yesterday_format">Hier, %1$s</string>
     <string name="quick_close_action">Actions rapides</string>
     <string name="bottom_sheet_add_iptv">Ajouter une source IPTV</string>
@@ -88,8 +88,8 @@
 
     <string name="home_search_placeholder">Rechercher chaîne, émissions...</string>
     <string name="empty_history">Aucune activité récente</string>
-    <string name="player_like">J\'aime</string>
-    <string name="player_dislike">Je n\'aime pas</string>
+    <string name="player_like">J’aime</string>
+    <string name="player_dislike">Je n’aime pas</string>
     <string name="player_share">Partager</string>
     <string name="player_report">Signaler</string>
 
@@ -97,7 +97,7 @@
     <string name="programs_today_format">%1$d Programmes</string>
 
     <string name="popup_refresh_program_title">Actualiser EPG</string>
-    <string name="popup_refresh_program_description">Actualiser tous les EPG aujourd\'hui?</string>
+    <string name="popup_refresh_program_description">Actualiser tous les EPG aujourd’hui?</string>
 
     <!-- Settings Bottom Sheet -->
     <string name="settings_title">Paramètres</string>
@@ -114,20 +114,20 @@
     <string name="deactivation_success_message">Votre compte a été supprimé.</string>
     
     <!-- Deactivation Waiting Status -->
-    <string name="deactivation_waiting_title">En attente d\'examen administrateur</string>
-    <string name="deactivation_waiting_message">Votre demande de désactivation est en cours d\'examen par l\'administrateur. Veuillez attendre que l\'examen soit terminé.</string>
+    <string name="deactivation_waiting_title">En attente d’examen administrateur</string>
+    <string name="deactivation_waiting_message">Votre demande de désactivation est en cours d’examen par l’administrateur. Veuillez attendre que l’examen soit terminé.</string>
     <string name="back_to_login_account">Vous avez déjà un compte? Se connecter</string>
     
     <!-- Error Messages -->
     <string name="error_network">Erreur réseau. Veuillez vérifier votre connexion internet et réessayer.</string>
-    <string name="error_authentication">Échec de l\'authentification. Veuillez vérifier vos identifiants et réessayer.</string>
+    <string name="error_authentication">Échec de l’authentification. Veuillez vérifier vos identifiants et réessayer.</string>
     <string name="error_firebase">Erreur serveur. Veuillez réessayer plus tard.</string>
-    <string name="error_parsing">Échec de l\'analyse des données. Veuillez vérifier la source et réessayer.</string>
-    <string name="error_registration">Échec de l\'inscription. Veuillez réessayer.</string>
+    <string name="error_parsing">Échec de l’analyse des données. Veuillez vérifier la source et réessayer.</string>
+    <string name="error_registration">Échec de l’inscription. Veuillez réessayer.</string>
     <string name="error_general">Erreur inattendue. Veuillez réessayer.</string>
-    <string name="error_timeout">Délai d\'attente dépassé. Veuillez vérifier votre connexion et réessayer.</string>
+    <string name="error_timeout">Délai d’attente dépassé. Veuillez vérifier votre connexion et réessayer.</string>
     <string name="error_invalid_data">Format de données invalide. Veuillez vérifier votre saisie.</string>
-    <string name="error_permission_denied">Permission refusée. Veuillez vérifier vos droits d\'accès.</string>
+    <string name="error_permission_denied">Permission refusée. Veuillez vérifier vos droits d’accès.</string>
     <string name="error_service_unavailable">Service actuellement indisponible. Veuillez réessayer plus tard.</string>
 
     <string name="user_name">Nom d'utilisateur</string>
@@ -167,7 +167,241 @@
 
     <!-- Rating and contributor programme -->
     <string name="rate_app_title">Noter TS IPTV</string>
-    <string name="rate_app_desc">Vous aimez l\'application ? Laissez un avis sur Google Play</string>
+    <string name="rate_app_desc">Vous aimez l’application ? Laissez un avis sur Google Play</string>
     <string name="contributor_entry_title">Devenir contributeur</string>
-    <string name="open_link_failed">Impossible d\'ouvrir le lien. Vérifiez qu\'un navigateur ou le Play Store est installé.</string>
+    <string name="open_link_failed">Impossible d’ouvrir le lien. Vérifiez qu’un navigateur ou le Play Store est installé.</string>
+
+    <!-- Kodi-compatible M3U, file import and per-channel playback (docs/prd-kodi-m3u-compat.md) -->
+    <string name="import_from_file_title">Importer depuis un fichier</string>
+    <string name="import_file_unavailable_tv">Ce téléviseur n’a pas de sélecteur de fichiers. Ajoutez plutôt la playlist par lien.</string>
+    <string name="import_error_file_too_large">Ce fichier dépasse 20 Mo.</string>
+    <string name="import_error_html_page">Ce lien ouvre une page web, pas une playlist. Utilisez le lien brut (raw) ou de téléchargement direct.</string>
+    <string name="import_error_unknown_format">Ce contenu n’est pas un format de playlist que TS IPTV sait lire.</string>
+    <string name="import_error_needs_update">Cette playlist nécessite une version plus récente de TS IPTV.</string>
+    <string name="import_replace_existing">Une playlist nommée « %1$s » existe déjà. La remplacer ?</string>
+    <string name="import_replace_action">Remplacer</string>
+    <string name="import_details_title">Détails de l’importation</string>
+    <string name="import_details_action">Détails</string>
+    <string name="import_hls_single_title">Il s’agit d’un flux unique</string>
+    <string name="import_hls_single_message">Le lien est un seul flux vidéo, pas une liste de chaînes. L’ajouter comme une chaîne ?</string>
+    <string name="import_hls_single_action">Ajouter comme chaîne</string>
+    <string name="strm_error_kodi_addon">Ce fichier .strm pointe vers une extension Kodi (plugin://) et ne peut pas être lu dans TS IPTV.</string>
+    <string name="playlist_file_refresh_hint">Cette playlist a été importée depuis un fichier. Importez à nouveau le fichier pour la mettre à jour.</string>
+    <string name="channel_badge_radio">Radio</string>
+    <string name="drm_not_supported_device">Cette chaîne est protégée par DRM. Le DRM n’est pas pris en charge sur cet appareil.</string>
+    <string name="drm_not_supported_config">La configuration DRM de cette chaîne n’est pas encore prise en charge.</string>
+    <string name="drm_license_failed">Le serveur de licences DRM a refusé cet appareil. Vérifiez que votre abonnement est actif.</string>
+    <string name="stream_error_forbidden_headers">Le serveur a refusé ce flux. Les en-têtes ou le jeton de la playlist ont peut-être expiré.</string>
+    <string name="player_back">Retour</string>
+    <plurals name="import_summary_skipped">
+        <item quantity="one">%1$d entrée n’a pas pu être importée.</item>
+        <item quantity="other">%1$d entrées n’ont pas pu être importées.</item>
+    </plurals>
+    <plurals name="import_skipped_kodi_addon">
+        <item quantity="one">%1$d nécessite une extension Kodi (plugin://) et ne peut pas être lue dans TS IPTV</item>
+        <item quantity="other">%1$d nécessitent une extension Kodi (plugin://) et ne peuvent pas être lues dans TS IPTV</item>
+    </plurals>
+    <plurals name="import_skipped_web_scraping">
+        <item quantity="one">%1$d utilise l’extraction de pages web, que TS IPTV ne prend pas en charge</item>
+        <item quantity="other">%1$d utilisent l’extraction de pages web, que TS IPTV ne prend pas en charge</item>
+    </plurals>
+    <plurals name="import_skipped_no_url">
+        <item quantity="one">%1$d n’a pas de lien de flux</item>
+        <item quantity="other">%1$d n’ont pas de lien de flux</item>
+    </plurals>
+    <string name="stream_error_generic">Impossible de lire cette chaîne. Le flux est peut-être hors ligne ou son lien a changé.</string>
+    <string name="import_error_file_read">Impossible de lire ce fichier.</string>
+    <string name="import_replace_title">Remplacer la playlist ?</string>
+
+    <!-- F2: Stremio-compatible addons -->
+    <string name="addons_title">Modules</string>
+    <string name="addons_empty">Aucun module pour l’instant. Si vous gérez ou utilisez un module compatible Stremio, ajoutez-le avec son lien de manifeste.</string>
+    <string name="addon_add">Ajouter un module</string>
+    <string name="addon_url_label">Lien du manifeste (…/manifest.json)</string>
+    <string name="addon_notice">Les modules sont des services tiers qui ne sont pas exploités par TS IPTV. Vous êtes responsable de disposer des droits sur tout ce que vous regardez avec eux.</string>
+    <string name="addon_added_by_you">Ajouté par vous</string>
+    <string name="addon_added">Module ajouté</string>
+    <string name="addon_warn_http">Ce module n’utilise pas de connexion chiffrée.</string>
+    <string name="addon_warn_p2p">Ce module indique utiliser des flux pair à pair. TS IPTV ne les lit pas, une grande partie risque donc de ne pas fonctionner.</string>
+    <string name="addon_warn_adult">Ce module contient du contenu pour adultes.</string>
+    <string name="addon_confirm_adult">J’ai 18 ans ou plus</string>
+    <string name="addon_error_not_manifest">Saisissez le lien du manifeste du module. Il se termine par /manifest.json.</string>
+    <string name="addon_error_legacy">Il s’agit d’un module d’ancien format que TS IPTV ne peut pas utiliser.</string>
+    <string name="addon_error_local_server">Cette adresse appartient au serveur local de l’application Stremio et ne peut pas être utilisée dans TS IPTV.</string>
+    <string name="addon_error_invalid_manifest">Ce lien n’a pas renvoyé de manifeste de module valide.</string>
+    <string name="addon_error_unreachable">Impossible de joindre ce module. Vérifiez le lien et votre connexion.</string>
+    <string name="addon_needs_configuration">Ce module doit d’abord être configuré. Ouvrez sa page de configuration, puis collez le lien qu’elle vous donne.</string>
+    <string name="addon_configure">Configurer</string>
+    <string name="addon_replace_existing">Remplacer le module existant « %1$s » ?</string>
+    <string name="addon_blocked">Ce module a été bloqué dans TS IPTV.</string>
+    <string name="addon_updated">Mis à jour vers la version %1$s</string>
+    <string name="addon_update_now">Mettre à jour</string>
+    <string name="addon_remove_confirm">Supprimer « %1$s » ? Son historique de visionnage sera aussi supprimé.</string>
+    <string name="addon_move_up">Monter</string>
+    <string name="addon_move_down">Descendre</string>
+    <string name="addon_status_ok">Fonctionne</string>
+    <string name="addon_status_unreachable">Ne répond pas — copie enregistrée utilisée</string>
+    <string name="addon_status_blocked">Bloqué</string>
+    <string name="addon_partial_failure">%1$d module(s) n’ont pas répondu</string>
+    <string name="discover_title">Découvrir</string>
+    <string name="discover_search_hint">Rechercher dans vos modules</string>
+    <string name="discover_no_results">Aucun résultat</string>
+    <string name="discover_empty_catalog">Rien à afficher ici</string>
+    <string name="discover_offline">Vous êtes hors ligne</string>
+    <string name="discover_see_all">Tout voir</string>
+    <string name="discover_type_all">Tout</string>
+    <string name="type_movie">Films</string>
+    <string name="type_series">Séries</string>
+    <string name="type_tv">TV en direct</string>
+    <string name="type_channel">Chaînes</string>
+    <string name="continue_watching_media">Reprendre</string>
+    <string name="history_media_section">Films et séries</string>
+    <string name="meta_play">Lire</string>
+    <string name="meta_rating">Note %1$s</string>
+    <string name="meta_season">Saison %1$d</string>
+    <string name="meta_specials">Épisodes spéciaux</string>
+    <string name="meta_upcoming">Bientôt</string>
+    <string name="meta_not_found">Impossible de charger ce titre.</string>
+    <string name="stream_picker_title">Choisir un flux</string>
+    <string name="stream_show_unsupported">Afficher les flux non pris en charge</string>
+    <string name="stream_unsupported">Non lisible dans TS IPTV</string>
+    <string name="stream_none_playable">Aucun flux lisible n’a été trouvé pour ce titre.</string>
+    <string name="stream_open_external">Ouvrir %1$s dans votre navigateur ?</string>
+    <string name="stream_external_tv">Ouvrez ce lien sur un autre appareil :</string>
+    <string name="stream_badge_region">Limité par région</string>
+    <string name="stream_badge_may_not_play">Risque de ne pas être lu sur cet appareil</string>
+    <string name="addon_continue">Continuer</string>
+    <string name="addon_remove">Supprimer</string>
+    <string name="addon_replace">Remplacer</string>
+    <string name="addon_retry">Réessayer</string>
+    <string name="addon_version">Version %1$s</string>
+    <string name="addon_provides_streams">Fournit des flux</string>
+    <string name="addon_no_streams">Catalogues et fiches uniquement</string>
+    <string name="addon_paste">Coller</string>
+    <string name="addon_configured_url_label">Lien du manifeste configuré</string>
+    <string name="addon_error_missing_field">Champ manquant ou invalide : %1$s</string>
+    <string name="addon_enabled">Activé</string>
+    <string name="addon_more">Plus</string>
+    <string name="addon_types">Types : %1$s</string>
+    <string name="addon_catalogs">Catalogues : %1$d</string>
+    <string name="addon_toggle_hint_tv">◀ ▶ active ou désactive le module · OK ouvre les options</string>
+    <string name="stream_open">Ouvrir</string>
+    <string name="stream_opens_browser">S’ouvre dans votre navigateur</string>
+    <string name="history_media_clear">Effacer l’historique des films et séries</string>
+    <string name="history_media_remove">Retirer de l’historique</string>
+    <string name="addon_status_off">Désactivé</string>
+    <string name="addon_status_secret_lost">Le lien enregistré n’est plus lisible. Ajoutez à nouveau le module.</string>
+    <string name="tv_player_hint_vod">◀ ▶ avancer/reculer de 10 s · OK lecture/pause · RETOUR quitter</string>
+    <!-- F3: TS IPTV Source -->
+    <string name="source_preview_title">Ajouter cette source ?</string>
+    <string name="source_by_author">par %1$s</string>
+    <string name="source_counts">%1$d chaînes · %2$d radios · %3$d films · %4$d séries</string>
+    <string name="source_counts_extra">%1$d épisodes · %2$d sources incluses</string>
+    <string name="source_hosts_title">Cette source contacte ces serveurs</string>
+    <string name="source_notice">Cette source a été créée par un tiers, et non par TS IPTV. Vous êtes responsable de détenir les droits sur ce que vous regardez.</string>
+    <string name="source_warn_adult">Cette source indique contenir du contenu pour adultes.</string>
+    <string name="source_warn_adult_include">Une partie du contenu de cette source provient d’une source ou d’un module qui indique contenir du contenu pour adultes.</string>
+    <string name="source_import">Importer</string>
+    <string name="source_items_skipped">%1$d éléments seront ignorés</string>
+    <string name="source_fetching_includes">Chargement de %1$d sur %2$d…</string>
+    <string name="source_error_title">Impossible d’ajouter cette source</string>
+    <string name="source_error_not_json">Ce fichier n’est pas un JSON valide.</string>
+    <string name="source_error_not_source">Ce n’est pas un fichier TS IPTV Source.</string>
+    <string name="source_error_version">Cette source nécessite une version plus récente de TS IPTV.</string>
+    <string name="source_error_too_large">Cette source dépasse 5 MB.</string>
+    <string name="source_error_missing_fields">Il manque l’id ou le nom de cette source.</string>
+    <string name="source_error_empty">Cette source ne contient rien que TS IPTV puisse afficher.</string>
+    <string name="source_error_nothing_loaded">Aucun contenu de cette source n’a pu être chargé. Réessayez plus tard.</string>
+    <string name="source_replace_existing">Remplacer la source « %1$s » ?</string>
+    <string name="source_replace_title">Remplacer la source</string>
+    <string name="source_home_tab">Accueil</string>
+    <string name="source_channels_tab">Chaînes</string>
+    <string name="source_about">À propos de cette source</string>
+    <string name="source_refresh">Actualiser</string>
+    <string name="source_remove">Supprimer la source</string>
+    <string name="source_remove_confirm">Supprimer la source « %1$s » ? Ses chaînes, films, séries et son historique de visionnage seront supprimés.</string>
+    <string name="source_open_homepage">Ouvrir %1$s dans votre navigateur ?</string>
+    <string name="source_homepage">Site web</string>
+    <string name="source_include_ok">À jour</string>
+    <string name="source_include_stale">Actualisation impossible — copie du %1$s affichée</string>
+    <string name="source_include_failed">Chargement impossible</string>
+    <string name="source_include_withheld">Retenue jusqu’à la confirmation 18+</string>
+    <string name="source_include_type_m3u">Playlist M3U</string>
+    <string name="source_include_type_xmltv">Guide XMLTV</string>
+    <string name="source_include_type_stremio">Module</string>
+    <string name="source_include_type_source">TS IPTV Source</string>
+    <string name="source_includes_title">Sources incluses</string>
+    <string name="source_section_continue">Reprendre</string>
+    <string name="source_section_movies">Films</string>
+    <string name="source_section_series">Séries</string>
+    <string name="source_section_radio">Radio</string>
+    <string name="source_section_channels">Chaînes</string>
+    <string name="source_search_hint">Rechercher dans cette source</string>
+    <string name="source_search_empty">Aucun résultat</string>
+    <string name="addons_from_sources">De vos sources</string>
+    <string name="source_season_default">Saison %1$d</string>
+    <string name="source_stream_default">Source %1$d</string>
+    <string name="source_import_done">Source ajoutée : %1$d chaînes, %2$d films, %3$d séries</string>
+    <string name="source_updated_at">Mise à jour %1$s</string>
+    <string name="source_revision">Révision %1$d</string>
+    <string name="source_last_refresh">Dernière actualisation %1$s</string>
+    <string name="source_languages">Langues : %1$s</string>
+    <string name="source_loaded_from">Chargée depuis %1$s</string>
+    <string name="source_loaded_from_file">Importée depuis un fichier</string>
+    <string name="source_issues_count">Problèmes détectés lors de la dernière actualisation : %1$d</string>
+    <string name="source_no_issues">Aucun problème détecté.</string>
+    <string name="source_refreshing">Actualisation…</string>
+    <string name="source_refresh_failed">Impossible d’actualiser cette source. La copie enregistrée est affichée.</string>
+    <string name="source_confirm_adult_action">Confirmer</string>
+    <string name="source_adult_pending">Le nouveau contenu est retenu jusqu’à ce que vous confirmiez avoir 18 ans ou plus.</string>
+    <string name="source_no_content">Cette source n’a encore rien à afficher.</string>
+    <string name="source_issue_e_not_json">Le fichier n’est pas un JSON valide, ou sa racine n’est pas un objet.</string>
+    <string name="source_issue_e_not_source">« format » est absent ou n’est pas « tsiptv-source ».</string>
+    <string name="source_issue_e_version">« version » est absent, n’est pas un nombre entier ou est plus récent que ce que cette application prend en charge.</string>
+    <string name="source_issue_e_too_large">Le fichier dépasse 5 MiB après décompression.</string>
+    <string name="source_issue_e_id">L’« id » de la source est absent ou invalide.</string>
+    <string name="source_issue_e_meta">« meta » ou « meta.name » est absent ou invalide.</string>
+    <string name="source_issue_e_empty">Il n’y a aucun élément ni aucune source incluse, ou tous ont été écartés.</string>
+    <string name="source_issue_e_item_id">Un élément a un id absent ou invalide.</string>
+    <string name="source_issue_e_duplicate_id">Cet id est déjà utilisé dans la source.</string>
+    <string name="source_issue_e_item_name">Un élément a un nom absent ou invalide.</string>
+    <string name="source_issue_e_no_stream">Un élément n’a plus aucun flux lisible.</string>
+    <string name="source_issue_e_url">Un lien est invalide, trop long ou n’est pas en http(s).</string>
+    <string name="source_issue_e_header_forbidden">Un nom d’en-tête est interdit ou invalide ; l’en-tête a été écarté.</string>
+    <string name="source_issue_e_drm">Une configuration DRM est invalide ; le flux a été écarté.</string>
+    <string name="source_issue_e_include">Une source incluse est invalide, a été refusée ou n’a pas pu être chargée.</string>
+    <string name="source_issue_e_include_cycle">Une source incluse se répète elle-même ou est imbriquée trop profondément.</string>
+    <string name="source_issue_w_unknown_type">Une valeur inconnue a été remplacée par sa valeur par défaut.</string>
+    <string name="source_issue_w_query_ref">Une section fait référence à quelque chose qui n’existe pas ; elle est ignorée.</string>
+    <string name="source_issue_w_limit">Une limite a été atteinte ; les éléments en trop ont été écartés.</string>
+    <string name="source_issue_w_contrast">Une couleur a été ignorée, car le texte serait difficile à lire.</string>
+    <string name="source_issue_w_text">Un texte a été raccourci ou avait une clé de langue invalide.</string>
+    <string name="source_issue_w_field">Un champ facultatif avait un type ou une valeur incorrects et a été ignoré.</string>
+    <string name="player_options_title">Options de lecture</string>
+    <string name="player_stream">Flux</string>
+    <string name="player_subtitles">Sous-titres</string>
+    <string name="player_subtitles_off">Désactivés</string>
+    <string name="player_no_options">Aucun autre flux ni sous-titre pour cet élément.</string>
+    <string name="tv_player_hint_options">▶ flux et sous-titres</string>
+    <string name="tv_player_hint_options_vod">▲ flux et sous-titres</string>
+    <string name="source_details_title">Problèmes détectés</string>
+    <string name="source_added">Source ajoutée : %1$s</string>
+    <string name="source_last_refresh_failed">Dernière tentative : %1$s</string>
+    <string name="source_include_guide">Guide %1$d</string>
+    <plurals name="source_n_channels">
+        <item quantity="one">%1$d chaîne</item>
+        <item quantity="other">%1$d chaînes</item>
+    </plurals>
+    <plurals name="source_n_movies">
+        <item quantity="one">%1$d film</item>
+        <item quantity="other">%1$d films</item>
+    </plurals>
+    <plurals name="source_n_series">
+        <item quantity="one">%1$d série</item>
+        <item quantity="other">%1$d séries</item>
+    </plurals>
+    <plurals name="source_items_were_skipped">
+        <item quantity="one">%1$d élément a été ignoré</item>
+        <item quantity="other">%1$d éléments ont été ignorés</item>
+    </plurals>
 </resources>

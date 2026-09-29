@@ -2,6 +2,7 @@ package tss.t.tsiptv.usecase.di
 
 import org.koin.dsl.module
 import tss.t.tsiptv.usecase.playlist.GetCurrentPlaylistUseCase
+import tss.t.tsiptv.usecase.playlist.PlaylistImporter
 import tss.t.tsiptv.usecase.playlist.SetCurrentPlaylistUseCase
 import tss.t.tsiptv.usecase.programs.GetChannelsWithValidProgramCounts
 import tss.t.tsiptv.usecase.programs.GetCurrentProgramChannelList
@@ -32,6 +33,14 @@ val useCaseModule = module {
     factory<GetCurrentProgramChannelList> {
         GetCurrentProgramChannelList(
             get()
+        )
+    }
+
+    factory<PlaylistImporter> {
+        PlaylistImporter(
+            database = get(),
+            networkClient = get(),
+            sources = get(),
         )
     }
 

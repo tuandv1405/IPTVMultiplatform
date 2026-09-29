@@ -1,0 +1,7 @@
+{
+  "streams": [
+    { "name": "archive.org", "description": "MP4 · 512kb",
+      "url": "https://archive.org/download/superman_the_mechanical_monsters/superman_the_mechanical_monsters_512kb.mp4",
+      "behaviorHints": { "filename": "superman_the_mechanical_monsters_512kb.mp4", "bingeGroup": "tspd-archive-512kb" } }
+  ]
+}

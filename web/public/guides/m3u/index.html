@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="vi" data-title-vi="M3U và M3U8 — Hướng dẫn TS IPTV" data-title-en="M3U and M3U8 — TS IPTV guides">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>M3U và M3U8 — Hướng dẫn TS IPTV</title>
+<meta name="description" content="Cú pháp danh sách phát M3U/M3U8 cho IPTV: thuộc tính, nhóm, header, cách tự viết, đưa lên mạng và thêm vào TS IPTV.">
+<link rel="canonical" href="https://tsiptv-8bdd6.web.app/guides/m3u/">
+<link rel="alternate" hreflang="vi" href="https://tsiptv-8bdd6.web.app/guides/m3u/">
+<link rel="alternate" hreflang="en" href="https://tsiptv-8bdd6.web.app/guides/m3u/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://tsiptv-8bdd6.web.app/guides/m3u/">
+<meta property="og:title" content="M3U và M3U8 — Hướng dẫn TS IPTV">
+<meta property="og:description" content="Cú pháp danh sách phát M3U/M3U8 cho IPTV: thuộc tính, nhóm, header, cách tự viết, đưa lên mạng và thêm vào TS IPTV.">
+<meta property="og:image" content="https://tsiptv-8bdd6.web.app/assets/og-image.png">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://tsiptv-8bdd6.web.app/guides/m3u/">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <img src="/assets/app-icon.png" alt="">
+    <span class="name">TS IPTV</span>
+    <nav>
+      <a href="/guides/" aria-current="page">Hướng dẫn / Guides</a>
+      <a href="/">Trang chủ / Home</a>
+      <a href="/privacy/">Quyền riêng tư / Privacy</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <ul class="langbar">
+    <li><button type="button" data-lang="vi" aria-pressed="true">Tiếng Việt</button></li>
+    <li><button type="button" data-lang="en" aria-pressed="false">English</button></li>
+  </ul>
+
+  <!-- ==================== VIETNAMESE ==================== -->
+  <article data-lang-pane="vi">
+    <nav class="breadcrumb" aria-label="Vị trí trang"><a href="/guides/">Hướng dẫn</a> › <span aria-current="page">M3U / M3U8</span></nav>
+    <h1>Danh sách phát M3U và M3U8</h1>
+    <p class="lead">M3U là định dạng danh sách phát IPTV phổ biến nhất: một tệp văn bản thuần, mỗi kênh gồm một dòng mô tả và một dòng đường dẫn. Trang này trình bày cú pháp đầy đủ mà TS IPTV đọc được, kể cả các thuộc tính kiểu Kodi.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV không có sẵn kênh nào.</strong> Ứng dụng chỉ phát các danh sách phát do bạn thêm vào. Mọi ví dụ dùng tên miền giả <code>example.com</code>, một luồng thử nghiệm công khai, hoặc tệp ví dụ của chính TS IPTV trên <code>tsiptv-8bdd6.web.app</code>.</p>
+    </div>
+
+    <nav class="toc" aria-label="Trên trang này">
+      <p class="toc-title">Trên trang này</p>
+      <ol>
+        <li><a href="#what">M3U là gì</a></li>
+        <li><a href="#syntax">Cú pháp</a></li>
+        <li><a href="#example">Ví dụ đầy đủ</a></li>
+        <li><a href="#create">Tự viết một tệp</a></li>
+        <li><a href="#host">Đưa tệp lên mạng</a></li>
+        <li><a href="#add">Thêm vào TS IPTV</a></li>
+        <li><a href="#mistakes">Lỗi thường gặp</a></li>
+        <li><a href="#support">TS IPTV hỗ trợ những gì</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what">M3U là gì</h2>
+    <p>M3U ra đời cùng các trình nghe nhạc WinPlay3 và Winamp như một danh sách đường dẫn tới tệp media, mỗi dòng một đường dẫn. Cộng đồng IPTV mở rộng nó thành danh sách kênh: mỗi kênh có tên, logo, nhóm và mã để khớp với lịch phát sóng. Phần mở rộng này là quy ước chung, không phải một tiêu chuẩn chính thức.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Tên gọi</th><th>Nghĩa là gì</th></tr></thead>
+        <tbody>
+          <tr><td>M3U</td><td>Danh sách đường dẫn thuần, mỗi dòng một mục, không có thông tin kèm theo.</td></tr>
+          <tr><td>M3U mở rộng</td><td>Dòng đầu là <code>#EXTM3U</code>, và mỗi mục có một dòng <code>#EXTINF</code> đứng trước.</td></tr>
+          <tr><td>M3U8</td><td>Cùng định dạng đó, nhưng mã hoá <strong>UTF-8</strong>. Phần mở rộng <code>.m3u8</code> báo hiệu UTF-8.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 id="hls">Danh sách HLS khác danh sách kênh IPTV</h3>
+    <p>Luồng HLS cũng dùng tệp <code>.m3u8</code> bắt đầu bằng <code>#EXTM3U</code> (<a href="https://www.rfc-editor.org/rfc/rfc8216">RFC 8216</a>), nhưng đó là <em>chỉ mục của một luồng</em>, không phải danh sách kênh:</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th></th><th>Danh sách media HLS</th><th>Danh sách kênh IPTV</th></tr></thead>
+        <tbody>
+          <tr><td>Mỗi mục là</td><td>một đoạn video 2–10 giây của <strong>một</strong> luồng</td><td>một <strong>kênh</strong> (đường dẫn tới luồng của kênh đó)</td></tr>
+          <tr><td><code>#EXTINF:&lt;n&gt;</code></td><td>thời lượng đoạn, tính bằng giây</td><td><code>-1</code> hoặc <code>0</code> (bỏ qua)</td></tr>
+          <tr><td>Thẻ đặc trưng</td><td><code>#EXT-X-TARGETDURATION</code>, <code>#EXT-X-MEDIA-SEQUENCE</code>, <code>#EXT-X-STREAM-INF</code></td><td>chỉ <code>#EXTM3U</code></td></tr>
+          <tr><td>Thuộc tính trên <code>#EXTINF</code></td><td>không có</td><td><code>tvg-id="…"</code>, <code>group-title="…"</code> và các thuộc tính khác</td></tr>
+          <tr><td>Ai mở nó</td><td>trình phát video, tự động</td><td>bạn, khi thêm danh sách phát</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Nếu bạn dán đường dẫn của một luồng HLS vào TS IPTV, ứng dụng nhận ra điều đó và hỏi <strong>“Đây là một luồng đơn”</strong>: chọn <strong>Thêm thành kênh</strong> để tạo một danh sách phát có đúng một kênh.</p>
+
+    <h2 id="syntax">Cú pháp</h2>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>#EXTM3U [thuộc tính tiêu đề]
+#EXTINF:-1 [khoá="giá trị" ...],&lt;Tên kênh&gt;
+[#EXTGRP:&lt;nhóm&gt;]
+[#EXTVLCOPT:&lt;tuỳ chọn&gt;=&lt;giá trị&gt;]
+[#KODIPROP:&lt;thuộc tính&gt;=&lt;giá trị&gt;]
+&lt;đường dẫn luồng&gt;[|Header=Giá trị&amp;Header=Giá trị]</code></pre>
+    </div>
+    <p>Dòng đầu tiên là <code>#EXTM3U</code>. Mỗi kênh bắt đầu bằng một dòng <code>#EXTINF</code>, có thể có vài dòng tuỳ chọn, và kết thúc bằng dòng đường dẫn. Phần trong ngoặc vuông là không bắt buộc. Các dòng bắt đầu bằng <code>#</code> mà không phải thẻ đã biết được coi là chú thích.</p>
+
+    <h3 id="header-attrs">Thuộc tính trên dòng <code>#EXTM3U</code></h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Thuộc tính</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>x-tvg-url</code></td><td>Đường dẫn lịch phát sóng XMLTV. Có thể ghi nhiều đường dẫn, cách nhau bằng dấu phẩy; TS IPTV tải tất cả (tối đa 5) và gộp lại.</td></tr>
+          <tr><td><code>url-tvg</code></td><td>Tên cũ của <code>x-tvg-url</code>. Chỉ được đọc khi không có <code>x-tvg-url</code>.</td></tr>
+          <tr><td><code>tvg-shift</code></td><td>Độ lệch giờ mặc định của lịch phát sóng, tính bằng giờ (ví dụ <code>+2</code>, <code>-4.5</code>), cho các kênh không tự khai báo.</td></tr>
+          <tr><td><code>catchup</code>, <code>catchup-days</code>, <code>catchup-source</code>, <code>catchup-correction</code></td><td>Giá trị xem lại mặc định cho các kênh không tự khai báo. Xem <a href="/guides/kodi/#catchup">xem lại trong hướng dẫn Kodi</a>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="channel-attrs">Thuộc tính trên dòng <code>#EXTINF</code></h3>
+    <p>Mỗi thuộc tính có dạng <code>khoá="giá trị"</code>, giá trị nằm trong dấu nháy kép thẳng. Tên thuộc tính không phân biệt hoa thường (<code>tvg-ID</code> được hiểu là <code>tvg-id</code>). Tất cả thuộc tính đứng <strong>trước</strong> dấu phẩy; tên kênh đứng sau.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Thuộc tính</th><th>Bắt buộc</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td>(tên sau dấu phẩy)</td><td><strong>có</strong></td><td>Tên hiển thị của kênh. Đó là phần chữ sau dấu phẩy đầu tiên nằm ngoài dấu nháy, nên tên có thể chứa dấu phẩy.</td></tr>
+          <tr><td><code>tvg-id</code></td><td>nên có</td><td>Mã để khớp kênh với <code>&lt;channel id&gt;</code> trong lịch XMLTV. Thường có dạng <code>TenKenh.ma-quoc-gia</code>, ví dụ <code>ExampleNews.us</code>.</td></tr>
+          <tr><td><code>tvg-name</code></td><td>không</td><td>Tên phụ, chỉ dùng để khớp với lịch phát sóng; không thay tên hiển thị.</td></tr>
+          <tr><td><code>tvg-logo</code></td><td>không</td><td>Đường dẫn ảnh logo (PNG, JPG hoặc SVG).</td></tr>
+          <tr><td><code>group-title</code></td><td>không</td><td>Nhóm của kênh. Nhiều nhóm cách nhau bằng dấu chấm phẩy: <code>group-title="News;HD"</code> đặt kênh vào cả hai nhóm.</td></tr>
+          <tr><td><code>tvg-chno</code> (hoặc <code>ch-number</code>)</td><td>không</td><td>Số kênh, là số nguyên. Hiển thị trước tên kênh.</td></tr>
+          <tr><td><code>tvg-shift</code></td><td>không</td><td>Độ lệch giờ lịch phát sóng riêng cho kênh này, tính bằng giờ.</td></tr>
+          <tr><td><code>radio</code></td><td>không</td><td><code>"true"</code> đánh dấu kênh radio: có biểu tượng radio và trình phát hiện logo thay cho khung video.</td></tr>
+          <tr><td><code>media</code></td><td>không</td><td><code>"true"</code> đánh dấu một video theo yêu cầu thay vì kênh trực tiếp.</td></tr>
+          <tr><td><code>catchup</code>, <code>catchup-days</code>, <code>catchup-source</code>, <code>catchup-correction</code></td><td>không</td><td>Thông tin xem lại (catch-up). Được lưu lại; tính năng phát lại chương trình cũ sẽ có sau.</td></tr>
+          <tr><td><code>user-agent</code>, <code>referrer</code></td><td>không chuẩn</td><td>Một số công cụ ghi header ở dạng thuộc tính. TS IPTV vẫn đọc, nhưng nên dùng <code>#EXTVLCOPT</code> hoặc hậu tố <code>|</code> bên dưới.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="extgrp"><code>#EXTGRP</code></h3>
+    <p><code>#EXTGRP:Tên nhóm</code> là một cách khác để đặt nhóm, và có hai cách dùng:</p>
+    <ul>
+      <li><strong>Trong một kênh</strong> (sau <code>#EXTINF</code>, trước đường dẫn): áp dụng cho kênh đó nếu nó không có <code>group-title</code>.</li>
+      <li><strong>Trước các kênh</strong>: trở thành nhóm mặc định cho mọi kênh phía sau không có <code>group-title</code>, cho tới một dòng <code>#EXTGRP:</code> để trống hoặc hết tệp.</li>
+    </ul>
+
+    <h3 id="extvlcopt"><code>#EXTVLCOPT</code></h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Dòng</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>#EXTVLCOPT:http-user-agent=…</code></td><td>Header <code>User-Agent</code> cho luồng này.</td></tr>
+          <tr><td><code>#EXTVLCOPT:http-referrer=…</code></td><td>Header <code>Referer</code> cho luồng này (chú ý cách viết <code>referrer</code> có hai chữ r; <code>http-referer</code> cũng được chấp nhận).</td></tr>
+          <tr><td>khoá khác</td><td>Được lưu lại nhưng không có tác dụng.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="pipe">Header sau dấu <code>|</code></h3>
+    <p>Bạn có thể gắn header HTTP ngay sau đường dẫn, theo kiểu Kodi: <code>https://cdn.example.com/live.m3u8|User-Agent=Mozilla%2F5.0&amp;Referer=https%3A%2F%2Fexample.com%2F</code>.</p>
+    <ul>
+      <li>TS IPTV tách ở dấu <code>|</code> <strong>đầu tiên</strong>: phần trước là đường dẫn luồng, phần sau là các cặp <code>Tên=Giá trị</code> nối bằng <code>&amp;</code>.</li>
+      <li>Hãy <strong>mã hoá URL</strong> các giá trị (<code>/</code> thành <code>%2F</code>, <code>:</code> thành <code>%3A</code>, dấu cách thành <code>%20</code>). Giá trị chưa mã hoá vẫn được chấp nhận nếu không chứa <code>&amp;</code>.</li>
+      <li>Khi cùng một header được khai báo ở nhiều nơi, thứ tự ưu tiên là: hậu tố <code>|</code>, rồi <code>#EXTVLCOPT</code>, rồi <code>#KODIPROP</code>, rồi thuộc tính không chuẩn.</li>
+    </ul>
+
+    <h3 id="kodiprop"><code>#KODIPROP</code></h3>
+    <p>Các dòng <code>#KODIPROP:khoá=giá trị</code> đến từ Kodi. Chúng khai báo loại luồng (<code>mimetype</code>), header và DRM (Widevine, PlayReady, ClearKey). Chi tiết từng khoá và nền tảng hỗ trợ có trong <a href="/guides/kodi/">hướng dẫn định dạng Kodi</a>.</p>
+
+    <h2 id="example">Ví dụ đầy đủ</h2>
+    <p>Tệp dưới đây là tệp ví dụ của TS IPTV. Kênh đầu tiên phát thật (luồng thử nghiệm công khai của Mux, phim Big Buck Bunny © Blender Foundation, giấy phép CC BY 3.0); các kênh còn lại dùng đường dẫn giả <code>example.com</code> để minh hoạ cú pháp.</p>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/playlist.m3u" download>Tải playlist.m3u</a></div>
+      <pre data-copy data-example="/examples/playlist.m3u" tabindex="0"><code>#EXTM3U x-tvg-url="https://tsiptv-8bdd6.web.app/examples/guide.xml"
+#EXTINF:-1 tvg-id="HlsTest.example" tvg-chno="1" group-title="Test",HLS Test Channel
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+#EXTINF:-1 tvg-id="ExampleNews.us" tvg-chno="2" tvg-logo="https://example.com/logos/news.png" group-title="News;HD",Example News
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+#EXTVLCOPT:http-referrer=https://example.com/
+https://cdn.example.com/news/index.m3u8
+#EXTINF:-1 tvg-id="ExampleSports.us" tvg-chno="3" group-title="Sports",Example Sports
+https://cdn.example.com/sports/index.m3u8|Referer=https%3A%2F%2Fexample.com%2F
+#EXTINF:-1 tvg-id="ExampleRadio.us" tvg-chno="4" radio="true" group-title="Radio",Example Radio
+https://cdn.example.com/radio/stream.aac
+#EXTINF:-1 tvg-id="ExampleProtected.us" tvg-chno="5" group-title="DRM demo",Example Protected
+#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha
+#KODIPROP:inputstream.adaptive.license_key=https://license.example.com/widevine|Content-Type=application%2Foctet-stream|R{SSM}|R
+#KODIPROP:mimetype=application/dash+xml
+https://cdn.example.com/protected/manifest.mpd
+#EXTINF:-1 tvg-id="ExampleArchive.us" tvg-chno="6" catchup="shift" catchup-days="3" group-title="Archive",Example Archive
+https://cdn.example.com/archive/index.m3u8</code></pre>
+    </div>
+    <p>Giải thích từng phần:</p>
+    <ol>
+      <li><strong>Dòng 1</strong>: tiêu đề <code>#EXTM3U</code>, với <code>x-tvg-url</code> trỏ tới <a href="/guides/xmltv/">lịch phát sóng XMLTV ví dụ</a>.</li>
+      <li><strong>HLS Test Channel</strong>: kênh đơn giản nhất: một dòng <code>#EXTINF</code> với mã, số kênh và nhóm, rồi đến đường dẫn.</li>
+      <li><strong>Example News</strong>: thuộc hai nhóm (<code>News;HD</code>), có logo, và gửi <code>User-Agent</code> cùng <code>Referer</code> qua hai dòng <code>#EXTVLCOPT</code>.</li>
+      <li><strong>Example Sports</strong>: gửi <code>Referer</code> bằng hậu tố <code>|</code>, giá trị đã được mã hoá URL.</li>
+      <li><strong>Example Radio</strong>: <code>radio="true"</code> đánh dấu kênh radio.</li>
+      <li><strong>Example Protected</strong>: luồng DASH có DRM Widevine, khai báo bằng ba dòng <code>#KODIPROP</code> (xem <a href="/guides/kodi/">hướng dẫn Kodi</a>).</li>
+      <li><strong>Example Archive</strong>: khai báo xem lại kiểu <code>shift</code> trong 3 ngày.</li>
+    </ol>
+    <p>Danh sách phát nhỏ nhất hợp lệ chỉ có ba dòng:</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>#EXTM3U
+#EXTINF:-1,Kênh của tôi
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8</code></pre>
+    </div>
+    <p>Nếu bạn chỉ có một luồng và muốn lưu nó thành tệp, bạn cũng có thể dùng tệp <code>.strm</code>: xem <a href="/guides/kodi/#strm">tệp .strm trong hướng dẫn Kodi</a>.</p>
+
+    <h2 id="create">Tự viết một tệp</h2>
+    <ol>
+      <li>Mở một trình soạn thảo văn bản thuần: Notepad (Windows), TextEdit ở chế độ <em>văn bản thuần</em> (macOS) hoặc VS Code. Đừng dùng Word hay Google Docs.</li>
+      <li>Gõ <code>#EXTM3U</code> ở dòng đầu tiên.</li>
+      <li>Với mỗi kênh, thêm hai dòng: <code>#EXTINF:-1 &lt;thuộc tính&gt;,&lt;Tên&gt;</code> rồi đến đường dẫn luồng.</li>
+      <li>Dùng dấu nháy kép thẳng <code>"</code> quanh giá trị thuộc tính, không dùng nháy cong <code>“ ”</code>.</li>
+      <li>Lưu với mã hoá <strong>UTF-8</strong> (trong Notepad: <em>Lưu thành › Mã hoá: UTF-8</em>; tốt nhất là UTF-8 không có BOM), đuôi tệp <code>.m3u</code> hoặc <code>.m3u8</code>.</li>
+      <li>Thử từng đường dẫn luồng trước khi chia sẻ, ví dụ trong VLC: <em>Media › Open Network Stream</em>.</li>
+    </ol>
+
+    <h2 id="host">Đưa tệp lên mạng</h2>
+    <p>Mọi đường dẫn trả về <strong>chính nội dung tệp</strong> đều dùng được. Máy chủ có thể gửi <code>Content-Type</code> là <code>audio/x-mpegurl</code>, <code>application/vnd.apple.mpegurl</code> hay <code>text/plain</code>; TS IPTV tự nhận dạng nội dung.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Cách</th><th>Dạng đường dẫn</th></tr></thead>
+        <tbody>
+          <tr><td>GitHub (tệp gốc)</td><td><code>https://raw.githubusercontent.com/&lt;user&gt;/&lt;repo&gt;/&lt;branch&gt;/playlist.m3u</code></td></tr>
+          <tr><td>GitHub Pages</td><td><code>https://&lt;user&gt;.github.io/&lt;repo&gt;/playlist.m3u</code></td></tr>
+          <tr><td>Máy chủ tĩnh bất kỳ (Netlify, Cloudflare Pages, nginx của bạn…)</td><td><code>https://www.example.com/playlist.m3u</code></td></tr>
+          <tr><td>Dropbox</td><td>Đổi <code>dl=0</code> ở cuối đường dẫn chia sẻ thành <code>dl=1</code> để nhận tệp thay vì trang xem trước.</td></tr>
+          <tr><td>Tệp trên máy</td><td>Không cần đưa lên mạng: dùng <strong>Nhập từ tệp</strong> trong TS IPTV.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Không dùng được:</strong> trang chia sẻ của Google Drive hay OneDrive, trang xem trước của Dropbox (<code>dl=0</code>), và đường dẫn GitHub dạng <code>github.com/&lt;user&gt;/&lt;repo&gt;/blob/…</code>. Chúng trả về một trang web, không phải tệp. Hãy dùng đường dẫn tệp gốc (<em>Raw</em>) hoặc đường dẫn tải trực tiếp.</p>
+    <ul>
+      <li><strong>HTTPS</strong> được khuyến nghị. TS IPTV vẫn mở được <code>http://</code>, nhưng khi đó bất kỳ ai trên cùng mạng đều có thể đọc hoặc sửa tệp trên đường truyền.</li>
+      <li><strong>CORS</strong>: TS IPTV là ứng dụng cài đặt, không cần header CORS. Chỉ thêm <code>Access-Control-Allow-Origin: *</code> nếu bạn muốn trình phát chạy trên web cũng đọc được tệp.</li>
+      <li>Danh sách phát từ đường dẫn được tải lại khi làm mới. Hãy giữ nguyên đường dẫn và sửa tệp tại chỗ.</li>
+    </ul>
+
+    <h2 id="add">Thêm vào TS IPTV</h2>
+    <h3 id="add-phone">Trên điện thoại, máy tính bảng và máy tính</h3>
+    <ol>
+      <li>Mở <strong>Thêm nguồn IPTV</strong> (nút <strong>Thêm IPTV</strong> trên màn hình chính).</li>
+      <li>Nhập <strong>Tên nguồn</strong>, ví dụ “Kênh của tôi”.</li>
+      <li>Dán đường dẫn vào <strong>Liên kết nguồn</strong> rồi chọn <strong>Thêm IPTV</strong>. Hoặc chọn <strong>Nhập từ tệp</strong> và chọn tệp <code>.m3u</code>/<code>.m3u8</code> trên máy (tối đa 20 MB).</li>
+      <li>Khi nhập xong, TS IPTV cho biết số kênh tìm thấy. Nếu có mục bị bỏ qua, bạn thấy thêm dòng “Không thể nhập N mục” và nút <strong>Chi tiết</strong> liệt kê lý do: cần tiện ích Kodi (<code>plugin://</code>), lấy luồng từ trang web, hoặc không có đường dẫn luồng.</li>
+    </ol>
+    <h3 id="add-tv">Trên Android TV</h3>
+    <ol>
+      <li>Mở hộp thoại nhập danh sách phát, dùng các phím mũi tên để chuyển giữa tên, đường dẫn và nút thêm.</li>
+      <li>Nhập đường dẫn bằng bàn phím trên màn hình (hoặc bàn phím trên điện thoại nếu TV hỗ trợ).</li>
+      <li><strong>Nhập từ tệp</strong> chỉ xuất hiện nếu TV có trình chọn tệp; phần lớn TV không có, nên hãy dùng đường dẫn.</li>
+    </ol>
+    <p>Danh sách phát nhập từ tệp không tự làm mới: hãy nhập lại tệp khi bạn sửa nó.</p>
+
+    <h2 id="mistakes">Lỗi thường gặp</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Lỗi</th><th>Biểu hiện</th><th>Cách sửa</th></tr></thead>
+        <tbody>
+          <tr><td>Đầu tệp không phải <code>#EXTM3U</code> hay <code>#EXTINF</code> (ví dụ một trang HTML hoặc chữ khác)</td><td>Không nhận ra danh sách phát</td><td>Đặt <code>#EXTM3U</code> ở ngay đầu tệp.</td></tr>
+          <tr><td>Đường dẫn là một trang web (trang chia sẻ, <code>blob/</code> của GitHub)</td><td>“Đường dẫn này mở một trang web, không phải danh sách phát”</td><td>Dùng đường dẫn tệp gốc (raw) hoặc tải trực tiếp.</td></tr>
+          <tr><td>Nháy cong <code>“ ”</code> do trình soạn thảo văn bản tự đổi</td><td>Mất logo, mất nhóm</td><td>Gõ lại thành nháy thẳng <code>"</code>.</td></tr>
+          <tr><td>Không có dấu phẩy trước tên, hoặc thuộc tính đặt sau tên</td><td>Tên hiện ra như <code>tvg-id="…"</code>, hoặc không có tên</td><td>Viết <code>#EXTINF:-1 thuộc tính,Tên</code>; sau tên không còn gì.</td></tr>
+          <tr><td>Đường dẫn nằm cùng dòng với <code>#EXTINF</code></td><td>Kênh không có luồng</td><td>Đường dẫn phải nằm trên dòng riêng.</td></tr>
+          <tr><td>Dấu cách hoặc <code>|</code> trong đường dẫn chưa được mã hoá</td><td>Lỗi 404 hoặc 400</td><td>Mã hoá dấu cách thành <code>%20</code>; chỉ dùng <code>|</code> cho phần header.</td></tr>
+          <tr><td>Header viết thành thuộc tính (<code>user-agent="…"</code>)</td><td>Máy chủ vẫn từ chối trên một số trình phát</td><td>Dùng <code>#EXTVLCOPT:http-user-agent=…</code> hoặc hậu tố <code>|User-Agent=…</code>.</td></tr>
+          <tr><td>Lưu bằng ANSI/Windows-1252 khi tên có dấu</td><td>Tên bị lỗi font (<code>Ã©</code>)</td><td>Lưu lại bằng UTF-8.</td></tr>
+          <tr><td><code>tvg-id</code> không trùng với <code>&lt;channel id&gt;</code> nào trong XMLTV</td><td>Không có lịch phát sóng</td><td>Chép mã y hệt, phân biệt hoa thường.</td></tr>
+          <tr><td>Nhập một luồng HLS như danh sách kênh</td><td>Hàng trăm “kênh” mang tên số đoạn</td><td>Chọn <strong>Thêm thành kênh</strong> trong hộp thoại luồng đơn, hoặc nhập danh sách kênh thật.</td></tr>
+          <tr><td>Đường dẫn có mã tạm thời (<code>?token=…</code>)</td><td>Hôm nay chạy, mai hỏng</td><td>Mã này hết hạn theo thiết kế; hãy lấy danh sách mới từ nhà cung cấp.</td></tr>
+          <tr><td>Mục <code>plugin://…</code></td><td>Bị bỏ qua, ghi trong chi tiết nhập</td><td>Đây là tiện ích Kodi, không phải luồng; TS IPTV không chạy được. Xem <a href="/guides/kodi/#cannot">hướng dẫn Kodi</a>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support">TS IPTV hỗ trợ những gì</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Tính năng</th><th>Android</th><th>iOS</th><th>Máy tính</th></tr></thead>
+        <tbody>
+          <tr><td>M3U, M3U mở rộng, M3U8, tệp nén gzip</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Nhiều nhóm, <code>#EXTGRP</code>, số kênh, kênh radio</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Nhiều lịch phát sóng trong <code>x-tvg-url</code>, <code>tvg-shift</code></td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Header theo kênh (<code>#EXTVLCOPT</code>, <code>|</code>, <code>#KODIPROP</code>)</td><td><span class="badge yes">Mọi header</span></td><td><span class="badge partial">Cố gắng tối đa</span></td><td><span class="badge partial">Chỉ User-Agent và Referer</span></td></tr>
+          <tr><td>DRM (Widevine, PlayReady, ClearKey)</td><td><span class="badge yes">Chỉ Android</span></td><td><span class="badge no">Không hỗ trợ</span></td><td><span class="badge no">Không hỗ trợ</span></td></tr>
+          <tr><td>Xem lại (catch-up)</td><td colspan="3"><span class="badge partial">Được lưu, phát lại sẽ có sau</span></td></tr>
+          <tr><td>Luồng <code>rtmp</code>, <code>rtsp</code>, <code>udp</code>…</td><td colspan="3">Được nhập nguyên vẹn; phát được hay không tuỳ trình phát của từng nền tảng.</td></tr>
+          <tr><td>Mục <code>plugin://</code> và <code>#WEBPROP</code></td><td colspan="3"><span class="badge no">Không hỗ trợ</span> Bị bỏ qua và liệt kê trong chi tiết nhập.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related">Hướng dẫn liên quan</h2>
+      <ul>
+        <li><a href="/guides/xmltv/">Lịch phát sóng XMLTV</a></li>
+        <li><a href="/guides/kodi/">Định dạng Kodi trong TS IPTV</a></li>
+        <li><a href="/guides/xtream-codes/">Đường dẫn kiểu Xtream Codes</a></li>
+        <li><a href="/guides/stremio-addons/">Addon tương thích Stremio</a></li>
+        <li><a href="/guides/tsiptv-source/">TS IPTV Source</a></li>
+        <li><a href="/guides/">Tất cả hướng dẫn</a></li>
+      </ul>
+    </section>
+  </article>
+
+  <!-- ==================== ENGLISH ==================== -->
+  <article data-lang-pane="en" hidden>
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/guides/">Guides</a> › <span aria-current="page">M3U / M3U8</span></nav>
+    <h1>M3U and M3U8 playlists</h1>
+    <p class="lead">M3U is the most common IPTV playlist format: a plain text file where each channel is one description line and one link line. This page gives the full syntax TS IPTV reads, including the Kodi-style attributes.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels.</strong> It plays only the playlists you add. Every example uses <code>example.com</code> placeholders, a public test stream, or TS IPTV's own example files on <code>tsiptv-8bdd6.web.app</code>.</p>
+    </div>
+
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+        <li><a href="#what-en">What M3U is</a></li>
+        <li><a href="#syntax-en">Syntax</a></li>
+        <li><a href="#example-en">Complete example</a></li>
+        <li><a href="#create-en">Create one by hand</a></li>
+        <li><a href="#host-en">Host it</a></li>
+        <li><a href="#add-en">Add it in TS IPTV</a></li>
+        <li><a href="#mistakes-en">Common mistakes</a></li>
+        <li><a href="#support-en">What TS IPTV supports</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what-en">What M3U is</h2>
+    <p>M3U started with the WinPlay3 and Winamp music players as a list of media locations, one per line. The IPTV community extended it into a channel list: each channel gets a name, a logo, a group and an identifier for the programme guide. These extensions are a shared convention, not a formal standard.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Name</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><td>M3U</td><td>A plain list of locations, one per line, with no metadata.</td></tr>
+          <tr><td>Extended M3U</td><td>The first line is <code>#EXTM3U</code>, and each entry is preceded by an <code>#EXTINF</code> line.</td></tr>
+          <tr><td>M3U8</td><td>The same format encoded as <strong>UTF-8</strong>. The <code>.m3u8</code> extension signals UTF-8.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 id="hls-en">HLS playlists are not IPTV channel lists</h3>
+    <p>HLS streams also use <code>.m3u8</code> files that start with <code>#EXTM3U</code> (<a href="https://www.rfc-editor.org/rfc/rfc8216">RFC 8216</a>), but those are <em>the index of one stream</em>, not a channel list:</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th></th><th>HLS media playlist</th><th>IPTV channel list</th></tr></thead>
+        <tbody>
+          <tr><td>An entry is</td><td>a 2–10 second segment of <strong>one</strong> stream</td><td>a <strong>channel</strong> (a link to that channel's stream)</td></tr>
+          <tr><td><code>#EXTINF:&lt;n&gt;</code></td><td>segment duration in seconds</td><td><code>-1</code> or <code>0</code> (ignored)</td></tr>
+          <tr><td>Typical tags</td><td><code>#EXT-X-TARGETDURATION</code>, <code>#EXT-X-MEDIA-SEQUENCE</code>, <code>#EXT-X-STREAM-INF</code></td><td>only <code>#EXTM3U</code></td></tr>
+          <tr><td>Attributes on <code>#EXTINF</code></td><td>none</td><td><code>tvg-id="…"</code>, <code>group-title="…"</code> and others</td></tr>
+          <tr><td>Who opens it</td><td>the video player, automatically</td><td>you, when you add a playlist</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>If you paste the link of an HLS stream into TS IPTV, the app recognises it and asks <strong>“This is a single stream”</strong>: choose <strong>Add as channel</strong> to create a playlist with exactly one channel.</p>
+
+    <h2 id="syntax-en">Syntax</h2>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>#EXTM3U [header attributes]
+#EXTINF:-1 [key="value" ...],&lt;Channel name&gt;
+[#EXTGRP:&lt;group&gt;]
+[#EXTVLCOPT:&lt;option&gt;=&lt;value&gt;]
+[#KODIPROP:&lt;property&gt;=&lt;value&gt;]
+&lt;stream URL&gt;[|Header=Value&amp;Header=Value]</code></pre>
+    </div>
+    <p>The first line is <code>#EXTM3U</code>. Each channel starts with an <code>#EXTINF</code> line, may have a few option lines, and ends with the link line. Parts in square brackets are optional. Lines that start with <code>#</code> but are not a known tag are comments.</p>
+
+    <h3 id="header-attrs-en">Attributes on the <code>#EXTM3U</code> line</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Attribute</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>x-tvg-url</code></td><td>XMLTV guide URL. Several URLs may be separated by commas; TS IPTV downloads all of them (up to 5) and merges them.</td></tr>
+          <tr><td><code>url-tvg</code></td><td>Older name for <code>x-tvg-url</code>. Read only when <code>x-tvg-url</code> is absent.</td></tr>
+          <tr><td><code>tvg-shift</code></td><td>Default guide time shift in hours (for example <code>+2</code>, <code>-4.5</code>) for channels that do not set their own.</td></tr>
+          <tr><td><code>catchup</code>, <code>catchup-days</code>, <code>catchup-source</code>, <code>catchup-correction</code></td><td>Default catch-up values for channels that do not set their own. See <a href="/guides/kodi/#catchup-en">catch-up in the Kodi guide</a>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="channel-attrs-en">Attributes on the <code>#EXTINF</code> line</h3>
+    <p>Each attribute is <code>key="value"</code>, with the value in straight double quotes. Attribute names are case-insensitive (<code>tvg-ID</code> is read as <code>tvg-id</code>). All attributes go <strong>before</strong> the comma; the channel name follows it.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Attribute</th><th>Required</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>(name after the comma)</td><td><strong>yes</strong></td><td>The channel's display name: the text after the first comma that is outside quotes, so names may contain commas.</td></tr>
+          <tr><td><code>tvg-id</code></td><td>recommended</td><td>Identifier that links the channel to <code>&lt;channel id&gt;</code> in the XMLTV guide. Usually <code>ChannelName.country</code>, for example <code>ExampleNews.us</code>.</td></tr>
+          <tr><td><code>tvg-name</code></td><td>no</td><td>Alternative name used only for guide matching; it does not replace the display name.</td></tr>
+          <tr><td><code>tvg-logo</code></td><td>no</td><td>Logo image URL (PNG, JPG or SVG).</td></tr>
+          <tr><td><code>group-title</code></td><td>no</td><td>The channel's group. Separate several groups with semicolons: <code>group-title="News;HD"</code> puts the channel in both.</td></tr>
+          <tr><td><code>tvg-chno</code> (or <code>ch-number</code>)</td><td>no</td><td>Channel number, an integer. Shown before the channel name.</td></tr>
+          <tr><td><code>tvg-shift</code></td><td>no</td><td>Guide time shift for this channel only, in hours.</td></tr>
+          <tr><td><code>radio</code></td><td>no</td><td><code>"true"</code> marks a radio station: it gets a radio icon and the player shows its logo instead of a video area.</td></tr>
+          <tr><td><code>media</code></td><td>no</td><td><code>"true"</code> marks an on-demand video instead of a live channel.</td></tr>
+          <tr><td><code>catchup</code>, <code>catchup-days</code>, <code>catchup-source</code>, <code>catchup-correction</code></td><td>no</td><td>Catch-up information. Stored; playback of past programmes comes later.</td></tr>
+          <tr><td><code>user-agent</code>, <code>referrer</code></td><td>non-standard</td><td>Some generators write headers as attributes. TS IPTV reads them, but prefer <code>#EXTVLCOPT</code> or the <code>|</code> suffix below.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="extgrp-en"><code>#EXTGRP</code></h3>
+    <p><code>#EXTGRP:Group name</code> is another way to set a group, and it works two ways:</p>
+    <ul>
+      <li><strong>Inside a channel</strong> (after <code>#EXTINF</code>, before the link): applies to that channel if it has no <code>group-title</code>.</li>
+      <li><strong>Before channels</strong>: becomes the default group for every following channel without a <code>group-title</code>, until an empty <code>#EXTGRP:</code> line or the end of the file.</li>
+    </ul>
+
+    <h3 id="extvlcopt-en"><code>#EXTVLCOPT</code></h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Line</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>#EXTVLCOPT:http-user-agent=…</code></td><td><code>User-Agent</code> header for this stream.</td></tr>
+          <tr><td><code>#EXTVLCOPT:http-referrer=…</code></td><td><code>Referer</code> header for this stream (note the spelling <code>referrer</code> with two r's; <code>http-referer</code> is accepted too).</td></tr>
+          <tr><td>other keys</td><td>Stored, no effect.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="pipe-en">Headers after <code>|</code></h3>
+    <p>You can attach HTTP headers right after the link, Kodi style: <code>https://cdn.example.com/live.m3u8|User-Agent=Mozilla%2F5.0&amp;Referer=https%3A%2F%2Fexample.com%2F</code>.</p>
+    <ul>
+      <li>TS IPTV splits at the <strong>first</strong> <code>|</code>: the left part is the stream URL, the right part is <code>Name=Value</code> pairs joined with <code>&amp;</code>.</li>
+      <li><strong>URL-encode</strong> the values (<code>/</code> becomes <code>%2F</code>, <code>:</code> becomes <code>%3A</code>, a space becomes <code>%20</code>). Unencoded values are accepted as long as they contain no <code>&amp;</code>.</li>
+      <li>When the same header is set in several places, the order of priority is: the <code>|</code> suffix, then <code>#EXTVLCOPT</code>, then <code>#KODIPROP</code>, then non-standard attributes.</li>
+    </ul>
+
+    <h3 id="kodiprop-en"><code>#KODIPROP</code></h3>
+    <p><code>#KODIPROP:key=value</code> lines come from Kodi. They declare the stream type (<code>mimetype</code>), headers and DRM (Widevine, PlayReady, ClearKey). Each key and its platform support is described in the <a href="/guides/kodi/">Kodi formats guide</a>.</p>
+
+    <h2 id="example-en">Complete example</h2>
+    <p>This is TS IPTV's example file. The first channel really plays (the Mux public test stream, Big Buck Bunny © Blender Foundation, licensed CC BY 3.0); the other channels use <code>example.com</code> placeholders to show the syntax.</p>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/playlist.m3u" download>Download playlist.m3u</a></div>
+      <pre data-copy data-example="/examples/playlist.m3u" tabindex="0"><code>#EXTM3U x-tvg-url="https://tsiptv-8bdd6.web.app/examples/guide.xml"
+#EXTINF:-1 tvg-id="HlsTest.example" tvg-chno="1" group-title="Test",HLS Test Channel
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+#EXTINF:-1 tvg-id="ExampleNews.us" tvg-chno="2" tvg-logo="https://example.com/logos/news.png" group-title="News;HD",Example News
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+#EXTVLCOPT:http-referrer=https://example.com/
+https://cdn.example.com/news/index.m3u8
+#EXTINF:-1 tvg-id="ExampleSports.us" tvg-chno="3" group-title="Sports",Example Sports
+https://cdn.example.com/sports/index.m3u8|Referer=https%3A%2F%2Fexample.com%2F
+#EXTINF:-1 tvg-id="ExampleRadio.us" tvg-chno="4" radio="true" group-title="Radio",Example Radio
+https://cdn.example.com/radio/stream.aac
+#EXTINF:-1 tvg-id="ExampleProtected.us" tvg-chno="5" group-title="DRM demo",Example Protected
+#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha
+#KODIPROP:inputstream.adaptive.license_key=https://license.example.com/widevine|Content-Type=application%2Foctet-stream|R{SSM}|R
+#KODIPROP:mimetype=application/dash+xml
+https://cdn.example.com/protected/manifest.mpd
+#EXTINF:-1 tvg-id="ExampleArchive.us" tvg-chno="6" catchup="shift" catchup-days="3" group-title="Archive",Example Archive
+https://cdn.example.com/archive/index.m3u8</code></pre>
+    </div>
+    <p>Part by part:</p>
+    <ol>
+      <li><strong>Line 1</strong>: the <code>#EXTM3U</code> header, with <code>x-tvg-url</code> pointing to the <a href="/guides/xmltv/">example XMLTV guide</a>.</li>
+      <li><strong>HLS Test Channel</strong>: the simplest channel: one <code>#EXTINF</code> line with an id, a number and a group, then the link.</li>
+      <li><strong>Example News</strong>: in two groups (<code>News;HD</code>), with a logo, sending <code>User-Agent</code> and <code>Referer</code> through two <code>#EXTVLCOPT</code> lines.</li>
+      <li><strong>Example Sports</strong>: sends <code>Referer</code> with the <code>|</code> suffix, URL-encoded.</li>
+      <li><strong>Example Radio</strong>: <code>radio="true"</code> marks a radio station.</li>
+      <li><strong>Example Protected</strong>: a Widevine-protected DASH stream, declared with three <code>#KODIPROP</code> lines (see the <a href="/guides/kodi/">Kodi guide</a>).</li>
+      <li><strong>Example Archive</strong>: declares <code>shift</code> catch-up for 3 days.</li>
+    </ol>
+    <p>The smallest valid playlist has three lines:</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>#EXTM3U
+#EXTINF:-1,My Channel
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8</code></pre>
+    </div>
+    <p>If you have a single stream and want to keep it as a file, you can also use a <code>.strm</code> file: see <a href="/guides/kodi/#strm-en">.strm files in the Kodi guide</a>.</p>
+
+    <h2 id="create-en">Create one by hand</h2>
+    <ol>
+      <li>Open a plain-text editor: Notepad (Windows), TextEdit in <em>plain text</em> mode (macOS) or VS Code. Do not use Word or Google Docs.</li>
+      <li>Type <code>#EXTM3U</code> on the first line.</li>
+      <li>For each channel, add two lines: <code>#EXTINF:-1 &lt;attributes&gt;,&lt;Name&gt;</code> and then the stream URL.</li>
+      <li>Use straight double quotes <code>"</code> around attribute values, not curly quotes <code>“ ”</code>.</li>
+      <li>Save as <strong>UTF-8</strong> (in Notepad: <em>Save as › Encoding: UTF-8</em>; UTF-8 without BOM is best), with the extension <code>.m3u</code> or <code>.m3u8</code>.</li>
+      <li>Test each stream URL before you share the file, for example in VLC: <em>Media › Open Network Stream</em>.</li>
+    </ol>
+
+    <h2 id="host-en">Host it</h2>
+    <p>Any link that returns <strong>the file itself</strong> works. The server may send <code>Content-Type</code> <code>audio/x-mpegurl</code>, <code>application/vnd.apple.mpegurl</code> or <code>text/plain</code>; TS IPTV detects the content.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Option</th><th>URL shape</th></tr></thead>
+        <tbody>
+          <tr><td>GitHub (raw file)</td><td><code>https://raw.githubusercontent.com/&lt;user&gt;/&lt;repo&gt;/&lt;branch&gt;/playlist.m3u</code></td></tr>
+          <tr><td>GitHub Pages</td><td><code>https://&lt;user&gt;.github.io/&lt;repo&gt;/playlist.m3u</code></td></tr>
+          <tr><td>Any static host (Netlify, Cloudflare Pages, your own nginx…)</td><td><code>https://www.example.com/playlist.m3u</code></td></tr>
+          <tr><td>Dropbox</td><td>Change <code>dl=0</code> at the end of the share link to <code>dl=1</code> so it returns the file, not a preview page.</td></tr>
+          <tr><td>A file on your device</td><td>No hosting needed: use <strong>Import from file</strong> in TS IPTV.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>What does not work:</strong> Google Drive or OneDrive share pages, Dropbox preview links (<code>dl=0</code>), and GitHub links of the form <code>github.com/&lt;user&gt;/&lt;repo&gt;/blob/…</code>. They return a web page, not the file. Use the <em>Raw</em> or direct-download link instead.</p>
+    <ul>
+      <li><strong>HTTPS</strong> is recommended. TS IPTV also opens <code>http://</code> links, but then anyone on the network path can read or change the file.</li>
+      <li><strong>CORS</strong>: TS IPTV is an installed app and needs no CORS headers. Add <code>Access-Control-Allow-Origin: *</code> only if web-based players should read the file too.</li>
+      <li>Playlists added by link are downloaded again when you refresh. Keep the URL stable and edit the file in place.</li>
+    </ul>
+
+    <h2 id="add-en">Add it in TS IPTV</h2>
+    <h3 id="add-phone-en">On phones, tablets and desktop</h3>
+    <ol>
+      <li>Open <strong>Add IPTV Source</strong> (the <strong>Add IPTV</strong> button on the home screen).</li>
+      <li>Enter a <strong>Source Name</strong>, for example “My channels”.</li>
+      <li>Paste the link into <strong>Source Link</strong> and choose <strong>Add IPTV</strong>. Or choose <strong>Import from file</strong> and pick an <code>.m3u</code>/<code>.m3u8</code> file on your device (up to 20 MB).</li>
+      <li>When the import finishes, TS IPTV shows how many channels it found. If entries were skipped, you also see “N entries could not be imported” and a <strong>Details</strong> button listing the reasons: a Kodi add-on is needed (<code>plugin://</code>), web-page scraping, or no stream link.</li>
+    </ol>
+    <h3 id="add-tv-en">On Android TV</h3>
+    <ol>
+      <li>Open the import dialog and use the arrow keys to move between the name, the link and the add button.</li>
+      <li>Type the link with the on-screen keyboard (or your phone's keyboard, if your TV supports it).</li>
+      <li><strong>Import from file</strong> appears only if the TV has a file picker; most TVs do not, so use a link.</li>
+    </ol>
+    <p>Playlists imported from a file do not refresh on their own: import the file again after you edit it.</p>
+
+    <h2 id="mistakes-en">Common mistakes</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Mistake</th><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>Something other than <code>#EXTM3U</code>/<code>#EXTINF</code> at the start (an HTML page, other text)</td><td>Not recognised as a playlist</td><td>Make <code>#EXTM3U</code> the very start of the file.</td></tr>
+          <tr><td>The link is a web page (a share page, a GitHub <code>blob/</code> URL)</td><td>“This link opens a web page, not a playlist”</td><td>Use the raw or direct-download link.</td></tr>
+          <tr><td>Curly quotes <code>“ ”</code> inserted by a word processor</td><td>Logos and groups missing</td><td>Retype them as straight <code>"</code>.</td></tr>
+          <tr><td>No comma before the name, or attributes after the name</td><td>The name shows as <code>tvg-id="…"</code>, or there is no name</td><td>Write <code>#EXTINF:-1 attributes,Name</code>; nothing after the name.</td></tr>
+          <tr><td>The link is on the same line as <code>#EXTINF</code></td><td>The channel has no stream</td><td>The link goes on its own line.</td></tr>
+          <tr><td>Unencoded space or <code>|</code> in the link</td><td>404 or 400 errors</td><td>Encode spaces as <code>%20</code>; use <code>|</code> only for the header suffix.</td></tr>
+          <tr><td>Headers written as attributes (<code>user-agent="…"</code>)</td><td>The server still refuses on some players</td><td>Use <code>#EXTVLCOPT:http-user-agent=…</code> or the <code>|User-Agent=…</code> suffix.</td></tr>
+          <tr><td>Saved as ANSI/Windows-1252 with accented names</td><td>Garbled names (<code>Ã©</code>)</td><td>Save again as UTF-8.</td></tr>
+          <tr><td><code>tvg-id</code> matches no XMLTV <code>&lt;channel id&gt;</code></td><td>No programme guide</td><td>Copy ids exactly; they are case-sensitive.</td></tr>
+          <tr><td>An HLS stream imported as a channel list</td><td>Hundreds of “channels” named after segment numbers</td><td>Choose <strong>Add as channel</strong> in the single-stream dialog, or import the real channel list.</td></tr>
+          <tr><td>Links with temporary tokens (<code>?token=…</code>)</td><td>Works today, fails tomorrow</td><td>Tokens expire by design; get a fresh list from your provider.</td></tr>
+          <tr><td><code>plugin://…</code> entries</td><td>Skipped, listed in the import details</td><td>These are Kodi add-ons, not streams; TS IPTV cannot run them. See the <a href="/guides/kodi/#cannot-en">Kodi guide</a>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support-en">What TS IPTV supports</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Feature</th><th>Android</th><th>iOS</th><th>Desktop</th></tr></thead>
+        <tbody>
+          <tr><td>M3U, extended M3U, M3U8, gzip-compressed files</td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>Several groups, <code>#EXTGRP</code>, channel numbers, radio</td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>Several guides in <code>x-tvg-url</code>, <code>tvg-shift</code></td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>Per-channel headers (<code>#EXTVLCOPT</code>, <code>|</code>, <code>#KODIPROP</code>)</td><td><span class="badge yes">All headers</span></td><td><span class="badge partial">Best effort</span></td><td><span class="badge partial">User-Agent and Referer only</span></td></tr>
+          <tr><td>DRM (Widevine, PlayReady, ClearKey)</td><td><span class="badge yes">Android only</span></td><td><span class="badge no">Not supported</span></td><td><span class="badge no">Not supported</span></td></tr>
+          <tr><td>Catch-up</td><td colspan="3"><span class="badge partial">Stored, playback coming later</span></td></tr>
+          <tr><td><code>rtmp</code>, <code>rtsp</code>, <code>udp</code>… streams</td><td colspan="3">Imported unchanged; whether they play depends on each platform's player.</td></tr>
+          <tr><td><code>plugin://</code> and <code>#WEBPROP</code> entries</td><td colspan="3"><span class="badge no">Not supported</span> Skipped and listed in the import details.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related-en">Related guides</h2>
+      <ul>
+        <li><a href="/guides/xmltv/">XMLTV programme guides</a></li>
+        <li><a href="/guides/kodi/">Kodi formats in TS IPTV</a></li>
+        <li><a href="/guides/xtream-codes/">Xtream Codes style links</a></li>
+        <li><a href="/guides/stremio-addons/">Stremio-compatible addons</a></li>
+        <li><a href="/guides/tsiptv-source/">TS IPTV Source</a></li>
+        <li><a href="/guides/">All guides</a></li>
+      </ul>
+    </section>
+  </article>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    TS IPTV · <a href="/guides/">Hướng dẫn / Guides</a> · <a href="/">Trang chủ / Home</a> · <a href="/privacy/">Quyền riêng tư / Privacy</a> · <a href="/terms/">Điều khoản / Terms</a>
+  </div>
+</footer>
+
+<script src="/assets/lang.js"></script>
+<script src="/assets/guides.js"></script>
+</body>
+</html>

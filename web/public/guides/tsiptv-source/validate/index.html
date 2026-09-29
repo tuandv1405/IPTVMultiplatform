@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="vi" data-title-vi="Kiểm tra TS IPTV Source — Hướng dẫn TS IPTV" data-title-en="Validate a TS IPTV Source — TS IPTV guides">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kiểm tra TS IPTV Source — Hướng dẫn TS IPTV</title>
+<meta name="description" content="Kiểm tra một tệp TS IPTV Source ngay trong trình duyệt, không tải tệp lên.">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://tsiptv-8bdd6.web.app/guides/tsiptv-source/validate/">
+<link rel="alternate" hreflang="vi" href="https://tsiptv-8bdd6.web.app/guides/tsiptv-source/validate/">
+<link rel="alternate" hreflang="en" href="https://tsiptv-8bdd6.web.app/guides/tsiptv-source/validate/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://tsiptv-8bdd6.web.app/guides/tsiptv-source/validate/">
+<meta property="og:title" content="Kiểm tra TS IPTV Source — Hướng dẫn TS IPTV">
+<meta property="og:description" content="Kiểm tra một tệp TS IPTV Source ngay trong trình duyệt, không tải tệp lên.">
+<meta property="og:image" content="https://tsiptv-8bdd6.web.app/assets/og-image.png">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://tsiptv-8bdd6.web.app/guides/tsiptv-source/validate/">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <img src="/assets/app-icon.png" alt="">
+    <span class="name">TS IPTV</span>
+    <nav>
+      <a href="/guides/" aria-current="page">Hướng dẫn / Guides</a>
+      <a href="/">Trang chủ / Home</a>
+      <a href="/privacy/">Quyền riêng tư / Privacy</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <ul class="langbar">
+    <li><button type="button" data-lang="vi" aria-pressed="true">Tiếng Việt</button></li>
+    <li><button type="button" data-lang="en" aria-pressed="false">English</button></li>
+  </ul>
+
+  <!-- ==================== VIETNAMESE ==================== -->
+  <article data-lang-pane="vi">
+    <nav class="breadcrumb" aria-label="Vị trí trang"><a href="/guides/">Hướng dẫn</a> › <span aria-current="page">Kiểm tra TS IPTV Source</span></nav>
+    <h1>Kiểm tra một TS IPTV Source</h1>
+    <p class="lead">Dán nội dung tệp <a href="/guides/tsiptv-source/">TS IPTV Source</a> hoặc chọn một tệp, rồi bấm <strong>Kiểm tra</strong>. Việc kiểm tra diễn ra hoàn toàn trong trình duyệt của bạn: không có gì được tải lên, và yêu cầu mạng duy nhất của trang này là tải <a href="/schema/tsiptv-source-v1.json">JSON Schema</a>.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV không có sẵn kênh nào và cũng không có sẵn nguồn nào.</strong> Công cụ này chỉ đọc tệp bạn đưa vào. Nó không bao giờ mở các đường dẫn bên trong: include, lịch phát sóng, ảnh và luồng đều không được tải.</p>
+    </div>
+
+    <div class="validator" data-validator>
+      <label for="vsrc-vi">Nội dung tệp (JSON)</label>
+      <textarea id="vsrc-vi" rows="14" spellcheck="false" autocomplete="off" placeholder='{ "format": "tsiptv-source", "version": 1, … }'></textarea>
+      <div class="validator-actions">
+        <label class="vfile-label" for="vfile-vi">Hoặc chọn một tệp</label>
+        <input type="file" id="vfile-vi" accept=".json,application/json,text/plain">
+        <button type="button" class="btn" data-validate>Kiểm tra</button>
+      </div>
+      <div data-result role="status" aria-live="polite"></div>
+    </div>
+
+    <h2 id="checks">Những gì được kiểm tra</h2>
+    <ul>
+      <li><strong>JSON</strong>: tệp đọc được và gốc là một đối tượng (<code>E_NOT_JSON</code>). Tệp lớn hơn 5 MiB bị từ chối (<code>E_TOO_LARGE</code>). Ở đây chỉ kiểm tra được JSON chưa nén; hãy giải nén tệp <code>.gz</code> trước.</li>
+      <li><strong>Quy tắc của tài liệu</strong>: <code>format</code> là <code>"tsiptv-source"</code>, <code>version</code> là <code>1</code>, và tệp có kênh, phim lẻ, phim bộ hoặc include.</li>
+      <li><strong>JSON Schema</strong> (chuẩn 2020-12): trường bắt buộc, kiểu dữ liệu, khoảng giá trị, mẫu của id và URL, header bị cấm, chữ và khoá ngôn ngữ, và <strong>trường không xác định</strong>, thường là do gõ nhầm. Schema khắt khe hơn ứng dụng, nên tệp qua được schema gần như luôn được chấp nhận (các ngoại lệ có trong <a href="/guides/tsiptv-source/#what">hướng dẫn định dạng</a>).</li>
+      <li><strong>Quy tắc schema không diễn đạt được</strong>: id trùng giữa kênh, phim lẻ, phim bộ, tập và include; số mùa, số tập trùng nhau; id include bắt đầu bằng <code>epg-</code>; truy vấn trỏ tới include không tồn tại hoặc include <code>xmltv</code>; <code>ids</code> và target của banner không có trong tệp; <code>endYear</code> nhỏ hơn <code>year</code>.</li>
+    </ul>
+    <p>Mỗi vấn đề được liệt kê dạng <code>đường dẫn — thông báo</code>, ví dụ <code>channels[0].id — phải là một id…</code>, kèm mã kiểm tra nếu ứng dụng có dùng mã đó. <strong>Lỗi</strong> là những gì schema từ chối hoặc TS IPTV bỏ đi; <strong>cảnh báo</strong> là những gì TS IPTV chấp nhận nhưng xử lý đặc biệt.</p>
+
+    <h2 id="not-checked">Những gì không được kiểm tra ở đây</h2>
+    <p>Mọi thứ cần mạng hoặc cần ứng dụng: đường dẫn và luồng có hoạt động không, nội dung của các include (danh sách M3U, lịch phát sóng, addon, nguồn khác), addon có khai báo danh mục hay không, độ tương phản màu, và thiết bị có hỗ trợ DRM không. TS IPTV kiểm tra những điều đó khi bạn nhập nguồn và liệt kê kết quả trong màn hình xem trước.</p>
+
+    <p>Trang này dùng <a href="/assets/vendor/ajv2020.LICENSE.txt">trình kiểm tra Ajv</a> (giấy phép MIT), được phục vụ từ chính trang web này.</p>
+
+    <section class="related">
+      <h2 id="related">Hướng dẫn liên quan</h2>
+      <ul>
+        <li><a href="/guides/tsiptv-source/">Định dạng TS IPTV Source</a></li>
+        <li><a href="/guides/">Tất cả hướng dẫn</a></li>
+      </ul>
+    </section>
+  </article>
+
+  <!-- ==================== ENGLISH ==================== -->
+  <article data-lang-pane="en" hidden>
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/guides/">Guides</a> › <span aria-current="page">Validate a TS IPTV Source</span></nav>
+    <h1>Validate a TS IPTV Source</h1>
+    <p class="lead">Paste a <a href="/guides/tsiptv-source/">TS IPTV Source</a> file or choose one, then press <strong>Validate</strong>. The check runs entirely in your browser: nothing is uploaded, and the only request this page makes is for the <a href="/schema/tsiptv-source-v1.json">JSON Schema</a>.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels and no sources.</strong> This tool only reads the file you give it. It never opens the links inside it: includes, guides, images and streams are not fetched.</p>
+    </div>
+
+    <div class="validator" data-validator>
+      <label for="vsrc-en">File content (JSON)</label>
+      <textarea id="vsrc-en" rows="14" spellcheck="false" autocomplete="off" placeholder='{ "format": "tsiptv-source", "version": 1, … }'></textarea>
+      <div class="validator-actions">
+        <label class="vfile-label" for="vfile-en">Or choose a file</label>
+        <input type="file" id="vfile-en" accept=".json,application/json,text/plain">
+        <button type="button" class="btn" data-validate>Validate</button>
+      </div>
+      <div data-result role="status" aria-live="polite"></div>
+    </div>
+
+    <h2 id="checks-en">What is checked</h2>
+    <ul>
+      <li><strong>JSON</strong>: the file parses, and its root is an object (<code>E_NOT_JSON</code>). Files over 5 MiB are refused (<code>E_TOO_LARGE</code>). Only uncompressed JSON can be checked here; unzip a <code>.gz</code> file first.</li>
+      <li><strong>Document rules</strong>: <code>format</code> is <code>"tsiptv-source"</code>, <code>version</code> is <code>1</code>, and the file has channels, movies, series or includes.</li>
+      <li><strong>The JSON Schema</strong> (draft 2020-12): required fields, types, ranges, id and URL patterns, forbidden headers, texts and language keys, and <strong>unknown fields</strong>, which usually are typos. The schema is stricter than the app, so a file that passes it is almost always accepted (the exceptions are listed in the <a href="/guides/tsiptv-source/#what-en">format guide</a>).</li>
+      <li><strong>Rules the schema cannot express</strong>: duplicate ids across channels, movies, series, episodes and includes; duplicate season and episode numbers; include ids starting with <code>epg-</code>; queries that name an unknown include or an <code>xmltv</code> include; <code>ids</code> and banner targets that are not in the file; <code>endYear</code> before <code>year</code>.</li>
+    </ul>
+    <p>Each problem is listed as <code>path — message</code>, for example <code>channels[0].id — must be an id…</code>, with the validation code where the app uses one. <strong>Errors</strong> are things the schema rejects or TS IPTV drops; <strong>warnings</strong> are things TS IPTV accepts but handles specially.</p>
+
+    <h2 id="not-checked-en">What is not checked here</h2>
+    <p>Everything that needs the network or the app: whether links and streams work, the content of includes (M3U playlists, guides, addons, other sources), whether an addon declares a catalogue, colour contrast, and the device's DRM support. TS IPTV checks those when you import the source and lists the results in the preview.</p>
+
+    <p>This page uses the MIT-licensed <a href="/assets/vendor/ajv2020.LICENSE.txt">Ajv validator</a>, served from this site.</p>
+
+    <section class="related">
+      <h2 id="related-en">Related guides</h2>
+      <ul>
+        <li><a href="/guides/tsiptv-source/">TS IPTV Source format</a></li>
+        <li><a href="/guides/">All guides</a></li>
+      </ul>
+    </section>
+    <script src="/assets/vendor/ajv2020.min.js"></script>
+    <script src="/assets/tsiptv-validate.js"></script>
+  </article>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    TS IPTV · <a href="/guides/">Hướng dẫn / Guides</a> · <a href="/">Trang chủ / Home</a> · <a href="/privacy/">Quyền riêng tư / Privacy</a> · <a href="/terms/">Điều khoản / Terms</a>
+  </div>
+</footer>
+
+<script src="/assets/lang.js"></script>
+<script src="/assets/guides.js"></script>
+</body>
+</html>

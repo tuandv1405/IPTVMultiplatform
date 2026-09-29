@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<playlist version="1" xmlns="http://xspf.org/ns/0/" xmlns:vlc="http://www.videolan.org/vlc/playlist/ns/0/">
+  <title>TS IPTV example playlist</title>
+  <trackList>
+    <track>
+      <location>https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8</location>
+      <title>HLS Test Channel</title>
+      <extension application="http://www.videolan.org/vlc/playlist/0">
+        <vlc:id>0</vlc:id>
+      </extension>
+    </track>
+    <track>
+      <location>https://cdn.example.com/news/index.m3u8</location>
+      <title>Example News</title>
+      <image>https://example.com/logos/news.png</image>
+      <extension application="http://www.videolan.org/vlc/playlist/0">
+        <vlc:id>1</vlc:id>
+      </extension>
+    </track>
+  </trackList>
+  <extension application="http://www.videolan.org/vlc/playlist/0">
+    <vlc:node title="Test"><vlc:item tid="0"/></vlc:node>
+    <vlc:node title="News"><vlc:item tid="1"/></vlc:node>
+  </extension>
+</playlist>

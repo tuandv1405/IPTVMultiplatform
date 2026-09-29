@@ -30,7 +30,7 @@ class IosDatabaseFactory(
         return RoomIPTVDatabase(
             getRoomDatabase(
                 getDatabaseBuilder()
-            ), networkClient
+            )
         )
     }
 

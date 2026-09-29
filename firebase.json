@@ -20,6 +20,25 @@
         ]
       },
       {
+        "source": "/@(examples|schema|policy)/**",
+        "headers": [
+          { "key": "Access-Control-Allow-Origin", "value": "*" },
+          { "key": "Cache-Control", "value": "public, max-age=600" }
+        ]
+      },
+      {
+        "source": "**/*.@(m3u|m3u8)",
+        "headers": [{ "key": "Content-Type", "value": "audio/x-mpegurl; charset=utf-8" }]
+      },
+      {
+        "source": "**/*.strm",
+        "headers": [{ "key": "Content-Type", "value": "text/plain; charset=utf-8" }]
+      },
+      {
+        "source": "**/*.xspf",
+        "headers": [{ "key": "Content-Type", "value": "application/xspf+xml" }]
+      },
+      {
         "source": "**/*.html",
         "headers": [
           {

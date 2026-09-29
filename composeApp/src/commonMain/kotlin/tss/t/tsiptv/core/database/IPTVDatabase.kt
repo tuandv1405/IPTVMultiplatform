@@ -25,6 +25,12 @@ interface IPTVDatabase {
     val channelHistoryDao: ChannelHistoryDao
     val playlistDao: PlaylistDao
     val programDao: ProgramDao
+
+    /** F2 (Room v5): installed addons and media watch history. */
+    val stremioStores: tss.t.tsiptv.core.stremio.StremioStores
+
+    /** F3 (Room v6): TS IPTV Sources, their includes and VOD rows. */
+    val tsiptvStore: tss.t.tsiptv.core.tsiptv.TsiptvStore
     /**
      * Gets all channel.
      *
@@ -156,7 +162,8 @@ interface IPTVDatabase {
     fun getAllPlaylists(): Flow<List<Playlist>>
 
     /**
-     * Gets a playlist by ID.
+     * Gets a playlist by ID. A plain read: refreshing stale playlists is the job of
+     * [tss.t.tsiptv.usecase.playlist.PlaylistImporter.refreshIfStale].
      *
      * @param id The ID of the playlist to get
      * @return The playlist with the given ID, or null if not found
@@ -194,6 +201,29 @@ interface IPTVDatabase {
     suspend fun deleteChannelsInPlaylist(playlistId: String)
 
     /**
+     * Stores a freshly parsed playlist in one transaction: the playlist row (updated in place),
+     * its categories, its channels and their raw attributes all replace what was there.
+     * Each new channel is matched to the stored one it continues ([matchPreviousChannels]):
+     * its favourite flag and last-watched time are carried over, and when its id changed the
+     * playlist's history rows move to the new id.
+     *
+     * @param attributes Raw attributes by channel id
+     * @param legacyIds Pre-F1 id by new channel id, where they differ
+     */
+    suspend fun replacePlaylistContent(
+        playlist: Playlist,
+        categories: List<Category>,
+        channels: List<Channel>,
+        attributes: Map<String, Map<String, String>>,
+        legacyIds: Map<String, String> = emptyMap(),
+    )
+
+    /**
+     * Gets the raw attributes stored for a channel.
+     */
+    suspend fun getChannelAttributes(channelId: String): Map<String, String>
+
+    /**
      * Gets all programs.
      *
      * @return A flow of all programs
@@ -201,6 +231,13 @@ interface IPTVDatabase {
     fun getAllPrograms(): Flow<List<IPTVProgram>>
 
     suspend fun countValidPrograms(playlistId: String): Int
+
+    /**
+     * The Programs tab: each guide channel of [playlistId] with its programme count (one per
+     * channel, start and title) and the channel it belongs to. F3 (QC r3 O1): a TS IPTV Source
+     * channel is found by its guide id (`epgId`, incl. name matches), other channels by their id.
+     */
+    suspend fun getChannelsWithValidProgramCounts(playlistId: String, timeStamp: Long): List<tss.t.tsiptv.core.database.entity.ChannelWithProgramCount>
 
     /**
      * Gets a program by ID.
@@ -395,3 +432,9 @@ interface IPTVDatabase {
      */
     suspend fun clearAllData()
 }
+
+/**
+ * F3 (QC r2 #3): one programme per (channel, start, title). Two guides of a TS IPTV Source may cover
+ * the same channel; their rows have different (per-guide) ids, so `SELECT DISTINCT` cannot merge them.
+ */
+fun List<IPTVProgram>.distinctProgrammes(): List<IPTVProgram> = distinctBy { Triple(it.channelId, it.startTime, it.title) }

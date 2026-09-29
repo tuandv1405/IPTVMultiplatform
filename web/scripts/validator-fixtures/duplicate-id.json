@@ -1,0 +1,7 @@
+{
+  "format": "tsiptv-source",
+  "version": 1,
+  "id": "org.example.fixture",
+  "meta": { "name": "Fixture" },
+  "channels": [ { "id": "a", "name": "A", "url": "https://cdn.example.com/a.m3u8" } ], "movies": [ { "id": "a", "name": "Movie A", "url": "https://cdn.example.com/a.mp4" } ]
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://tsiptv-8bdd6.web.app/schema/tsiptv-source-v1.json",
+  "format": "tsiptv-source",
+  "version": 1,
+  "id": "app.tsiptv.examples.minimal-live",
+  "meta": {
+    "name": "Minimal live list",
+    "description": "The smallest useful TS IPTV Source: one public test stream that really plays, one placeholder channel that shows how to send HTTP headers, and one placeholder radio station. Replace the example.com links with your own streams.",
+    "language": "en",
+    "updatedAt": "2026-09-27T00:00:00Z"
+  },
+  "channels": [
+    {
+      "id": "hls-test",
+      "name": "HLS Test Channel",
+      "number": 1,
+      "groups": ["Test"],
+      "description": "Mux public HLS test stream. Video: Big Buck Bunny, (c) Blender Foundation, CC BY 3.0.",
+      "url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+    },
+    {
+      "id": "example-news",
+      "name": "Example News (placeholder)",
+      "number": 2,
+      "groups": ["News"],
+      "logo": "https://example.com/logos/news.png",
+      "epgId": "ExampleNews.us",
+      "url": "https://cdn.example.com/news/index.m3u8",
+      "headers": {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Referer": "https://example.com/"
+      }
+    },
+    {
+      "id": "example-radio",
+      "type": "radio",
+      "name": "Example Radio (placeholder)",
+      "groups": ["Radio"],
+      "url": "https://radio.example.com/stream.aac",
+      "mimeType": "audio/aac"
+    }
+  ]
+}

@@ -66,7 +66,8 @@ class AdsViewModel(
                 }
                 refreshAds()
             } catch (e: Exception) {
-                e.printStackTrace()
+                // Type only: Ktor exceptions carry the request URL in their message.
+                println("Ads could not be loaded: ${e::class.simpleName}")
                 _ads.value = emptyList()
             } finally {
                 _isLoading.value = false

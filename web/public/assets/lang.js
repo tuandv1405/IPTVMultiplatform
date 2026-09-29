@@ -35,6 +35,9 @@
       button.setAttribute("aria-pressed", String(button.getAttribute("data-lang") === lang));
     });
     document.documentElement.lang = lang;
+    // Pages that carry data-title-vi / data-title-en on <html> switch the tab title too.
+    var title = document.documentElement.getAttribute("data-title-" + lang);
+    if (title) document.title = title;
   }
 
   buttons.forEach(function (button) {

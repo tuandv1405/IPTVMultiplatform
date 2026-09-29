@@ -6,47 +6,64 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.analytics.analytics
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.database.entity.ChannelWithHistory
 import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
-import tss.t.tsiptv.core.database.entity.toPlaylistEntity
+import tss.t.tsiptv.core.database.entity.shiftedBy
 import tss.t.tsiptv.core.firebase.analystics.AnalyticsConstants
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.model.Category
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.model.Playlist
-import tss.t.tsiptv.core.network.NetworkClient
-import tss.t.tsiptv.core.parser.EPGParserFactory
-import tss.t.tsiptv.core.parser.IPTVParserFactory
 import tss.t.tsiptv.core.parser.model.IPTVProgram
+import tss.t.tsiptv.core.parser.model.SkipReason
 import tss.t.tsiptv.core.repository.IHistoryRepository
 import tss.t.tsiptv.core.storage.KeyValueStorage
+import tss.t.tsiptv.platform.PickedPlaylistFile
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.usecase.playlist.GetCurrentPlaylistUseCase
+import tss.t.tsiptv.usecase.playlist.ImportError
+import tss.t.tsiptv.usecase.playlist.ImportOutcome
+import tss.t.tsiptv.usecase.playlist.ImportResult
+import tss.t.tsiptv.usecase.playlist.PlaylistImportException
+import tss.t.tsiptv.usecase.playlist.PlaylistImporter
 import tss.t.tsiptv.usecase.playlist.SetCurrentPlaylistUseCase
+import tss.t.tsiptv.usecase.playlist.TsiptvRefreshFailedException
+import tss.t.tsiptv.core.tsiptv.TsiptvNothingLoadedException
+import tss.t.tsiptv.core.tsiptv.TsiptvPendingImport
+import tss.t.tsiptv.core.tsiptv.TsiptvRefreshResult
+import tss.t.tsiptv.core.tsiptv.TsiptvSourcePreview
+import tss.t.tsiptv.core.tsiptv.TsiptvSourceRejectedException
+import tss.t.tsiptv.core.tsiptv.TsiptvSourceService
+import tss.t.tsiptv.core.tsiptv.TsiptvStoreResult
+import tss.t.tsiptv.core.parser.tsiptv.TsiptvValidationReport
 import tss.t.tsiptv.utils.isToday
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class HomeViewModel(
     private val iptvDatabase: IPTVDatabase,
-    private val networkClient: NetworkClient,
     private val historyRepository: IHistoryRepository,
     private val historyTracker: ChannelHistoryTracker,
     private val keyValueStorage: KeyValueStorage,
     private val getCurrentPlaylistUC: GetCurrentPlaylistUseCase,
     private val setCurrentPlaylistUC: SetCurrentPlaylistUseCase,
+    private val playlistImporter: PlaylistImporter,
+    private val sourceService: TsiptvSourceService,
 ) : ViewModel() {
 
     private var _currentListChannel: List<Channel> = emptyList()
@@ -62,11 +79,19 @@ class HomeViewModel(
     val totalChannelList: StateFlow<List<PlaylistWithChannelCount>>
         get() = _totalChannelList
 
+    private var importJob: Job? = null
+    private var channelsJob: Job? = null
+
+    /** The picked file waiting for "Replace?"; up to 20 MiB, so kept out of the UI state. */
+    private var pendingFile: Pair<String, PickedPlaylistFile.Picked>? = null
+
     init {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val playlistId = getCurrentPlaylistUC() ?: return@launch
-                val currentPlaylist = iptvDatabase.getPlaylistById(playlistId)
+                // Opening the playlist is when the daily refresh runs (and, after the v4
+                // migration, the one-off re-parse that brings in headers and DRM).
+                val currentPlaylist = playlistImporter.refreshIfStale(playlistId)
                 if (currentPlaylist != null) {
                     onHandleEvent(HomeEvent.LoadHistory)
                     _uiState.update {
@@ -110,75 +135,221 @@ class HomeViewModel(
      * @param name The name of the IPTV source
      * @param url The URL of the IPTV source
      */
-    @OptIn(ExperimentalTime::class)
     fun parseIptvSource(name: String, url: String) {
-        viewModelScope.launch {
-            _uiState.update {
-                it.copy(isLoading = true)
-            }
-
-            Firebase.analytics.logEvent(
-                AnalyticsConstants.EVENT_ADD_IPTV,
-                mapOf(
-                    AnalyticsConstants.PARAMS_IPTV_NAME to name,
-                    AnalyticsConstants.PARAMS_IPTV_URL to url
-                )
-            )
-
-            try {
-                val content = networkClient.get(url)
-                val parser = IPTVParserFactory.createParserForContent(content)
-                val playlist = parser.parse(content)
-                val newPlaylist = Playlist(
-                    id = url.hashCode().toString(), // Use URL hash as ID
-                    name = name,
-                    url = url,
-                    epgUrl = playlist.epgUrl,
-                    lastUpdated = Clock.System.now().toEpochMilliseconds()
-                )
-                iptvDatabase.insertPlaylist(newPlaylist)
-                parsePlaylistEpg(
-                    playListId = newPlaylist.id,
-                    playListEpgUrl = newPlaylist.epgUrl
-                )
-                iptvDatabase.insertCategories(playlist.groups.map {
-                    Category(
-                        id = it.id,
-                        name = it.title,
-                        playlistId = newPlaylist.id
-                    )
-                })
-                val channels = playlist.channels.map { iptvChannel ->
-                    Channel(
-                        id = iptvChannel.id,
-                        name = iptvChannel.name,
-                        url = iptvChannel.url,
-                        logoUrl = iptvChannel.logoUrl,
-                        categoryId = iptvChannel.groupTitle,
-                        playlistId = newPlaylist.id,
-                        isFavorite = false,
-                        lastWatched = null
-                    )
-                }
-                iptvDatabase.insertChannels(channels)
-                _currentListChannel = channels
-                _uiState.update {
+        runImport {
+            when (val outcome = playlistImporter.importFromUrl(name, url)) {
+                is ImportOutcome.SingleStream -> _uiState.update {
                     it.copy(
                         isLoading = false,
-                        playListId = newPlaylist.id,
-                        playListName = newPlaylist.name,
-                        categories = iptvDatabase.getCategoriesByPlaylist(newPlaylist.id),
-                        listChannels = channels
+                        pendingSingleStream = PendingSingleStream(outcome.name, outcome.url)
                     )
                 }
-                setCurrentPlaylistUC(newPlaylist.id)
-                onEmitEvent(HomeEvent.OnParseIPTVSourceSuccess)
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(isLoading = false, error = e)
+
+                is ImportOutcome.Imported -> onImported(outcome.result)
+                is ImportOutcome.SourcePreview -> onSourcePreview(outcome.preview)
+            }
+        }
+    }
+
+    /**
+     * Import a playlist or `.strm` file the user picked. A file with the same display name as an
+     * earlier import asks before replacing it.
+     */
+    fun importFile(name: String, file: PickedPlaylistFile, confirmedReplace: Boolean = false) {
+        when (file) {
+            PickedPlaylistFile.Cancelled -> Unit
+            is PickedPlaylistFile.TooLarge -> _uiState.update {
+                it.copy(error = PlaylistImportException(ImportError.FILE_TOO_LARGE))
+            }
+
+            PickedPlaylistFile.ReadFailed -> _uiState.update {
+                it.copy(error = PlaylistImportException(ImportError.FILE_READ))
+            }
+
+            is PickedPlaylistFile.Picked -> runImport {
+                val id = PlaylistImporter.filePlaylistId(file.displayName)
+                if (!confirmedReplace && iptvDatabase.getPlaylistById(id) != null) {
+                    pendingFile = name to file
+                    _uiState.update {
+                        it.copy(isLoading = false, pendingFileReplace = file.displayName)
+                    }
+                    return@runImport
+                }
+                when (val outcome = playlistImporter.importFileOutcome(name, file.displayName, file.bytes)) {
+                    is ImportOutcome.Imported -> onImported(outcome.result)
+                    is ImportOutcome.SourcePreview -> onSourcePreview(outcome.preview)
+                    is ImportOutcome.SingleStream -> Unit
                 }
             }
         }
+    }
+
+    private fun runImport(block: suspend () -> Unit) {
+        importJob?.cancel()
+        _uiState.update { it.copy(isLoading = true) }
+        importJob = viewModelScope.launch {
+            try {
+                block()
+            } catch (e: CancellationException) {
+                _uiState.update { it.copy(isLoading = false) }
+                throw e
+            } catch (e: TsiptvSourceRejectedException) {
+                _uiState.update { it.copy(isLoading = false, sourceImport = SourceImportState.Rejected(e.report)) }
+            } catch (e: TsiptvNothingLoadedException) {
+                _uiState.update { it.copy(isLoading = false, sourceImport = SourceImportState.Rejected(null)) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e, sourceImport = null) }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // F3: TS IPTV Source import (preview -> includes -> 18+ -> store)
+    // ---------------------------------------------------------------------------------------------
+
+    private var pendingSource: TsiptvPendingImport? = null
+
+    /** The playlist that was active before the current one (Remove source goes back to it). */
+    private var previousPlaylistId: String? = null
+
+    private fun rememberPrevious(newPlaylistId: String) {
+        _uiState.value.playListId?.takeIf { it != newPlaylistId }?.let {
+            previousPlaylistId = it
+            // Kept across restarts (QC F3 r2): Remove source still goes back to it.
+            viewModelScope.launch { keyValueStorage.putString(KEY_PREVIOUS_PLAYLIST, it) }
+        }
+    }
+
+    private fun onSourcePreview(preview: TsiptvSourcePreview) {
+        _uiState.update { it.copy(isLoading = false, sourceImport = SourceImportState.Preview(preview)) }
+    }
+
+    /** "Import" in the preview: fetch the includes, then ask 18+ for adult includes, then store. */
+    private fun importSource(preview: TsiptvSourcePreview, adultConfirmed: Boolean) {
+        runImport {
+            _uiState.update { it.copy(sourceImport = SourceImportState.Fetching(0, preview.includeCount)) }
+            val pending = sourceService.resolve(preview) { done, total ->
+                _uiState.update { s ->
+                    if (s.sourceImport is SourceImportState.Fetching) s.copy(sourceImport = SourceImportState.Fetching(done, total)) else s
+                }
+            }
+            if (pending.nothingLoaded) throw TsiptvNothingLoadedException()
+            val confirmedBefore = adultConfirmed || preview.existing?.adultConfirmed == true
+            if (pending.adultIncludePaths.isNotEmpty() && !confirmedBefore) {
+                pendingSource = pending
+                _uiState.update { it.copy(isLoading = false, sourceImport = SourceImportState.AdultInclude) }
+                return@runImport
+            }
+            storeSource(pending, adultConfirmed)
+        }
+    }
+
+    private suspend fun storeSource(pending: TsiptvPendingImport, adultConfirmed: Boolean) {
+        pendingSource = null
+        val result = sourceService.store(pending, adultConfirmed)
+        onSourceStored(result, fromRefresh = false)
+    }
+
+    private suspend fun onSourceStored(result: TsiptvStoreResult, fromRefresh: Boolean) {
+        val playlist = result.playlist
+        rememberPrevious(playlist.id)
+        // Format and size only (no names or links).
+        Firebase.analytics.logEvent(
+            AnalyticsConstants.EVENT_ADD_IPTV,
+            mapOf(
+                AnalyticsConstants.PARAMS_IPTV_FORMAT to tss.t.tsiptv.core.parser.model.IPTVFormat.TSIPTV_SOURCE.name,
+                AnalyticsConstants.PARAMS_IPTV_CHANNEL_COUNT to result.channelCount,
+            )
+        )
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                sourceImport = null,
+                playListId = playlist.id,
+                playListName = playlist.name,
+                categories = iptvDatabase.getCategoriesByPlaylist(playlist.id),
+                selectedCategory = null,
+                importSummary = ImportSummary(
+                    channelCount = result.channelCount,
+                    skipped = emptyMap(),
+                    fromRefresh = fromRefresh,
+                    source = SourceImportSummary(result.channelCount, result.movieCount, result.seriesCount, result.skippedCount, result.report),
+                ),
+            )
+        }
+        getAllChannelForIptvSource(playlist.id)
+        setCurrentPlaylistUC(playlist.id)
+        loadHistoryData(playlist.id)
+        if (!fromRefresh) onEmitEvent(HomeEvent.OnParseIPTVSourceSuccess)
+    }
+
+    /** "Confirm" 18+ in About: merges the withheld content. */
+    fun confirmSourceAdult(playlistId: String) {
+        viewModelScope.launch {
+            val result = try {
+                sourceService.confirmAdult(playlistId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            }
+            if (result is TsiptvRefreshResult.Stored) onSourceStored(result.result, fromRefresh = true)
+        }
+    }
+
+    /** "Remove source" in About. Another playlist (or none) becomes active. */
+    fun removeSource(playlistId: String) {
+        viewModelScope.launch {
+            try {
+                sourceService.remove(playlistId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e) }
+                return@launch
+            }
+            if (_uiState.value.playListId != playlistId) return@launch
+            // Back to the playlist that was active before this one (QC F3 #22), else any other.
+            val previous = previousPlaylistId ?: keyValueStorage.getString(KEY_PREVIOUS_PLAYLIST).takeIf { it.isNotEmpty() }
+            val next = previous?.takeIf { it != playlistId }?.let { iptvDatabase.getPlaylistById(it) }
+                ?: iptvDatabase.getAllPlaylists().first().firstOrNull { it.id != playlistId }
+            if (next != null) {
+                onHandleEvent(HomeEvent.OnRequestChangePlaylist(next))
+            } else {
+                channelsJob?.cancel()
+                _uiState.update {
+                    it.copy(playListId = null, playListName = null, categories = emptyList(), listChannels = emptyList(), zapChannels = null)
+                }
+            }
+        }
+    }
+
+    private suspend fun onImported(result: ImportResult) {
+        val playlist = result.playlist
+        rememberPrevious(playlist.id)
+        // Format and size only: playlist links carry tokens and |Authorization= suffixes,
+        // and the name the user typed can identify them.
+        Firebase.analytics.logEvent(
+            AnalyticsConstants.EVENT_ADD_IPTV,
+            mapOf(
+                AnalyticsConstants.PARAMS_IPTV_FORMAT to result.format.name,
+                AnalyticsConstants.PARAMS_IPTV_CHANNEL_COUNT to result.channelCount,
+            )
+        )
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                playListId = playlist.id,
+                playListName = playlist.name,
+                categories = iptvDatabase.getCategoriesByPlaylist(playlist.id),
+                selectedCategory = null,
+                importSummary = ImportSummary(result.channelCount, result.skipped, fromRefresh = false),
+            )
+        }
+        getAllChannelForIptvSource(playlist.id)
+        setCurrentPlaylistUC(playlist.id)
+        parsePlaylistEpg(playListId = playlist.id, epgUrls = playlist.epgUrls)
+        onEmitEvent(HomeEvent.OnParseIPTVSourceSuccess)
     }
 
 
@@ -206,7 +377,9 @@ class HomeViewModel(
      * @return Flow of list of channel
      */
     fun getAllChannelForIptvSource(playlistId: String) {
-        viewModelScope.launch {
+        // One collector at a time; each playlist switch used to add another.
+        channelsJob?.cancel()
+        channelsJob = viewModelScope.launch {
             iptvDatabase
                 .getAllChannelsByPlayListId(playlistId)
                 .collect { channels ->
@@ -219,7 +392,7 @@ class HomeViewModel(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            listChannels = channels
+                            listChannels = searchWithFilter(it.searchText, it.selectedCategory)
                         )
                     }
                 }
@@ -247,7 +420,7 @@ class HomeViewModel(
             }
             parsePlaylistEpg(
                 playListId = currPlaylist.id,
-                playListEpgUrl = currPlaylist.epgUrl
+                epgUrls = currPlaylist.epgUrls
             )
         }
     }
@@ -260,45 +433,13 @@ class HomeViewModel(
     fun refreshIPTVChannel(playlistId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val currPlaylist = iptvDatabase.getPlaylistById(playlistId)
-                if (currPlaylist == null) {
-                    return@launch
-                }
-                val content = networkClient.get(currPlaylist.url)
-                val parser = IPTVParserFactory.createParserForContent(content)
-                val playlist = parser.parse(content)
-                val newPlaylist = currPlaylist.copy(
-                    epgUrl = playlist.epgUrl,
-                    lastUpdated = Clock.System.now().toEpochMilliseconds()
-                )
-                iptvDatabase.playlistDao.updatePlaylist(newPlaylist.toPlaylistEntity())
-                iptvDatabase.insertCategories(playlist.groups.map {
-                    Category(
-                        id = it.id,
-                        name = it.title,
-                        playlistId = newPlaylist.id
-                    )
-                })
-                val channels = playlist.channels.map { iptvChannel ->
-                    Channel(
-                        id = iptvChannel.id,
-                        name = iptvChannel.name,
-                        url = iptvChannel.url,
-                        logoUrl = iptvChannel.logoUrl,
-                        categoryId = iptvChannel.groupTitle,
-                        playlistId = newPlaylist.id,
-                        isFavorite = false,
-                        lastWatched = null
-                    )
-                }
-                _currentListChannel = channels
-                iptvDatabase.deleteChannelsInPlaylist(playlistId)
-                iptvDatabase.insertChannels(channels)
+                val result = playlistImporter.refresh(playlistId)
+                val newPlaylist = result.playlist
                 val top3Watched = iptvDatabase.channelHistoryDao
                     .getLastTop3WatchedChannelsWithDetailsSync(playlistId)
                 parsePlaylistEpg(
                     playListId = newPlaylist.id,
-                    playListEpgUrl = newPlaylist.epgUrl
+                    epgUrls = newPlaylist.epgUrls
                 )
                 _uiState.update {
                     it.copy(
@@ -306,11 +447,34 @@ class HomeViewModel(
                         playListId = newPlaylist.id,
                         playListName = newPlaylist.name,
                         categories = iptvDatabase.getCategoriesByPlaylist(newPlaylist.id),
-                        listChannels = channels,
-                        top3MostPlayedChannels = top3Watched
+                        top3MostPlayedChannels = top3Watched,
+                        importSummary = ImportSummary(result.channelCount, result.skipped, fromRefresh = true),
                     )
                 }
                 onEmitEvent(HomeEvent.OnParseIPTVSourceSuccess)
+            } catch (e: TsiptvRefreshFailedException) {
+                // The root failed, but the includes may have been stored (QC F3 r2 #4): reload what
+                // Home shows from the database, then tell the user.
+                val playlist = iptvDatabase.getPlaylistById(playlistId)
+                val categories = iptvDatabase.getCategoriesByPlaylist(playlistId)
+                val top3Watched = iptvDatabase.channelHistoryDao.getLastTop3WatchedChannelsWithDetailsSync(playlistId)
+                _uiState.update {
+                    if (it.playListId != playlistId) return@update it.copy(isLoading = false, notice = HomeNotice.SOURCE_REFRESH_FAILED)
+                    it.copy(
+                        isLoading = false,
+                        notice = HomeNotice.SOURCE_REFRESH_FAILED,
+                        playListName = playlist?.name ?: it.playListName,
+                        categories = categories,
+                        top3MostPlayedChannels = top3Watched,
+                    )
+                }
+                if (_uiState.value.playListId == playlistId) getAllChannelForIptvSource(playlistId)
+            } catch (e: PlaylistImportException) {
+                if (e.error == ImportError.FILE_REFRESH) {
+                    _uiState.update { it.copy(isLoading = false, notice = HomeNotice.FILE_REFRESH_HINT) }
+                } else {
+                    _uiState.update { it.copy(isLoading = false, error = e) }
+                }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(isLoading = false, error = e)
@@ -321,23 +485,11 @@ class HomeViewModel(
 
     fun parsePlaylistEpg(
         playListId: String,
-        playListEpgUrl: String?,
+        epgUrls: List<String>,
     ) {
-        val epgUrl = playListEpgUrl ?: return
-        if (epgUrl.isEmpty()) return
+        if (epgUrls.none { it.isNotBlank() }) return
         viewModelScope.launch(Dispatchers.IO) {
-            val content = runCatching {
-                networkClient.getManualGzipIfNeed(
-                    epgUrl,
-                    mapOf("Content-Encoding" to "gzip")
-                )
-            }.onFailure {
-
-            }.getOrNull() ?: return@launch
-            val epgParser = EPGParserFactory.createParserForContent(content)
-            val epg = epgParser.parse(content)
-            iptvDatabase.deleteProgramsForPlaylist(playListId)
-            iptvDatabase.insertPrograms(epg, playListId)
+            playlistImporter.fetchEpg(playListId, epgUrls) ?: return@launch
             keyValueStorage.putLong(playListId, Clock.System.now().toEpochMilliseconds())
             val channel = uiState.value.nowPlayingChannel
             channel?.getChannel()?.let {
@@ -378,7 +530,7 @@ class HomeViewModel(
 
     private fun onHandleEvent(event: HomeEvent) {
         when (event) {
-            HomeEvent.RefreshIPTVSource -> refreshIPTVChannel(_uiState.value.playListId!!)
+            HomeEvent.RefreshIPTVSource -> _uiState.value.playListId?.let(::refreshIPTVChannel)
             HomeEvent.OnBackPressed -> {}
             is HomeEvent.OnFavouriteIPTVChannelPressed -> {
                 favouriteIPTVChannel(
@@ -460,6 +612,7 @@ class HomeViewModel(
 
             is HomeEvent.OnRequestChangePlaylist -> {
                 val currentPlaylist = event.playlist
+                rememberPrevious(currentPlaylist.id)
                 viewModelScope.launch {
                     val category = iptvDatabase.getCategoriesByPlaylist(
                         currentPlaylist.id
@@ -475,8 +628,66 @@ class HomeViewModel(
                     setCurrentPlaylistUC(currentPlaylist.id)
                     getAllChannelForIptvSource(playlistId = currentPlaylist.id)
                     loadHistoryData(playlistId = currentPlaylist.id)
+                    // Opening a playlist runs its daily refresh; the channel flow picks up
+                    // the new rows when it lands.
+                    if (playlistImporter.refreshIfStale(currentPlaylist.id) != null) {
+                        _uiState.update {
+                            if (it.playListId != currentPlaylist.id) return@update it
+                            it.copy(categories = iptvDatabase.getCategoriesByPlaylist(currentPlaylist.id))
+                        }
+                    }
                 }
             }
+
+            HomeEvent.OnCancelParseIPTVSource -> {
+                importJob?.cancel()
+                _uiState.update { it.copy(isLoading = false) }
+            }
+
+            is HomeEvent.OnImportFile -> importFile(event.name, event.file)
+
+            HomeEvent.OnConfirmReplaceFile -> {
+                val (name, file) = pendingFile ?: return
+                pendingFile = null
+                _uiState.update { it.copy(pendingFileReplace = null) }
+                importFile(name, file, confirmedReplace = true)
+            }
+
+            HomeEvent.OnCancelReplaceFile -> {
+                pendingFile = null
+                _uiState.update { it.copy(pendingFileReplace = null) }
+            }
+
+            HomeEvent.OnConfirmSingleStream -> {
+                val pending = _uiState.value.pendingSingleStream ?: return
+                _uiState.update { it.copy(pendingSingleStream = null) }
+                runImport { onImported(playlistImporter.importSingleStream(pending.name, pending.url)) }
+            }
+
+            HomeEvent.OnCancelSingleStream -> _uiState.update { it.copy(pendingSingleStream = null) }
+            HomeEvent.OnDismissNotice -> _uiState.update { it.copy(notice = null) }
+            HomeEvent.OnDismissImportSummary -> _uiState.update { it.copy(importSummary = null) }
+            is HomeEvent.OnSourceImport -> {
+                val preview = (_uiState.value.sourceImport as? SourceImportState.Preview)?.preview ?: return
+                importSource(preview, event.adultConfirmed)
+            }
+
+            HomeEvent.OnSourceAdultIncludeConfirmed -> {
+                val pending = pendingSource ?: return
+                runImport { storeSource(pending, adultConfirmed = true) }
+            }
+
+            HomeEvent.OnSourceImportDismiss -> {
+                if (_uiState.value.sourceImport is SourceImportState.Fetching) importJob?.cancel()
+                pendingSource = null
+                _uiState.update { it.copy(isLoading = false, sourceImport = null) }
+            }
+
+            // A channel opened anywhere else zaps through the channel list again.
+            is HomeEvent.OnOpenVideoPlayer -> _uiState.update { it.copy(zapChannels = null) }
+            is HomeEvent.OnPlaySourceChannel -> _uiState.update { it.copy(zapChannels = event.zapList.takeIf { list -> list.size > 1 }) }
+            is HomeEvent.OnConfirmSourceAdult -> confirmSourceAdult(event.playlistId)
+            is HomeEvent.OnRemoveSource -> removeSource(event.playlistId)
 
             else -> {}
         }
@@ -498,6 +709,7 @@ class HomeViewModel(
         }
     }
 
+    /** A channel is listed under every group it belongs to, not only its first. */
     private fun searchWithFilter(
         searchKey: String,
         category: Category?,
@@ -516,7 +728,8 @@ class HomeViewModel(
                 return@filter true
             }
             channel.categoryId == category.id ||
-                    channel.categoryId == category.name
+                    channel.categoryId == category.name ||
+                    channel.groups.any { it.equals(category.name, ignoreCase = true) }
         }
 
     fun getRelatedChannels(channel: Channel) {
@@ -572,7 +785,7 @@ class HomeViewModel(
 
     fun loadProgramForChannel(channel: Channel) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (_uiState.value.currentProgram?.channelId != channel.id) {
+            if (_uiState.value.currentProgram?.channelId != channel.guideId) {
                 _uiState.update {
                     it.copy(
                         currentProgram = null,
@@ -581,11 +794,15 @@ class HomeViewModel(
                 }
             }
 
+            // History rows carry only part of a channel; the shift lives on the full row.
+            val shiftHours = (iptvDatabase.getChannelById(channel.id) ?: channel).epgShiftHours ?: 0.0
+            val shiftMs = (shiftHours * 3_600_000).toLong()
             val currentProgram = iptvDatabase.getCurrentProgramForChannel(
-                channelId = channel.id,
-                currentTime = Clock.System.now().toEpochMilliseconds()
-            )
-            val programForChannel = iptvDatabase.getProgramsForChannel(channel.id)
+                channelId = channel.guideId,
+                currentTime = Clock.System.now().toEpochMilliseconds() - shiftMs
+            )?.shiftedBy(shiftMs)
+            val programForChannel = iptvDatabase.getProgramsForChannel(channel.guideId)
+                .map { it.shiftedBy(shiftMs) }
             if (currentProgram == null) {
                 return@launch
             }
@@ -597,6 +814,47 @@ class HomeViewModel(
             }
         }
     }
+}
+
+private const val KEY_PREVIOUS_PLAYLIST = "home_previous_playlist_id"
+
+/** What the last import or refresh stored, for the result dialog. */
+data class ImportSummary(
+    val channelCount: Int,
+    val skipped: Map<SkipReason, Int>,
+    val fromRefresh: Boolean,
+    /** F3: set for a TS IPTV Source (its own message and Details). */
+    val source: SourceImportSummary? = null,
+) {
+    val skippedTotal: Int get() = source?.skippedCount ?: skipped.values.sum()
+}
+
+/** What a stored TS IPTV Source holds, for the "Source added" dialog. */
+data class SourceImportSummary(
+    val channelCount: Int,
+    val movieCount: Int,
+    val seriesCount: Int,
+    val skippedCount: Int,
+    val report: TsiptvValidationReport,
+)
+
+/** The TS IPTV Source import flow (PRD F3 section 1). */
+sealed interface SourceImportState {
+    class Preview(val preview: TsiptvSourcePreview) : SourceImportState
+    data class Fetching(val done: Int, val total: Int) : SourceImportState
+
+    /** An include is adult: ask 18+ before storing. */
+    data object AdultInclude : SourceImportState
+
+    /** A document error ([report]) or nothing could be loaded (null). */
+    class Rejected(val report: TsiptvValidationReport?) : SourceImportState
+}
+
+data class PendingSingleStream(val name: String, val url: String)
+
+enum class HomeNotice {
+    FILE_REFRESH_HINT,
+    SOURCE_REFRESH_FAILED,
 }
 
 /**
@@ -617,7 +875,19 @@ data class HomeUiState(
     val nowPlayingChannel: ChannelWithHistory? = null,
     val top3MostPlayedChannels: List<ChannelWithHistory> = emptyList(),
     val allPlayedChannels: List<ChannelWithHistory> = emptyList(),
-)
+    val importSummary: ImportSummary? = null,
+    val pendingSingleStream: PendingSingleStream? = null,
+    /** Display name of a picked file that would replace an earlier import. */
+    val pendingFileReplace: String? = null,
+    val notice: HomeNotice? = null,
+    /** F3: the TS IPTV Source import in progress. */
+    val sourceImport: SourceImportState? = null,
+    /** F3: the channels up/down zaps through when playback started from a Source Home section. */
+    val zapChannels: List<Channel>? = null,
+) {
+    /** The active playlist is a TS IPTV Source (Source Home instead of the channel list). */
+    val isSourcePlaylist: Boolean get() = tss.t.tsiptv.core.tsiptv.TsiptvSourceIds.isSourcePlaylist(playListId)
+}
 
 sealed interface HomeEvent {
     data object RefreshIPTVSource : HomeEvent
@@ -646,6 +916,14 @@ sealed interface HomeEvent {
         val url: String,
     ) : HomeEvent
 
+    data class OnImportFile(val name: String, val file: PickedPlaylistFile) : HomeEvent
+    data object OnConfirmReplaceFile : HomeEvent
+    data object OnCancelReplaceFile : HomeEvent
+    data object OnConfirmSingleStream : HomeEvent
+    data object OnCancelSingleStream : HomeEvent
+    data object OnDismissNotice : HomeEvent
+    data object OnDismissImportSummary : HomeEvent
+
     data class OnOpenVideoPlayer(val channel: Channel) : HomeEvent
     data class OnResumeMediaItem(val mediaItem: MediaItem) : HomeEvent
 
@@ -657,4 +935,14 @@ sealed interface HomeEvent {
 
     data object LoadHistory : HomeEvent {}
     data object RefreshEpgIfNeed : HomeEvent
+
+    // F3: TS IPTV Sources
+    data class OnSourceImport(val adultConfirmed: Boolean) : HomeEvent
+    data object OnSourceAdultIncludeConfirmed : HomeEvent
+    data object OnSourceImportDismiss : HomeEvent
+
+    /** A channel was opened from Source Home; [zapList] is its section (TV zapping). */
+    data class OnPlaySourceChannel(val channel: Channel, val zapList: List<Channel>) : HomeEvent
+    data class OnConfirmSourceAdult(val playlistId: String) : HomeEvent
+    data class OnRemoveSource(val playlistId: String) : HomeEvent
 }

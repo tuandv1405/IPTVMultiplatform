@@ -1,0 +1,7 @@
+{
+  "streams": [
+    { "name": "archive.org", "description": "MP4 · 512kb",
+      "url": "https://archive.org/download/his_girl_friday/his_girl_friday_512kb.mp4",
+      "behaviorHints": { "filename": "his_girl_friday_512kb.mp4" } }
+  ]
+}

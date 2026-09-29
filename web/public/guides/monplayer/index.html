@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="vi" data-title-vi="Về định dạng của MonPlayer — Hướng dẫn TS IPTV" data-title-en="About MonPlayer&#x27;s format — TS IPTV guides">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Về định dạng của MonPlayer — Hướng dẫn TS IPTV</title>
+<meta name="description" content="Vì sao TS IPTV chưa nhập được nguồn JSON của MonPlayer và cần gì để hỗ trợ.">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://tsiptv-8bdd6.web.app/guides/monplayer/">
+<link rel="alternate" hreflang="vi" href="https://tsiptv-8bdd6.web.app/guides/monplayer/">
+<link rel="alternate" hreflang="en" href="https://tsiptv-8bdd6.web.app/guides/monplayer/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://tsiptv-8bdd6.web.app/guides/monplayer/">
+<meta property="og:title" content="Về định dạng của MonPlayer — Hướng dẫn TS IPTV">
+<meta property="og:description" content="Vì sao TS IPTV chưa nhập được nguồn JSON của MonPlayer và cần gì để hỗ trợ.">
+<meta property="og:image" content="https://tsiptv-8bdd6.web.app/assets/og-image.png">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://tsiptv-8bdd6.web.app/guides/monplayer/">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <img src="/assets/app-icon.png" alt="">
+    <span class="name">TS IPTV</span>
+    <nav>
+      <a href="/guides/" aria-current="page">Hướng dẫn / Guides</a>
+      <a href="/">Trang chủ / Home</a>
+      <a href="/privacy/">Quyền riêng tư / Privacy</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <ul class="langbar">
+    <li><button type="button" data-lang="vi" aria-pressed="true">Tiếng Việt</button></li>
+    <li><button type="button" data-lang="en" aria-pressed="false">English</button></li>
+  </ul>
+
+  <!-- ==================== VIETNAMESE ==================== -->
+  <article data-lang-pane="vi">
+    <nav class="breadcrumb" aria-label="Vị trí trang"><a href="/guides/">Hướng dẫn</a> › <span aria-current="page">MonPlayer</span></nav>
+    <h1>Về định dạng của MonPlayer</h1>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV không có sẵn kênh nào.</strong> Ứng dụng chỉ phát các danh sách phát do bạn thêm vào.</p>
+    </div>
+
+    <ul>
+      <li>MonPlayer là một ứng dụng của bên thứ ba. Định dạng “nguồn JSON” của nó <strong>không được công bố</strong>: trang ứng dụng trên cửa hàng và trang web của nhà phát triển không có bản mô tả nào (kiểm tra vào tháng 9 năm 2026).</li>
+      <li>Vì vậy TS IPTV hiện chưa nhập được định dạng JSON đó. Nếu thứ bạn có là một danh sách M3U thông thường, hãy thêm nó như một danh sách M3U: xem <a href="/guides/m3u/">hướng dẫn M3U</a>.</li>
+      <li>Để hỗ trợ định dạng này, TS IPTV cần <strong>một tệp mẫu do chính bạn tạo hoặc bạn được phép chia sẻ</strong>, trong đó mọi đường dẫn luồng đã được thay bằng đường dẫn giả <code>example.com</code>, kèm thông tin tệp đến từ một đường dẫn hay là một tệp. Hãy gửi tới <a href="mailto:chintk111999@gmail.com">chintk111999@gmail.com</a>.</li>
+      <li>TS IPTV không kết nối tới dịch vụ hay danh mục của MonPlayer và sẽ không thêm chúng.</li>
+    </ul>
+  </article>
+
+  <!-- ==================== ENGLISH ==================== -->
+  <article data-lang-pane="en" hidden>
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/guides/">Guides</a> › <span aria-current="page">MonPlayer</span></nav>
+    <h1>About MonPlayer's format</h1>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels.</strong> It plays only the playlists you add.</p>
+    </div>
+
+    <ul>
+      <li>MonPlayer is a third-party app. The format of its “JSON sources” is <strong>not publicly documented</strong>: there is no specification on its store listing or its developer's website (checked in September 2026).</li>
+      <li>TS IPTV therefore cannot import that JSON format today. If what you have is an ordinary M3U playlist, add it as an M3U: see the <a href="/guides/m3u/">M3U guide</a>.</li>
+      <li>To add support, TS IPTV needs <strong>one sample file that you created yourself or are allowed to share</strong>, with every stream link replaced by an <code>example.com</code> placeholder, and whether it came from a link or a file. Send it to <a href="mailto:chintk111999@gmail.com">chintk111999@gmail.com</a>.</li>
+      <li>TS IPTV does not connect to MonPlayer's services or catalogues and will not add them.</li>
+    </ul>
+  </article>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    TS IPTV · <a href="/guides/">Hướng dẫn / Guides</a> · <a href="/">Trang chủ / Home</a> · <a href="/privacy/">Quyền riêng tư / Privacy</a> · <a href="/terms/">Điều khoản / Terms</a>
+  </div>
+</footer>
+
+<script src="/assets/lang.js"></script>
+<script src="/assets/guides.js"></script>
+</body>
+</html>

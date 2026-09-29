@@ -423,6 +423,8 @@ fun GrayButton(
                 borderRadius = 12.dp
             )
             .clip(TSShapes.roundedShape8)
+            // Dialog buttons are reached with the D-pad on a TV; show where focus is.
+            .tvFocusBorder(TSShapes.roundedShape8)
             .clickable(onClick = onClick)
             .background(color = TSButtonDefaults.grayContainerColor, shape = TSShapes.roundedShape8)
             .padding(vertical = 14.dp),

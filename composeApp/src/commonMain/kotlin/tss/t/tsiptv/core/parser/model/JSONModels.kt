@@ -6,6 +6,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
+import tss.t.tsiptv.core.parser.iptv.m3u.HeaderSuffixParser
 
 /**
  * Serializable models for JSON IPTV playlists.
@@ -115,9 +116,24 @@ data class JSONChannel(
             groupTitle = effectiveGroupTitle,
             groupId = effectiveGroupId,
             epgId = epgId,
-            attributes = attributes ?: emptyMap()
+            attributes = attributes ?: emptyMap(),
+            headers = headersFromAttributes(attributes.orEmpty()),
         )
     }
+}
+
+/**
+ * JSON playlists carry player headers as plain attributes; map them the way the M3U parser
+ * maps the same non-standard `#EXTINF` attributes.
+ */
+internal fun headersFromAttributes(attributes: Map<String, String>): Map<String, String> {
+    val lower = attributes.mapKeys { it.key.lowercase() }
+    return HeaderSuffixParser.sanitize(buildMap {
+        (lower["http-user-agent"] ?: lower["user-agent"])?.takeIf { it.isNotBlank() }
+            ?.let { put("User-Agent", it) }
+        (lower["http-referrer"] ?: lower["referrer"] ?: lower["referer"])?.takeIf { it.isNotBlank() }
+            ?.let { put("Referer", it) }
+    })
 }
 
 /**

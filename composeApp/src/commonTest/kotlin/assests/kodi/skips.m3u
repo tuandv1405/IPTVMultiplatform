@@ -1,0 +1,12 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="ok-1",Playable one
+https://cdn.example.com/one.m3u8
+#EXTINF:-1 tvg-id="addon",Needs an add-on
+plugin://plugin.video.example/?channel=1
+#EXTINF:-1 tvg-id="scrape",Scraped page
+#WEBPROP:web-regex=source: "(.*?)"
+@https://www.example.com/watch
+#EXTINF:-1 tvg-id="no-url",No link
+#EXTINF:-1 tvg-id="ok-2",Playable two
+https://cdn.example.com/two.m3u8
+#EXTINF:-1 tvg-id="trailing",No link at the end

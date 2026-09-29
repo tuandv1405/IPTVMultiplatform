@@ -1,0 +1,138 @@
+    <h1>Danh sách phát XSPF</h1>
+    <p class="lead">XSPF (XML Shareable Playlist Format, đọc là “spiff”) là định dạng danh sách phát dạng XML. VLC dùng nó để lưu danh sách phát, kể cả danh sách kênh IPTV.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV không có sẵn kênh nào.</strong> Ứng dụng chỉ phát các danh sách phát do bạn thêm vào.</p>
+    </div>
+
+    <nav class="toc" aria-label="Trên trang này">
+      <p class="toc-title">Trên trang này</p>
+      <ol>
+        <li><a href="#what">XSPF là gì</a></li>
+        <li><a href="#syntax">Cú pháp</a></li>
+        <li><a href="#example">Ví dụ đầy đủ</a></li>
+        <li><a href="#create">Tạo một tệp</a></li>
+        <li><a href="#host">Đưa tệp lên mạng</a></li>
+        <li><a href="#add">Thêm vào TS IPTV</a></li>
+        <li><a href="#mistakes">Lỗi thường gặp</a></li>
+        <li><a href="#support">TS IPTV hỗ trợ những gì</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what">XSPF là gì</h2>
+    <p>XSPF là một định dạng mở, được mô tả trong <a href="https://www.xspf.org/spec">đặc tả XSPF phiên bản 1</a>. Mỗi mục là một <code>&lt;track&gt;</code> với đường dẫn, tiêu đề và ảnh. So với M3U, XSPF dài hơn nhưng có cấu trúc chặt chẽ; bạn thường gặp nó khi lưu danh sách từ VLC.</p>
+
+    <h2 id="syntax">Cú pháp</h2>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;playlist version="1" xmlns="http://xspf.org/ns/0/"&gt;
+  &lt;title&gt;…&lt;/title&gt;                 (0 hoặc 1)
+  &lt;trackList&gt;                     (đúng 1, có thể rỗng)
+    &lt;track&gt;
+      &lt;location&gt;URI&lt;/location&gt;    (0 hoặc nhiều; chỉ một được phát)
+      &lt;title&gt;…&lt;/title&gt;             (0 hoặc 1)
+      &lt;image&gt;URI&lt;/image&gt;          (0 hoặc 1)
+      &lt;extension application="URI"&gt;…&lt;/extension&gt;
+    &lt;/track&gt;
+  &lt;/trackList&gt;
+&lt;/playlist&gt;</code></pre>
+    </div>
+    <ul>
+      <li>Không gian tên (namespace) là <code>http://xspf.org/ns/0/</code> và <code>version="1"</code>: không gian tên mang số 0 nhưng phiên bản là 1.</li>
+      <li>Phần tử tuỳ chọn ở cấp danh sách: <code>title</code>, <code>creator</code>, <code>annotation</code>, <code>info</code>, <code>location</code>, <code>identifier</code>, <code>image</code>, <code>date</code>, <code>license</code>, <code>attribution</code>, <code>link</code>, <code>meta</code>, <code>extension</code>.</li>
+      <li>Phần tử tuỳ chọn ở cấp track: <code>location</code>, <code>identifier</code>, <code>title</code>, <code>creator</code>, <code>annotation</code>, <code>info</code>, <code>image</code>, <code>album</code>, <code>trackNum</code>, <code>duration</code> (mili giây, chỉ mang tính gợi ý), <code>link</code>, <code>meta</code>, <code>extension</code>.</li>
+      <li>Đường dẫn tương đối được tính theo địa chỉ của chính tệp XSPF.</li>
+    </ul>
+    <h3 id="vlc">Phần mở rộng của VLC</h3>
+    <p>VLC thêm thông tin riêng trong <code>&lt;extension application="http://www.videolan.org/vlc/playlist/0"&gt;</code>, với không gian tên <code>xmlns:vlc="http://www.videolan.org/vlc/playlist/ns/0/"</code>:</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Phần tử</th><th>Ở đâu</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>&lt;vlc:id&gt;</code></td><td>trong <code>&lt;extension&gt;</code> của mỗi track</td><td>Số thứ tự của track. TS IPTV dùng nó làm mã kênh.</td></tr>
+          <tr><td><code>&lt;vlc:node title="…"&gt;</code></td><td>trong <code>&lt;extension&gt;</code> cấp danh sách</td><td>Một nhóm (thư mục).</td></tr>
+          <tr><td><code>&lt;vlc:item tid="N"/&gt;</code></td><td>trong <code>&lt;vlc:node&gt;</code></td><td>Track có <code>vlc:id</code> bằng N thuộc nhóm này.</td></tr>
+          <tr><td><code>&lt;vlc:option&gt;</code></td><td>trong <code>&lt;extension&gt;</code> của track</td><td>Tuỳ chọn phát của VLC. TS IPTV bỏ qua.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="example">Ví dụ đầy đủ</h2>
+    <p>Track đầu tiên là luồng thử nghiệm công khai của Mux (Big Buck Bunny © Blender Foundation, CC BY 3.0); track thứ hai dùng đường dẫn giả <code>example.com</code>.</p>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/playlist.xspf" download>Tải playlist.xspf</a></div>
+      <pre data-copy data-example="/examples/playlist.xspf" tabindex="0"><code></code></pre>
+    </div>
+    <ol>
+      <li>Dòng 2 khai báo cả không gian tên XSPF và không gian tên VLC.</li>
+      <li><code>&lt;title&gt;</code> đầu tiên là tên danh sách phát.</li>
+      <li>Mỗi <code>&lt;track&gt;</code> có <code>&lt;location&gt;</code> (đường dẫn luồng), <code>&lt;title&gt;</code> (tên kênh), có thể có <code>&lt;image&gt;</code> (logo), và <code>&lt;vlc:id&gt;</code>.</li>
+      <li><code>&lt;extension&gt;</code> cuối tệp chia track vào các nhóm “Test” và “News”.</li>
+    </ol>
+    <div class="card callout">
+      <p><strong>Giữ mỗi phần tử trên một dòng.</strong> Trình đọc XSPF hiện tại của TS IPTV đọc từng dòng, nên <code>&lt;location&gt;…&lt;/location&gt;</code>, <code>&lt;title&gt;…&lt;/title&gt;</code> và <code>&lt;vlc:id&gt;…&lt;/vlc:id&gt;</code> phải nằm gọn trên một dòng như trong ví dụ. VLC cũng lưu tệp theo cách này.</p>
+    </div>
+
+    <h2 id="create">Tạo một tệp</h2>
+    <h3 id="create-vlc">Bằng VLC</h3>
+    <ol>
+      <li>Mở các luồng trong VLC (<em>Media › Open Network Stream</em>) để chúng vào danh sách phát.</li>
+      <li>Chọn <em>Media › Save Playlist to File…</em>.</li>
+      <li>Chọn định dạng <strong>XSPF</strong> và lưu với đuôi <code>.xspf</code>.</li>
+    </ol>
+    <h3 id="create-hand">Bằng tay</h3>
+    <ol>
+      <li>Chép ví dụ ở trên vào một trình soạn thảo văn bản thuần.</li>
+      <li>Thêm hoặc sửa các <code>&lt;track&gt;</code>, mỗi phần tử một dòng.</li>
+      <li>Viết <code>&amp;</code> trong đường dẫn thành <code>&amp;amp;</code>.</li>
+      <li>Lưu với mã hoá UTF-8, đuôi <code>.xspf</code>.</li>
+    </ol>
+
+    <h2 id="host">Đưa tệp lên mạng</h2>
+    <p>Giống như M3U: mọi đường dẫn HTTPS trả về chính nội dung tệp đều dùng được (<code>https://raw.githubusercontent.com/&lt;user&gt;/&lt;repo&gt;/&lt;branch&gt;/playlist.xspf</code>, <code>https://&lt;user&gt;.github.io/&lt;repo&gt;/playlist.xspf</code>, <code>https://www.example.com/playlist.xspf</code>, Dropbox với <code>dl=1</code>). Trang chia sẻ và đường dẫn <code>blob/</code> của GitHub không dùng được. HTTPS được khuyến nghị; TS IPTV không cần CORS. Máy chủ có thể gửi <code>Content-Type: application/xspf+xml</code> hoặc <code>text/xml</code>. Chi tiết: <a href="/guides/m3u/#host">đưa tệp M3U lên mạng</a>.</p>
+
+    <h2 id="add">Thêm vào TS IPTV</h2>
+    <ol>
+      <li>Mở <strong>Thêm nguồn IPTV</strong> (nút <strong>Thêm IPTV</strong>).</li>
+      <li>Nhập <strong>Tên nguồn</strong>, dán đường dẫn vào <strong>Liên kết nguồn</strong> rồi chọn <strong>Thêm IPTV</strong>; hoặc chọn <strong>Nhập từ tệp</strong> và chọn tệp <code>.xspf</code>.</li>
+      <li>TS IPTV nhận ra XSPF qua dòng đầu <code>&lt;?xml …?&gt;</code> và không gian tên và cho biết số kênh tìm thấy. Trên TV, dùng đường dẫn nếu TV không có trình chọn tệp.</li>
+    </ol>
+
+    <h2 id="mistakes">Lỗi thường gặp</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Lỗi</th><th>Biểu hiện</th><th>Cách sửa</th></tr></thead>
+        <tbody>
+          <tr><td>Thiếu dòng đầu <code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;</code></td><td>Không nhận ra danh sách phát</td><td>Đặt dòng này ở ngay đầu tệp; hiện TS IPTV cần nó để nhận dạng XSPF.</td></tr>
+          <tr><td>Thiếu hoặc sai <code>xmlns</code></td><td>Không nhận ra danh sách phát</td><td>Dùng đúng <code>xmlns="http://xspf.org/ns/0/"</code>.</td></tr>
+          <tr><td><code>&amp;</code> trong đường dẫn chưa viết thành <code>&amp;amp;</code></td><td>Lỗi đọc XML</td><td>Viết <code>&amp;amp;</code>.</td></tr>
+          <tr><td>Đường dẫn đặt trong <code>&lt;title&gt;</code> hoặc <code>&lt;info&gt;</code></td><td>Track không phát được</td><td>Đặt đường dẫn luồng trong <code>&lt;location&gt;</code>.</td></tr>
+          <tr><td>Một phần tử bị ngắt thành nhiều dòng</td><td>Mất tên hoặc mất đường dẫn</td><td>Giữ mỗi phần tử trên một dòng.</td></tr>
+          <tr><td>Track không có <code>&lt;title&gt;</code></td><td>Track bị bỏ qua</td><td>Mỗi track cần cả <code>&lt;location&gt;</code> và <code>&lt;title&gt;</code>.</td></tr>
+          <tr><td>Dựa vào <code>&lt;duration&gt;</code> cho kênh trực tiếp</td><td>Không có tác dụng</td><td>Bỏ <code>&lt;duration&gt;</code> với luồng trực tiếp.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support">TS IPTV hỗ trợ những gì</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Tính năng</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+          <tr><td><code>location</code>, <code>title</code>, <code>image</code> của track</td><td><span class="badge yes">Hỗ trợ</span> trên mọi nền tảng</td></tr>
+          <tr><td><code>vlc:id</code> làm mã kênh</td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Nhóm từ <code>vlc:node</code></td><td><span class="badge partial">Một phần</span> Tên nhóm được đọc, nhưng track chưa được gán vào nhóm theo <code>vlc:item tid</code>.</td></tr>
+          <tr><td>Phần tử viết trên nhiều dòng</td><td><span class="badge no">Không hỗ trợ</span> Giữ mỗi phần tử trên một dòng.</td></tr>
+          <tr><td>Header, DRM, lịch phát sóng</td><td><span class="badge no">Không có trong XSPF</span> Dùng <a href="/guides/m3u/">M3U</a> nếu cần.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related">Hướng dẫn liên quan</h2>
+      <ul>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/json/">JSON</a></li>
+        <li><a href="/guides/">Tất cả hướng dẫn</a></li>
+      </ul>
+    </section>

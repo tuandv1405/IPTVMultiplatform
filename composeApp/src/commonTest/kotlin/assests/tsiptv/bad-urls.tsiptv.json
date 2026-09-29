@@ -1,0 +1,57 @@
+{
+  "format": "tsiptv-source",
+  "version": 1,
+  "id": "qa.tsiptv.bad-urls",
+  "meta": {
+    "name": "Non-http schemes everywhere",
+    "logo": "file:///sdcard/logo.png",
+    "homepage": "javascript:alert(1)"
+  },
+  "appearance": {
+    "background": { "color": "#101014", "image": "content://media/external/images/1" }
+  },
+  "layout": {
+    "home": [
+      {
+        "type": "hero",
+        "items": [
+          { "image": "intent://scan/#Intent;scheme=zxing;end", "title": "Intent banner" },
+          { "image": "HTTPS://images.example.com/ok.jpg", "title": "Upper-case scheme is fine" }
+        ]
+      }
+    ]
+  },
+  "channels": [
+    { "id": "rtmp", "name": "RTMP", "url": "rtmp://live.example.com/app/stream" },
+    { "id": "udp", "name": "UDP", "url": "udp://@239.0.0.1:1234" },
+    {
+      "id": "mixed",
+      "name": "One good stream of three",
+      "logo": "data:image/png;base64,iVBORw0KGgo=",
+      "streams": [
+        { "url": "rtsp://cam.example.com/live" },
+        { "url": "https://cdn.example.com/drm.mpd", "drm": { "system": "widevine", "licenseUrl": "data:text/plain,license" } },
+        { "url": "https://cdn.example.com/clear.m3u8" }
+      ]
+    }
+  ],
+  "movies": [
+    {
+      "id": "movie",
+      "name": "Movie",
+      "backdrop": "data:image/jpeg;base64,/9j/4AAQ",
+      "poster": "magnet:?xt=urn:btih:0000",
+      "url": "https://cdn.example.com/movie.mp4",
+      "subtitles": [
+        { "url": "file:///sdcard/sub.vtt", "language": "en" },
+        { "url": "https://cdn.example.com/sub.srt", "language": "vi" }
+      ]
+    }
+  ],
+  "includes": [
+    { "id": "js", "type": "m3u", "url": "javascript:fetch('x')" },
+    { "id": "plugin", "type": "m3u", "url": "plugin://plugin.video.example/" },
+    { "id": "ok", "type": "m3u", "url": "https://example.com/ok.m3u" }
+  ],
+  "epg": ["file:///guide.xml", { "url": "https://example.com/guide.xml.gz", "refreshHours": 12 }]
+}

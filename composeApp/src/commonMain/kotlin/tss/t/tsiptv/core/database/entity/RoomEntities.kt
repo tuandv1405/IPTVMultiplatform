@@ -13,6 +13,8 @@ import kotlin.String
  * @property url The URL of the playlist
  * @property lastUpdated The timestamp when the playlist was last updated
  * @property format The format of the playlist (M3U, XML, JSON)
+ * @property sourceType [tss.t.tsiptv.core.model.PlaylistSourceType] name
+ * @property epgUrlsJson JSON array of every guide URL (v4)
  */
 @Entity(tableName = "playlists")
 data class PlaylistEntity(
@@ -22,7 +24,10 @@ data class PlaylistEntity(
     val url: String,
     val lastUpdated: Long,
     val format: String,
-    val epgUrl: String?
+    val epgUrl: String?,
+    @ColumnInfo(defaultValue = "URL")
+    val sourceType: String = "URL",
+    val epgUrlsJson: String? = null,
 )
 
 /**
@@ -36,6 +41,10 @@ data class PlaylistEntity(
  * @property playlistId The ID of the playlist the channel belongs to
  * @property isFavorite Whether the channel is a favorite
  * @property lastWatched The timestamp when the channel was last watched, or null if never watched
+ *
+ * Columns added in v4 hold what playback needs. Lists and specs are JSON so the schema does not
+ * change each time the playlist dialect grows; every one of them is nullable or has a default,
+ * which lets the 3 → 4 AutoMigration add them to existing rows without touching user data.
  */
 @Entity(
     tableName = "channel",
@@ -62,6 +71,35 @@ data class ChannelEntity(
     val playlistId: String,
     val isFavorite: Boolean = false,
     val lastWatched: Long? = null,
+    val channelNumber: Int? = null,
+    /** JSON array of group titles. */
+    val groupsJson: String? = null,
+    @ColumnInfo(defaultValue = "0")
+    val isRadio: Boolean = false,
+    @ColumnInfo(defaultValue = "0")
+    val isVod: Boolean = false,
+    /** JSON object of header name to value. */
+    val headersJson: String? = null,
+    val mimeType: String? = null,
+    /** Serialized [tss.t.tsiptv.core.parser.model.playback.DrmSpec]. */
+    val drmJson: String? = null,
+    /** Serialized [tss.t.tsiptv.core.parser.model.playback.CatchupSpec]. */
+    val catchupJson: String? = null,
+    val epgShiftHours: Double? = null,
+    /** Position in the playlist file; list queries sort by it. */
+    @ColumnInfo(defaultValue = "0")
+    val sortIndex: Int = 0,
+    // v6 (F3): TS IPTV Source channels. All nullable, so the 5 → 6 AutoMigration adds them to
+    // existing rows without touching user data.
+    /** XMLTV id when it differs from [id] (namespaced source channel ids). */
+    val epgId: String? = null,
+    /** Localized name (JSON); [name] keeps the resolved default for search and existing code. */
+    val nameJson: String? = null,
+    val originIncludePath: String? = null,
+    val tagsJson: String? = null,
+    val descriptionJson: String? = null,
+    /** F3: all streams of a TS IPTV Source channel (JSON `TsiptvStream[]`) when it has more than one. */
+    val streamsJson: String? = null,
 )
 
 /**

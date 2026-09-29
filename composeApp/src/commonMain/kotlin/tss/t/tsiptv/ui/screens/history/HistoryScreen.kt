@@ -76,9 +76,13 @@ fun HistoryScreen(
     onHomeEvent: (HomeEvent) -> Unit = {},
     onPlay: (Channel) -> Unit = {},
     onPause: (Channel) -> Unit = {},
+    /** F2: the "Movies & series" section, under the channel history. */
+    mediaSection: (androidx.compose.foundation.lazy.LazyListScope.() -> Unit)? = null,
+    /** F2: movies/series history exists, so the "no history / add a playlist" card is not shown. */
+    hasMediaHistory: Boolean = false,
 ) {
-    val isEmpty = remember(homeUiState.allPlayedChannels.size) {
-        homeUiState.allPlayedChannels.isEmpty()
+    val isEmpty = remember(homeUiState.allPlayedChannels.size, hasMediaHistory) {
+        homeUiState.allPlayedChannels.isEmpty() && !hasMediaHistory
     }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
         state = rememberTopAppBarState(),
@@ -189,6 +193,8 @@ fun HistoryScreen(
                     }
                 }
             }
+
+            mediaSection?.invoke(this)
 
             item {
                 Spacer(

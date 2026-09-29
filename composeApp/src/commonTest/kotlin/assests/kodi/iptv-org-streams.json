@@ -1,0 +1,22 @@
+[
+  {
+    "channel": "HlsTest.example",
+    "feed": null,
+    "title": "HLS Test Channel",
+    "url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+    "referrer": null,
+    "user_agent": null,
+    "quality": null,
+    "labels": []
+  },
+  {
+    "channel": "ExampleNews.us",
+    "feed": "HD",
+    "title": "Example News HD",
+    "url": "https://cdn.example.com/news/index.m3u8",
+    "referrer": "https://example.com/",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "quality": "1080p",
+    "labels": ["Not 24/7"]
+  }
+]

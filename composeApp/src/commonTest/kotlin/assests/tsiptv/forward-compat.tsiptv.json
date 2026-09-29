@@ -1,0 +1,51 @@
+{
+  "format": "tsiptv-source",
+  "version": 1,
+  "id": "qa.tsiptv.forward-compat",
+  "foo": 1,
+  "x-editor": { "generatedBy": "hand" },
+  "meta": {
+    "name": { "en": "Forward compatibility", "x-note": "ignored" },
+    "foo": 1,
+    "x-internal": true,
+    "author": { "name": "QA", "foo": 1, "x-team": "qa" }
+  },
+  "appearance": {
+    "foo": 1,
+    "x-theme": "neon",
+    "background": { "color": "#101014", "foo": 1 },
+    "card": { "style": "circle", "corner": "huge", "foo": 1 }
+  },
+  "layout": {
+    "foo": 1,
+    "home": [
+      { "type": "carousel", "title": "From a future version", "query": { "from": "channels" } },
+      { "type": "row", "title": "Trending", "query": { "from": "trending" } },
+      { "type": "row", "title": "Random order", "foo": 1, "x-a": 2, "query": { "from": "channels", "sort": "random", "foo": 1 } },
+      { "type": "grid", "title": "All", "query": { "from": "channels" }, "card": { "style": "circle" } }
+    ]
+  },
+  "channels": [
+    {
+      "id": "future-type",
+      "name": "Podcast type",
+      "type": "podcast",
+      "foo": 1,
+      "x-origin": "import",
+      "url": "https://cdn.example.com/podcast.mp3",
+      "mimeType": "video/x-flv",
+      "catchup": { "mode": "timeshift-plus", "foo": 1 }
+    },
+    {
+      "id": "future-drm",
+      "name": "FairPlay",
+      "streams": [
+        { "url": "https://cdn.example.com/fp.m3u8", "foo": 1, "drm": { "system": "fairplay", "licenseUrl": "https://license.example.com/fp", "foo": 1 } }
+      ]
+    }
+  ],
+  "includes": [
+    { "id": "ipfs", "type": "ipfs", "url": "https://example.com/list" },
+    { "id": "guide", "type": "xmltv", "url": "https://example.com/guide.xml", "foo": 1, "x-cache": "none" }
+  ]
+}

@@ -1,0 +1,375 @@
+    <h1>Addon tương thích Stremio</h1>
+    <p class="lead">Addon là một dịch vụ web nhỏ, thậm chí chỉ là một thư mục tệp JSON tĩnh, trả lời vài loại yêu cầu HTTP bằng danh mục, thông tin chi tiết và đường dẫn luồng. Giao thức addon là giao thức mở, có tài liệu công khai; TS IPTV dùng được mọi addon tuân theo giao thức này và trả về đường dẫn video thông thường.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV không có sẵn kênh nào và cũng không có sẵn addon nào.</strong> Ứng dụng không cài sẵn và không giới thiệu addon nào. Addon là dịch vụ của bên thứ ba do bạn tự thêm; bạn chịu trách nhiệm về quyền sử dụng mọi nội dung bạn xem qua chúng.</p>
+      <p>Giao thức này được tạo ra cho ứng dụng Stremio và được công bố dưới dạng đặc tả mở <a href="https://github.com/Stremio/stremio-addon-sdk">stremio-addon-sdk</a>. TS IPTV không liên kết với Stremio và không được Stremio bảo trợ; cụm từ “tương thích Stremio” chỉ để mô tả giao thức. Mọi ví dụ dùng addon mẫu của chính TS IPTV trên <code>tsiptv-8bdd6.web.app</code>, phim thuộc phạm vi công cộng trên archive.org, một luồng thử nghiệm công khai, hoặc tên miền giả <code>example.com</code>.</p>
+    </div>
+
+    <nav class="toc" aria-label="Trên trang này">
+      <p class="toc-title">Trên trang này</p>
+      <ol>
+        <li><a href="#what">Addon là gì</a></li>
+        <li><a href="#syntax">Giao thức</a></li>
+        <li><a href="#example">Ví dụ đầy đủ: addon mẫu</a></li>
+        <li><a href="#create">Tự tạo addon</a></li>
+        <li><a href="#host">Đưa addon lên mạng</a></li>
+        <li><a href="#add">Thêm vào TS IPTV</a></li>
+        <li><a href="#mistakes">Lỗi thường gặp</a></li>
+        <li><a href="#support">TS IPTV phát được những gì</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what">Addon là gì</h2>
+    <p>Mỗi addon được nhận diện bằng đường dẫn tới <strong>manifest</strong> của nó, một tệp JSON luôn kết thúc bằng <code>/manifest.json</code>. Manifest cho biết addon cung cấp gì: loại nội dung nào (<code>movie</code>, <code>series</code>, <code>tv</code>…), những danh mục nào, và những tài nguyên nào (danh sách, thông tin chi tiết, luồng, phụ đề). Trình phát dựng các đường dẫn tiếp theo từ địa chỉ của manifest và gửi yêu cầu HTTP GET thông thường. Mọi câu trả lời đều là JSON. Không có đăng nhập, phiên làm việc hay giao thức riêng, nên một addon có thể đơn giản chỉ là vài tệp trên một máy chủ web tĩnh.</p>
+    <p>Addon hữu ích khi bạn muốn đăng bộ sưu tập của riêng mình kèm ảnh bìa, mô tả, mùa và tập: ví dụ máy chủ media tại nhà, một dịch vụ có bản quyền do bạn vận hành, hoặc kho phim thuộc phạm vi công cộng.</p>
+
+    <h2 id="syntax">Giao thức</h2>
+    <p>Văn bản chuẩn là <a href="https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/protocol.md">protocol.md</a> và <a href="https://github.com/Stremio/stremio-addon-sdk/tree/master/docs/api">tài liệu API</a> của SDK. Phần này tóm tắt những gì người viết addon cần biết.</p>
+
+    <h3 id="urls">Đường dẫn</h3>
+    <p><strong>Đường dẫn gốc</strong> (base URL) là đường dẫn manifest bỏ phần <code>/manifest.json</code>. Mọi yêu cầu khác đều dựng từ đó:</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>GET {base}/manifest.json
+GET {base}/{resource}/{type}/{id}.json
+GET {base}/{resource}/{type}/{id}/{extra}.json</code></pre>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Tài nguyên</th><th><code>type</code></th><th><code>id</code></th><th>Câu trả lời</th></tr></thead>
+        <tbody>
+          <tr><td><code>catalog</code></td><td>loại của danh mục</td><td>mã danh mục trong manifest</td><td><code>{ "metas": [ … ] }</code></td></tr>
+          <tr><td><code>meta</code></td><td>loại của mục</td><td>mã mục lấy từ danh mục</td><td><code>{ "meta": { … } }</code></td></tr>
+          <tr><td><code>stream</code></td><td>loại của mục</td><td>mã <strong>video</strong> (phim lẻ: chính mã của phim; một tập: mã của tập; <code>tv</code>: mã kênh)</td><td><code>{ "streams": [ … ] }</code></td></tr>
+          <tr><td><code>subtitles</code></td><td>loại của mục</td><td>mã video</td><td><code>{ "subtitles": [ … ] }</code></td></tr>
+          <tr><td><code>addon_catalog</code></td><td>lấy từ <code>addonCatalogs</code></td><td>lấy từ <code>addonCatalogs</code></td><td><code>{ "addons": [ … ] }</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul>
+      <li>Chuỗi truy vấn (query string) trên đường dẫn manifest được giữ lại và gắn sau <code>.json</code> của mọi yêu cầu. Phần đứng trước <code>/manifest.json</code> cũng được giữ nguyên; addon có cấu hình đặt thiết lập của người dùng ở đó, ví dụ <code>https://addon.example.com/eyJsYW5nIjoiZW4ifQ/manifest.json</code>.</li>
+      <li>Máy chủ dùng SDK trả về 404 <code>{"err":"not found"}</code> cho tài nguyên không có và 500 <code>{"err":"handler error"}</code> khi xử lý lỗi; chúng cũng có thể chuyển hướng bằng mã 307. Máy chủ tĩnh trả về 404 cho mọi tệp không tồn tại.</li>
+    </ul>
+
+    <h3 id="encoding">Mã hoá: các đoạn đường dẫn và <code>extra</code></h3>
+    <ul>
+      <li><code>resource</code>, <code>type</code> và <code>id</code> được mã hoá riêng từng phần giống hàm <code>encodeURIComponent</code> của JavaScript: mọi byte trừ chữ cái, chữ số và <code>- _ . ! ~ * ' ( )</code> đều thành <code>%XX</code>. Vì vậy <code>tt1234567:1:2</code> được gửi đi thành <code>tt1234567%3A1%3A2</code>.</li>
+      <li><code>extra</code> là các cặp <code>tên=giá-trị</code> nối bằng <code>&amp;</code>, mỗi tên và giá trị được mã hoá cùng cách: <code>search=his%20girl&amp;skip=100</code>. Dấu cách là <strong><code>%20</code>, không bao giờ là <code>+</code></strong>; ký tự <code>&amp;</code> hay <code>=</code> nằm trong giá trị thành <code>%26</code> hay <code>%3D</code>.</li>
+      <li>Extra cho phép nhiều giá trị thì lặp lại tên: <code>genre=Action&amp;genre=Comedy</code>. TS IPTV ghi extra theo thứ tự khai báo trong manifest, <code>skip</code> luôn ở cuối, và bỏ hẳn đoạn <code>/{extra}</code> khi không có extra nào.</li>
+    </ul>
+
+    <h3 id="manifest">Manifest</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Trường</th><th>Bắt buộc</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><strong>có</strong></td><td>Mã định danh kiểu tên miền đảo ngược, ví dụ <code>com.example.myaddon</code>. Thêm lại cùng mã nghĩa là cập nhật.</td></tr>
+          <tr><td><code>version</code></td><td><strong>có</strong></td><td>Chuỗi phiên bản, thường theo semver (<code>1.0.0</code>).</td></tr>
+          <tr><td><code>name</code></td><td><strong>có</strong></td><td>Tên hiển thị.</td></tr>
+          <tr><td><code>description</code></td><td>có (theo đặc tả)</td><td>Một hai câu mô tả.</td></tr>
+          <tr><td><code>types</code></td><td><strong>có</strong></td><td>Loại nội dung: <code>movie</code>, <code>series</code>, <code>channel</code>, <code>tv</code>, hoặc chuỗi bất kỳ.</td></tr>
+          <tr><td><code>resources</code></td><td><strong>có</strong></td><td><code>"catalog"</code>, <code>"meta"</code>, <code>"stream"</code>, <code>"subtitles"</code>, <code>"addon_catalog"</code>, hoặc đối tượng <code>{ "name": "stream", "types": ["movie"], "idPrefixes": ["ex_"] }</code>.</td></tr>
+          <tr><td><code>catalogs</code></td><td><strong>có</strong> (có thể là <code>[]</code>)</td><td>Danh sách danh mục (xem dưới).</td></tr>
+          <tr><td><code>idPrefixes</code></td><td>không</td><td>Chỉ những mã bắt đầu bằng một trong các tiền tố này mới được gửi tới addon, ví dụ <code>["ex_"]</code>.</td></tr>
+          <tr><td><code>addonCatalogs</code></td><td>không</td><td>Danh sách các addon khác (<code>type</code>, <code>id</code>, <code>name</code>).</td></tr>
+          <tr><td><code>behaviorHints</code></td><td>không</td><td><code>adult</code>, <code>p2p</code>, <code>configurable</code>, <code>configurationRequired</code>, <code>epgProvider</code>, đều là giá trị đúng/sai.</td></tr>
+          <tr><td><code>logo</code>, <code>background</code>, <code>contactEmail</code></td><td>không</td><td>Logo (PNG 256×256), ảnh nền, địa chỉ liên hệ.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Mỗi <strong>danh mục</strong> có dạng <code>{ "type", "id", "name", "extra": [ … ] }</code>. Một <code>id</code> có thể dùng cho nhiều loại. Mỗi phần tử <code>extra</code> có dạng <code>{ "name", "isRequired", "options", "optionsLimit" }</code>:</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Extra</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>search</code></td><td>Tìm kiếm tự do. <code>isRequired: true</code> tạo danh mục chỉ dùng để tìm, không bao giờ hiện thành một hàng.</td></tr>
+          <tr><td><code>genre</code></td><td>Bộ lọc; các giá trị lấy từ <code>options</code>. Thể loại bắt buộc sẽ bắt đầu ở giá trị đầu tiên.</td></tr>
+          <tr><td><code>skip</code></td><td>Phân trang (xem dưới).</td></tr>
+          <tr><td>tên khác</td><td>Được phép; khai báo theo cùng cách.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Manifest kiểu cũ dùng danh sách chuỗi <code>extraSupported</code>/<code>extraRequired</code> và một danh sách <code>genres</code> riêng; TS IPTV vẫn đọc được, nhưng khi có cả hai thì <code>extra</code> được ưu tiên.</p>
+
+    <h3 id="paging">Phân trang</h3>
+    <p>Mỗi trang danh mục chứa tối đa <strong>100</strong> mục. Trang đầu được yêu cầu không có <code>skip</code>; các trang sau dùng <code>skip=100</code>, <code>skip=200</code>, v.v. Theo đặc tả, trang có ít hơn 100 mục là trang cuối. TS IPTV dễ dãi hơn: nó yêu cầu trang tiếp theo với <code>skip</code> bằng số mục đã nhận, và dừng khi gặp trang rỗng, trang không có mục mới, hoặc câu trả lời lỗi ngay sau một trang ngắn (ví dụ 404 của máy chủ tĩnh). Chỉ khai báo <code>skip</code> khi danh mục của bạn có nhiều hơn một trang.</p>
+
+    <h3 id="meta">Mục trong danh mục và thông tin chi tiết</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Trường</th><th>Ở đâu</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code>, <code>type</code>, <code>name</code></td><td>cả hai</td><td>Bắt buộc.</td></tr>
+          <tr><td><code>poster</code>, <code>posterShape</code></td><td>cả hai</td><td>Ảnh bìa; hình dạng <code>poster</code> (dọc, mặc định), <code>square</code> hoặc <code>landscape</code>.</td></tr>
+          <tr><td><code>genres</code>, <code>releaseInfo</code>, <code>description</code>, <code>imdbRating</code></td><td>cả hai</td><td>Chữ hiển thị trên thẻ và trang chi tiết.</td></tr>
+          <tr><td><code>background</code>, <code>logo</code>, <code>released</code>, <code>runtime</code>, <code>language</code>, <code>country</code>, <code>links</code></td><td>meta</td><td>Trường của trang chi tiết. <code>released</code> theo ISO 8601; <code>runtime</code> là chữ, ví dụ <code>"92 min"</code>.</td></tr>
+          <tr><td><code>videos</code></td><td>meta</td><td>Các tập của phim bộ (hoặc video của một kênh). Không có <code>videos</code> thì mục có đúng một video, mã video bằng mã mục.</td></tr>
+          <tr><td><code>behaviorHints.defaultVideoId</code>, <code>behaviorHints.isLive</code></td><td>meta</td><td>Mở thẳng video này; mục phát trực tiếp (<code>tv</code> luôn là trực tiếp).</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Mỗi <strong>video</strong> có dạng <code>{ "id", "title", "released", "season", "episode", "thumbnail", "overview" }</code>. Mùa <code>0</code> là các tập đặc biệt. Ngày <code>released</code> trong tương lai đánh dấu tập sắp ra mắt. Nếu một video tự mang mảng <code>streams</code>, chỉ những luồng đó được dùng cho nó.</p>
+
+    <h3 id="stream">Luồng</h3>
+    <p>Mỗi đối tượng luồng có đúng một nguồn và vài nhãn:</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Trường</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>url</code></td><td>Đường dẫn trực tiếp <code>https</code> (hoặc <code>http</code>): MP4, MKV, HLS <code>.m3u8</code>, DASH <code>.mpd</code>.</td></tr>
+          <tr><td><code>externalUrl</code></td><td>Một trang web để mở trong trình duyệt.</td></tr>
+          <tr><td><code>name</code></td><td>Nhãn ngắn, ví dụ chất lượng.</td></tr>
+          <tr><td><code>description</code> (tên cũ: <code>title</code>)</td><td>Nhãn dài hơn, có thể nhiều dòng.</td></tr>
+          <tr><td><code>behaviorHints.proxyHeaders.request</code></td><td>Header HTTP cần gửi kèm mọi yêu cầu của luồng này, ví dụ <code>{ "User-Agent": "…", "Referer": "…" }</code>. Đặc tả yêu cầu có kèm <code>notWebReady: true</code>.</td></tr>
+          <tr><td><code>behaviorHints.notWebReady</code></td><td>Đường dẫn không phát thẳng được trong trình duyệt web (không phải MP4, là http thường, hoặc cần header).</td></tr>
+          <tr><td><code>behaviorHints.bingeGroup</code></td><td>Luồng cùng nhóm được ưu tiên cho tập tiếp theo.</td></tr>
+          <tr><td><code>behaviorHints.filename</code>, <code>videoSize</code></td><td>Tên tệp và dung lượng; giúp trình phát đoán định dạng.</td></tr>
+          <tr><td><code>behaviorHints.countryWhitelist</code></td><td>Mã quốc gia ISO 3166-1 alpha-3 (chữ thường) nơi luồng hoạt động.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Đặc tả còn có các trường nguồn khác; TS IPTV không dùng chúng (xem <a href="#support">TS IPTV phát được những gì</a>). Hãy xếp luồng từ chất lượng cao nhất tới thấp nhất.</p>
+
+    <h3 id="subtitles">Phụ đề</h3>
+    <p><code>GET {base}/subtitles/{type}/{videoId}.json</code>, có thể kèm <code>videoHash</code>, <code>videoSize</code> và <code>filename</code> trong <code>extra</code>, trả về <code>{ "subtitles": [ { "id", "url", "lang", "label" } ] }</code>. <code>lang</code> là mã ISO 639-2 như <code>vie</code> hoặc <code>eng</code>; tệp phụ đề là SRT hoặc VTT. TS IPTV hiện chưa dùng addon phụ đề.</p>
+
+    <h3 id="cache">Bộ nhớ đệm</h3>
+    <p>Mọi câu trả lời đều có thể kèm <code>cacheMaxAge</code>, <code>staleRevalidate</code> và <code>staleError</code> (tính bằng giây). SDK đổi chúng thành header <code>Cache-Control</code> và vẫn giữ chúng trong JSON. TS IPTV ưu tiên <code>Cache-Control</code>, rồi đến các trường này, rồi đến giá trị mặc định của mình (danh mục 1 giờ, chi tiết 6 giờ, luồng 5 phút), và không bao giờ giữ câu trả lời về luồng quá 5 phút.</p>
+
+    <h3 id="ids">Loại và mã</h3>
+    <p>Loại là chuỗi tự do; phổ biến là <code>movie</code>, <code>series</code>, <code>channel</code> và <code>tv</code>. Mã (id) là chuỗi không cần mang nghĩa. Hãy đặt cho mã một tiền tố riêng (<code>ex_news</code>, <code>tspd_his_girl_friday</code>) và khai báo nó trong <code>idPrefixes</code>, để trình phát chỉ hỏi addon của bạn về các mục của bạn. Mỗi tập có mã riêng, ví dụ <code>tspd_superman_s1e1</code>.</p>
+
+    <h2 id="example">Ví dụ đầy đủ: addon mẫu</h2>
+    <p>TS IPTV công bố một addon tĩnh nhỏ, <strong>Public Domain Sampler</strong>, làm ví dụ trực tiếp và dữ liệu kiểm thử. Nó có một phim lẻ (His Girl Friday, 1940), một loạt phim hoạt hình (Fleischer Superman, 1941–43), cả hai thuộc phạm vi công cộng trên archive.org, và một kênh trực tiếp phát luồng thử nghiệm công khai của Mux (Big Buck Bunny © Blender Foundation, CC BY 3.0). Đường dẫn manifest là <code>https://tsiptv-8bdd6.web.app/examples/stremio-sampler/manifest.json</code>.</p>
+    <p>Đây là toàn bộ các tệp của nó; mỗi tệp đúng bằng đường dẫn mà trình phát yêu cầu:</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>manifest.json
+catalog/movie/tspd-movie.json
+catalog/movie/tspd-movie/genre=Comedy.json
+catalog/series/tspd-series.json
+catalog/tv/tspd-tv.json
+meta/movie/tspd_his_girl_friday.json
+meta/series/tspd_superman.json
+meta/tv/tspd_test_hls.json
+stream/movie/tspd_his_girl_friday.json
+stream/series/tspd_superman_s1e1.json
+stream/tv/tspd_test_hls.json</code></pre>
+    </div>
+
+    <h3 id="ex-manifest"><code>manifest.json</code></h3>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/stremio-sampler/manifest.json" download>Tải manifest.json</a></div>
+      <pre data-copy data-example="/examples/stremio-sampler/manifest.json" tabindex="0"><code></code></pre>
+    </div>
+    <p>Ba danh mục, mỗi loại một danh mục. Danh mục phim lẻ khai báo extra <code>genre</code> với đúng một giá trị, nên chỉ có một tệp extra: <code>catalog/movie/tspd-movie/genre=Comedy.json</code> (bản sao của danh sách không lọc). <code>idPrefixes</code> là <code>tspd_</code>, và mã dùng <code>_</code> chứ không dùng <code>:</code>, vì mỗi mã sẽ thành một tên tệp.</p>
+
+    <h3 id="ex-catalog"><code>catalog/movie/tspd-movie.json</code></h3>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/stremio-sampler/catalog/movie/tspd-movie.json" download>Tải tệp</a></div>
+      <pre data-copy data-example="/examples/stremio-sampler/catalog/movie/tspd-movie.json" tabindex="0"><code></code></pre>
+    </div>
+    <p>Được yêu cầu tại <code>…/catalog/movie/tspd-movie.json</code>. Danh mục không khai báo <code>skip</code>, nên trang duy nhất này là toàn bộ danh mục và không có trang nào được yêu cầu thêm.</p>
+
+    <h3 id="ex-meta"><code>meta/series/tspd_superman.json</code></h3>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/stremio-sampler/meta/series/tspd_superman.json" download>Tải tệp</a></div>
+      <pre data-copy data-example="/examples/stremio-sampler/meta/series/tspd_superman.json" tabindex="0"><code></code></pre>
+    </div>
+    <p>Phim bộ liệt kê các tập trong <code>videos</code>. Mã tập <code>tspd_superman_s1e1</code> là mã mà yêu cầu luồng sử dụng.</p>
+
+    <h3 id="ex-stream"><code>stream/movie/tspd_his_girl_friday.json</code> và <code>stream/tv/tspd_test_hls.json</code></h3>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/stremio-sampler/stream/movie/tspd_his_girl_friday.json" download>Tải tệp</a></div>
+      <pre data-copy data-example="/examples/stremio-sampler/stream/movie/tspd_his_girl_friday.json" tabindex="0"><code></code></pre>
+    </div>
+    <div class="codeblock">
+      <div class="codebar"><a class="dl-btn" href="/examples/stremio-sampler/stream/tv/tspd_test_hls.json" download>Tải tệp</a></div>
+      <pre data-copy data-example="/examples/stremio-sampler/stream/tv/tspd_test_hls.json" tabindex="0"><code></code></pre>
+    </div>
+    <p>Luồng của phim lẻ là một <code>url</code> MP4 trực tiếp kèm gợi ý <code>filename</code>. Luồng của kênh trực tiếp là HLS và yêu cầu header <code>User-Agent</code> qua <code>proxyHeaders.request</code>; TS IPTV gửi header này kèm mọi yêu cầu danh sách và đoạn video. Các tệp còn lại theo cùng mẫu: <a href="/examples/stremio-sampler/catalog/series/tspd-series.json">danh mục phim bộ</a>, <a href="/examples/stremio-sampler/catalog/tv/tspd-tv.json">danh mục tv</a>, <a href="/examples/stremio-sampler/meta/movie/tspd_his_girl_friday.json">chi tiết phim lẻ</a>, <a href="/examples/stremio-sampler/meta/tv/tspd_test_hls.json">chi tiết kênh</a>, <a href="/examples/stremio-sampler/stream/series/tspd_superman_s1e1.json">luồng của tập phim</a>, <a href="/examples/stremio-sampler/catalog/movie/tspd-movie/genre=Comedy.json">tệp thể loại Comedy</a>.</p>
+
+    <h2 id="create">Tự tạo addon</h2>
+    <h3 id="create-static">Cách 1: tệp JSON tĩnh (không cần máy chủ)</h3>
+    <ol>
+      <li>Tải các tệp mẫu ở trên về một thư mục, giữ nguyên cấu trúc thư mục.</li>
+      <li>Sửa <code>manifest.json</code>: <code>id</code> mới (tên miền đảo ngược của một tên miền bạn quản lý), <code>name</code>, <code>description</code>, <code>idPrefixes</code> và các danh mục của riêng bạn.</li>
+      <li>Với mỗi danh mục, viết <code>catalog/{type}/{catalogId}.json</code>. Thêm một tệp cho mỗi giá trị <code>genre</code> (<code>catalog/{type}/{catalogId}/genre={giá-trị}.json</code>) và, nếu có hơn 100 mục, <code>…/skip=100.json</code>, <code>…/skip=200.json</code>.</li>
+      <li>Với mỗi mục, viết <code>meta/{type}/{id}.json</code>; với mỗi phim lẻ, tập phim hoặc kênh, viết <code>stream/{type}/{videoId}.json</code>.</li>
+      <li>Giữ mã và giá trị <code>extra</code> an toàn cho URL: chữ cái, chữ số, <code>_</code> và <code>-</code>. Kiểm tra từng tệp là JSON hợp lệ (VS Code báo lỗi ngay khi gõ).</li>
+      <li>Thử trên máy: trong thư mục, chạy <code>npx http-server . --cors -c-1</code> rồi thêm <code>http://127.0.0.1:8080/manifest.json</code> (trình giả lập Android: <code>http://10.0.2.2:8080/manifest.json</code>).</li>
+    </ol>
+    <p>Giới hạn của addon tĩnh: không có tìm kiếm tự do <code>search</code> (vì không thể tạo sẵn mọi truy vấn), mỗi thể loại và mỗi trang là một tệp, và không có <code>:</code> trong mã (máy chủ sẽ tìm một tên tệp chứa <code>:</code>, điều Windows và một số máy chủ không cho phép).</p>
+
+    <h3 id="create-sdk">Cách 2: SDK cho Node.js</h3>
+    <p>Với SDK chính thức (Node.js 12 trở lên), bạn viết các hàm xử lý thay vì tệp, nhờ đó có tìm kiếm, danh mục lớn và câu trả lời được tính toán. <code>serveHTTP</code> tự thêm header CORS, và đổi các giá trị <code>cacheMaxAge</code>, <code>staleRevalidate</code>, <code>staleError</code> mà hàm xử lý trả về thành header <code>Cache-Control</code>.</p>
+    <p><code>package.json</code>:</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>{
+  "name": "my-publicdomain-addon",
+  "version": "1.0.0",
+  "main": "addon.js",
+  "scripts": { "start": "node addon.js" },
+  "dependencies": { "stremio-addon-sdk": "^1.6.10" }
+}</code></pre>
+    </div>
+    <p><code>addon.js</code> (addon mẫu, có tìm kiếm, lọc thể loại và phân trang):</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>const { addonBuilder, serveHTTP } = require('stremio-addon-sdk')
+
+const ITEMS = [
+  { id: 'tspd_his_girl_friday', type: 'movie', name: 'His Girl Friday',
+    releaseInfo: '1940', genres: ['Comedy'],
+    poster: 'https://archive.org/services/img/his_girl_friday',
+    streams: [{ name: 'archive.org', description: 'MP4 512kb',
+      url: 'https://archive.org/download/his_girl_friday/his_girl_friday_512kb.mp4',
+      behaviorHints: { filename: 'his_girl_friday_512kb.mp4' } }] },
+  { id: 'tspd_superman', type: 'series', name: 'Fleischer Superman (1941-43)',
+    releaseInfo: '1941-1943', genres: ['Animation'],
+    poster: 'https://archive.org/services/img/superman_the_mechanical_monsters',
+    videos: [{ id: 'tspd_superman_s1e1', title: 'The Mechanical Monsters',
+      season: 1, episode: 1, released: '1941-11-28T00:00:00.000Z',
+      streams: [{ name: 'archive.org', description: 'MP4 512kb',
+        url: 'https://archive.org/download/superman_the_mechanical_monsters/superman_the_mechanical_monsters_512kb.mp4' }] }] },
+  { id: 'tspd_test_hls', type: 'tv', name: 'HLS Test Channel',
+    posterShape: 'square', poster: 'https://archive.org/services/img/his_girl_friday',
+    streams: [{ name: 'HLS', description: 'Mux public test stream',
+      url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+      behaviorHints: { notWebReady: true,
+        proxyHeaders: { request: { 'User-Agent': 'TSIPTV-Example/1.0' } } } }] }
+]
+const PAGE = 100
+
+const builder = new addonBuilder({
+  id: 'org.example.publicdomain', version: '1.0.0', name: 'My Public Domain Addon',
+  description: 'Public-domain films and cartoons, plus a public HLS test channel.',
+  resources: ['catalog', 'meta', 'stream'], types: ['movie', 'series', 'tv'],
+  idPrefixes: ['tspd_'],
+  catalogs: ['movie', 'series', 'tv'].map(type =&gt; ({
+    type, id: 'tspd-' + type, name: 'Public Domain ' + type,
+    extra: [{ name: 'search' }, { name: 'genre', options: ['Animation', 'Comedy'] }, { name: 'skip' }]
+  })),
+  behaviorHints: { adult: false, p2p: false }
+})
+
+const preview = i =&gt; ({ id: i.id, type: i.type, name: i.name, poster: i.poster,
+  posterShape: i.posterShape, genres: i.genres, releaseInfo: i.releaseInfo })
+
+builder.defineCatalogHandler(({ type, id, extra }) =&gt; {
+  let list = ITEMS.filter(i =&gt; i.type === type &amp;&amp; id === 'tspd-' + type)
+  if (extra.genre) list = list.filter(i =&gt; (i.genres || []).includes(extra.genre))
+  if (extra.search) list = list.filter(i =&gt; i.name.toLowerCase().includes(extra.search.toLowerCase()))
+  const skip = parseInt(extra.skip || '0', 10) || 0
+  return Promise.resolve({ metas: list.slice(skip, skip + PAGE).map(preview), cacheMaxAge: 3600 })
+})
+
+builder.defineMetaHandler(({ type, id }) =&gt; {
+  const i = ITEMS.find(x =&gt; x.id === id &amp;&amp; x.type === type)
+  if (!i) return Promise.resolve({ meta: null })
+  const meta = preview(i)
+  if (i.videos) meta.videos = i.videos.map(({ streams, ...v }) =&gt; v)
+  return Promise.resolve({ meta, cacheMaxAge: 3600 })
+})
+
+builder.defineStreamHandler(({ type, id }) =&gt; {
+  for (const i of ITEMS) {
+    if (i.id === id &amp;&amp; i.streams) return Promise.resolve({ streams: i.streams, cacheMaxAge: 600 })
+    const v = (i.videos || []).find(v =&gt; v.id === id)
+    if (v) return Promise.resolve({ streams: v.streams, cacheMaxAge: 600 })
+  }
+  return Promise.resolve({ streams: [] })
+})
+
+serveHTTP(builder.getInterface(), { port: process.env.PORT || 7000 })</code></pre>
+    </div>
+    <ol>
+      <li>Chạy <code>npm install</code>, rồi <code>npm start</code>. SDK in ra đường dẫn manifest, <code>http://127.0.0.1:7000/manifest.json</code>.</li>
+      <li>Thêm đường dẫn đó vào TS IPTV trên cùng máy tính; từ trình giả lập Android dùng <code>http://10.0.2.2:7000/manifest.json</code>; từ điện thoại hoặc TV trong cùng mạng dùng <code>http://&lt;địa chỉ LAN của máy tính&gt;:7000/manifest.json</code>.</li>
+      <li>Để công bố, triển khai lên bất kỳ dịch vụ lưu trữ Node.js nào có địa chỉ HTTPS, rồi dùng <code>https://&lt;máy chủ của bạn&gt;/manifest.json</code>.</li>
+    </ol>
+    <p>SDK cũng có thể tạo trang cấu hình (<code>config</code> trong manifest) và gắn addon vào một ứng dụng Express có sẵn; xem <a href="https://github.com/Stremio/stremio-addon-sdk/blob/master/README.md">README của SDK</a>.</p>
+
+    <h2 id="host">Đưa addon lên mạng</h2>
+    <ul>
+      <li><strong>HTTPS.</strong> Đặc tả yêu cầu HTTPS cho mọi địa chỉ trừ <code>127.0.0.1</code>. TS IPTV vẫn nhận <code>http://</code>, kèm cảnh báo “Addon này không dùng kết nối mã hoá”.</li>
+      <li><strong>CORS.</strong> Đặc tả yêu cầu header <code>Access-Control-Allow-Origin: *</code> trên mọi đường dẫn, kể cả <code>/manifest.json</code>. TS IPTV là ứng dụng cài đặt nên không cần, nhưng trình phát chạy trên web thì cần, vì vậy hãy thêm nó.</li>
+      <li><strong>Header bộ nhớ đệm.</strong> <code>Cache-Control: public, max-age=600</code> cho danh mục và chi tiết là mặc định hợp lý; giữ thời gian ngắn cho câu trả lời về luồng nếu đường dẫn có hạn dùng.</li>
+      <li><strong>Loại nội dung.</strong> Gửi tệp <code>.json</code> với <code>application/json</code>, và không chuyển hướng từ <code>/tệp.json</code> sang <code>/tệp.json/</code>.</li>
+    </ul>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Nơi lưu trữ</th><th>Cần làm gì</th></tr></thead>
+        <tbody>
+          <tr><td>GitHub Pages</td><td>Đẩy cây thư mục lên một kho mã và bật Pages. Thêm một tệp rỗng <code>.nojekyll</code> ở thư mục gốc để tệp được phục vụ nguyên vẹn. Pages đã gửi sẵn <code>Access-Control-Allow-Origin: *</code>. Manifest: <code>https://&lt;user&gt;.github.io/&lt;repo&gt;/manifest.json</code>.</td></tr>
+          <tr><td>Firebase Hosting</td><td>Thêm một quy tắc header trong <code>firebase.json</code>: <code>{"source": "**/*.json", "headers": [{"key": "Access-Control-Allow-Origin", "value": "*"}]}</code>. Addon mẫu của TS IPTV được lưu trữ theo cách này.</td></tr>
+          <tr><td>Netlify</td><td>Tệp <code>_headers</code> ở thư mục gốc, dòng đầu là <code>/*</code>, dòng sau là <code>  Access-Control-Allow-Origin: *</code>.</td></tr>
+          <tr><td>Vercel</td><td><code>vercel.json</code>: <code>{"headers": [{"source": "/(.*)", "headers": [{"key": "Access-Control-Allow-Origin", "value": "*"}]}]}</code>.</td></tr>
+          <tr><td>Máy chủ web bất kỳ</td><td>Phục vụ thư mục như tệp tĩnh và thêm header CORS, ví dụ với nginx: <code>add_header Access-Control-Allow-Origin *;</code></td></tr>
+          <tr><td>SDK Node.js</td><td>Bất kỳ dịch vụ Node.js nào có HTTPS; <code>serveHTTP</code> tự đặt header CORS; <code>Cache-Control</code> lấy từ <code>cacheMaxAge</code> mà hàm xử lý trả về.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Trang <code>blob/</code> của GitHub hay trang chia sẻ tệp không phải là addon: đường dẫn manifest phải trả về chính nội dung JSON.</p>
+
+    <h2 id="add">Thêm vào TS IPTV</h2>
+    <ol>
+      <li>Điện thoại, máy tính bảng, iOS và máy tính: <strong>Hồ sơ → Addon → Thêm addon</strong>. Android TV: <strong>Cài đặt → Addon → Thêm addon</strong> (nhập đường dẫn bằng bàn phím trên màn hình).</li>
+      <li>Dán đường dẫn manifest (kết thúc bằng <code>/manifest.json</code>). Đường dẫn cài đặt dạng <code>stremio://…/manifest.json</code> cũng dùng được; TS IPTV tự đổi nó thành <code>https://</code>, hoặc <code>http://</code> với máy trong mạng nội bộ (<code>localhost</code>, <code>127.0.0.1</code>, <code>10.x</code>, <code>192.168.x</code>, <code>172.16–31.x</code>).</li>
+      <li>Chọn <strong>Tiếp tục</strong>. Màn hình xem trước cho biết tên, phiên bản, máy chủ, loại nội dung, số danh mục, addon có cung cấp luồng hay không, và các cảnh báo (không mã hoá, ngang hàng P2P, nội dung người lớn).</li>
+      <li>Đọc và đồng ý với thông báo (“Addon là dịch vụ của bên thứ ba, không do TS IPTV vận hành…”), rồi chọn <strong>Thêm</strong>.</li>
+      <li>Mục <strong>Khám phá</strong> xuất hiện: trên điện thoại ở giữa Trang chủ và Lịch sử, trên TV ở đầu thanh bên của Trang chủ. Mỗi danh mục là một hàng; mở một nội dung và chọn một luồng để phát.</li>
+    </ol>
+    <p>Nếu manifest có <code>configurationRequired</code>, TS IPTV chưa thêm ngay: chọn <strong>Cấu hình</strong> để mở trang <code>/configure</code> của addon trong trình duyệt (trên TV, địa chỉ được hiện dưới dạng chữ), hoàn tất ở đó rồi dán đường dẫn nó cung cấp. Quản lý addon (bật, tắt, sắp xếp, cập nhật, gỡ) ngay trên màn hình Addon. Đường dẫn addon có thể chứa thiết lập cá nhân, nên TS IPTV lưu chúng ở dạng mã hoá và chỉ hiển thị tên máy chủ.</p>
+
+    <h2 id="mistakes">Lỗi thường gặp</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Lỗi</th><th>Biểu hiện</th><th>Cách sửa</th></tr></thead>
+        <tbody>
+          <tr><td>Đường dẫn không kết thúc bằng <code>/manifest.json</code></td><td>“Hãy nhập đường dẫn manifest của addon. Đường dẫn kết thúc bằng /manifest.json.”</td><td>Dùng đường dẫn manifest, không phải trang web của addon.</td></tr>
+          <tr><td>Manifest thiếu trường (<code>id</code>, <code>name</code>, <code>version</code>, <code>types</code>, <code>resources</code>)</td><td>“Đường dẫn này không trả về manifest addon hợp lệ.”</td><td>Thêm trường còn thiếu; kiểm tra tệp là JSON hợp lệ.</td></tr>
+          <tr><td>Dùng <code>+</code> thay cho <code>%20</code> trong tên tệp tĩnh</td><td>Không tìm thấy tệp thể loại hay tìm kiếm</td><td>Trình phát gửi <code>%20</code>; chỉ đặt tên tệp bằng giá trị an toàn cho URL.</td></tr>
+          <tr><td>Có <code>:</code> trong mã của addon tĩnh</td><td>Không tạo được tệp trên Windows, hoặc lỗi 404</td><td>Dùng <code>_</code> hoặc <code>-</code> trong mã.</td></tr>
+          <tr><td>Mỗi trang chỉ 20 mục</td><td>Ứng dụng khác dừng sau trang đầu</td><td>Trả về 100 mục mỗi trang; chỉ trang cuối được ngắn hơn.</td></tr>
+          <tr><td><code>idPrefixes</code> không khớp mã, hoặc thiếu <code>"stream"</code> trong <code>resources</code></td><td>Chi tiết hoặc luồng không bao giờ được yêu cầu</td><td>Khai báo mọi tài nguyên bạn phục vụ và một tiền tố chung cho mọi mã.</td></tr>
+          <tr><td>Video tự mang <code>streams</code></td><td>Không addon nào khác được hỏi về video đó</td><td>Chỉ dùng luồng gắn sẵn khi đó là những luồng duy nhất.</td></tr>
+          <tr><td><code>configurationRequired: true</code></td><td>“Addon này cần được cấu hình trước.”</td><td>Cấu hình trong trình duyệt rồi dán đường dẫn đã cấu hình.</td></tr>
+          <tr><td>Đường dẫn trên <code>127.0.0.1:11470</code></td><td>“Địa chỉ này thuộc máy chủ cục bộ của ứng dụng Stremio…”</td><td>Máy chủ đó thuộc một ứng dụng khác, không phải addon.</td></tr>
+          <tr><td>Addon kiểu cũ <code>/stremio/v1</code></td><td>“Đây là addon kiểu cũ, TS IPTV không dùng được.”</td><td>Chỉ giao thức HTTP hiện tại được hỗ trợ.</td></tr>
+          <tr><td>Addon chỉ có nguồn khác <code>url</code></td><td>“Không tìm thấy luồng phát được cho nội dung này.”</td><td>TS IPTV chỉ phát luồng <code>url</code>; xem bên dưới.</td></tr>
+          <tr><td>Không có header CORS</td><td>Chạy trong TS IPTV nhưng lỗi trên trình phát web</td><td>Thêm <code>Access-Control-Allow-Origin: *</code>.</td></tr>
+          <tr><td>GitHub Pages thiếu <code>.nojekyll</code></td><td>Mất các tệp bắt đầu bằng <code>_</code></td><td>Thêm tệp rỗng <code>.nojekyll</code>.</td></tr>
+          <tr><td>Lưu đệm lâu đường dẫn luồng có chữ ký hoặc có hạn</td><td>Luồng hỏng sau một thời gian</td><td>Đặt <code>cacheMaxAge</code> ngắn cho câu trả lời về luồng.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support">TS IPTV phát được những gì</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Tính năng</th><th>Android</th><th>iOS</th><th>Máy tính</th></tr></thead>
+        <tbody>
+          <tr><td>Luồng <code>url</code>: MP4, HLS qua HTTPS/HTTP</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Luồng <code>url</code>: DASH <code>.mpd</code>, MKV</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge partial">Có thể không phát được</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td><code>proxyHeaders.request</code></td><td><span class="badge yes">Mọi header</span></td><td><span class="badge partial">Cố gắng tối đa</span></td><td><span class="badge partial">Chỉ User-Agent và Referer</span></td></tr>
+          <tr><td><code>externalUrl</code></td><td colspan="3">Mở trong trình duyệt sau khi bạn xác nhận; trên TV không có trình duyệt, đường dẫn được hiện dưới dạng chữ. Liên kết trang <code>stremio:///…</code> mở màn hình tương ứng của TS IPTV.</td></tr>
+          <tr><td>Luồng torrent, Usenet, tệp nén và YouTube</td><td colspan="3"><span class="badge no">Không hỗ trợ</span></td></tr>
+          <tr><td>Danh mục, lọc thể loại, tìm kiếm, phân trang, phim bộ có mùa, mục <code>tv</code> trực tiếp</td><td colspan="3"><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td><code>configurable</code>, <code>configurationRequired</code></td><td colspan="3"><span class="badge yes">Hỗ trợ</span> Qua trang cấu hình của addon trong trình duyệt.</td></tr>
+          <tr><td>Gợi ý <code>adult</code>, <code>p2p</code></td><td colspan="3">Cảnh báo khi thêm; addon người lớn cần xác nhận đủ 18 tuổi và không xuất hiện trong các hàng của Khám phá hay trong tìm kiếm.</td></tr>
+          <tr><td>Xem tiếp và phát tiếp phim lẻ, tập phim từ addon</td><td colspan="3"><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Phụ đề, addon lịch phát sóng (<code>epgProvider</code>), danh sách addon (<code>addon_catalog</code>), tự phát tập tiếp theo</td><td colspan="3"><span class="badge partial">Chưa có</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>TS IPTV không có addon cài sẵn và không gợi ý addon nào. Addon chỉ bị tắt từ xa khi có yêu cầu gỡ bỏ bắt buộc.</p>
+
+    <section class="related">
+      <h2 id="related">Hướng dẫn liên quan</h2>
+      <ul>
+        <li><a href="/guides/json/">Danh sách phát JSON</a></li>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/iptv/">IPTV là gì</a></li>
+        <li><a href="/guides/tsiptv-source/">TS IPTV Source</a></li>
+        <li><a href="/guides/">Tất cả hướng dẫn</a></li>
+      </ul>
+    </section>

@@ -3,8 +3,6 @@ package tss.t.tsiptv.core.database
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toCollection
-import kotlinx.coroutines.flow.toList
 import tss.t.tsiptv.core.database.dao.CategoryDao
 import tss.t.tsiptv.core.database.dao.ChannelAttributeDao
 import tss.t.tsiptv.core.database.dao.ChannelDao
@@ -44,20 +42,25 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     override val programDao: ProgramDao
         get() = TODO("Not yet implemented")
 
+    /** Same semantics as the Room v5 tables (see `InMemoryStremioStores`). */
+    override val stremioStores: tss.t.tsiptv.core.stremio.StremioStores = tss.t.tsiptv.core.stremio.InMemoryStremioStores()
+
+    private val channelAttributes = MutableStateFlow<Map<String, Map<String, String>>>(emptyMap())
+
+    // Same order as the Room queries: file order, then insertion order.
     override fun getAllChannels(): Flow<List<Channel>> {
-        return channels.map { it.values.toList() }
+        return channels.map { it.values.sortedBy(Channel::sortIndex) }
     }
 
     override fun getAllChannelsByPlayListId(playListId: String): Flow<List<Channel>> {
         return channels.map { channelMap ->
-            channelMap.values.filter { it.playlistId == playListId }
+            channelMap.values.filter { it.playlistId == playListId }.sortedBy(Channel::sortIndex)
         }
     }
 
+    // Reads the current value: collecting a StateFlow never completes.
     override suspend fun getCategoriesByPlaylist(playlistId: String): List<Category> {
-        return categories.map { categoryMap ->
-            categoryMap.values.filter { it.playlistId == playlistId }
-        }.toList().flatten()
+        return categories.value.values.filter { it.playlistId == playlistId }
     }
 
     override suspend fun getChannelById(id: String): Channel? {
@@ -66,7 +69,9 @@ class InMemoryIPTVDatabase : IPTVDatabase {
 
     override fun getChannelsByCategory(categoryId: String): Flow<List<Channel>> {
         return channels.map { channelMap ->
-            channelMap.values.filter { it.categoryId == categoryId }
+            channelMap.values
+                .filter { it.categoryId == categoryId || it.groups.any { g -> g.equals(categoryId, ignoreCase = true) } }
+                .sortedBy(Channel::sortIndex)
         }
     }
 
@@ -74,8 +79,51 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         return channels.map { channelMap ->
             channelMap.values.filter {
                 it.name.contains(query, ignoreCase = true)
-            }
+            }.sortedBy(Channel::sortIndex)
         }
+    }
+
+    override suspend fun replacePlaylistContent(
+        playlist: Playlist,
+        categories: List<Category>,
+        channels: List<Channel>,
+        attributes: Map<String, Map<String, String>>,
+        legacyIds: Map<String, String>,
+    ) {
+        val previous = this.channels.value.values.filter { it.playlistId == playlist.id }
+        val previousById = previous.associateBy { it.id }
+        val removedIds = previous.map { it.id }.toSet()
+        val continues = matchPreviousChannels(
+            previous.map { StoredChannel(it.id, it.url) },
+            channels.map { NewChannel(it.id, it.url, legacyIds[it.id]) },
+        )
+        // History is keyed "<channel>_<playlist>" here; move rows whose channel was renamed.
+        val moved = continues.filter { (newId, oldId) -> newId != oldId }
+        if (moved.isNotEmpty()) {
+            val history = channelHistory.value
+            val movedOld = moved.values.map { "${it}_${playlist.id}" }.toSet()
+            channelHistory.value = history.filterKeys { it !in movedOld } +
+                    moved.mapNotNull { (newId, oldId) ->
+                        history["${oldId}_${playlist.id}"]?.let { "${newId}_${playlist.id}" to it.copy(channelId = newId) }
+                    }
+        }
+
+        playlists.value = playlists.value + (playlist.id to playlist)
+        this.categories.value = this.categories.value.filterValues { it.playlistId != playlist.id } +
+                categories.associateBy { it.id }
+        this.channels.value = this.channels.value.filterKeys { it !in removedIds } +
+                channels.associate { channel ->
+                    val old = continues[channel.id]?.let(previousById::get)
+                    channel.id to channel.copy(
+                        isFavorite = old?.isFavorite ?: channel.isFavorite,
+                        lastWatched = old?.lastWatched ?: channel.lastWatched,
+                    )
+                }
+        channelAttributes.value = channelAttributes.value.filterKeys { it !in removedIds } + attributes
+    }
+
+    override suspend fun getChannelAttributes(channelId: String): Map<String, String> {
+        return channelAttributes.value[channelId].orEmpty()
     }
 
     override suspend fun insertChannel(channel: Channel) {
@@ -99,9 +147,7 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     }
 
     override suspend fun getAllCategoriesByPlayListId(playListId: String): List<Category> {
-        return categories.map { categoryMap ->
-            categoryMap.values.filter { it.playlistId == playListId }
-        }.toList().flatten()
+        return categories.value.values.filter { it.playlistId == playListId }
     }
 
     override suspend fun getCategoryById(id: String): Category? {
@@ -146,28 +192,72 @@ class InMemoryIPTVDatabase : IPTVDatabase {
 
     override suspend fun deletePlaylistById(id: String) {
         playlists.value = playlists.value - id
+        // Same as Room's ON DELETE CASCADE.
+        deleteChannelsInPlaylist(id)
+        categories.value = categories.value.filterValues { it.playlistId != id }
+        inMemoryTsiptv.deletePlaylist(id)
     }
 
+    private val inMemoryTsiptv = tss.t.tsiptv.core.tsiptv.InMemoryTsiptvStore { content ->
+        replacePlaylistContent(content.playlist, content.categories, content.channels, emptyMap(), emptyMap())
+        val plan = content.guides
+        if (!plan.isEmpty) {
+            val pl = content.playlist.id
+            val removed = (plan.drop + plan.replace.keys).map { tss.t.tsiptv.core.tsiptv.TsiptvGuideIds.prefix(pl, it) }
+            programs.value = programs.value.filterKeys { id -> removed.none { id.startsWith(it) } } +
+                plan.replace.flatMap { (path, list) ->
+                    list.map { it.copy(id = tss.t.tsiptv.core.tsiptv.TsiptvGuideIds.programId(pl, path, it.id)) }
+                }.associateBy { it.id }
+        }
+    }
+
+    /** Same semantics as the Room v6 tables. */
+    override val tsiptvStore: tss.t.tsiptv.core.tsiptv.TsiptvStore get() = inMemoryTsiptv
+
     override suspend fun deleteChannelsInPlaylist(playlistId: String) {
+        val removed = channels.value.values.filter { it.playlistId == playlistId }.map { it.id }.toSet()
         channels.value = channels.value.filterNot { it.value.playlistId == playlistId }
+        channelAttributes.value = channelAttributes.value.filterKeys { it !in removed }
     }
 
     override fun getAllPrograms(): Flow<List<IPTVProgram>> {
         return programs.map { it.values.toList() }
     }
 
-    override suspend fun countValidPrograms(playlistId: String): Int {
-        return programs.map {
-            it.values.toList()
-        }.toCollection(mutableListOf()).size
+    override suspend fun countValidPrograms(playlistId: String): Int = programsOf(playlistId).size
+
+    /** Programmes of [playlistId], one per (channel, start, title). */
+    private fun programsOf(playlistId: String): List<IPTVProgram> {
+        val playlistChannels = channels.value.values.filter { it.playlistId == playlistId }
+        val guideIds = playlistChannels.flatMap { listOfNotNull(it.epgId, it.id) }.toSet()
+        val sourcePrefix = "tsg:$playlistId#"
+        return programs.value.values
+            .filter { it.id.startsWith(sourcePrefix) || (!it.id.startsWith("tsg:") && it.channelId in guideIds) }
+            .sortedBy { it.startTime }
+            .distinctProgrammes()
     }
+
+    override suspend fun getChannelsWithValidProgramCounts(playlistId: String, timeStamp: Long) =
+        programsOf(playlistId).groupBy { it.channelId }.map { (guideId, list) ->
+            val channel = channels.value.values.firstOrNull {
+                it.playlistId == playlistId && (it.epgId == guideId || (it.epgId == null && it.id == guideId))
+            }
+            tss.t.tsiptv.core.database.entity.ChannelWithProgramCount(
+                channelId = guideId,
+                programCount = list.size,
+                name = channel?.name,
+                categoryId = channel?.categoryId,
+                logoUrl = channel?.logoUrl,
+                isFavorite = channel?.isFavorite?.let { if (it) "1" else "0" },
+            )
+        }
 
     override suspend fun getProgramById(id: String): IPTVProgram? {
         return programs.value[id]
     }
 
     override suspend fun getProgramsForChannel(channelId: String): List<IPTVProgram> {
-        return programs.value.values.filter { it.channelId == channelId }
+        return programs.value.values.filter { it.channelId == channelId }.sortedBy { it.startTime }.distinctProgrammes()
     }
 
     override suspend fun getProgramsForChannelInTimeRange(
@@ -179,7 +269,7 @@ class InMemoryIPTVDatabase : IPTVDatabase {
             it.channelId == channelId &&
                     it.startTime >= startTime &&
                     it.endTime <= endTime
-        }
+        }.sortedBy { it.startTime }.distinctProgrammes()
     }
 
     override suspend fun getCurrentAndUpcomingProgramsForChannel(
@@ -189,7 +279,7 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         return programs.value.values.filter {
             it.channelId == channelId &&
                     it.endTime > currentTime
-        }.sortedBy { it.startTime }
+        }.sortedBy { it.startTime }.distinctProgrammes()
     }
 
     override suspend fun getCurrentProgramForChannel(
@@ -224,6 +314,9 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     }
 
     override suspend fun deleteProgramsForPlaylist(playlistId: String) {
+        // F3: a source's programmes carry its playlist id in their id.
+        val sourcePrefix = "tsg:$playlistId#"
+        programs.value = programs.value.filterKeys { !it.startsWith(sourcePrefix) }
         // Since IPTVProgram doesn't have playlistId, we need to find programs by channels in the playlist
         val channelsInPlaylist =
             channels.value.values.filter { it.playlistId == playlistId }.map { it.id }
@@ -237,6 +330,7 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         playlists.value = emptyMap()
         programs.value = emptyMap()
         channelHistory.value = emptyMap()
+        channelAttributes.value = emptyMap()
     }
 
     // Channel History methods implementation

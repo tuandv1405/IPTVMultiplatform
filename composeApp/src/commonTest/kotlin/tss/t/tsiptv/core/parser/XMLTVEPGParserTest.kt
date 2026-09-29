@@ -38,10 +38,7 @@ class XMLTVEPGParserTest {
         val testChannels = listOf(
             XMLTVChannel(
                 id = "vtv1hd",
-                displayName = XMLTVDisplayName(
-                    value = "VTV1 HD",
-                    lang = "vi"
-                ),
+                displayName = listOf(XMLTVDisplayName(value = "VTV1 HD", lang = "vi")),
                 displayNumber = "1",
                 icon = XMLTVIcon(
                     src = "https://img.lichphatsong.xyz/logo/vtv1hd.jpg"
@@ -49,10 +46,7 @@ class XMLTVEPGParserTest {
             ),
             XMLTVChannel(
                 id = "vtv2hd",
-                displayName = XMLTVDisplayName(
-                    value = "VTV2 HD",
-                    lang = "vi"
-                ),
+                displayName = listOf(XMLTVDisplayName(value = "VTV2 HD", lang = "vi")),
                 displayNumber = "2",
                 icon = XMLTVIcon(
                     src = "https://img.lichphatsong.xyz/logo/vtv2hd.jpg"
@@ -67,14 +61,8 @@ class XMLTVEPGParserTest {
                 channelNumber = "1",
                 start = "20250728120000 +0700",
                 stop = "20250728130000 +0700",
-                title = XMLTVTitle(
-                    value = "Test Program 1",
-                    lang = "vi"
-                ),
-                desc = XMLTVDesc(
-                    value = "This is a test program description.",
-                    lang = "vi"
-                ),
+                title = listOf(XMLTVTitle(value = "Test Program 1", lang = "vi")),
+                desc = listOf(XMLTVDesc(value = "This is a test program description.", lang = "vi")),
                 category = listOf(XMLTVCategory(
                     value = "Entertainment",
                     lang = "vi"
@@ -88,14 +76,8 @@ class XMLTVEPGParserTest {
                 channelNumber = "2",
                 start = "20250728130000 +0700",
                 stop = "20250728140000 +0700",
-                title = XMLTVTitle(
-                    value = "Test Program 2",
-                    lang = "vi"
-                ),
-                desc = XMLTVDesc(
-                    value = "This is another test program description.",
-                    lang = "vi"
-                ),
+                title = listOf(XMLTVTitle(value = "Test Program 2", lang = "vi")),
+                desc = listOf(XMLTVDesc(value = "This is another test program description.", lang = "vi")),
                 category = listOf(XMLTVCategory(
                     value = "News",
                     lang = "vi"

@@ -13,9 +13,9 @@ import java.util.concurrent.ConcurrentHashMap
  * Moves a host's requests off CDN edges that refuse them.
  *
  * Streams are often served from a multi-CDN host whose GSLB picks the edge from the
- * DNS resolver that asked. Some of those edges answer 403 to every client (the
- * BytePlus edges behind live.fptplay53.net return "deny code 22" whatever the
- * headers), so a playlist can play in a browser that uses its own secure DNS and
+ * DNS resolver that asked. Some of those edges answer 403 to every client (one
+ * CDN's edges return "deny code 22" whatever the headers), so a playlist can play
+ * in a browser that uses its own secure DNS and
  * fail in the app on the same network. When an edge answers 403 its address is
  * set aside, the host is also looked up through public DNS-over-HTTPS resolvers,
  * which the GSLB tends to send to a different CDN, and the request is repeated

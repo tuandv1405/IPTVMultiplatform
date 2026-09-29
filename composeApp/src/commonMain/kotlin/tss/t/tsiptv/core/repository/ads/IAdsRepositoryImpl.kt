@@ -31,7 +31,8 @@ class IAdsRepositoryImpl(
         val adsList = runCatching {
             json.decodeFromString<ShopeeAffiliateAdsResponse>(adsListRes)
         }.onFailure {
-            it.printStackTrace()
+            // Type only: messages of network/parse errors can contain URLs.
+            println("Ads list could not be parsed: ${it::class.simpleName}")
         }.getOrNull() ?: return emptyList()
         _lastFetchAdsList = Clock.System.now().epochSeconds
         _cacheAdsList = adsList.data

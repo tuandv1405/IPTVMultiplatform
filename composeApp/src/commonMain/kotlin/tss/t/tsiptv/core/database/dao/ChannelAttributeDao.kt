@@ -53,4 +53,15 @@ interface ChannelAttributeDao {
      */
     @Query("DELETE FROM channel_attributes WHERE channelId = :channelId")
     suspend fun deleteAttributesForChannel(channelId: String)
+
+    /** One-shot read, for comparing what each import path stored. */
+    @Query("SELECT * FROM channel_attributes WHERE channelId = :channelId ORDER BY id")
+    suspend fun getAttributesForChannelOnce(channelId: String): List<ChannelAttributeEntity>
+
+    /**
+     * Deletes the attributes of every channel in a playlist. Done explicitly rather than relying
+     * on the foreign key's cascade, which only runs when the connection enforces foreign keys.
+     */
+    @Query("DELETE FROM channel_attributes WHERE channelId IN (SELECT id FROM channel WHERE playlistId = :playlistId)")
+    suspend fun deleteAttributesForPlaylist(playlistId: String)
 }

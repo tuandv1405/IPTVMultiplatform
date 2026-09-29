@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="vi" data-title-vi="Đường dẫn kiểu Xtream Codes — Hướng dẫn TS IPTV" data-title-en="Xtream Codes style links — TS IPTV guides">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Đường dẫn kiểu Xtream Codes — Hướng dẫn TS IPTV</title>
+<meta name="description" content="Đường dẫn kiểu Xtream Codes là API của nhà cung cấp, không phải định dạng tệp. Cấu trúc đường dẫn và cách dùng trong TS IPTV.">
+<link rel="canonical" href="https://tsiptv-8bdd6.web.app/guides/xtream-codes/">
+<link rel="alternate" hreflang="vi" href="https://tsiptv-8bdd6.web.app/guides/xtream-codes/">
+<link rel="alternate" hreflang="en" href="https://tsiptv-8bdd6.web.app/guides/xtream-codes/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://tsiptv-8bdd6.web.app/guides/xtream-codes/">
+<meta property="og:title" content="Đường dẫn kiểu Xtream Codes — Hướng dẫn TS IPTV">
+<meta property="og:description" content="Đường dẫn kiểu Xtream Codes là API của nhà cung cấp, không phải định dạng tệp. Cấu trúc đường dẫn và cách dùng trong TS IPTV.">
+<meta property="og:image" content="https://tsiptv-8bdd6.web.app/assets/og-image.png">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://tsiptv-8bdd6.web.app/guides/xtream-codes/">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <img src="/assets/app-icon.png" alt="">
+    <span class="name">TS IPTV</span>
+    <nav>
+      <a href="/guides/" aria-current="page">Hướng dẫn / Guides</a>
+      <a href="/">Trang chủ / Home</a>
+      <a href="/privacy/">Quyền riêng tư / Privacy</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <ul class="langbar">
+    <li><button type="button" data-lang="vi" aria-pressed="true">Tiếng Việt</button></li>
+    <li><button type="button" data-lang="en" aria-pressed="false">English</button></li>
+  </ul>
+
+  <!-- ==================== VIETNAMESE ==================== -->
+  <article data-lang-pane="vi">
+    <nav class="breadcrumb" aria-label="Vị trí trang"><a href="/guides/">Hướng dẫn</a> › <span aria-current="page">Xtream Codes</span></nav>
+    <h1>Đường dẫn kiểu Xtream Codes</h1>
+    <p class="lead">Nếu nhà cung cấp đưa cho bạn một <strong>máy chủ</strong>, một <strong>tên đăng nhập</strong> và một <strong>mật khẩu</strong>, hoặc một đường dẫn có <code>get.php</code>, thì dịch vụ đó dùng API kiểu Xtream Codes. Trang này giải thích các đường dẫn đó và cách dùng chúng trong TS IPTV.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV không có sẵn kênh nào</strong> và không giới thiệu nhà cung cấp nào. Mọi ví dụ dùng máy chủ giả <code>provider.example.com</code>, tên đăng nhập <code>U</code> và mật khẩu <code>P</code>.</p>
+    </div>
+
+    <nav class="toc" aria-label="Trên trang này">
+      <p class="toc-title">Trên trang này</p>
+      <ol>
+        <li><a href="#what">Đây là gì</a></li>
+        <li><a href="#syntax">Cấu trúc đường dẫn</a></li>
+        <li><a href="#example">Ví dụ</a></li>
+        <li><a href="#create">Tự tạo</a></li>
+        <li><a href="#host">Lưu trữ</a></li>
+        <li><a href="#add">Thêm vào TS IPTV</a></li>
+        <li><a href="#mistakes">Lỗi thường gặp</a></li>
+        <li><a href="#support">TS IPTV hỗ trợ những gì</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what">Đây là gì</h2>
+    <p>“Xtream Codes” là tên một phần mềm quản lý (panel) mà nhiều nhà cung cấp IPTV dùng để quản lý thuê bao và luồng. Nó là <strong>API của nhà cung cấp</strong>, không phải định dạng tệp: máy chủ của nhà cung cấp tạo danh sách phát M3U, lịch XMLTV và dữ liệu JSON theo tài khoản của bạn. Không có đặc tả công khai chính thức; cấu trúc bên dưới là cấu trúc mà các trình phát mã nguồn mở vẫn dùng. Một nhà cung cấp có được cấp phép phát các kênh hay không là câu hỏi về chính nhà cung cấp đó, không phải về phần mềm họ dùng.</p>
+
+    <div class="card warn">
+      <p style="margin:0"><strong>Đường dẫn chứa tên đăng nhập và mật khẩu của bạn.</strong> Đừng chia sẻ nó, đừng đăng nó lên mạng hay chụp màn hình có nó. Ai có đường dẫn là dùng được tài khoản của bạn.</p>
+    </div>
+
+    <h2 id="syntax">Cấu trúc đường dẫn</h2>
+    <p><code>http(s)://provider.example.com:8080</code> là máy chủ và cổng do nhà cung cấp đưa; <code>U</code> là tên đăng nhập, <code>P</code> là mật khẩu.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Mục đích</th><th>Đường dẫn</th></tr></thead>
+        <tbody>
+          <tr><td>Danh sách phát M3U</td><td><code>…/get.php?username=U&amp;password=P&amp;type=m3u_plus&amp;output=ts</code><br><code>type=m3u_plus</code>: có tên, logo, nhóm và <code>tvg-id</code>; <code>type=m3u</code>: không có. <code>output=ts</code> (MPEG-TS) hoặc <code>output=m3u8</code> (HLS).</td></tr>
+          <tr><td>Thông tin tài khoản (JSON)</td><td><code>…/player_api.php?username=U&amp;password=P</code><br>Trả về <code>user_info</code> (trạng thái, ngày hết hạn, số kết nối tối đa…) và <code>server_info</code>.</td></tr>
+          <tr><td>Danh mục và danh sách kênh (JSON)</td><td><code>…/player_api.php?username=U&amp;password=P&amp;action=get_live_categories</code><br><code>…&amp;action=get_live_streams</code> (thêm <code>&amp;category_id=X</code> để lọc)</td></tr>
+          <tr><td>Phim và phim bộ (JSON)</td><td><code>…&amp;action=get_vod_categories</code>, <code>get_vod_streams</code>, <code>get_vod_info&amp;vod_id=X</code>, <code>get_series_categories</code>, <code>get_series</code>, <code>get_series_info&amp;series_id=X</code></td></tr>
+          <tr><td>Lịch phát sóng XMLTV</td><td><code>…/xmltv.php?username=U&amp;password=P</code></td></tr>
+          <tr><td>Một kênh trực tiếp</td><td><code>…/live/U/P/&lt;stream_id&gt;.ts</code> (hoặc <code>.m3u8</code>)</td></tr>
+          <tr><td>Một phim / một tập</td><td><code>…/movie/U/P/&lt;id&gt;.&lt;đuôi&gt;</code>, <code>…/series/U/P/&lt;id&gt;.&lt;đuôi&gt;</code></td></tr>
+          <tr><td>Xem lại (catch-up)</td><td><code>…/timeshift/U/P/&lt;số phút&gt;/&lt;YYYY-MM-DD:HH-MM&gt;/&lt;stream_id&gt;.ts</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="example">Ví dụ</h2>
+    <p>Đây là đường dẫn danh sách phát bạn dán vào TS IPTV. Không có tệp để tải về: máy chủ của nhà cung cấp tạo danh sách theo tài khoản của bạn mỗi lần tải.</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>http://provider.example.com:8080/get.php?username=U&amp;password=P&amp;type=m3u_plus&amp;output=ts</code></pre>
+    </div>
+    <p>Nội dung trả về là một danh sách <a href="/guides/m3u/">M3U</a> bình thường. Một số nhà cung cấp thêm đường dẫn lịch vào dòng đầu, ví dụ <code>#EXTM3U url-tvg="…/xmltv.php?username=U&amp;password=P"</code>. Mỗi kênh trỏ tới một đường dẫn <code>/live/U/P/…</code>.</p>
+
+    <h2 id="create">Tự tạo</h2>
+    <p>Không áp dụng: danh sách được máy chủ của nhà cung cấp tạo ra, bạn không viết nó.</p>
+
+    <h2 id="host">Lưu trữ</h2>
+    <p>Không áp dụng: nhà cung cấp lưu trữ danh sách, lịch và luồng trên máy chủ của họ.</p>
+
+    <h2 id="add">Thêm vào TS IPTV</h2>
+    <p>TS IPTV <strong>không có màn hình đăng nhập Xtream riêng</strong>. Bạn thêm tài khoản dưới dạng một đường dẫn danh sách phát:</p>
+    <ol>
+      <li>Ghép đường dẫn: <code>http(s)://&lt;máy chủ&gt;:&lt;cổng&gt;/get.php?username=U&amp;password=P&amp;type=m3u_plus&amp;output=ts</code>, thay máy chủ, cổng, <code>U</code> (tên đăng nhập) và <code>P</code> (mật khẩu) bằng thông tin nhà cung cấp đưa. Nhiều nhà cung cấp gửi sẵn đường dẫn này.</li>
+      <li>Mở <strong>Thêm nguồn IPTV</strong>, nhập <strong>Tên nguồn</strong>, dán đường dẫn vào <strong>Liên kết nguồn</strong> rồi chọn <strong>Thêm IPTV</strong>.</li>
+      <li>Lịch phát sóng: một số nhà cung cấp thêm <code>url-tvg</code> hoặc <code>x-tvg-url</code> trỏ tới <code>xmltv.php</code> vào danh sách, khi đó lịch được tải tự động. Nếu danh sách của bạn không có, TS IPTV hiện chưa có ô riêng cho đường dẫn lịch: hãy tải danh sách về, thêm <code>x-tvg-url="…/xmltv.php?username=U&amp;password=P"</code> vào dòng <code>#EXTM3U</code> rồi dùng <strong>Nhập từ tệp</strong> (xem <a href="/guides/xmltv/#add">hướng dẫn XMLTV</a>).</li>
+    </ol>
+    <p>TS IPTV không gửi đường dẫn này tới dịch vụ phân tích.</p>
+
+    <h2 id="mistakes">Lỗi thường gặp</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Lỗi</th><th>Biểu hiện</th><th>Cách sửa</th></tr></thead>
+        <tbody>
+          <tr><td>Dùng <code>type=m3u</code></td><td>Kênh không có nhóm, logo hay lịch</td><td>Dùng <code>type=m3u_plus</code>.</td></tr>
+          <tr><td>Dán đường dẫn <code>player_api.php</code></td><td>Không nhận ra danh sách phát</td><td>Đó là API JSON, không phải danh sách phát; dùng <code>get.php</code>.</td></tr>
+          <tr><td>Sai cổng, hoặc <code>https</code> khi máy chủ chỉ có <code>http</code> (hay ngược lại)</td><td>Không kết nối được</td><td>Dùng đúng máy chủ, cổng và giao thức nhà cung cấp đưa.</td></tr>
+          <tr><td>Tài khoản hết hạn hoặc bị khoá</td><td>Danh sách trống, hoặc “Máy chủ từ chối luồng này”</td><td>Kiểm tra tài khoản với nhà cung cấp.</td></tr>
+          <tr><td>Vượt số kết nối cho phép (nhiều thiết bị cùng xem)</td><td>Kênh ngừng phát hoặc bị từ chối</td><td>Tắt phát trên thiết bị khác.</td></tr>
+          <tr><td>Kênh không phát trên iOS với <code>output=ts</code></td><td>Lỗi khi phát</td><td>Thử <code>output=m3u8</code> (HLS).</td></tr>
+          <tr><td>Chia sẻ đường dẫn hoặc ảnh chụp màn hình có nó</td><td>Người khác dùng tài khoản của bạn</td><td>Đổi mật khẩu với nhà cung cấp.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support">TS IPTV hỗ trợ những gì</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Tính năng</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+          <tr><td>Danh sách <code>get.php</code> (<code>m3u</code>, <code>m3u_plus</code>)</td><td><span class="badge yes">Hỗ trợ</span> trên mọi nền tảng</td></tr>
+          <tr><td>Lịch <code>xmltv.php</code> qua <code>url-tvg</code>/<code>x-tvg-url</code> của danh sách</td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Màn hình đăng nhập Xtream riêng (máy chủ, tên, mật khẩu)</td><td><span class="badge no">Không có</span> Dùng đường dẫn <code>get.php</code>.</td></tr>
+          <tr><td>Phim và phim bộ qua <code>player_api.php</code></td><td><span class="badge no">Không hỗ trợ</span> Chỉ những mục có trong danh sách M3U.</td></tr>
+          <tr><td>Xem lại (<code>catchup="xc"</code>)</td><td><span class="badge partial">Được lưu, phát lại sẽ có sau</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related">Hướng dẫn liên quan</h2>
+      <ul>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/xmltv/">XMLTV</a></li>
+        <li><a href="/guides/">Tất cả hướng dẫn</a></li>
+      </ul>
+    </section>
+  </article>
+
+  <!-- ==================== ENGLISH ==================== -->
+  <article data-lang-pane="en" hidden>
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/guides/">Guides</a> › <span aria-current="page">Xtream Codes</span></nav>
+    <h1>Xtream Codes style links</h1>
+    <p class="lead">If your provider gave you a <strong>server</strong>, a <strong>username</strong> and a <strong>password</strong>, or a link that contains <code>get.php</code>, the service uses an Xtream Codes style API. This page explains those links and how to use them in TS IPTV.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels</strong> and recommends no provider. Every example uses the placeholder server <code>provider.example.com</code>, username <code>U</code> and password <code>P</code>.</p>
+    </div>
+
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+        <li><a href="#what-en">What it is</a></li>
+        <li><a href="#syntax-en">URL structure</a></li>
+        <li><a href="#example-en">Example</a></li>
+        <li><a href="#create-en">Create one</a></li>
+        <li><a href="#host-en">Hosting</a></li>
+        <li><a href="#add-en">Add it in TS IPTV</a></li>
+        <li><a href="#mistakes-en">Common mistakes</a></li>
+        <li><a href="#support-en">What TS IPTV supports</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what-en">What it is</h2>
+    <p>“Xtream Codes” is the name of panel software that many IPTV providers use to manage subscribers and streams. It is a <strong>provider API, not a file format</strong>: the provider's server generates an M3U playlist, an XMLTV guide and JSON data for your account. There is no official public specification; the structure below is the one open-source players use. Whether a provider is licensed to carry its channels is a question about that provider, not about the software it runs.</p>
+
+    <div class="card warn">
+      <p style="margin:0"><strong>The link contains your username and password.</strong> Do not share it, post it online or take screenshots that show it. Anyone who has the link can use your account.</p>
+    </div>
+
+    <h2 id="syntax-en">URL structure</h2>
+    <p><code>http(s)://provider.example.com:8080</code> is the server and port your provider gave you; <code>U</code> is the username, <code>P</code> the password.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Purpose</th><th>URL</th></tr></thead>
+        <tbody>
+          <tr><td>M3U playlist</td><td><code>…/get.php?username=U&amp;password=P&amp;type=m3u_plus&amp;output=ts</code><br><code>type=m3u_plus</code>: with names, logos, groups and <code>tvg-id</code>; <code>type=m3u</code>: without. <code>output=ts</code> (MPEG-TS) or <code>output=m3u8</code> (HLS).</td></tr>
+          <tr><td>Account information (JSON)</td><td><code>…/player_api.php?username=U&amp;password=P</code><br>Returns <code>user_info</code> (status, expiry date, maximum connections…) and <code>server_info</code>.</td></tr>
+          <tr><td>Categories and channel lists (JSON)</td><td><code>…/player_api.php?username=U&amp;password=P&amp;action=get_live_categories</code><br><code>…&amp;action=get_live_streams</code> (add <code>&amp;category_id=X</code> to filter)</td></tr>
+          <tr><td>Films and series (JSON)</td><td><code>…&amp;action=get_vod_categories</code>, <code>get_vod_streams</code>, <code>get_vod_info&amp;vod_id=X</code>, <code>get_series_categories</code>, <code>get_series</code>, <code>get_series_info&amp;series_id=X</code></td></tr>
+          <tr><td>XMLTV guide</td><td><code>…/xmltv.php?username=U&amp;password=P</code></td></tr>
+          <tr><td>One live channel</td><td><code>…/live/U/P/&lt;stream_id&gt;.ts</code> (or <code>.m3u8</code>)</td></tr>
+          <tr><td>One film / one episode</td><td><code>…/movie/U/P/&lt;id&gt;.&lt;ext&gt;</code>, <code>…/series/U/P/&lt;id&gt;.&lt;ext&gt;</code></td></tr>
+          <tr><td>Catch-up</td><td><code>…/timeshift/U/P/&lt;minutes&gt;/&lt;YYYY-MM-DD:HH-MM&gt;/&lt;stream_id&gt;.ts</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="example-en">Example</h2>
+    <p>This is the playlist link you paste into TS IPTV. There is no file to download: the provider's server generates the list for your account each time it is fetched.</p>
+    <div class="codeblock">
+      <pre data-copy tabindex="0"><code>http://provider.example.com:8080/get.php?username=U&amp;password=P&amp;type=m3u_plus&amp;output=ts</code></pre>
+    </div>
+    <p>What it returns is an ordinary <a href="/guides/m3u/">M3U</a> playlist. Some providers add a guide link to the first line, for example <code>#EXTM3U url-tvg="…/xmltv.php?username=U&amp;password=P"</code>. Each channel points to a <code>/live/U/P/…</code> link.</p>
+
+    <h2 id="create-en">Create one</h2>
+    <p>Not applicable: the provider's server generates the list; you do not write it.</p>
+
+    <h2 id="host-en">Hosting</h2>
+    <p>Not applicable: your provider hosts the list, the guide and the streams.</p>
+
+    <h2 id="add-en">Add it in TS IPTV</h2>
+    <p>TS IPTV has <strong>no separate Xtream login screen</strong>. You add the account as a playlist link:</p>
+    <ol>
+      <li>Build the link: <code>http(s)://&lt;server&gt;:&lt;port&gt;/get.php?username=U&amp;password=P&amp;type=m3u_plus&amp;output=ts</code>, replacing the server, the port, <code>U</code> (username) and <code>P</code> (password) with your provider's details. Many providers send this link ready-made.</li>
+      <li>Open <strong>Add IPTV Source</strong>, enter a <strong>Source Name</strong>, paste the link into <strong>Source Link</strong> and choose <strong>Add IPTV</strong>.</li>
+      <li>Programme guide: some providers add a <code>url-tvg</code> or <code>x-tvg-url</code> that points to <code>xmltv.php</code>, and then the guide loads automatically. If yours does not, TS IPTV has no separate guide URL field yet: download the list, add <code>x-tvg-url="…/xmltv.php?username=U&amp;password=P"</code> to its <code>#EXTM3U</code> line and use <strong>Import from file</strong> (see the <a href="/guides/xmltv/#add-en">XMLTV guide</a>).</li>
+    </ol>
+    <p>TS IPTV does not send this link to analytics.</p>
+
+    <h2 id="mistakes-en">Common mistakes</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Mistake</th><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>Using <code>type=m3u</code></td><td>Channels without groups, logos or guide</td><td>Use <code>type=m3u_plus</code>.</td></tr>
+          <tr><td>Pasting the <code>player_api.php</code> link</td><td>Not recognised as a playlist</td><td>That is a JSON API, not a playlist; use <code>get.php</code>.</td></tr>
+          <tr><td>Wrong port, or <code>https</code> when the server only speaks <code>http</code> (or the reverse)</td><td>Cannot connect</td><td>Use exactly the server, port and protocol your provider gave you.</td></tr>
+          <tr><td>The account has expired or is suspended</td><td>An empty list, or “The server refused this stream”</td><td>Check the account with your provider.</td></tr>
+          <tr><td>Too many connections (several devices watching)</td><td>Channels stop or are refused</td><td>Stop playback on the other device.</td></tr>
+          <tr><td>Channels do not play on iOS with <code>output=ts</code></td><td>Playback error</td><td>Try <code>output=m3u8</code> (HLS).</td></tr>
+          <tr><td>Sharing the link, or a screenshot that shows it</td><td>Someone else uses your account</td><td>Change your password with the provider.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="support-en">What TS IPTV supports</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><code>get.php</code> playlists (<code>m3u</code>, <code>m3u_plus</code>)</td><td><span class="badge yes">Supported</span> on every platform</td></tr>
+          <tr><td>The <code>xmltv.php</code> guide through the list's <code>url-tvg</code>/<code>x-tvg-url</code></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td>A separate Xtream login screen (server, username, password)</td><td><span class="badge no">Not available</span> Use the <code>get.php</code> link.</td></tr>
+          <tr><td>Films and series through <code>player_api.php</code></td><td><span class="badge no">Not supported</span> Only the entries in the M3U list.</td></tr>
+          <tr><td>Catch-up (<code>catchup="xc"</code>)</td><td><span class="badge partial">Stored, playback coming later</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related-en">Related guides</h2>
+      <ul>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/xmltv/">XMLTV</a></li>
+        <li><a href="/guides/">All guides</a></li>
+      </ul>
+    </section>
+  </article>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    TS IPTV · <a href="/guides/">Hướng dẫn / Guides</a> · <a href="/">Trang chủ / Home</a> · <a href="/privacy/">Quyền riêng tư / Privacy</a> · <a href="/terms/">Điều khoản / Terms</a>
+  </div>
+</footer>
+
+<script src="/assets/lang.js"></script>
+<script src="/assets/guides.js"></script>
+</body>
+</html>

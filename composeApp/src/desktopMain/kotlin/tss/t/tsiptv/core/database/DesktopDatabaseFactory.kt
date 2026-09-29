@@ -24,7 +24,6 @@ class DesktopDatabaseFactory(
             getRoomDatabase(
                 getDatabaseBuilder()
             ),
-            networkClient
         )
     }
 

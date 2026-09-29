@@ -35,6 +35,7 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -110,6 +111,7 @@ fun MediaPlayerView(
     val isPlaying by player.isPlaying.collectAsState()
     val volume by player.volume.collectAsState()
     val isMuted by player.isMuted.collectAsState()
+    val playbackError by player.playbackError.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val showCustomControls = remember { !PlatformUtils.platform.isIOS }
     var autoShowControls by remember { mutableStateOf(true) }
@@ -191,6 +193,10 @@ fun MediaPlayerView(
                     .aspectRatio(16 / 9f)
             )
         }
+        // Under the controls, so play / pause and volume stay reachable.
+        if (mediaItem.isRadio) {
+            RadioArtwork(mediaItem = mediaItem, modifier = Modifier.matchParentSize())
+        }
         if (showCustomControls) {
             MediaPlayerControls(
                 playbackState = playbackState,
@@ -212,6 +218,18 @@ fun MediaPlayerView(
                     resetAutoHideTimer++
                     onPlayerControl(it)
                 }
+            )
+        }
+        playbackError?.let { error ->
+            PlaybackErrorOverlay(
+                error = error,
+                modifier = Modifier.matchParentSize(),
+                onBack = {
+                    onPlayerControl(
+                        if (playerUIState.isFullScreen) PlayerEvent.OnExitFullScreen
+                        else PlayerEvent.OnVerticalPlayerBack
+                    )
+                },
             )
         }
     }
@@ -239,7 +257,7 @@ fun BoxScope.MediaPlayerControls(
         } else 1f
     }
 
-    val isLive = remember(duration) { duration == 0L }
+    val isLive = remember(duration) { duration <= 0L }
 
     AnimatedVisibility(
         visible = showControls,
@@ -345,13 +363,32 @@ fun BoxScope.MediaPlayerControls(
         )
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            PlayerProgress(
-                progress = progress,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .fillMaxWidth(),
-                progressHeigh = 4.dp
-            )
+            if (isLive) {
+                PlayerProgress(
+                    progress = progress,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth(),
+                    progressHeigh = 4.dp
+                )
+            } else {
+                // VOD (duration known): a real seek bar. Dragging previews, releasing seeks.
+                var dragging by remember { mutableStateOf<Float?>(null) }
+                Slider(
+                    value = dragging ?: progress.coerceIn(0f, 1f),
+                    onValueChange = { dragging = it },
+                    onValueChangeFinished = {
+                        dragging?.let { onPlayerControl(PlayerEvent.SeekTo((it * duration).toLong())) }
+                        dragging = null
+                    },
+                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth().height(24.dp),
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.White,
+                        activeTrackColor = TSColors.AccentCyan,
+                        inactiveTrackColor = Color.White.copy(alpha = 0.3f),
+                    ),
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 16.dp),
@@ -370,8 +407,8 @@ fun BoxScope.MediaPlayerControls(
                     )
                 } else {
                     Text(
-                        text = remember(currentPosition) {
-                            formatTime(currentPosition)
+                        text = remember(currentPosition, duration) {
+                            formatTime(currentPosition) + " / " + formatTime(duration)
                         },
                         modifier = Modifier.padding(end = 8.dp)
                     )
@@ -533,10 +570,12 @@ fun BoxScope.MediaPlayerControls(
  * Format time in milliseconds to a string in the format "mm:ss".
  */
 private fun formatTime(timeMs: Long): String {
-    val totalSeconds = timeMs / 1000
-    val minutes = totalSeconds / 60
+    val totalSeconds = (timeMs / 1000).coerceAtLeast(0)
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
     val seconds = totalSeconds % 60
-    return "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
+    val mmss = "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
+    return if (hours > 0) "$hours:$mmss" else mmss
 }
 
 /**

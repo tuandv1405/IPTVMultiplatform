@@ -125,6 +125,31 @@ interface ChannelHistoryDao {
     suspend fun getChannelHistory(channelId: String, playlistId: String): ChannelHistoryEntity?
 
     /**
+     * Moves a channel's history to a new id (a re-parse renamed the channel). OR IGNORE keeps
+     * an existing row of the target id instead of failing on the unique index.
+     */
+    @Query("UPDATE OR IGNORE channel_history SET channelId = :toId WHERE channelId = :fromId AND playlistId = :playlistId")
+    suspend fun moveHistory(fromId: String, toId: String, playlistId: String)
+
+    /**
+     * Folds a history row that [moveHistory] could not move (the target already had one) into
+     * the target, then deletes it, so no temporary row is left behind.
+     */
+    @Query(
+        """
+        UPDATE channel_history SET
+            playCount = playCount + COALESCE((SELECT playCount FROM channel_history WHERE channelId = :fromId AND playlistId = :playlistId), 0),
+            totalPlayedTimeMs = totalPlayedTimeMs + COALESCE((SELECT totalPlayedTimeMs FROM channel_history WHERE channelId = :fromId AND playlistId = :playlistId), 0),
+            lastPlayedTimestamp = MAX(lastPlayedTimestamp, COALESCE((SELECT lastPlayedTimestamp FROM channel_history WHERE channelId = :fromId AND playlistId = :playlistId), 0))
+        WHERE channelId = :toId AND playlistId = :playlistId
+    """
+    )
+    suspend fun mergeHistoryInto(fromId: String, toId: String, playlistId: String)
+
+    @Query("DELETE FROM channel_history WHERE channelId = :channelId AND playlistId = :playlistId")
+    suspend fun deleteHistoryRow(channelId: String, playlistId: String)
+
+    /**
      * Deletes all channel history for a specific playlist.
      *
      * @param playlistId The ID of the playlist

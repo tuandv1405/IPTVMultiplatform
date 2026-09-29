@@ -32,11 +32,11 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.bottom_sheet_refresh_channel
 import tsiptv.composeapp.generated.resources.error_occurred
-import tsiptv.composeapp.generated.resources.iptv_import_success_msg
-import tsiptv.composeapp.generated.resources.iptv_import_success_title
 import tsiptv.composeapp.generated.resources.ok
 import tsiptv.composeapp.generated.resources.open_link_failed
+import tsiptv.composeapp.generated.resources.playlist_file_refresh_hint
 import tsiptv.composeapp.generated.resources.try_again
 import tss.t.tsiptv.core.database.entity.ChannelWithProgramCount
 import tss.t.tsiptv.core.language.AppLocaleProvider
@@ -52,8 +52,10 @@ import tss.t.tsiptv.navigation.navigateAndRemoveFromBackStack
 import tss.t.tsiptv.navigation.navigateHomeClearingBackStack
 import tss.t.tsiptv.navigation.navtype.ChannelWithProgramCountNavType
 import tss.t.tsiptv.ui.screens.addiptv.ImportIPTVScreen
+import tss.t.tsiptv.ui.screens.addiptv.ImportSummaryDialog
 import tss.t.tsiptv.ui.screens.home.HomeBottomNavigationScreen
 import tss.t.tsiptv.ui.screens.home.HomeEvent
+import tss.t.tsiptv.ui.screens.home.HomeNotice
 import tss.t.tsiptv.ui.screens.home.HomeViewModel
 import tss.t.tsiptv.ui.screens.login.AuthViewModel
 import tss.t.tsiptv.ui.screens.login.LoginScreenDesktop2
@@ -61,6 +63,7 @@ import tss.t.tsiptv.ui.screens.login.LoginScreenPhone
 import tss.t.tsiptv.ui.screens.login.SignUpScreen
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
 import tss.t.tsiptv.ui.screens.player.PlayerEvent
+import tss.t.tsiptv.ui.screens.player.PlayerOptionsDialog
 import tss.t.tsiptv.ui.screens.player.PlayerScreen
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
 import tss.t.tsiptv.ui.screens.programs.details.ProgramForChannelScreen
@@ -72,6 +75,20 @@ import tss.t.tsiptv.ui.tv.TvHomeScreen
 import tss.t.tsiptv.ui.tv.TvPlayerScreen
 import tss.t.tsiptv.ui.widgets.TSDialog
 import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
+import tss.t.tsiptv.core.stremio.AddonRepository
+import tss.t.tsiptv.ui.screens.addons.AddonsScreen
+import tss.t.tsiptv.ui.screens.discover.CatalogScreen
+import tss.t.tsiptv.ui.screens.discover.DiscoverSearchScreen
+import tss.t.tsiptv.ui.screens.discover.DiscoverViewModel
+import tss.t.tsiptv.ui.screens.mediadetail.MediaDetailScreen
+import tss.t.tsiptv.ui.screens.source.SourceAboutScreen
+import tss.t.tsiptv.ui.screens.source.SourceAboutViewModel
+import tss.t.tsiptv.ui.screens.source.SourceHomeActions
+import tss.t.tsiptv.ui.screens.source.SourceHomeViewModel
+import tss.t.tsiptv.ui.screens.source.SourceSeeAllContent
+import tsiptv.composeapp.generated.resources.source_refresh_failed
+import tss.t.tsiptv.core.model.Channel
+import androidx.navigation.NavHostController
 import tss.t.tsiptv.utils.PlatformUtils
 import tss.t.tsiptv.utils.getScreenOrientationUtils
 import kotlin.reflect.typeOf
@@ -139,6 +156,9 @@ fun App() {
     // Rating prompt: only on the way back from the player to Home, so it never
     // interrupts playback. The controller decides whether it is due.
     val appRating: AppRatingController = koinInject()
+    // F2: daily manifest refresh and blocklist check (never throws, no UI).
+    val addonRepository: AddonRepository = koinInject()
+    LaunchedEffect(Unit) { addonRepository.dailyMaintenance() }
     val appScope = rememberCoroutineScope()
     var showOpenLinkFailed by remember { mutableStateOf(false) }
     LaunchedEffect(navController) {
@@ -288,6 +308,13 @@ fun App() {
                                     navController.navigate(NavRoutes.Player(homeEvent.channel.id))
                                     homeViewModel.onEmitEvent(HomeEvent.LoadHistory)
                                 }
+                                // F3: a channel from Source Home; its section is the zap list.
+                                if (homeEvent is HomeEvent.OnPlaySourceChannel) {
+                                    homeViewModel.loadProgramForChannel(homeEvent.channel)
+                                    playerViewModel.playIptv(homeEvent.channel)
+                                    navController.navigate(NavRoutes.Player(homeEvent.channel.id))
+                                    homeViewModel.onEmitEvent(HomeEvent.LoadHistory)
+                                }
 
 
                                 when (homeEvent) {
@@ -314,6 +341,34 @@ fun App() {
                                 }
                             }
 
+                            // Refresh feedback from Settings (phone sheet or TV dialog).
+                            if (homeUIState.notice == HomeNotice.FILE_REFRESH_HINT) {
+                                TSDialog(
+                                    title = stringResource(Res.string.bottom_sheet_refresh_channel),
+                                    message = stringResource(Res.string.playlist_file_refresh_hint),
+                                    positiveButtonText = stringResource(Res.string.ok),
+                                    onPositiveClick = { homeViewModel.onEmitEvent(HomeEvent.OnDismissNotice) },
+                                    onDismissRequest = { homeViewModel.onEmitEvent(HomeEvent.OnDismissNotice) },
+                                )
+                            }
+                            if (homeUIState.notice == HomeNotice.SOURCE_REFRESH_FAILED) {
+                                TSDialog(
+                                    title = stringResource(Res.string.bottom_sheet_refresh_channel),
+                                    message = stringResource(Res.string.source_refresh_failed),
+                                    positiveButtonText = stringResource(Res.string.ok),
+                                    onPositiveClick = { homeViewModel.onEmitEvent(HomeEvent.OnDismissNotice) },
+                                    onDismissRequest = { homeViewModel.onEmitEvent(HomeEvent.OnDismissNotice) },
+                                )
+                            }
+                            homeUIState.importSummary
+                                ?.takeIf { it.fromRefresh && it.skippedTotal > 0 }
+                                ?.let { summary ->
+                                    ImportSummaryDialog(
+                                        summary = summary,
+                                        onDismiss = { homeViewModel.onEmitEvent(HomeEvent.OnDismissImportSummary) },
+                                    )
+                                }
+
                             if (isTvMode) {
                                 val mediaItem by playerViewModel.mediaItemState.collectAsState()
                                 LifecycleResumeEffect(Unit) {
@@ -333,6 +388,9 @@ fun App() {
                                         .takeIf { authState.isAuthenticated },
                                     onLogin = { navController.navigate(NavRoutes.Login) },
                                     onLogout = { authViewModel.onEvent(LoginEvents.OnLogoutPressed) },
+                                    onOpenAddons = { navController.navigate(NavRoutes.Addons) },
+                                    onNavigate = { route -> navController.navigate(route) },
+                                    onOpenSourceAbout = { id -> navController.navigate(NavRoutes.SourceAbout(id)) },
                                     onRateApp = if (appRating.canOpenStoreListing) {
                                         {
                                             appScope.launch {
@@ -372,6 +430,7 @@ fun App() {
                             )
 
                             val channelId = it.toRoute<NavRoutes.Player>().mediaItemId
+                            var showPlayerOptions by remember { mutableStateOf(false) }
 
                             val mediaItem by playerViewModel.mediaItemState.collectAsStateWithLifecycle()
                             val homeUIState by homeViewModel.uiState.collectAsStateWithLifecycle()
@@ -396,8 +455,19 @@ fun App() {
 
                                 when (event) {
                                     PlayerEvent.OnVerticalPlayerBack -> navController.popBackStack()
+                                    // F3: streams of a source channel and subtitle tracks (AC-T21).
+                                    PlayerEvent.OnSettings -> showPlayerOptions = true
                                     else -> playerViewModel.onHandleEvent(event)
                                 }
+                            }
+                            if (showPlayerOptions) {
+                                val channelStreams by playerViewModel.channelStreams.collectAsStateWithLifecycle()
+                                PlayerOptionsDialog(
+                                    player = playerViewModel.player,
+                                    streams = channelStreams,
+                                    onPickStream = playerViewModel::playChannelStream,
+                                    onDismiss = { showPlayerOptions = false },
+                                )
                             }
 
                             if (isTvMode) {
@@ -406,6 +476,8 @@ fun App() {
                                     homeUIState = homeUIState,
                                     mediaPlayer = playerViewModel.player,
                                     onEvent = onPlayerEvent,
+                                    optionsVisible = showPlayerOptions,
+                                    hasStreamChoice = playerViewModel.channelStreams.collectAsStateWithLifecycle().value != null,
                                 )
                             } else {
                                 PlayerScreen(
@@ -426,22 +498,15 @@ fun App() {
                             val coroutineScope = rememberCoroutineScope()
                             var showPopupSuccess by remember { mutableStateOf(false) }
 
-                            if (showPopupSuccess) {
-                                TSDialog(
-                                    onDismissRequest = {
+                            val summary = homeUIState.importSummary
+                            if (showPopupSuccess && summary != null) {
+                                ImportSummaryDialog(
+                                    summary = summary,
+                                    onDismiss = {
                                         showPopupSuccess = false
+                                        homeViewModel.onEmitEvent(HomeEvent.OnDismissImportSummary)
                                         navController.popBackStack()
                                     },
-                                    title = stringResource(Res.string.iptv_import_success_title),
-                                    message = stringResource(
-                                        Res.string.iptv_import_success_msg,
-                                        homeUIState.listChannels.size
-                                    ),
-                                    positiveButtonText = stringResource(Res.string.ok),
-                                    onPositiveClick = {
-                                        showPopupSuccess = false
-                                        navController.popBackStack()
-                                    }
                                 )
                             }
 
@@ -483,6 +548,71 @@ fun App() {
                             )
                         }
 
+                        // F2: Stremio-compatible addons.
+                        composable<NavRoutes.Addons> {
+                            AddonsScreen(onBack = { navController.popBackStack() })
+                        }
+
+                        composable<NavRoutes.AddonCatalog> { entry ->
+                            CatalogScreen(
+                                route = entry.toRoute<NavRoutes.AddonCatalog>(),
+                                onNavigate = { navController.navigate(it) },
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
+
+                        composable<NavRoutes.MediaDetail> { entry ->
+                            MediaDetailScreen(
+                                route = entry.toRoute<NavRoutes.MediaDetail>(),
+                                onNavigate = { navController.navigate(it) },
+                                onPlay = { id -> navController.navigate(NavRoutes.Player(id)) },
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
+
+                        // F3: TS IPTV Sources.
+                        composable<NavRoutes.SourceSeeAll> { entry ->
+                            val homeViewModel = koinViewModel<HomeViewModel>(viewModelStoreOwner = appViewModelStore)
+                            val playerViewModel = koinViewModel<PlayerViewModel>(viewModelStoreOwner = appViewModelStore)
+                            val sourceViewModel = koinViewModel<SourceHomeViewModel>()
+                            SourceSeeAllContent(
+                                route = entry.toRoute<NavRoutes.SourceSeeAll>(),
+                                viewModel = sourceViewModel,
+                                actions = SourceHomeActions(
+                                    onPlayChannel = { channel, zap -> playSourceChannel(homeViewModel, playerViewModel, navController, channel, zap) },
+                                    onNavigate = { navController.navigate(it) },
+                                    onOpenAbout = {},
+                                    onRefresh = {},
+                                ),
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
+
+                        composable<NavRoutes.SourceAbout> { entry ->
+                            val homeViewModel = koinViewModel<HomeViewModel>(viewModelStoreOwner = appViewModelStore)
+                            val route = entry.toRoute<NavRoutes.SourceAbout>()
+                            SourceAboutScreen(
+                                playlistId = route.playlistId,
+                                viewModel = koinViewModel<SourceAboutViewModel>(),
+                                onConfirmAdult = { homeViewModel.onEmitEvent(HomeEvent.OnConfirmSourceAdult(route.playlistId)) },
+                                onRemove = {
+                                    homeViewModel.onEmitEvent(HomeEvent.OnRemoveSource(route.playlistId))
+                                    navController.popBackStack()
+                                },
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
+
+                        composable<NavRoutes.DiscoverSearch> { entry ->
+                            val discoverViewModel = koinViewModel<DiscoverViewModel>(viewModelStoreOwner = appViewModelStore)
+                            DiscoverSearchScreen(
+                                viewModel = discoverViewModel,
+                                initialQuery = entry.toRoute<NavRoutes.DiscoverSearch>().query,
+                                onNavigate = { navController.navigate(it) },
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
+
                         composable<NavRoutes.LanguageSettings>() {
                             LanguageSettingsScreen(
                                 onBackPressed = {
@@ -512,4 +642,19 @@ fun App() {
             }
         }
     }
+}
+
+/** F3: plays a Source Home channel through the Home flow ([HomeEvent.OnPlaySourceChannel]). */
+private fun playSourceChannel(
+    homeViewModel: HomeViewModel,
+    playerViewModel: PlayerViewModel,
+    navController: NavHostController,
+    channel: Channel,
+    zap: List<Channel>,
+) {
+    homeViewModel.onEmitEvent(HomeEvent.OnPlaySourceChannel(channel, zap))
+    homeViewModel.loadProgramForChannel(channel)
+    playerViewModel.playIptv(channel)
+    navController.navigate(NavRoutes.Player(channel.id))
+    homeViewModel.onEmitEvent(HomeEvent.LoadHistory)
 }

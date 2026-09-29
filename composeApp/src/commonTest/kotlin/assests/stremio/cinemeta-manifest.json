@@ -1,0 +1,63 @@
+{
+  "id": "com.linvo.cinemeta",
+  "version": "3.0.14",
+  "name": "Cinemeta",
+  "description": "Hand-written test fixture shaped like the official metadata addon manifest (research 2.3).",
+  "logo": "https://example.org/cinemeta-logo.png",
+  "resources": ["catalog", "meta", "addon_catalog"],
+  "types": ["movie", "series"],
+  "idPrefixes": ["tt"],
+  "catalogs": [
+    {
+      "type": "movie", "id": "top", "name": "Popular",
+      "genres": ["Action", "Comedy", "Drama"],
+      "extra": [
+        { "name": "genre", "options": ["Action", "Comedy", "Drama", "Science Fiction"] },
+        { "name": "search" },
+        { "name": "skip" }
+      ],
+      "extraSupported": ["search", "genre", "skip"]
+    },
+    {
+      "type": "series", "id": "top", "name": "Popular",
+      "genres": ["Action", "Comedy"],
+      "extra": [
+        { "name": "genre", "options": ["Action", "Comedy", "Drama"] },
+        { "name": "search" },
+        { "name": "skip" }
+      ],
+      "extraSupported": ["search", "genre", "skip"]
+    },
+    {
+      "type": "movie", "id": "year", "name": "New",
+      "extra": [
+        { "name": "genre", "options": ["2026", "2025", "2024"], "isRequired": true },
+        { "name": "skip", "isRequired": true, "options": ["100"] }
+      ],
+      "extraSupported": ["genre", "skip"],
+      "extraRequired": ["genre"]
+    },
+    {
+      "type": "movie", "id": "imdbRating", "name": "Featured",
+      "extra": [
+        { "name": "genre", "options": ["Action", "Comedy"], "optionsLimit": 2 },
+        { "name": "skip" }
+      ]
+    },
+    {
+      "type": "series", "id": "last-videos", "name": "Last videos",
+      "extra": [ { "name": "lastVideosIds", "isRequired": true, "optionsLimit": 100 } ],
+      "extraSupported": ["lastVideosIds"],
+      "extraRequired": ["lastVideosIds"]
+    },
+    {
+      "type": "movie", "id": "top", "name": "Duplicate of movie/top, dropped"
+    },
+    { "id": "no-type", "name": "Dropped: no type" }
+  ],
+  "addonCatalogs": [
+    { "type": "all", "id": "official", "name": "Official" },
+    { "type": "all", "id": "community", "name": "Community" }
+  ],
+  "behaviorHints": { "newEpisodeNotifications": true }
+}

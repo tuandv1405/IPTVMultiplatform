@@ -103,6 +103,13 @@ fun PlayerScreen(
     playerControlState: PlayerUIState,
     onEvent: (PlayerEvent) -> Unit,
 ) {
+    // F2: addon movies/episodes are not channels: no related channels or EPG under them.
+    @Suppress("NAME_SHADOWING")
+    val homeUIState = remember(homeUIState, mediaItem.id) {
+        if (isAddonItemId(mediaItem.id)) {
+            homeUIState.copy(relatedChannels = emptyList(), currentProgram = null, currentProgramList = null)
+        } else homeUIState
+    }
     val isPlaying by mediaPlayer.isPlaying.collectAsState()
     val adsViewModel = koinViewModel<AdsViewModel>()
     var showTitleUnderPlayer by remember {

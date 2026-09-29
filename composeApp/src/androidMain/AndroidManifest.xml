@@ -15,6 +15,27 @@
         android:name="android.hardware.touchscreen"
         android:required="false" />
 
+    <!-- "Import from file" is shown only where something can open a document; without this,
+         package visibility (API 30+) would hide DocumentsUI from the check on every device. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.OPEN_DOCUMENT" />
+            <category android:name="android.intent.category.OPENABLE" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <!-- F2: open addon links (externalUrl streams, addon configure pages) in the browser. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="http" />
+        </intent>
+    </queries>
+
     <application
         android:name=".TSAndroidApplication"
         android:allowBackup="false"

@@ -22,7 +22,6 @@ class AndroidDatabaseFactory(
     override fun createDatabase(): IPTVDatabase {
         return RoomIPTVDatabase(
             getRoomDatabase(getDatabaseBuilder(context)),
-            networkClient
         )
     }
 

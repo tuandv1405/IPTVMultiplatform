@@ -1,0 +1,38 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="wv",Widevine license_key
+#KODIPROP:inputstream=inputstream.adaptive
+#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha
+#KODIPROP:inputstream.adaptive.license_key=https://lic.example.com/wv|User-Agent=A&Content-Type=application%2Foctet-stream|R{SSM}|R
+#KODIPROP:mimetype=application/dash+xml
+https://cdn.example.com/wv/manifest.mpd
+#EXTINF:-1 tvg-id="ck-legacy",ClearKey drm_legacy
+#KODIPROP:inputstream.adaptive.drm_legacy=org.w3.clearkey|000102030405060708090a0b0c0d0e0f:00112233445566778899aabbccddeeff
+https://cdn.example.com/ck/manifest.mpd
+#EXTINF:-1 tvg-id="ck-lenient",ClearKey license_key with UUID kid
+#KODIPROP:inputstream.adaptive.license_type=clearkey
+#KODIPROP:inputstream.adaptive.license_key=00010203-0405-0607-0809-0a0b0c0d0e0f:00112233445566778899aabbccddeeff
+https://cdn.example.com/ck2/manifest.mpd
+#EXTINF:-1 tvg-id="wrapped-body",Unsupported body
+#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha
+#KODIPROP:inputstream.adaptive.license_key=https://lic.example.com/wv||b{SSM}|R
+https://cdn.example.com/x1/manifest.mpd
+#EXTINF:-1 tvg-id="wrapped-response",Unsupported response
+#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha
+#KODIPROP:inputstream.adaptive.license_key=https://lic.example.com/wv|||JBlicense
+https://cdn.example.com/x2/manifest.mpd
+#EXTINF:-1 tvg-id="unwrapper",Unsupported drm JSON
+#KODIPROP:inputstream.adaptive.drm={"com.widevine.alpha":{"license":{"server_url":"https://lic.example.com/wv","unwrapper":"base64"}}}
+https://cdn.example.com/x3/manifest.mpd
+#EXTINF:-1 tvg-id="wiseplay",WisePlay
+#KODIPROP:inputstream.adaptive.license_type=com.huawei.wiseplay
+https://cdn.example.com/x4/manifest.mpd
+#EXTINF:-1 tvg-id="json-wins",drm JSON beats license_type
+#KODIPROP:inputstream.adaptive.license_type=com.microsoft.playready
+#KODIPROP:inputstream.adaptive.license_key=https://lic.example.com/pr
+#KODIPROP:inputstream.adaptive.drm={"com.widevine.alpha":{"license":{"server_url":"https://lic.example.com/wv","req_headers":"X-A=1"}}}
+https://cdn.example.com/json/manifest.mpd
+#EXTINF:-1 tvg-id="ck-hls",ClearKey on HLS
+#KODIPROP:inputstream.adaptive.drm_legacy=org.w3.clearkey|000102030405060708090a0b0c0d0e0f:00112233445566778899aabbccddeeff
+https://cdn.example.com/ck/index.m3u8
+#EXTINF:-1 tvg-id="drm-in-url",Clear stream whose URL says drm
+https://cdn.example.com/drm/encrypted/protected/widevine/index.m3u8

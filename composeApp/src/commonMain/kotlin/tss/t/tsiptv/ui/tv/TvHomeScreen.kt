@@ -32,6 +32,7 @@ import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.LiveTv
+import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -62,8 +63,10 @@ import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.all_channels_title
 import tsiptv.composeapp.generated.resources.app_name
 import tsiptv.composeapp.generated.resources.bottom_sheet_import_playlist
+import tsiptv.composeapp.generated.resources.channel_badge_radio
 import tsiptv.composeapp.generated.resources.channel_count_format
 import tsiptv.composeapp.generated.resources.continue_watching
+import tsiptv.composeapp.generated.resources.discover_title
 import tsiptv.composeapp.generated.resources.empty_iptv_source_title
 import tsiptv.composeapp.generated.resources.settings_title
 import tsiptv.composeapp.generated.resources.tv_import_playlist_hint
@@ -74,6 +77,24 @@ import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.ui.screens.home.HomeEvent
 import tss.t.tsiptv.ui.screens.home.HomeUiState
 import tss.t.tsiptv.ui.themes.TSColors
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.backhandler.BackHandler
+import org.koin.compose.viewmodel.koinViewModel
+import tss.t.tsiptv.navigation.NavRoutes
+import tss.t.tsiptv.ui.screens.discover.DiscoverContent
+import tss.t.tsiptv.ui.screens.discover.DiscoverViewModel
+import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Info
+import tsiptv.composeapp.generated.resources.source_about
+import tsiptv.composeapp.generated.resources.source_home_tab
+import tss.t.tsiptv.ui.screens.source.SourceHomeActions
+import tss.t.tsiptv.ui.screens.source.SourceHomeContent
+import tss.t.tsiptv.ui.screens.source.SourceHomeViewModel
 
 /**
  * Home for the TV layout: a category rail on the left and a channel grid on the
@@ -81,6 +102,7 @@ import tss.t.tsiptv.ui.themes.TSColors
  * [HomeEvent]s as the phone home, so both layouts share one HomeViewModel.
  * Works signed out; [signedInEmail] is null until the user logs in from Settings.
  */
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 fun TvHomeScreen(
     homeUiState: HomeUiState,
@@ -93,8 +115,28 @@ fun TvHomeScreen(
     onLogin: () -> Unit,
     onLogout: () -> Unit,
     onRateApp: (() -> Unit)? = null,
+    onOpenAddons: () -> Unit = {},
+    onNavigate: (NavRoutes.RootRoutes) -> Unit = {},
+    onOpenSourceAbout: (playlistId: String) -> Unit = {},
 ) {
     var showSettings by remember { mutableStateOf(false) }
+    // F2: "Discover" sits at the top of the rail while at least one addon is enabled.
+    val discoverViewModel = koinViewModel<DiscoverViewModel>(viewModelStoreOwner = LocalAppViewModelStoreOwner.current!!)
+    val hasAddonsOrUnknown by discoverViewModel.hasActiveAddons.collectAsState()
+    val hasAddons = hasAddonsOrUnknown == true
+    var discoverSelected by rememberSaveable { mutableStateOf(false) }
+    // Unknown (null) right after process death keeps a restored Discover selection until Room answers.
+    val showDiscover = discoverSelected && hasAddonsOrUnknown != false
+    // Known "no active addon": forget the Discover selection, so re-adding one starts on the channels.
+    LaunchedEffect(hasAddonsOrUnknown) { if (hasAddonsOrUnknown == false) discoverSelected = false }
+    val discoverFocus = remember { FocusRequester() }
+    var focusDiscoverRequest by remember { mutableStateOf(0) }
+    // Back from the addon manager returns to the Settings item that opened it.
+    var restoreSettingsFocus by rememberSaveable { mutableStateOf(false) }
+    val settingsFocus = remember { FocusRequester() }
+    BackHandler(enabled = showDiscover) {
+        discoverSelected = false
+    }
     val railFocus = remember { FocusRequester() }
     val focusTargetRequester = remember { FocusRequester() }
     // Returning from the player puts the remote back on the channel that is
@@ -122,6 +164,12 @@ fun TvHomeScreen(
         }
     }
     val hasPlaylist = homeUiState.playListId != null
+    // F3: a TS IPTV Source starts on its Home (first rail item); About is the last rail item.
+    val isSource = homeUiState.isSourcePlaylist
+    var sourceHomeSelected by rememberSaveable(homeUiState.playListId) { mutableStateOf(true) }
+    val showSourceHome = isSource && sourceHomeSelected && !showDiscover
+    var sourceFocusToken by remember { mutableStateOf(0) }
+    val sourceViewModel = koinViewModel<SourceHomeViewModel>(viewModelStoreOwner = LocalAppViewModelStoreOwner.current!!)
 
     Row(
         modifier = Modifier
@@ -132,8 +180,28 @@ fun TvHomeScreen(
             homeUiState = homeUiState,
             listState = railState,
             selectedFocus = railFocus,
-            onHomeEvent = onHomeEvent,
+            onHomeEvent = { event ->
+                discoverSelected = false
+                sourceHomeSelected = false
+                onHomeEvent(event)
+            },
             onSettings = { showSettings = true },
+            settingsFocus = settingsFocus,
+            showDiscoverItem = hasAddons,
+            discoverSelected = showDiscover,
+            onDiscover = {
+                discoverSelected = true
+                sourceHomeSelected = false
+                focusDiscoverRequest++
+            },
+            showSourceItems = isSource,
+            sourceHomeSelected = showSourceHome,
+            onSourceHome = {
+                discoverSelected = false
+                sourceHomeSelected = true
+                sourceFocusToken++
+            },
+            onSourceAbout = { homeUiState.playListId?.let(onOpenSourceAbout) },
         )
 
         Box(
@@ -142,6 +210,25 @@ fun TvHomeScreen(
                 .fillMaxHeight()
         ) {
             when {
+                showDiscover -> DiscoverContent(
+                    viewModel = discoverViewModel,
+                    onNavigate = onNavigate,
+                    initialFocus = discoverFocus,
+                    focusToken = focusDiscoverRequest,
+                )
+
+                showSourceHome -> SourceHomeContent(
+                    playlistId = homeUiState.playListId!!,
+                    viewModel = sourceViewModel,
+                    actions = SourceHomeActions(
+                        onPlayChannel = { channel, zap -> onHomeEvent(HomeEvent.OnPlaySourceChannel(channel, zap)) },
+                        onNavigate = onNavigate,
+                        onOpenAbout = { homeUiState.playListId?.let(onOpenSourceAbout) },
+                        onRefresh = { onHomeEvent(HomeEvent.RefreshIPTVSource) },
+                    ),
+                    focusToken = sourceFocusToken,
+                )
+
                 homeUiState.isLoading && homeUiState.listChannels.isEmpty() -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
@@ -178,6 +265,10 @@ fun TvHomeScreen(
             onLogout = onLogout,
             onDismissRequest = { showSettings = false },
             onRateApp = onRateApp,
+            onOpenAddons = {
+                restoreSettingsFocus = true
+                onOpenAddons()
+            },
         )
     }
 
@@ -185,19 +276,24 @@ fun TvHomeScreen(
     // nowhere visible. Start on the selected category.
     // With no playlist, EmptyPlaylist takes focus on its import button instead.
     LaunchedEffect(hasPlaylist) {
-        if (!hasPlaylist) return@LaunchedEffect
+        if (restoreSettingsFocus) {
+            restoreSettingsFocus = false
+            if (settingsFocus.requestFocusAfterLayout()) return@LaunchedEffect
+        }
+        if (!hasPlaylist || showDiscover || showSourceHome) return@LaunchedEffect
         val restored = focusTargetId != null && focusTargetRequester.requestFocusAfterLayout()
         if (!restored) {
             // The selected category may be scrolled out of the rail; bring its
             // row into composition first or there is nothing to focus.
             val selectedIndex = homeUiState.categories
-                .indexOfFirst { it.id == homeUiState.selectedCategory?.id } + 1
+                .indexOfFirst { it.id == homeUiState.selectedCategory?.id } + 1 + (if (hasAddons) 1 else 0)
             railState.scrollToItem(selectedIndex)
             railFocus.requestFocusAfterLayout()
         }
     }
 }
 
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 private fun CategoryRail(
     homeUiState: HomeUiState,
@@ -205,8 +301,18 @@ private fun CategoryRail(
     selectedFocus: FocusRequester,
     onHomeEvent: (HomeEvent) -> Unit,
     onSettings: () -> Unit,
+    settingsFocus: FocusRequester? = null,
+    showDiscoverItem: Boolean = false,
+    discoverSelected: Boolean = false,
+    onDiscover: () -> Unit = {},
+    showSourceItems: Boolean = false,
+    sourceHomeSelected: Boolean = false,
+    onSourceHome: () -> Unit = {},
+    onSourceAbout: () -> Unit = {},
 ) {
-    val selectedId = homeUiState.selectedCategory?.id
+    val selectedId = homeUiState.selectedCategory?.id.takeUnless { sourceHomeSelected }
+    @Suppress("NAME_SHADOWING")
+    val discoverSelected = discoverSelected && !sourceHomeSelected
 
     Column(
         modifier = Modifier
@@ -251,23 +357,62 @@ private fun CategoryRail(
         }
         Spacer(Modifier.height(20.dp))
 
+        // ◀ from the content enters the rail on the selected item (not on whatever is nearest, e.g.
+        // Discover), when that item is on screen; otherwise the default search applies.
+        val selectedKey: Any = when {
+            sourceHomeSelected -> "source_home"
+            discoverSelected -> "discover"
+            selectedId == null -> "all"
+            else -> selectedId
+        }
         LazyColumn(
             state = listState,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f)
+                .focusProperties {
+                    @Suppress("DEPRECATION")
+                    enter = { direction ->
+                        // Only ◀ from the content; ▲/▼ and other entries keep the default search.
+                        val visible = listState.layoutInfo.visibleItemsInfo.any { it.key == selectedKey }
+                        if (direction == FocusDirection.Left && visible) selectedFocus else FocusRequester.Default
+                    }
+                }
+                .focusGroup(),
             verticalArrangement = Arrangement.spacedBy(4.dp),
             contentPadding = PaddingValues(vertical = 4.dp)
         ) {
+            if (showSourceItems) {
+                item(key = "source_home") {
+                    TvMenuItem(
+                        title = stringResource(Res.string.source_home_tab),
+                        icon = Icons.Rounded.Home,
+                        selected = sourceHomeSelected,
+                        modifier = if (sourceHomeSelected) Modifier.focusRequester(selectedFocus) else Modifier,
+                        onClick = onSourceHome,
+                    )
+                }
+            }
+            if (showDiscoverItem) {
+                item(key = "discover") {
+                    TvMenuItem(
+                        title = stringResource(Res.string.discover_title),
+                        icon = Icons.Rounded.Explore,
+                        selected = discoverSelected,
+                        modifier = if (discoverSelected) Modifier.focusRequester(selectedFocus) else Modifier,
+                        onClick = onDiscover,
+                    )
+                }
+            }
             item(key = "all") {
                 TvMenuItem(
                     title = stringResource(Res.string.all_channels_title),
                     icon = Icons.Rounded.Apps,
-                    selected = selectedId == null,
-                    modifier = if (selectedId == null) Modifier.focusRequester(selectedFocus) else Modifier,
+                    selected = selectedId == null && !discoverSelected && !sourceHomeSelected,
+                    modifier = if (selectedId == null && !discoverSelected && !sourceHomeSelected) Modifier.focusRequester(selectedFocus) else Modifier,
                     onClick = { onHomeEvent(HomeEvent.OnClearFilterCategory) }
                 )
             }
             items(homeUiState.categories, key = { it.id }) { category ->
-                val isSelected = category.id == selectedId
+                val isSelected = category.id == selectedId && !discoverSelected && !sourceHomeSelected
                 TvMenuItem(
                     title = category.name,
                     icon = Icons.Rounded.Folder,
@@ -279,10 +424,19 @@ private fun CategoryRail(
         }
 
         Spacer(Modifier.height(8.dp))
+        if (showSourceItems) {
+            TvMenuItem(
+                title = stringResource(Res.string.source_about),
+                icon = Icons.Rounded.Info,
+                onClick = onSourceAbout,
+            )
+            Spacer(Modifier.height(4.dp))
+        }
         TvMenuItem(
             title = stringResource(Res.string.settings_title),
             icon = Icons.Rounded.Settings,
-            onClick = onSettings
+            onClick = onSettings,
+            modifier = if (settingsFocus != null) Modifier.focusRequester(settingsFocus) else Modifier,
         )
     }
 }
@@ -422,7 +576,16 @@ private fun ChannelCard(
                     logoUrl = channel.logoUrl,
                     modifier = Modifier.fillMaxSize().padding(14.dp)
                 )
+                channel.number?.let { NumberBadge(it, Modifier.align(Alignment.TopStart)) }
                 if (isPlaying) PlayingBadge(Modifier.align(Alignment.TopEnd))
+                if (channel.isRadio) {
+                    Icon(
+                        imageVector = Icons.Rounded.Radio,
+                        contentDescription = stringResource(Res.string.channel_badge_radio),
+                        tint = TSColors.AccentCyan,
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp).size(20.dp)
+                    )
+                }
             }
             Text(
                 text = channel.name,
@@ -435,6 +598,21 @@ private fun ChannelCard(
             )
         }
     }
+}
+
+@Composable
+private fun NumberBadge(number: Int, modifier: Modifier = Modifier) {
+    Text(
+        text = number.toString(),
+        color = TSColors.TextPrimary,
+        fontSize = 14.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier = modifier
+            .padding(8.dp)
+            .clip(TvDefaults.cardShape)
+            .background(Color.Black.copy(alpha = 0.55f))
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+    )
 }
 
 @Composable

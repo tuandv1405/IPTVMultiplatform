@@ -10,7 +10,7 @@ class GetChannelsWithValidProgramCounts(
 ) {
     @OptIn(ExperimentalTime::class)
     suspend operator fun invoke(playlistId: String): List<ChannelWithProgramCount> {
-        return iptvDatabase.programDao
+        return iptvDatabase
             .getChannelsWithValidProgramCounts(
                 playlistId = playlistId,
                 timeStamp = Clock.System.now().toEpochMilliseconds()

@@ -1,0 +1,7 @@
+{
+  "format": "tsiptv-source",
+  "version": 1,
+  "id": "qa:tsiptv:colons",
+  "meta": { "description": "The id has colons and meta has no name." },
+  "channels": [{ "id": "a", "name": "A", "url": "https://cdn.example.com/a.m3u8" }]
+}

@@ -108,7 +108,7 @@ async function browserLinkCheck(rawUrl) {
 
 /** A light version of the server's parser: enough to show the user what the link holds. */
 function summarise(text) {
-  const body = text.replace(/^﻿/, "");
+  const body = text.replace(/^\uFEFF/, "");
   const head = body.trimStart().slice(0, 256).toLowerCase();
   let format = null;
   let channelCount = 0;

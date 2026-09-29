@@ -50,11 +50,18 @@ import dev.chrisbanes.haze.hazeEffect
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.home_nav_history
+import tsiptv.composeapp.generated.resources.discover_title
+import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.runtime.collectAsState
+import org.koin.compose.viewmodel.koinViewModel
+import tss.t.tsiptv.ui.screens.discover.DiscoverViewModel
+import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
 import tsiptv.composeapp.generated.resources.home_nav_main
 import tsiptv.composeapp.generated.resources.home_nav_profile
 import tsiptv.composeapp.generated.resources.home_nav_programs
 import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
 import tss.t.tsiptv.navigation.NavRoutes
+import tss.t.tsiptv.ui.screens.addiptv.importErrorMessage
 import tss.t.tsiptv.ui.screens.home.models.BottomNavItem
 import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.themes.TSColors
@@ -86,6 +93,12 @@ internal val defNavItems = listOf(
     )
 )
 
+internal val discoverNavItem = BottomNavItem(
+    route = NavRoutes.HomeScreens.DISCOVER,
+    icon = Icons.Rounded.Explore,
+    labelRes = Res.string.discover_title
+)
+
 /**
  * Home screen of the application with bottom navigation bar.
  */
@@ -102,14 +115,35 @@ fun HomeBottomNavigationScreen(
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
 
-    val bottomNavItems = remember {
-        defNavItems
+    // F2: "Discover" (between Home and History) exists only while an addon is enabled.
+    val discoverViewModel = koinViewModel<DiscoverViewModel>(viewModelStoreOwner = LocalAppViewModelStoreOwner.current!!)
+    val hasAddons by discoverViewModel.hasActiveAddons.collectAsState()
+    val backStack by navController.currentBackStack.collectAsState()
+    val discoverInStack = backStack.any { it.destination.route == NavRoutes.HomeScreens.DISCOVER }
+    val showDiscoverTab = hasAddons == true || (hasAddons == null && discoverInStack)
+    val bottomNavItems = remember(showDiscoverTab) {
+        // Unknown (null): the tab stays only for a restored Discover screen (no flicker for users
+        // without addons, no orphan for users with them).
+        if (showDiscoverTab) defNavItems.take(1) + discoverNavItem + defNavItems.drop(1) else defNavItems
+    }
+    LaunchedEffect(hasAddons) {
+        // Discover disappeared (last addon removed/disabled): no Discover entry may stay anywhere in
+        // the tab back stack, or Back would lead to an orphan screen.
+        // Only on a known "no active addon", never on the unknown initial state.
+        if (hasAddons == false && navController.currentBackStack.value.any { it.destination.route == NavRoutes.HomeScreens.DISCOVER }) {
+            navController.navigate(NavRoutes.HomeScreens.HOME_FEED) {
+                popUpTo(NavRoutes.HomeScreens.HOME_FEED) { inclusive = false }
+                launchSingleTop = true
+            }
+            // And no saved Discover state that restoreState could bring back later.
+            runCatching { navController.clearBackStack(NavRoutes.HomeScreens.DISCOVER) }
+        }
     }
 
     // Track the current selected item
     var selectedItemIndex by remember { mutableStateOf(0) }
 
-    LaunchedEffect(navBackStackEntry?.destination?.route) {
+    LaunchedEffect(navBackStackEntry?.destination?.route, bottomNavItems) {
         selectedItemIndex = bottomNavItems.indexOfFirst {
             it.route == navBackStackEntry?.destination?.route
         }
@@ -164,7 +198,7 @@ fun HomeBottomNavigationScreen(
     // Error Dialog for HomeViewModel Errors
     homeUiState.error?.let { error ->
         ErrorDialog(
-            errorMessage = error.message ?: error.toString(),
+            errorMessage = importErrorMessage(error),
             onDismiss = {
                 // Clear the error from HomeViewModel
                 onHomeEvent(HomeEvent.OnDismissErrorDialog)
@@ -238,18 +272,12 @@ private fun BoxScope.BottomAppBar(
                                 onClick = {
                                     if (selectedItemIndex == index) return@IconButton
                                     onItemChanged(index)
-                                    val inBackStack = navController.currentBackStack
-                                        .value.find {
-                                            it.destination.route == item.route
-                                        }?.destination?.route
-
-                                    if (inBackStack != null) {
-                                        navController.popBackStack(
-                                            route = inBackStack,
-                                            inclusive = false
-                                        )
-                                    } else {
-                                        navController.navigate(item.route)
+                                    // Standard bottom-nav behaviour: one entry per tab above the start
+                                    // destination, so tabs never pile up (or leave an orphan Discover).
+                                    navController.navigate(item.route) {
+                                        popUpTo(NavRoutes.HomeScreens.HOME_FEED) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
                                 },
                                 modifier = Modifier.height(24.dp)

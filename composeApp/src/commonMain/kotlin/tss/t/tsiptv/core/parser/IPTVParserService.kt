@@ -28,8 +28,9 @@ class IPTVParserService(private val networkClient: NetworkClient) {
                 val epgContent = networkClient.getManualGzipIfNeed(epgUrl)
                 return parsePlaylistWithEPG(playlist, epgContent)
             } catch (e: Exception) {
-                // Log the error but continue without program data
-                println("Failed to fetch or parse EPG data: ${e.message}")
+                // Continue without program data. Only the type is logged: messages from the
+                // HTTP stack can contain the guide URL and its token.
+                println("Failed to fetch or parse EPG data: ${e::class.simpleName}")
             }
         }
 

@@ -169,6 +169,9 @@ export function onLanguageChange(callback) { listeners.push(callback); }
 
 export function applyLanguage() {
   document.documentElement.lang = lang;
+  // Tab title from <html data-title-vi / data-title-en>, like lang.js on the other pages.
+  const title = document.documentElement.getAttribute(`data-title-${lang}`);
+  if (title) document.title = title;
   document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll("[data-ui-lang]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.uiLang === lang)));
   listeners.forEach((fn) => fn(lang));
