@@ -53,8 +53,9 @@ def nav_html(url_path: str) -> str:
     for href, prefix, icon, vi, en in ITEMS:
         current = ' aria-current="page"' if url_path.startswith(prefix) else ""
         lines.append(
-            f'      <a href="{href}"{current} title="{vi} / {en}">'
-            f'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" '
+            # Icon-only button; .nav-label is the accessible name and the hover/focus tooltip.
+            f'      <a href="{href}"{current}>'
+            f'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" '
             f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">{ICONS[icon]}</svg>'
             f'<span class="nav-label"><span lang="vi">{vi}</span><span lang="en">{en}</span></span></a>'
         )
