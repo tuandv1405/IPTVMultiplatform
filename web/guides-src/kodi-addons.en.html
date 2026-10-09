@@ -1,0 +1,143 @@
+    <h1>Using Kodi and installing add-ons</h1>
+    <p class="lead">Kodi is a free, open-source media center. This guide shows how to install it from the official sources, find your way around, install add-ons from the official Kodi Add-on repository, and use the PVR IPTV Simple Client to watch your own M3U playlist with its XMLTV guide.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV includes no channels, and neither does Kodi.</strong> Both play what you add. This page names no third-party add-on or repository; every playlist and guide link in it is an <code>example.com</code> placeholder or one of TS IPTV's own example files.</p>
+      <p>Menu names differ slightly between Kodi versions and skins. The steps below follow the default skin (Estuary) in Kodi 20 or later.</p>
+    </div>
+
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+        <li><a href="#what-en">What Kodi is</a></li>
+        <li><a href="#install-en">Install Kodi</a></li>
+        <li><a href="#basics-en">Kodi basics</a></li>
+        <li><a href="#addons-en">Install an add-on from the official repository</a></li>
+        <li><a href="#browse-en">Browse the official repository on the web</a></li>
+        <li><a href="#pvr-en">Worked example: your own M3U with PVR IPTV Simple Client</a></li>
+        <li><a href="#other-en">Other sources: zip files and “Unknown sources”</a></li>
+        <li><a href="#tsiptv-en">Kodi add-ons and TS IPTV</a></li>
+        <li><a href="#trouble-en">Troubleshooting</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what-en">What Kodi is</h2>
+    <p>Kodi (formerly XBMC) is a free, open-source media center made by Team Kodi and the non-profit XBMC Foundation. It plays local files, network shares and streams, and it can show live TV through PVR clients. <strong>Add-ons</strong> extend it: PVR clients, video and music sources, skins, subtitle services and more. Kodi ships with one add-on repository built in, the <strong>Kodi Add-on repository</strong>, maintained by Team Kodi.</p>
+
+    <h2 id="install-en">Install Kodi</h2>
+    <p>Get Kodi only from <a href="https://kodi.tv/download/">kodi.tv/download</a> or from the app store links on that page.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Platform</th><th>How</th></tr></thead>
+        <tbody>
+          <tr><td>Windows</td><td>Installer from kodi.tv/download (or the Microsoft Store link there).</td></tr>
+          <tr><td>macOS</td><td>Disk image from kodi.tv/download.</td></tr>
+          <tr><td>Linux</td><td>Your distribution's package or the instructions on kodi.tv/download.</td></tr>
+          <tr><td>Android phones and tablets</td><td>Google Play (publisher: XBMC Foundation) or the APK from kodi.tv/download.</td></tr>
+          <tr><td>Android TV and Google TV</td><td>Google Play on the TV, or the APK from kodi.tv/download.</td></tr>
+          <tr><td>iPhone, iPad, Apple TV</td><td>Not in the App Store; installing needs sideloading, as described on kodi.tv/download.</td></tr>
+          <tr><td>Raspberry Pi</td><td>A Kodi-based system such as LibreELEC, linked from kodi.tv/download.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 id="install-android-en">Android and Android TV</h3>
+    <ol>
+      <li>Open Google Play, search for <strong>Kodi</strong> and check that the publisher is the XBMC Foundation.</li>
+      <li>Install and open it. Allow access to media files if you want Kodi to play files on the device.</li>
+      <li>If you use the APK from kodi.tv instead, your device asks you to allow installs from the browser or file manager you used. Allow it for this install only.</li>
+    </ol>
+    <h3 id="install-windows-en">Windows</h3>
+    <ol>
+      <li>Download the 64-bit installer from kodi.tv/download.</li>
+      <li>Run it and follow the steps; the defaults are fine.</li>
+      <li>Start Kodi from the Start menu.</li>
+    </ol>
+    <div class="card warn">
+      <p style="margin:0"><strong>Avoid “pre-loaded” builds, boxes sold “fully loaded”, and unofficial forks.</strong> They change Kodi in ways you cannot check, often bundle add-ons that stream content without permission, and may contain malware. Team Kodi does not support them.</p>
+    </div>
+
+    <h2 id="basics-en">Kodi basics</h2>
+    <ul>
+      <li><strong>Home menu</strong>: the list on the left (Movies, TV shows, Music, TV, Radio, Add-ons…). Entries for media you have not set up may be hidden.</li>
+      <li><strong>Settings</strong>: the gear icon at the top of the home menu. <strong>System</strong> holds the add-on options; <strong>Add-ons</strong> opens the add-on browser.</li>
+      <li><strong>Settings level</strong>: at the bottom left of each settings screen you can switch between <strong>Basic</strong>, <strong>Standard</strong>, <strong>Advanced</strong> and <strong>Expert</strong>. Some options in this guide only appear at Standard or above.</li>
+      <li><strong>Add-ons</strong> in the home menu lists your installed add-ons by type; the open-box icon at its top left opens the add-on browser.</li>
+      <li><strong>TV and Radio</strong> appear in the home menu once a PVR client add-on is installed and enabled (see the <a href="#pvr-en">worked example</a>). If they stay hidden, turn them on in the skin's main-menu settings.</li>
+      <li>On a remote or keyboard: arrows to move, Enter or OK to select, Back or Esc to go back, and the context menu (the menu key, <kbd>C</kbd>, or a long press of OK) for options on the selected item.</li>
+    </ul>
+
+    <h2 id="addons-en">Install an add-on from the official repository</h2>
+    <ol>
+      <li>Open <strong>Settings</strong> (gear) › <strong>Add-ons</strong> › <strong>Install from repository</strong>. (From the home menu you can also open <strong>Add-ons</strong> › the open-box icon › <strong>Install from repository</strong>.)</li>
+      <li>Choose <strong>Kodi Add-on repository</strong>. If it is the only repository installed, Kodi may open it directly.</li>
+      <li>Choose a category, for example <strong>PVR clients</strong>, <strong>Video add-ons</strong> or <strong>Subtitles</strong>.</li>
+      <li>Select the add-on to open its information page, then choose <strong>Install</strong>. Kodi lists any other add-ons it needs (dependencies) and installs them too.</li>
+      <li>Wait for the “installed” notification. On the add-on's information page you can now choose <strong>Configure</strong> (its settings), <strong>Enable</strong> or <strong>Disable</strong>, <strong>Auto-update</strong> and <strong>Uninstall</strong>.</li>
+    </ol>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Task</th><th>Where</th></tr></thead>
+        <tbody>
+          <tr><td>Change an add-on's settings</td><td>Its information page › <strong>Configure</strong>, or the context menu on the add-on › <strong>Settings</strong>.</td></tr>
+          <tr><td>Update add-ons</td><td>Settings › System › Add-ons › <strong>Updates</strong>: install updates automatically, notify but don't install, or never check. <strong>Settings › Add-ons › Available updates</strong> lists pending ones.</td></tr>
+          <tr><td>Disable without removing</td><td>Information page › <strong>Disable</strong>. A disabled PVR client stops loading channels.</td></tr>
+          <tr><td>Uninstall</td><td>Information page › <strong>Uninstall</strong>. Its settings may stay in Kodi's user data.</td></tr>
+          <tr><td>See all installed add-ons</td><td>Settings › Add-ons › <strong>My add-ons</strong>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="browse-en">Browse the official repository on the web</h2>
+    <p><a href="https://kodi.tv/addons/">kodi.tv/addons</a> lists the add-ons of the official Kodi Add-on repository by category, Kodi version and platform, with descriptions. It is a catalogue only: you still install add-ons inside Kodi, as shown above. Use it to check that an add-on exists for your Kodi version and device before you look for it in Kodi.</p>
+
+    <h2 id="pvr-en">Worked example: your own M3U with PVR IPTV Simple Client</h2>
+    <p><strong>PVR IPTV Simple Client</strong> is a PVR client in the official repository. It shows the channels of an M3U playlist and the programmes of an XMLTV guide in Kodi's TV section. Use it with playlists you made or are entitled to use. Its full option list is in its <a href="https://github.com/kodi-pvr/pvr.iptvsimple">README</a>.</p>
+    <ol>
+      <li>Install it: Settings › Add-ons › Install from repository › Kodi Add-on repository › <strong>PVR clients</strong> › <strong>PVR IPTV Simple Client</strong> › <strong>Install</strong>.</li>
+      <li>Open its information page and choose <strong>Configure</strong>. Recent versions can hold several configurations: if asked, add or edit one and give it a name.</li>
+      <li><strong>General</strong> tab: set <strong>Location</strong> to <strong>Remote path (Internet address)</strong> and enter the playlist URL in <strong>M3U play list URL</strong>, for example TS IPTV's example playlist <code>https://tsiptv-8bdd6.web.app/examples/playlist.m3u</code> or your own <code>https://www.example.com/playlist.m3u</code>. For a file on the device, choose <strong>Local path</strong> and pick the file.</li>
+      <li><strong>EPG</strong> tab: same choice of location, then the guide in <strong>XMLTV URL</strong>, for example <code>https://tsiptv-8bdd6.web.app/examples/guide.xml</code>. If the playlist has an <code>x-tvg-url</code> header, the add-on can use it when this field is empty.</li>
+      <li>Choose <strong>OK</strong>, make sure the add-on is <strong>enabled</strong>, and restart Kodi if it asks.</li>
+      <li>Open <strong>TV</strong> in the home menu: the channels appear under <strong>Channels</strong> and the programmes under <strong>Guide</strong>. The first load can take a moment.</li>
+    </ol>
+    <p>The file formats are described in our <a href="/guides/m3u/">M3U guide</a>, <a href="/guides/xmltv/">XMLTV guide</a> and <a href="/guides/kodi/">Kodi formats guide</a>. TS IPTV reads the same playlists, including <code>#KODIPROP</code>, <code>#EXTVLCOPT</code> and <code>|headers</code>, so one playlist works in both apps.</p>
+
+    <h2 id="other-en">Other sources: zip files and “Unknown sources”</h2>
+    <p>Kodi can also install add-ons from outside the official repository: <strong>Settings › Add-ons › Install from zip file</strong>, which installs one add-on or a third-party repository from a zip. This needs <strong>Settings › System › Add-ons › Unknown sources</strong> to be switched on, and Kodi shows a warning when you do.</p>
+    <div class="card warn">
+      <p><strong>Add-ons are programs.</strong> An add-on runs Python code inside Kodi with the same access as Kodi itself: your files, your network and your accounts in Kodi. Add-ons outside the official repository are not reviewed by Team Kodi. They can contain malware, break with updates, and many of them stream films, series or channels without the rights holders' permission.</p>
+      <p style="margin-bottom:0">The official Kodi Add-on repository is the safe default. Switch on unknown sources only for an add-on from a developer you know and trust, only for content you have the right to watch, and switch it off again afterwards.</p>
+    </div>
+    <p>This guide does not name, link or explain any third-party add-on or repository.</p>
+
+    <h2 id="tsiptv-en">Kodi add-ons and TS IPTV</h2>
+    <ul>
+      <li>TS IPTV <strong>does not run Kodi add-ons</strong>: they are Python programs made for Kodi only. Entries that need one (<code>plugin://</code>) are skipped when you import a playlist.</li>
+      <li>TS IPTV reads the playlist <strong>formats</strong> Kodi uses: M3U with <code>#KODIPROP</code>, <code>#EXTVLCOPT</code> and <code>|headers</code>, XMLTV guides, and <code>.strm</code> files. See <a href="/guides/kodi/">Kodi formats in TS IPTV</a>.</li>
+      <li>For catalogues of films and series served over HTTP, TS IPTV supports <a href="/guides/stremio-addons/">Stremio-compatible addons</a>. To publish your own collection with a layout, use a <a href="/guides/tsiptv-source/">TS IPTV Source</a>.</li>
+    </ul>
+
+    <h2 id="trouble-en">Troubleshooting</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Problem</th><th>What to check</th></tr></thead>
+        <tbody>
+          <tr><td>The add-on is not in the list</td><td>Look in the right category (PVR clients are not under Video add-ons). Check on <a href="https://kodi.tv/addons/">kodi.tv/addons</a> that it exists for your Kodi version and platform. Raise the settings level if a menu entry is missing.</td></tr>
+          <tr><td>“Dependencies not met”</td><td>The add-on needs another add-on or a newer Kodi that is not available. Update Kodi, install add-ons from the official repository, and avoid zip files made for another Kodi version.</td></tr>
+          <tr><td>PVR IPTV Simple shows no channels</td><td>Open the playlist URL in a browser: it must return the file, not a web page. Check that the add-on is enabled and the location type (remote or local) matches. Restart Kodi after changing settings.</td></tr>
+          <tr><td>No programme guide</td><td>Check the XMLTV URL and that the playlist's <code>tvg-id</code> values match the guide's <code>&lt;channel id&gt;</code> (see the <a href="/guides/xmltv/">XMLTV guide</a>).</td></tr>
+          <tr><td>Something else fails</td><td>Look in <code>kodi.log</code>. Its location depends on the platform, for example <code>%APPDATA%\Kodi\kodi.log</code> on Windows and <code>~/.kodi/temp/kodi.log</code> on Linux; the <a href="https://kodi.wiki/view/Log_file">Kodi wiki log file page</a> lists every platform.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related-en">Related guides</h2>
+      <ul>
+        <li><a href="/guides/kodi/">Kodi formats in TS IPTV</a></li>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/xmltv/">XMLTV</a></li>
+        <li><a href="/guides/stremio-addons/">Stremio-compatible addons</a></li>
+        <li><a href="/guides/">All guides</a></li>
+      </ul>
+    </section>

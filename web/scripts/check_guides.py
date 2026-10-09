@@ -80,6 +80,8 @@ LINK_ALLOW = [
     ("developer.android.com", ""),
     ("w3.org", ""),
     ("tsiptv-8bdd6.web.app", ""),
+    ("kodi.tv", ""),          # official Kodi site (download, add-on catalogue); kodi-addons guide
+    ("kodi.wiki", ""),        # official Kodi wiki
 ]
 
 # Hosts that may appear as URLs in guide text and example files (content rule 2).

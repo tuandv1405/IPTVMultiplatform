@@ -219,3 +219,22 @@ Results: `build_guides.py` rebuilt `guides/tsiptv-source/`; `check_guides: OK �
 - **N5:** PlayReady plays only on Android devices with a PlayReady CDM.
 
 Results: `check_guides` OK; `test_validator` OK; both source files have 576 lines, so vi and en line numbers still match.
+
+## Kodi add-ons guide (2026-10-10)
+
+New bilingual page **`/guides/kodi-addons/`**, "Dùng Kodi và cài add-on / Using Kodi and installing add-ons", built with the generator (sources `web/guides-src/kodi-addons.{vi,en}.html`, a PAGES row in `build_guides.py`, the shared nav from `site_nav.py`). Branch `ci/app-distribution-apk-fallback` (= `origin/main` 0acbb99); not committed, not deployed.
+
+- **Sections:** what Kodi is; installing from kodi.tv/download only (platform table plus Android/Android TV and Windows steps, warning against pre-loaded builds, boxes and forks); Kodi basics (home menu, Settings gear, settings levels, Add-ons, TV/Radio after a PVR client, remote keys); installing from the Kodi Add-on repository step by step, with configure, updates, disable, uninstall and My add-ons; kodi.tv/addons as a catalogue only; the PVR IPTV Simple Client worked example (General › Location › M3U play list URL, EPG › XMLTV URL, enable, restart, TV › Channels/Guide) using only `example.com` and our own `examples/playlist.m3u` and `guide.xml`; "Install from zip file" and "Unknown sources" with the risks and no third-party names or URLs; Kodi add-ons vs TS IPTV (links to the Kodi formats, Stremio addons and TS IPTV Source pages); troubleshooting, including the `kodi.log` locations and the wiki link.
+- **Version wording:** steps follow the default skin in "Kodi 20 or later", with a note that menu names differ by version and skin.
+- **Wiring:**
+  - hub card (Other apps and services) and a "Which one do I need?" row;
+  - Related links both ways with `/guides/kodi/`;
+  - the sitemap.
+- **Allowlist:** `check_guides.py` `LINK_ALLOW` gains `kodi.tv` and `kodi.wiki` (lead-approved). The page links to kodi.tv/download, kodi.tv/addons, kodi.wiki/view/Log_file and the already-allowed pvr.iptvsimple README.
+- **Policy:** the only add-on named is PVR IPTV Simple Client (official repository), which the Kodi formats page already names. No third-party add-on, repository or URL appears, and the `repository.*` / `plugin.video.*` denylist patterns are not triggered.
+- **Checks:**
+  - `check_guides: OK — 13 guide pages, 24 site pages, 20 example files, schema and links clean`;
+  - `test_validator` OK;
+  - headless Chrome on the new page, `/guides/kodi/` and the hub, in vi and en at 320, 360 and 1280 px (18 loads): no console errors or warnings, no failed requests, no horizontal scroll, and the hub and Kodi page link to the new page.
+  - Screenshots in the scratchpad: `kodi-addons-360-vi.png`, `kodi-addons-1280-en-pvr.png`.
+- **Facts not verified against a live Kodi install** (written from Kodi's documented menus): Estuary menu labels, the "several configurations" prompt of recent PVR IPTV Simple versions, and "Kodi may open the repository directly". The page says names can differ.

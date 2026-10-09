@@ -1,0 +1,143 @@
+    <h1>Dùng Kodi và cài add-on</h1>
+    <p class="lead">Kodi là trung tâm giải trí đa phương tiện miễn phí, mã nguồn mở. Hướng dẫn này chỉ cách cài Kodi từ nguồn chính thức, làm quen giao diện, cài add-on từ kho add-on chính thức của Kodi, và dùng PVR IPTV Simple Client để xem danh sách M3U của chính bạn kèm lịch phát sóng XMLTV.</p>
+
+    <div class="card callout" data-no-channels>
+      <p><strong>TS IPTV không có sẵn kênh nào, và Kodi cũng vậy.</strong> Cả hai chỉ phát những gì bạn thêm vào. Trang này không nêu tên add-on hay kho add-on nào của bên thứ ba; mọi đường dẫn danh sách phát và lịch phát sóng ở đây đều là tên miền giả <code>example.com</code> hoặc tệp ví dụ của chính TS IPTV.</p>
+      <p>Tên menu có thể hơi khác giữa các phiên bản Kodi và giữa các giao diện (skin). Các bước dưới đây theo giao diện mặc định (Estuary) của Kodi 20 trở lên.</p>
+    </div>
+
+    <nav class="toc" aria-label="Trên trang này">
+      <p class="toc-title">Trên trang này</p>
+      <ol>
+        <li><a href="#what">Kodi là gì</a></li>
+        <li><a href="#install">Cài Kodi</a></li>
+        <li><a href="#basics">Làm quen Kodi</a></li>
+        <li><a href="#addons">Cài add-on từ kho chính thức</a></li>
+        <li><a href="#browse">Xem kho chính thức trên web</a></li>
+        <li><a href="#pvr">Ví dụ: M3U của bạn với PVR IPTV Simple Client</a></li>
+        <li><a href="#other">Nguồn khác: tệp zip và “Unknown sources”</a></li>
+        <li><a href="#tsiptv">Add-on Kodi và TS IPTV</a></li>
+        <li><a href="#trouble">Xử lý sự cố</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="what">Kodi là gì</h2>
+    <p>Kodi (tên cũ là XBMC) là trung tâm giải trí đa phương tiện miễn phí, mã nguồn mở, do Team Kodi và tổ chức phi lợi nhuận XBMC Foundation phát triển. Kodi phát tệp trên máy, thư mục chia sẻ trong mạng và luồng trực tuyến, và có thể hiện truyền hình trực tiếp qua các PVR client. <strong>Add-on</strong> mở rộng Kodi: PVR client, nguồn video và nhạc, giao diện, dịch vụ phụ đề, v.v. Kodi có sẵn một kho add-on là <strong>Kodi Add-on repository</strong>, do Team Kodi quản lý.</p>
+
+    <h2 id="install">Cài Kodi</h2>
+    <p>Chỉ tải Kodi từ <a href="https://kodi.tv/download/">kodi.tv/download</a> hoặc từ các liên kết kho ứng dụng trên trang đó.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Nền tảng</th><th>Cách cài</th></tr></thead>
+        <tbody>
+          <tr><td>Windows</td><td>Bộ cài từ kodi.tv/download (hoặc liên kết Microsoft Store trên trang đó).</td></tr>
+          <tr><td>macOS</td><td>Tệp ảnh đĩa từ kodi.tv/download.</td></tr>
+          <tr><td>Linux</td><td>Gói của bản phân phối bạn dùng, hoặc theo hướng dẫn trên kodi.tv/download.</td></tr>
+          <tr><td>Điện thoại và máy tính bảng Android</td><td>Google Play (nhà phát hành: XBMC Foundation) hoặc tệp APK từ kodi.tv/download.</td></tr>
+          <tr><td>Android TV và Google TV</td><td>Google Play trên TV, hoặc tệp APK từ kodi.tv/download.</td></tr>
+          <tr><td>iPhone, iPad, Apple TV</td><td>Không có trên App Store; cần cài theo cách sideload, như mô tả trên kodi.tv/download.</td></tr>
+          <tr><td>Raspberry Pi</td><td>Một hệ điều hành dựng sẵn Kodi như LibreELEC, có liên kết trên kodi.tv/download.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 id="install-android">Android và Android TV</h3>
+    <ol>
+      <li>Mở Google Play, tìm <strong>Kodi</strong> và kiểm tra nhà phát hành là XBMC Foundation.</li>
+      <li>Cài rồi mở ứng dụng. Cho phép truy cập tệp media nếu bạn muốn Kodi phát tệp trên máy.</li>
+      <li>Nếu dùng tệp APK từ kodi.tv, máy sẽ hỏi có cho phép cài từ trình duyệt hay trình quản lý tệp bạn đã dùng không. Chỉ cho phép cho lần cài này.</li>
+    </ol>
+    <h3 id="install-windows">Windows</h3>
+    <ol>
+      <li>Tải bộ cài 64-bit từ kodi.tv/download.</li>
+      <li>Chạy bộ cài và làm theo các bước; giữ thiết lập mặc định là được.</li>
+      <li>Mở Kodi từ menu Start.</li>
+    </ol>
+    <div class="card warn">
+      <p style="margin:0"><strong>Tránh các bản “build cài sẵn”, các hộp TV bán kèm “đầy đủ add-on” và các bản Kodi sửa đổi không chính thức.</strong> Chúng thay đổi Kodi theo cách bạn không kiểm tra được, thường kèm add-on phát nội dung không có phép, và có thể chứa mã độc. Team Kodi không hỗ trợ các bản này.</p>
+    </div>
+
+    <h2 id="basics">Làm quen Kodi</h2>
+    <ul>
+      <li><strong>Menu chính</strong>: danh sách bên trái (Movies, TV shows, Music, TV, Radio, Add-ons…). Mục nào chưa có nội dung có thể bị ẩn.</li>
+      <li><strong>Settings</strong> (Cài đặt): biểu tượng bánh răng ở đầu menu chính. Phần <strong>System</strong> chứa các tuỳ chọn về add-on; phần <strong>Add-ons</strong> mở trình duyệt add-on.</li>
+      <li><strong>Cấp độ cài đặt</strong>: ở góc dưới bên trái mỗi màn hình cài đặt, bạn chuyển được giữa <strong>Basic</strong>, <strong>Standard</strong>, <strong>Advanced</strong> và <strong>Expert</strong>. Một số tuỳ chọn trong hướng dẫn này chỉ hiện từ mức Standard trở lên.</li>
+      <li><strong>Add-ons</strong> trong menu chính liệt kê add-on đã cài theo loại; biểu tượng hộp mở ở góc trên bên trái mở trình duyệt add-on.</li>
+      <li><strong>TV và Radio</strong> xuất hiện trong menu chính khi đã cài và bật một PVR client (xem <a href="#pvr">ví dụ</a>). Nếu vẫn bị ẩn, hãy bật chúng trong phần cài đặt menu chính của giao diện.</li>
+      <li>Với điều khiển hoặc bàn phím: phím mũi tên để di chuyển, Enter hoặc OK để chọn, Back hoặc Esc để quay lại, và menu ngữ cảnh (phím menu, phím <kbd>C</kbd>, hoặc nhấn giữ OK) để xem tuỳ chọn cho mục đang chọn.</li>
+    </ul>
+
+    <h2 id="addons">Cài add-on từ kho chính thức</h2>
+    <ol>
+      <li>Mở <strong>Settings</strong> (bánh răng) › <strong>Add-ons</strong> › <strong>Install from repository</strong>. (Từ menu chính bạn cũng có thể mở <strong>Add-ons</strong> › biểu tượng hộp mở › <strong>Install from repository</strong>.)</li>
+      <li>Chọn <strong>Kodi Add-on repository</strong>. Nếu đây là kho duy nhất đã cài, Kodi có thể mở thẳng vào kho.</li>
+      <li>Chọn một danh mục, ví dụ <strong>PVR clients</strong>, <strong>Video add-ons</strong> hoặc <strong>Subtitles</strong>.</li>
+      <li>Chọn add-on để mở trang thông tin, rồi chọn <strong>Install</strong>. Kodi liệt kê các add-on khác cần có kèm (phần phụ thuộc) và cài luôn.</li>
+      <li>Chờ thông báo đã cài xong. Trên trang thông tin của add-on giờ có <strong>Configure</strong> (cài đặt riêng), <strong>Enable</strong> hoặc <strong>Disable</strong>, <strong>Auto-update</strong> và <strong>Uninstall</strong>.</li>
+    </ol>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Việc cần làm</th><th>Ở đâu</th></tr></thead>
+        <tbody>
+          <tr><td>Đổi cài đặt của add-on</td><td>Trang thông tin › <strong>Configure</strong>, hoặc menu ngữ cảnh trên add-on › <strong>Settings</strong>.</td></tr>
+          <tr><td>Cập nhật add-on</td><td>Settings › System › Add-ons › <strong>Updates</strong>: tự cài bản cập nhật, chỉ thông báo, hoặc không bao giờ kiểm tra. <strong>Settings › Add-ons › Available updates</strong> liệt kê các bản đang chờ.</td></tr>
+          <tr><td>Tắt mà không gỡ</td><td>Trang thông tin › <strong>Disable</strong>. PVR client bị tắt sẽ ngừng tải kênh.</td></tr>
+          <tr><td>Gỡ cài đặt</td><td>Trang thông tin › <strong>Uninstall</strong>. Cài đặt của add-on có thể vẫn còn trong dữ liệu người dùng của Kodi.</td></tr>
+          <tr><td>Xem mọi add-on đã cài</td><td>Settings › Add-ons › <strong>My add-ons</strong>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="browse">Xem kho chính thức trên web</h2>
+    <p><a href="https://kodi.tv/addons/">kodi.tv/addons</a> liệt kê các add-on của kho chính thức theo danh mục, phiên bản Kodi và nền tảng, kèm mô tả. Đây chỉ là trang danh mục: bạn vẫn cài add-on bên trong Kodi như ở trên. Hãy dùng trang này để kiểm tra một add-on có cho phiên bản Kodi và thiết bị của bạn không, trước khi tìm nó trong Kodi.</p>
+
+    <h2 id="pvr">Ví dụ: M3U của bạn với PVR IPTV Simple Client</h2>
+    <p><strong>PVR IPTV Simple Client</strong> là một PVR client trong kho chính thức. Nó hiện các kênh của một danh sách M3U và chương trình của một lịch XMLTV trong phần TV của Kodi. Hãy dùng nó với danh sách bạn tự tạo hoặc có quyền sử dụng. Toàn bộ tuỳ chọn có trong <a href="https://github.com/kodi-pvr/pvr.iptvsimple">README</a> của add-on.</p>
+    <ol>
+      <li>Cài add-on: Settings › Add-ons › Install from repository › Kodi Add-on repository › <strong>PVR clients</strong> › <strong>PVR IPTV Simple Client</strong> › <strong>Install</strong>.</li>
+      <li>Mở trang thông tin và chọn <strong>Configure</strong>. Các phiên bản gần đây cho phép nhiều cấu hình: nếu được hỏi, hãy thêm hoặc sửa một cấu hình và đặt tên cho nó.</li>
+      <li>Thẻ <strong>General</strong>: đặt <strong>Location</strong> là <strong>Remote path (Internet address)</strong> và nhập đường dẫn danh sách vào <strong>M3U play list URL</strong>, ví dụ danh sách ví dụ của TS IPTV <code>https://tsiptv-8bdd6.web.app/examples/playlist.m3u</code> hoặc của bạn <code>https://www.example.com/playlist.m3u</code>. Với tệp trên máy, chọn <strong>Local path</strong> rồi chọn tệp.</li>
+      <li>Thẻ <strong>EPG</strong>: chọn vị trí tương tự, rồi nhập lịch vào <strong>XMLTV URL</strong>, ví dụ <code>https://tsiptv-8bdd6.web.app/examples/guide.xml</code>. Nếu danh sách có tiêu đề <code>x-tvg-url</code>, add-on có thể dùng nó khi ô này để trống.</li>
+      <li>Chọn <strong>OK</strong>, bảo đảm add-on đang <strong>bật</strong>, và khởi động lại Kodi nếu được yêu cầu.</li>
+      <li>Mở <strong>TV</strong> trong menu chính: kênh nằm trong <strong>Channels</strong> và chương trình trong <strong>Guide</strong>. Lần tải đầu có thể mất một lúc.</li>
+    </ol>
+    <p>Các định dạng tệp được mô tả trong <a href="/guides/m3u/">hướng dẫn M3U</a>, <a href="/guides/xmltv/">hướng dẫn XMLTV</a> và <a href="/guides/kodi/">hướng dẫn định dạng Kodi</a>. TS IPTV đọc cùng các danh sách đó, kể cả <code>#KODIPROP</code>, <code>#EXTVLCOPT</code> và <code>|headers</code>, nên một danh sách dùng được cho cả hai ứng dụng.</p>
+
+    <h2 id="other">Nguồn khác: tệp zip và “Unknown sources”</h2>
+    <p>Kodi cũng có thể cài add-on từ ngoài kho chính thức: <strong>Settings › Add-ons › Install from zip file</strong> cài một add-on hoặc một kho add-on của bên thứ ba từ tệp zip. Việc này cần bật <strong>Settings › System › Add-ons › Unknown sources</strong>, và Kodi hiện cảnh báo khi bạn bật.</p>
+    <div class="card warn">
+      <p><strong>Add-on là chương trình.</strong> Add-on chạy mã Python bên trong Kodi với cùng quyền như Kodi: tệp của bạn, mạng của bạn và các tài khoản bạn đã đăng nhập trong Kodi. Add-on ngoài kho chính thức không được Team Kodi kiểm duyệt. Chúng có thể chứa mã độc, hỏng sau khi cập nhật, và nhiều add-on phát phim, phim bộ hay kênh truyền hình khi chưa được chủ sở hữu bản quyền cho phép.</p>
+      <p style="margin-bottom:0">Kho add-on chính thức của Kodi là lựa chọn an toàn mặc định. Chỉ bật unknown sources cho add-on của nhà phát triển bạn biết và tin tưởng, chỉ cho nội dung bạn có quyền xem, và tắt lại sau khi cài xong.</p>
+    </div>
+    <p>Hướng dẫn này không nêu tên, không liên kết và không giải thích cách dùng add-on hay kho add-on nào của bên thứ ba.</p>
+
+    <h2 id="tsiptv">Add-on Kodi và TS IPTV</h2>
+    <ul>
+      <li>TS IPTV <strong>không chạy add-on Kodi</strong>: đó là các chương trình Python chỉ dành cho Kodi. Mục nào cần add-on (<code>plugin://</code>) sẽ bị bỏ qua khi bạn nhập danh sách phát.</li>
+      <li>TS IPTV đọc các <strong>định dạng</strong> danh sách mà Kodi dùng: M3U có <code>#KODIPROP</code>, <code>#EXTVLCOPT</code> và <code>|headers</code>, lịch XMLTV, và tệp <code>.strm</code>. Xem <a href="/guides/kodi/">Định dạng Kodi trong TS IPTV</a>.</li>
+      <li>Với danh mục phim lẻ và phim bộ phục vụ qua HTTP, TS IPTV hỗ trợ <a href="/guides/stremio-addons/">addon tương thích Stremio</a>. Để đăng bộ sưu tập của riêng bạn kèm bố cục, hãy dùng <a href="/guides/tsiptv-source/">TS IPTV Source</a>.</li>
+    </ul>
+
+    <h2 id="trouble">Xử lý sự cố</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Sự cố</th><th>Cần kiểm tra</th></tr></thead>
+        <tbody>
+          <tr><td>Không thấy add-on trong danh sách</td><td>Tìm đúng danh mục (PVR client không nằm trong Video add-ons). Kiểm tra trên <a href="https://kodi.tv/addons/">kodi.tv/addons</a> rằng add-on có cho phiên bản Kodi và nền tảng của bạn. Nâng cấp độ cài đặt nếu thiếu một mục menu.</td></tr>
+          <tr><td>Lỗi “Dependencies not met”</td><td>Add-on cần một add-on khác hoặc phiên bản Kodi mới hơn mà máy không có. Hãy cập nhật Kodi, cài add-on từ kho chính thức, và tránh tệp zip làm cho phiên bản Kodi khác.</td></tr>
+          <tr><td>PVR IPTV Simple không hiện kênh</td><td>Mở đường dẫn danh sách trong trình duyệt: nó phải trả về tệp, không phải trang web. Kiểm tra add-on đang bật và loại vị trí (remote hay local) đúng. Khởi động lại Kodi sau khi đổi cài đặt.</td></tr>
+          <tr><td>Không có lịch phát sóng</td><td>Kiểm tra đường dẫn XMLTV, và giá trị <code>tvg-id</code> trong danh sách phải trùng <code>&lt;channel id&gt;</code> trong lịch (xem <a href="/guides/xmltv/">hướng dẫn XMLTV</a>).</td></tr>
+          <tr><td>Lỗi khác</td><td>Xem tệp <code>kodi.log</code>. Vị trí tuỳ nền tảng, ví dụ <code>%APPDATA%\Kodi\kodi.log</code> trên Windows và <code>~/.kodi/temp/kodi.log</code> trên Linux; <a href="https://kodi.wiki/view/Log_file">trang về tệp log trên Kodi wiki</a> liệt kê đủ mọi nền tảng.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="related">
+      <h2 id="related">Hướng dẫn liên quan</h2>
+      <ul>
+        <li><a href="/guides/kodi/">Định dạng Kodi trong TS IPTV</a></li>
+        <li><a href="/guides/m3u/">M3U / M3U8</a></li>
+        <li><a href="/guides/xmltv/">XMLTV</a></li>
+        <li><a href="/guides/stremio-addons/">Addon tương thích Stremio</a></li>
+        <li><a href="/guides/">Tất cả hướng dẫn</a></li>
+      </ul>
+    </section>
