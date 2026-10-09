@@ -95,9 +95,14 @@ Sau đó vào GitHub › **Settings › Secrets and variables › Actions › Va
 2. Tab **Testers & Groups**: tạo group có alias `testers` và thêm email tester.
 3. **Bắt buộc khi phát hành AAB:** App Distribution chỉ nhận AAB khi project Firebase đã được liên kết với Google Play.
    Vào Firebase Console › Project settings › **Integrations › Google Play** › Link, và app phải có trên Play Console
-   (một bản ở bất kỳ track nào, kể cả internal). Nếu chưa liên kết, bước upload sẽ báo lỗi. Tạm thời có thể đổi
-   `bundleRelease` thành `assembleRelease` và đường dẫn `bundle/release/*.aab` thành `apk/release/*.apk`
-   trong workflow.
+   (một bản ở bất kỳ track nào, kể cả internal). Nếu chưa liên kết, workflow tự upload bản APK (build từ cùng commit)
+   và hiện cảnh báo trên run. Muốn luôn dùng APK thì đặt variable `FIREBASE_DISTRIBUTE_FORMAT=apk`.
+4. Nếu bước upload vẫn lỗi, mở run trên GitHub › job `distribute` › bước **Upload to Firebase App Distribution**.
+   Dòng `::error::` cuối cùng tóm tắt nguyên nhân. Các lỗi hay gặp:
+   - Sai group: chưa có group alias `testers`.
+   - Thiếu quyền: service account chưa có role Firebase App Distribution Admin.
+   - Chưa bật API `firebaseappdistribution.googleapis.com`.
+   - Chưa bấm **Get started** trong App Distribution.
 
 ### 4. Tuỳ chọn: GitHub variables
 
@@ -107,6 +112,7 @@ Vào **Settings › Secrets and variables › Actions › Variables**:
 |---|---|
 | `FIREBASE_ANDROID_APP_ID` | `1:234600934735:android:c8d65b7ef4741dacd4a93a` (lấy từ `composeApp/google-services.json`) |
 | `FIREBASE_TESTER_GROUPS` | `testers` (nhiều group thì phân tách bằng dấu phẩy) |
+| `FIREBASE_DISTRIBUTE_FORMAT` | `aab`. Đặt `apk` để luôn upload APK, ví dụ khi chưa liên kết Google Play |
 
 ## Lưu ý
 
