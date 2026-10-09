@@ -99,6 +99,8 @@ Sau đó vào GitHub › **Settings › Secrets and variables › Actions › Va
    và hiện cảnh báo trên run. Muốn luôn dùng APK thì đặt variable `FIREBASE_DISTRIBUTE_FORMAT=apk`.
 4. Nếu bước upload vẫn lỗi, mở run trên GitHub › job `distribute` › bước **Upload to Firebase App Distribution**.
    Dòng `::error::` cuối cùng tóm tắt nguyên nhân. Các lỗi hay gặp:
+   - `failed to distribute to testers/groups … HTTP Error: 404`: bản build **đã upload**, nhưng không có group nào có alias `testers`.
+     Tạo group với alias đó, hoặc chép alias thật của group vào variable `FIREBASE_TESTER_GROUPS`.
    - Sai group: chưa có group alias `testers`.
    - Thiếu quyền: service account chưa có role Firebase App Distribution Admin.
    - Chưa bật API `firebaseappdistribution.googleapis.com`.
@@ -111,7 +113,8 @@ Vào **Settings › Secrets and variables › Actions › Variables**:
 | Variable | Mặc định |
 |---|---|
 | `FIREBASE_ANDROID_APP_ID` | `1:234600934735:android:c8d65b7ef4741dacd4a93a` (lấy từ `composeApp/google-services.json`) |
-| `FIREBASE_TESTER_GROUPS` | `testers` (nhiều group thì phân tách bằng dấu phẩy) |
+| `FIREBASE_TESTER_GROUPS` | `testers`. Đây là **alias** của group (Testers & Groups › mở group › alias), không phải tên hiển thị. Nhiều group thì phân tách bằng dấu phẩy. Để trống thì chỉ upload, không gửi cho ai |
+| `FIREBASE_TESTERS` | (trống). Email tester, phân tách bằng dấu phẩy, dùng thêm hoặc thay cho group |
 | `FIREBASE_DISTRIBUTE_FORMAT` | `aab`. Đặt `apk` để luôn upload APK, ví dụ khi chưa liên kết Google Play |
 
 ## Lưu ý

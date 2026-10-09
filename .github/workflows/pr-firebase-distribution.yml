@@ -101,27 +101,40 @@ jobs:
       - name: Upload to Firebase App Distribution
         env:
           FIREBASE_APP_ID: ${{ vars.FIREBASE_ANDROID_APP_ID || '1:234600934735:android:c8d65b7ef4741dacd4a93a' }}
+          # Group ALIASES (Testers & Groups › the group › alias), comma-separated; empty = upload only.
           TESTER_GROUPS: ${{ vars.FIREBASE_TESTER_GROUPS || 'testers' }}
+          # Optional tester emails, comma-separated.
+          TESTERS: ${{ vars.FIREBASE_TESTERS }}
           FORMAT: ${{ vars.FIREBASE_DISTRIBUTE_FORMAT || 'aab' }}
           AAB: ${{ steps.out.outputs.aab }}
           APK: ${{ steps.out.outputs.apk }}
         run: |
           distribute() {
-            npx --yes firebase-tools@14 appdistribution:distribute "$1" \
-              --app "$FIREBASE_APP_ID" \
-              --groups "$TESTER_GROUPS" \
-              --release-notes-file release-notes.txt 2>&1 | tee distribute.log
+            args=(appdistribution:distribute "$1" --app "$FIREBASE_APP_ID" --release-notes-file release-notes.txt)
+            if [ -n "$TESTER_GROUPS" ]; then args+=(--groups "$TESTER_GROUPS"); fi
+            if [ -n "$TESTERS" ]; then args+=(--testers "$TESTERS"); fi
+            npx --yes firebase-tools@14 "${args[@]}" 2>&1 | tee distribute.log
             return "${PIPESTATUS[0]}"
+          }
+          # The build was uploaded but handing it to the groups failed (404 = unknown group alias).
+          # Retrying with the APK would fail the same way, so stop here with a clear message.
+          distribution_failed() {
+            if grep -q 'failed to distribute to testers/groups' distribute.log; then
+              echo "::error::The build was uploaded, but distributing it failed: no tester group with alias '$TESTER_GROUPS'. In Firebase Console › App Distribution › Testers & Groups, create the group or copy its alias into the FIREBASE_TESTER_GROUPS variable (see docs/ci-firebase-distribution.md)."
+              return 0
+            fi
+            return 1
           }
           if [ "$FORMAT" != "apk" ]; then
             if distribute "$AAB"; then exit 0; fi
+            if distribution_failed; then exit 1; fi
             echo "::warning::AAB upload failed (is Firebase linked to Google Play? see docs/ci-firebase-distribution.md). Retrying with the APK."
           fi
           if distribute "$APK"; then exit 0; fi
-          reason=$(grep -iE 'error|denied|permission|not found|invalid|group' distribute.log | tail -n 3 | tr '\n' ' ')
+          if distribution_failed; then exit 1; fi
+          reason=$(grep -iE 'error|denied|permission|not found|invalid' distribute.log | tail -n 3 | tr '\n' ' ')
           echo "::error::App Distribution upload failed: ${reason:-see the step log}"
           exit 1
-
       - name: Keep the AAB and APK as workflow artifacts
         if: always() && steps.out.outputs.aab != ''
         uses: actions/upload-artifact@v5
