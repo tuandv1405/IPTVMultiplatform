@@ -134,6 +134,15 @@ How it behaves
 Edit `public/assets/support-config.js`, replace each `CHANGE_ME`, then preview with
 `?preview=1` and scan every QR with a phone before deploying. Never commit made-up values.
 
+- **Keep every value in quotes**, including account and phone numbers (`"0123…"`, not
+  `0123…`): as JavaScript numbers they lose leading zeros and digits beyond 15.
+- **Replacing a QR image: use a new file name** (e.g. `vietqr-2027.png`) and update `qr`.
+  Images are served with `Cache-Control: max-age=604800` (7 days, `firebase.json`), so
+  visitors would keep seeing the old QR under the same name.
+- **Where the money goes:** the "Apple developer account fees" line is commented out in both
+  panes of `public/support/index.html`. Uncomment it only if you pay for an Apple developer
+  account (i.e. the iOS app is published); otherwise leave it out.
+
 | Method | Fields | Where to get them |
 |---|---|---|
 | VietQR / Napas 247 | `bankName`, `accountNumber`, `accountName` (capitals without accents, exactly as the bank shows), optional `branch`; `qr: "/assets/support/vietqr.png"` | Generate the QR image in your banking app ("Mã QR nhận tiền"), or on vietqr.io (choose the bank, enter the account number and name, leave the amount empty, download the PNG). Save it as `public/assets/support/vietqr.png`. |

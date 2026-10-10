@@ -136,6 +136,17 @@
 .support-notes h2 { margin-top: 0; font-size: 1.05rem; }
 .support-notes ul { margin-bottom: 0; }
 
+.pay-copy-area {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+}
+
 .pay-offscreen {
   position: absolute !important;
   width: 1px;

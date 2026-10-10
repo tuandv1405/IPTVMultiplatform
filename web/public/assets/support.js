@@ -118,13 +118,25 @@
     external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>'
   };
 
+  // Own keys only: ids such as "constructor" or "__proto__" must not match Object.prototype.
+  function has(obj, key) {
+    return typeof key === "string" && Object.prototype.hasOwnProperty.call(obj, key);
+  }
+
+  // A number typed without quotes (e.g. an account number) still counts; keep values in quotes
+  // anyway, because long numbers lose digits and leading zeros as JavaScript numbers.
+  function str(v) {
+    return typeof v === "number" && isFinite(v) ? String(v) : v;
+  }
+
   function filled(v) {
+    v = str(v);
     return typeof v === "string" && v.trim() !== "" && v.indexOf("CHANGE_ME") === -1;
   }
 
   function isConfigured(m) {
+    if (!has(REQUIRED, m.id)) return false;
     var req = REQUIRED[m.id];
-    if (!req) return false;
     if (m.id === "crypto") {
       return (m.addresses || []).some(function (a) { return filled(a.address); });
     }
@@ -147,6 +159,7 @@
 
   function safeApp(url) {
     if (!filled(url)) return null;
+    url = String(url);
     var scheme = url.split("//")[0].toLowerCase();
     return APP_SCHEMES.indexOf(scheme) !== -1 ? url : null;
   }
@@ -179,11 +192,14 @@
 
   // ---- clipboard (same approach as guides.js) ------------------------------------------------
 
-  function fallbackCopy(text) {
+  // Fixed at the top of the viewport so focusing it never scrolls the page; focus goes back to
+  // the button that was pressed.
+  function fallbackCopy(text, returnFocus) {
     var area = document.createElement("textarea");
     area.value = text;
     area.setAttribute("readonly", "");
-    area.className = "pay-offscreen";
+    area.setAttribute("aria-hidden", "true");
+    area.className = "pay-copy-area";
     document.body.appendChild(area);
     area.focus();
     area.select();
@@ -191,17 +207,23 @@
     var ok = false;
     try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
     document.body.removeChild(area);
+    if (returnFocus && returnFocus.focus) returnFocus.focus();
     return ok;
   }
 
-  function copyText(text) {
+  function copyText(text, returnFocus) {
+    text = String(text);
     if (navigator.clipboard && window.isSecureContext) {
       return navigator.clipboard.writeText(text).then(
         function () { return true; },
-        function () { return fallbackCopy(text); });
+        function () { return fallbackCopy(text, returnFocus); });
     }
-    return Promise.resolve(fallbackCopy(text));
+    return Promise.resolve(fallbackCopy(text, returnFocus));
   }
+
+  // Phones and tablets, where momo:// or zalopay:// can open an installed app.
+  var MOBILE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "") ||
+    (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent || ""));
 
   var live = { vi: null, en: null };
 
@@ -220,6 +242,7 @@
     var row = el("div", "pay-field");
     row.appendChild(el("dt", null, label));
     var dd = el("dd");
+    value = str(value);
     var unset = !filled(value);
     var code = el("code", "pay-value" + (unset ? " pay-unset" : ""), unset ? "CHANGE_ME" : value);
     if (opts.mono === false) code.className += " pay-text";
@@ -227,13 +250,13 @@
     if (!unset && opts.copy !== false) {
       var btn = el("button", "pay-copy");
       btn.type = "button";
-      btn.setAttribute("aria-label", fmt(t.copyAria, { label: label.toLowerCase() }));
+      btn.setAttribute("aria-label", fmt(t.copyAria, { label: label }));
       btn.appendChild(icon("copy", "pay-btn-icon"));
       var lbl = el("span", null, t.copy);
       btn.appendChild(lbl);
       var timer = null;
       btn.addEventListener("click", function () {
-        copyText(value).then(function (ok) {
+        copyText(value, btn).then(function (ok) {
           lbl.textContent = ok ? t.copied : t.copyFail;
           btn.classList.toggle("is-done", ok);
           announce(lang, (ok ? t.copied : t.copyFail) + ": " + label);
@@ -263,7 +286,19 @@
     img.addEventListener("error", function () {
       // A missing image: placeholder in preview, nothing for visitors.
       if (PREVIEW && img.getAttribute("src") !== PLACEHOLDER_QR) img.src = PLACEHOLDER_QR;
-      else if (!PREVIEW) fig.remove();
+      else if (!PREVIEW) {
+        var owner = fig.closest ? fig.closest(".pay-card") : null;
+        fig.remove();
+        // A card left with nothing to copy or open (QR-only methods such as VNPAY-QR) goes too.
+        if (owner && !owner.querySelector(".pay-copy, .pay-actions a, .pay-coin")) {
+          var grid = owner.parentNode;
+          owner.remove();
+          if (grid && !grid.querySelector(".pay-card") && grid.parentNode) {
+            var lang2 = grid.parentNode.id === "methods-en" ? "en" : "vi";
+            grid.parentNode.replaceChild(el("p", "card pay-empty", UI[lang2].empty), grid);
+          }
+        }
+      }
     });
     img.src = src || PLACEHOLDER_QR;
     fig.appendChild(img);
@@ -281,14 +316,15 @@
   }
 
   // "Open app" tries the app scheme; if the page is still visible after 1.5 s the app is not
-  // installed (or the browser blocked it), so the web link opens instead.
+  // installed (or the browser blocked it), so the web link opens in a new tab instead.
+  // Shown only when there is a web fallback, or on a phone/tablet (see card()).
   function appButton(lang, appHref, webHref) {
     var a = el("a", "btn pay-btn", UI[lang].openApp);
     a.href = appHref;
     a.addEventListener("click", function () {
       if (!webHref) return;
       var t = setTimeout(function () {
-        if (!document.hidden) location.href = webHref;
+        if (!document.hidden) window.open(webHref, "_blank", "noopener,noreferrer");
       }, 1500);
       document.addEventListener("visibilitychange", function once() {
         if (document.hidden) clearTimeout(t);
@@ -345,9 +381,10 @@
         fig = qrFigure(lang, m.qr, meta.name);
         if (filled(m.phone) || PREVIEW) dl.appendChild(field(lang, t.phone, m.phone));
         if (filled(m.accountName) || PREVIEW) dl.appendChild(field(lang, t.name, m.accountName, { copy: false }));
-        if (CONFIG.transferNote && m.id !== "shopeepay") dl.appendChild(field(lang, t.note, CONFIG.transferNote));
+        if (filled(CONFIG.transferNote) && m.id !== "shopeepay") dl.appendChild(field(lang, t.note, CONFIG.transferNote));
         var web = safeHttps(m.link);
-        var app = safeApp(m.appLink);
+        // "Open app" needs a web fallback, or a phone/tablet where the app can be installed.
+        var app = (web || MOBILE) ? safeApp(m.appLink) : null;
         if (app && (configured || PREVIEW)) actions.appendChild(appButton(lang, app, web));
         if (web) actions.appendChild(linkButton(web, t.openWeb, !app));
         break;
@@ -415,11 +452,16 @@
     var grid = el("div", "pay-grid");
     var count = 0;
     (CONFIG.methods || []).forEach(function (m) {
-      if (!m || !METHODS[m.id]) return;
-      var show = PREVIEW || (m.enabled === true && isConfigured(m));
-      if (!show) return;
-      grid.appendChild(card(lang, m));
-      count++;
+      // One bad entry never blanks the page: it is skipped (and logged in preview).
+      try {
+        if (!m || typeof m !== "object" || !has(METHODS, m.id)) return;
+        var show = PREVIEW || (m.enabled === true && isConfigured(m));
+        if (!show) return;
+        grid.appendChild(card(lang, m));
+        count++;
+      } catch (e) {
+        if (PREVIEW && window.console) console.warn("support-config: skipped a method", e);
+      }
     });
     if (count) host.appendChild(grid);
     else host.appendChild(el("p", "card pay-empty", UI[lang].empty));
