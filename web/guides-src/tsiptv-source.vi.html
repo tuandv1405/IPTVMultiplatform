@@ -554,6 +554,7 @@
           <tr><td>Nhập bằng đường dẫn hoặc tệp, xem trước, bố cục, giao diện, tìm kiếm, Xem tiếp</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge partial">Chưa kiểm chứng</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
           <tr><td>Kênh, radio, phim lẻ, phim bộ; nhiều luồng mỗi mục (kênh: “Tuỳ chọn phát”; phim lẻ và tập phim: trang chi tiết)</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge partial">Chưa kiểm chứng</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
           <tr><td>Header</td><td><span class="badge yes">Mọi header</span></td><td><span class="badge partial">Chưa kiểm chứng</span></td><td><span class="badge partial">Chỉ User-Agent và Referer</span></td></tr>
+          <tr><td>Luồng DASH <code>.mpd</code> không có DRM</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge partial">Chưa kiểm chứng</span> qua trình phát VLC tích hợp; chỉ gửi header User-Agent và Referer</td><td><span class="badge yes">Hỗ trợ</span></td></tr>
           <tr><td>DRM (Widevine, PlayReady; ClearKey cho DASH)</td><td><span class="badge yes">Chỉ Android</span></td><td><span class="badge no">Không hỗ trợ</span></td><td><span class="badge no">Không hỗ trợ</span></td></tr>
           <tr><td>Phụ đề (VTT, SRT), mặc định tắt</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge no">Chưa có</span></td><td><span class="badge partial">Chưa kiểm chứng</span></td></tr>
           <tr><td>Include: <code>m3u</code>, <code>xmltv</code>, <code>stremio</code>, <code>tsiptv-source</code></td><td colspan="3"><span class="badge yes">Hỗ trợ</span> Addon tương thích Stremio chỉ phát luồng <code>url</code>.</td></tr>
@@ -562,7 +563,7 @@
         </tbody>
       </table>
     </div>
-    <p>iOS: phần hỗ trợ TS IPTV Source chưa được build và kiểm tra trên iPhone và iPad, nên các ô đó ghi “Chưa kiểm chứng”. DRM không có trên iOS theo thiết kế. Máy tính: các tính năng ghi “Hỗ trợ” đã được build, nhưng ứng dụng máy tính chưa được kiểm tra với TS IPTV Source; phụ đề trên máy tính “Chưa kiểm chứng”.</p>
+    <p>iOS: phần hỗ trợ TS IPTV Source chưa được build và kiểm tra trên iPhone và iPad, nên các ô đó ghi “Chưa kiểm chứng”. DRM không có trên iOS theo thiết kế. Luồng DASH không có DRM phát được trên iPhone và iPad qua trình phát VLC tích hợp, trình phát này chỉ gửi header User-Agent và Referer; DASH có DRM thì không hỗ trợ trên các thiết bị đó. Máy tính: các tính năng ghi “Hỗ trợ” đã được build, nhưng ứng dụng máy tính chưa được kiểm tra với TS IPTV Source; phụ đề trên máy tính “Chưa kiểm chứng”.</p>
 
     <section class="related">
       <h2 id="related">Hướng dẫn liên quan</h2>

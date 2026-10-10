@@ -554,6 +554,7 @@
           <tr><td>Import by link or file, preview, layout, appearance, search, Continue watching</td><td><span class="badge yes">Supported</span></td><td><span class="badge partial">Not yet verified</span></td><td><span class="badge yes">Supported</span></td></tr>
           <tr><td>Channels, radio, movies, series; several streams per item (channels: “Playback options”; movies and episodes: the detail page)</td><td><span class="badge yes">Supported</span></td><td><span class="badge partial">Not yet verified</span></td><td><span class="badge yes">Supported</span></td></tr>
           <tr><td>Headers</td><td><span class="badge yes">All headers</span></td><td><span class="badge partial">Not yet verified</span></td><td><span class="badge partial">User-Agent and Referer only</span></td></tr>
+          <tr><td>DASH <code>.mpd</code> streams without DRM</td><td><span class="badge yes">Supported</span></td><td><span class="badge partial">Not yet verified</span> through the built-in VLC player; only the User-Agent and Referer headers are sent</td><td><span class="badge yes">Supported</span></td></tr>
           <tr><td>DRM (Widevine, PlayReady; ClearKey for DASH)</td><td><span class="badge yes">Android only</span></td><td><span class="badge no">Not supported</span></td><td><span class="badge no">Not supported</span></td></tr>
           <tr><td>Subtitles (VTT, SRT), off by default</td><td><span class="badge yes">Supported</span></td><td><span class="badge no">Not yet</span></td><td><span class="badge partial">Not yet verified</span></td></tr>
           <tr><td>Includes: <code>m3u</code>, <code>xmltv</code>, <code>stremio</code>, <code>tsiptv-source</code></td><td colspan="3"><span class="badge yes">Supported</span> Stremio-compatible addons play <code>url</code> streams only.</td></tr>
@@ -562,7 +563,7 @@
         </tbody>
       </table>
     </div>
-    <p>iOS: TS IPTV Source support has not yet been built or tested on iPhone and iPad, so those cells say “Not yet verified”. DRM is not available on iOS by design. Desktop: the features marked “Supported” are built, but the desktop app has not yet been tested with TS IPTV Sources; its subtitles are “Not yet verified”.</p>
+    <p>iOS: TS IPTV Source support has not yet been built or tested on iPhone and iPad, so those cells say “Not yet verified”. DRM is not available on iOS by design. DASH streams without DRM play on iPhone and iPad through the built-in VLC player, which sends only the User-Agent and Referer headers; DASH with DRM is not supported there. Desktop: the features marked “Supported” are built, but the desktop app has not yet been tested with TS IPTV Sources; its subtitles are “Not yet verified”.</p>
 
     <section class="related">
       <h2 id="related-en">Related guides</h2>

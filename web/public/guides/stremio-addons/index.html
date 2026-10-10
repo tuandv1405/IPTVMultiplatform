@@ -441,7 +441,8 @@ serveHTTP(builder.getInterface(), { port: process.env.PORT || 7000 })</code></pr
         <thead><tr><th>Tính năng</th><th>Android</th><th>iOS</th><th>Máy tính</th></tr></thead>
         <tbody>
           <tr><td>Luồng <code>url</code>: MP4, HLS qua HTTPS/HTTP</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
-          <tr><td>Luồng <code>url</code>: DASH <code>.mpd</code>, MKV</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge partial">Có thể không phát được</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Luồng <code>url</code>: DASH <code>.mpd</code> không có DRM</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge yes">Hỗ trợ</span> qua trình phát VLC tích hợp; chỉ gửi header User-Agent và Referer</td><td><span class="badge yes">Hỗ trợ</span></td></tr>
+          <tr><td>Luồng <code>url</code>: MKV</td><td><span class="badge yes">Hỗ trợ</span></td><td><span class="badge partial">Có thể không phát được</span></td><td><span class="badge yes">Hỗ trợ</span></td></tr>
           <tr><td><code>proxyHeaders.request</code></td><td><span class="badge yes">Mọi header</span></td><td><span class="badge partial">Cố gắng tối đa</span></td><td><span class="badge partial">Chỉ User-Agent và Referer</span></td></tr>
           <tr><td><code>externalUrl</code></td><td colspan="3">Mở trong trình duyệt sau khi bạn xác nhận; trên TV không có trình duyệt, đường dẫn được hiện dưới dạng chữ. Liên kết trang <code>stremio:///…</code> mở màn hình tương ứng của TS IPTV.</td></tr>
           <tr><td>Luồng torrent, Usenet, tệp nén và YouTube</td><td colspan="3"><span class="badge no">Không hỗ trợ</span></td></tr>
@@ -867,7 +868,8 @@ serveHTTP(builder.getInterface(), { port: process.env.PORT || 7000 })</code></pr
         <thead><tr><th>Feature</th><th>Android</th><th>iOS</th><th>Desktop</th></tr></thead>
         <tbody>
           <tr><td><code>url</code> streams: HTTPS/HTTP MP4, HLS</td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td></tr>
-          <tr><td><code>url</code> streams: DASH <code>.mpd</code>, MKV</td><td><span class="badge yes">Supported</span></td><td><span class="badge partial">May not play</span></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td><code>url</code> streams: DASH <code>.mpd</code> without DRM</td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span> through the built-in VLC player; only the User-Agent and Referer headers are sent</td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td><code>url</code> streams: MKV</td><td><span class="badge yes">Supported</span></td><td><span class="badge partial">May not play</span></td><td><span class="badge yes">Supported</span></td></tr>
           <tr><td><code>proxyHeaders.request</code></td><td><span class="badge yes">All headers</span></td><td><span class="badge partial">Best effort</span></td><td><span class="badge partial">User-Agent and Referer only</span></td></tr>
           <tr><td><code>externalUrl</code></td><td colspan="3">Opens in your browser after you confirm; on a TV without a browser the link is shown as text. <code>stremio:///…</code> page links open the matching TS IPTV screen.</td></tr>
           <tr><td>Torrent, Usenet, archive and YouTube streams</td><td colspan="3"><span class="badge no">Not supported</span></td></tr>

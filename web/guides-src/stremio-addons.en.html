@@ -349,7 +349,8 @@ serveHTTP(builder.getInterface(), { port: process.env.PORT || 7000 })</code></pr
         <thead><tr><th>Feature</th><th>Android</th><th>iOS</th><th>Desktop</th></tr></thead>
         <tbody>
           <tr><td><code>url</code> streams: HTTPS/HTTP MP4, HLS</td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span></td></tr>
-          <tr><td><code>url</code> streams: DASH <code>.mpd</code>, MKV</td><td><span class="badge yes">Supported</span></td><td><span class="badge partial">May not play</span></td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td><code>url</code> streams: DASH <code>.mpd</code> without DRM</td><td><span class="badge yes">Supported</span></td><td><span class="badge yes">Supported</span> through the built-in VLC player; only the User-Agent and Referer headers are sent</td><td><span class="badge yes">Supported</span></td></tr>
+          <tr><td><code>url</code> streams: MKV</td><td><span class="badge yes">Supported</span></td><td><span class="badge partial">May not play</span></td><td><span class="badge yes">Supported</span></td></tr>
           <tr><td><code>proxyHeaders.request</code></td><td><span class="badge yes">All headers</span></td><td><span class="badge partial">Best effort</span></td><td><span class="badge partial">User-Agent and Referer only</span></td></tr>
           <tr><td><code>externalUrl</code></td><td colspan="3">Opens in your browser after you confirm; on a TV without a browser the link is shown as text. <code>stremio:///…</code> page links open the matching TS IPTV screen.</td></tr>
           <tr><td>Torrent, Usenet, archive and YouTube streams</td><td colspan="3"><span class="badge no">Not supported</span></td></tr>
