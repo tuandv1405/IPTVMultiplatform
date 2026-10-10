@@ -79,7 +79,11 @@ Errors (`{"error": "<code>"}`):
 - **Rate limits** on `/billing/verify` (in memory, per instance): 10 a minute per uid and 30 a minute
   per client address (`BILLING_VERIFY_PER_UID_PER_MIN`, `BILLING_VERIFY_PER_IP_PER_MIN`; set
   `BILLING_TRUST_PROXY=true` on Cloud Run so the address comes from `X-Forwarded-For`). Over the
-  limit: `429 {"error":"rate_limited"}`.
+  limit: `429 {"error":"rate_limited"}`. With `BILLING_TRUST_PROXY=true` the address is the
+  `X-Forwarded-For` entry `BILLING_TRUSTED_PROXY_HOPS` places from the **right** (default `1`: the
+  address the last trusted proxy saw; Cloud Run alone = 1, a load balancer in front of Cloud Run = 2).
+  Entries further left are written by the client and are ignored; a header with fewer entries than
+  the hop count falls back to the socket address.
 - **JWKS:** an unknown `kid` in a push token forces at most one JWKS refetch per minute; the normal
   refresh is hourly.
 

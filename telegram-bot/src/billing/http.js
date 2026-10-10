@@ -78,11 +78,20 @@ export function createRateLimiter({ limit, windowMs = 60_000, now = Date.now, ma
   };
 }
 
-/** The client address: the socket's, or the first X-Forwarded-For hop when behind a trusted proxy. */
-function clientAddress(req, trustProxy) {
+/**
+ * The client address: the socket's, or, behind [trustedHops] trusted proxies, the X-Forwarded-For
+ * entry that many hops from the right (each trusted proxy appends the address it saw). Entries to the
+ * left of it are client-supplied and can be spoofed, so they are never used. A header with fewer
+ * entries than trusted hops falls back to the socket address.
+ */
+export function clientAddress(req, trustProxy, trustedHops = 1) {
   if (trustProxy) {
-    const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
-    if (forwarded) return forwarded;
+    const hops = Number.isInteger(trustedHops) && trustedHops > 0 ? trustedHops : 1;
+    const entries = String(req.headers["x-forwarded-for"] || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (entries.length >= hops) return entries[entries.length - hops];
   }
   return req.socket?.remoteAddress || "unknown";
 }
@@ -92,7 +101,7 @@ function clientAddress(req, trustProxy) {
  * @param {ReturnType<import("./service.js").createBillingService>} deps.service
  * @param {(idToken: string) => Promise<{ uid: string }>} deps.verifyIdToken Firebase Auth ID token check
  * @param {(authorization: string | undefined) => Promise<object>} deps.verifyPushToken OIDC check (oidc.js)
- * @param {{ perUid?: number, perIp?: number, windowMs?: number, trustProxy?: boolean }} [deps.rateLimit]
+ * @param {{ perUid?: number, perIp?: number, windowMs?: number, trustProxy?: boolean, trustedHops?: number }} [deps.rateLimit]
  *   /billing/verify limits (default 10 per uid and 30 per address a minute; 429 `rate_limited`)
  * @param {() => number} [deps.now]
  * @returns {{ verify(req, res): Promise<void>, rtdn(req, res): Promise<void>, handle(req, res): Promise<boolean> }}
@@ -105,7 +114,7 @@ export function createBillingRoutes({ service, verifyIdToken, verifyPushToken, l
   async function verify(req, res) {
     try {
       // Before the ID-token check, so a flood of junk tokens is cheap to refuse too.
-      if (!allowIp(clientAddress(req, rateLimit.trustProxy))) throw new BillingError(429, "rate_limited");
+      if (!allowIp(clientAddress(req, rateLimit.trustProxy, rateLimit.trustedHops))) throw new BillingError(429, "rate_limited");
       const match = /^Bearer\s+(\S+)$/.exec(String(req.headers.authorization || ""));
       if (!match) throw new BillingError(401, "unauthenticated");
       let uid;

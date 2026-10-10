@@ -17,13 +17,18 @@ export function loadBillingConfig(env = process.env) {
     pushServiceAccount: (env.BILLING_PUSH_SERVICE_ACCOUNT || "").trim(),
     firebaseProjectId: env.FIREBASE_PROJECT_ID || "tsiptv-8bdd6",
     // /billing/verify limits per minute; behind Cloud Run / a proxy set BILLING_TRUST_PROXY=true so
-    // the client address comes from X-Forwarded-For.
+    // the client address comes from X-Forwarded-For, counted BILLING_TRUSTED_PROXY_HOPS entries from
+    // the right (default 1: the address the last proxy saw; left entries can be spoofed).
     rateLimit: {
       perUid: Number(env.BILLING_VERIFY_PER_UID_PER_MIN || 10),
       perIp: Number(env.BILLING_VERIFY_PER_IP_PER_MIN || 30),
       trustProxy: env.BILLING_TRUST_PROXY === "true",
+      trustedHops: Number(env.BILLING_TRUSTED_PROXY_HOPS || 1),
     },
   };
+  if (!Number.isInteger(config.rateLimit.trustedHops) || config.rateLimit.trustedHops < 1) {
+    problems.push("BILLING_TRUSTED_PROXY_HOPS must be a positive integer");
+  }
   if (noAds === unlimited) problems.push("BILLING_PRODUCT_NOADS and BILLING_PRODUCT_UNLIMITED must differ");
   if (!/^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i.test(config.packageName)) problems.push("BILLING_PACKAGE_NAME is not a package name");
   if (!config.pushAudience) problems.push("BILLING_PUSH_AUDIENCE is required (the audience set on the Pub/Sub push subscription)");

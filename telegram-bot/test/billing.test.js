@@ -7,7 +7,7 @@ import { PassThrough } from "node:stream";
 import { accountHash, computeEntitlement, purchaseFromV2, sha256Hex } from "../src/billing/entitlement.js";
 import { createBillingService, BillingError, NotificationType } from "../src/billing/service.js";
 import { createMemoryBillingStore } from "../src/billing/memoryStore.js";
-import { createBillingRoutes } from "../src/billing/http.js";
+import { clientAddress, createBillingRoutes } from "../src/billing/http.js";
 import { createPushTokenVerifier } from "../src/billing/oidc.js";
 import { createGoogleAuth, signAssertion } from "../src/billing/googleAuth.js";
 import { createPlayApi, PlayApiError } from "../src/billing/playApi.js";
@@ -548,6 +548,44 @@ test("S3: /billing/verify is rate limited per uid and per address", async () => 
   req.socket = { remoteAddress: "10.0.0.9" };
   await r.handle(req, res);
   assert.equal(res.status, 401);
+});
+
+test("N3: behind a trusted proxy the address is counted from the right of X-Forwarded-For", async () => {
+  const req = (xff, socket = "10.9.9.9") => ({ headers: xff === undefined ? {} : { "x-forwarded-for": xff }, socket: { remoteAddress: socket } });
+  // Not trusted: the header is ignored.
+  assert.equal(clientAddress(req("1.1.1.1"), false), "10.9.9.9");
+  // One trusted hop: the rightmost entry; spoofed leftmost entries are ignored.
+  assert.equal(clientAddress(req("6.6.6.6, 7.7.7.7, 203.0.113.5"), true), "203.0.113.5");
+  assert.equal(clientAddress(req("203.0.113.5"), true, 1), "203.0.113.5");
+  // Two trusted hops (load balancer + Cloud Run): second from the right.
+  assert.equal(clientAddress(req("6.6.6.6, 203.0.113.5, 130.211.0.1"), true, 2), "203.0.113.5");
+  // Fewer entries than trusted hops, empty or missing header: the socket address.
+  assert.equal(clientAddress(req("203.0.113.5"), true, 2), "10.9.9.9");
+  assert.equal(clientAddress(req(" , "), true), "10.9.9.9");
+  assert.equal(clientAddress(req(undefined), true), "10.9.9.9");
+  // Bad hop counts mean 1.
+  assert.equal(clientAddress(req("6.6.6.6, 203.0.113.5"), true, 0), "203.0.113.5");
+
+  // End to end: a client rotating spoofed left entries still shares one counter.
+  const ctx = setup({ [TOKEN_A]: v2() });
+  const r = createBillingRoutes({
+    service: ctx.service,
+    verifyIdToken: async () => {
+      throw new Error("bad token");
+    },
+    verifyPushToken: async () => ({}),
+    log: silent,
+    rateLimit: { perIp: 2, trustProxy: true, trustedHops: 1 },
+  });
+  const statuses = [];
+  for (let i = 0; i < 3; i++) {
+    const rq = request({ url: "/billing/verify", headers: { "x-forwarded-for": `9.9.9.${i}, 203.0.113.5` }, body: {} });
+    rq.socket = { remoteAddress: "10.0.0.1" };
+    const res = response();
+    await r.handle(rq, res);
+    statuses.push(res.status);
+  }
+  assert.deepEqual(statuses, [401, 401, 429]);
 });
 
 test("S3: unknown key ids refetch the JWKS at most once per cooldown", async () => {
