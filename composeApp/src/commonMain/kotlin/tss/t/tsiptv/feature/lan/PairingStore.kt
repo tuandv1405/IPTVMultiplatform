@@ -47,7 +47,8 @@ class PairingStore(
         _peers.value = list.map { it.toPeer() }
     }
 
-    private fun Entry.toPeer() = PairedPeer(id, name, pairedAt)
+    // Names stored by older builds are cleaned on the way out too.
+    private fun Entry.toPeer() = PairedPeer(id, LanValidation.cleanName(name), pairedAt)
 
     suspend fun load(): List<PairedPeer> = mutex.withLock { entries().map { it.toPeer() } }
 
@@ -56,12 +57,12 @@ class PairingStore(
         cipher.decrypt(entry.key)?.let { LanCrypto.unb64(it) }
     }
 
-    suspend fun nameOf(id: String): String? = mutex.withLock { entries().firstOrNull { it.id == id }?.name }
+    suspend fun nameOf(id: String): String? = mutex.withLock { entries().firstOrNull { it.id == id }?.name?.let(LanValidation::cleanName) }
 
     suspend fun put(id: String, name: String, key: ByteArray, now: Long) = mutex.withLock {
         val list = entries()
         list.removeAll { it.id == id }
-        list.add(Entry(id, name.take(LanValidation.MAX_NAME), cipher.encrypt(LanCrypto.b64(key)), now))
+        list.add(Entry(id, LanValidation.cleanName(name), cipher.encrypt(LanCrypto.b64(key)), now))
         // Bounded: the oldest pairing goes first.
         while (list.size > MAX_PEERS) list.removeAt(0)
         save(list)

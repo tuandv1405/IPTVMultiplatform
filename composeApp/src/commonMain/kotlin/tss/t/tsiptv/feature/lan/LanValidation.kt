@@ -15,7 +15,52 @@ object LanValidation {
     const val MAX_SUBTITLES = 10
     const val MAX_EPG_URLS = 5
 
+    /** Device names shown on the other device (pairing code screen, "from …" notices). */
+    const val MAX_DEVICE_NAME = 40
+
     private val TOKEN = Regex("^[!#$%&'*+.^_`|~0-9A-Za-z-]+$")
+
+    /**
+     * A peer-supplied name made safe to show: control, format (bidi overrides, zero-width), line and
+     * paragraph separator characters removed, whitespace runs collapsed to one space, trimmed and
+     * capped at [max] characters (never splitting a surrogate pair). Blank stays blank.
+     */
+    fun cleanName(raw: String, max: Int = MAX_DEVICE_NAME): String {
+        val out = StringBuilder(minOf(raw.length, max * 2))
+        var space = false
+        for (c in raw) {
+            when {
+                c.isWhitespace() -> space = out.isNotEmpty()
+                c.category == CharCategory.CONTROL || c.category == CharCategory.FORMAT ||
+                    c.category == CharCategory.LINE_SEPARATOR || c.category == CharCategory.PARAGRAPH_SEPARATOR ||
+                    c.category == CharCategory.UNASSIGNED || c.category == CharCategory.PRIVATE_USE -> Unit
+                else -> {
+                    if (space) out.append(' ')
+                    space = false
+                    out.append(c)
+                }
+            }
+            if (out.length >= max) break
+        }
+        var end = minOf(out.length, max)
+        if (end > 0 && out[end - 1].isHighSurrogate()) end--
+        return out.substring(0, end).trim()
+    }
+
+    /**
+     * A playlist name made from its link when the user typed none: the last path segment, else the
+     * host. Never the query, fragment or user:password part (tokens and credentials live there).
+     */
+    fun nameFromUrl(url: String): String {
+        val noScheme = url.substringAfter("://", url)
+        val withoutExtras = noScheme.substringBefore('#').substringBefore('?')
+        val authority = withoutExtras.substringBefore('/')
+        val host = authority.substringAfterLast('@').substringBefore(':').ifEmpty { authority.substringAfterLast('@') }
+        val path = withoutExtras.substringAfter('/', "")
+        val segment = path.trimEnd('/').substringAfterLast('/')
+        val decoded = segment.replace("%20", " ")
+        return cleanName(decoded.ifBlank { host }, MAX_NAME).ifBlank { cleanName(host, MAX_NAME) }
+    }
 
     /** http(s) only, a host, a sane length and no whitespace or control characters. */
     fun isHttpUrl(url: String?): Boolean {

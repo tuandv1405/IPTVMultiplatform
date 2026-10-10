@@ -120,10 +120,56 @@ class LanProtocolTest {
         repeat(LanProtocol.PAIR_LOCK_AFTER_FAILED_SESSIONS) {
             h.phone.startPairing(h.tv)
             h.engine.cancelPairing()
+            h.now += LanReceiverEngine.PAIR_COOLDOWN_MS
         }
         assertEquals(PairStartResult.Failed(LanResult.Refused(LanErrorCode.LOCKED)), h.phone.startPairing(h.tv))
         h.now += LanProtocol.PAIR_LOCK_MS
         assertIs<PairStartResult.Started>(h.phone.startPairing(h.tv))
+    }
+
+    @Test
+    fun aCancelledCodeScreenCannotBeReopenedAtOnce() = runBlocking<Unit> {
+        val h = Harness()
+        assertIs<PairStartResult.Started>(h.phone.startPairing(h.tv))
+        h.engine.cancelPairing()
+        // QC: a LAN client must not keep popping the full-screen code over playback.
+        assertEquals(PairStartResult.Failed(LanResult.Refused(LanErrorCode.BUSY)), h.phone.startPairing(h.tv))
+        h.now += LanReceiverEngine.PAIR_COOLDOWN_MS - 1
+        assertEquals(PairStartResult.Failed(LanResult.Refused(LanErrorCode.BUSY)), h.phone.startPairing(h.tv))
+        h.now += 1
+        assertIs<PairStartResult.Started>(h.phone.startPairing(h.tv))
+        // Stopping the receiver (app paused) drops the screen without a cooldown.
+        h.engine.abortPairing()
+        assertIs<PairStartResult.Started>(h.phone.startPairing(h.tv))
+    }
+
+    @Test
+    fun senderNamesAreCleaned() = runBlocking<Unit> {
+        val h = Harness()
+        val evil = "Living room\nremote \u202Eevil\u200B" + "x".repeat(100)
+        val line = encode(PairStartRequest(senderId = "atk", senderName = evil, pub = LanCrypto.b64(FakeAgreement().publicKey)))
+        assertEquals(true, response(h, line).ok)
+        val shown = h.engine.pairingPrompt.value!!.senderName
+        assertEquals(LanValidation.MAX_DEVICE_NAME, shown.length)
+        assertTrue(shown.startsWith("Living room remote evil"))
+        assertTrue(shown.none { it == '\n' || it == '\u202E' || it == '\u200B' })
+        h.engine.abortPairing()
+        // Nothing printable left: refused.
+        val blank = encode(PairStartRequest(senderId = "atk2", senderName = "\u202E\n\t", pub = LanCrypto.b64(FakeAgreement().publicKey)))
+        assertEquals(LanErrorCode.BAD_REQUEST, response(h, blank).code)
+    }
+
+    @Test
+    fun onlyPairedSendersMayExceedTheRequestCap() = runBlocking<Unit> {
+        val h = Harness()
+        val prefix = { id: String -> "{\"type\":\"signed\",\"v\":1,\"senderId\":\"$id\",\"ts\":1,\"nonce\":\"n\",\"body\":\"" }
+        assertFalse(h.engine.allowsLargeRequest(prefix("pixel")))
+        assertEquals(LanResult.Ok, h.pair())
+        val phoneId = h.tvStore.load().single().id
+        assertTrue(h.engine.allowsLargeRequest(prefix(phoneId)))
+        assertFalse(h.engine.allowsLargeRequest(prefix(phoneId).replace("signed", "hello")))
+        assertFalse(h.engine.allowsLargeRequest("{\"type\":\"pair_start\",\"senderId\":\"$phoneId\""))
+        assertFalse(h.engine.allowsLargeRequest("x".repeat(1000)))
     }
 
     @Test
@@ -243,6 +289,26 @@ class LanValidationTest {
         // Known HMAC-SHA256 vector (RFC 4231 case 2).
         val mac = LanCrypto.hmac("Jefe".encodeToByteArray(), "what do ya want for nothing?")
         assertEquals("5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843", mac.joinToString("") { (it.toInt() and 0xFF).toString(16).padStart(2, '0') })
+    }
+
+    @Test
+    fun namesAreCleaned() {
+        assertEquals("Phone evil line2", LanValidation.cleanName("Phone \u202Eevil\nline2"))
+        assertEquals("a b", LanValidation.cleanName("  a \t\r\n b  "))
+        assertEquals("", LanValidation.cleanName("\u200B\u2066\u0000"))
+        assertEquals(40, LanValidation.cleanName("y".repeat(200)).length)
+        // A surrogate pair is never split at the cap.
+        val emoji = "\uD83D\uDCFA"
+        assertEquals("x".repeat(39), LanValidation.cleanName("x".repeat(39) + emoji))
+    }
+
+    @Test
+    fun namesFromLinksDropTokensAndCredentials() {
+        assertEquals("tv.m3u", LanValidation.nameFromUrl("https://user:secret@host.example:8080/list/tv.m3u?token=abc#x"))
+        assertEquals("host.example", LanValidation.nameFromUrl("http://user:secret@host.example/?username=a&password=b"))
+        assertEquals("get.php", LanValidation.nameFromUrl("http://host.example:8080/get.php?username=a&password=b&type=m3u"))
+        assertEquals("my list.m3u", LanValidation.nameFromUrl("https://h.example/a/my%20list.m3u/"))
+        assertFalse("secret" in LanValidation.nameFromUrl("https://u:secret@h.example"))
     }
 
     @Test

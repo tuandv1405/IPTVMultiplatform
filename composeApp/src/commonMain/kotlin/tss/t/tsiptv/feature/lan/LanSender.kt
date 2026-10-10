@@ -65,7 +65,7 @@ class LanSender(
         val probe = LanDevice(id = "", name = host, host = host, port = port)
         val answer = call(probe, HelloRequest()) ?: return null
         if (!answer.ok || answer.id.isNullOrBlank()) return null
-        return probe.copy(id = answer.id, name = answer.name?.take(LanValidation.MAX_NAME) ?: host, version = answer.v ?: 1)
+        return probe.copy(id = answer.id, name = answer.name?.let(LanValidation::cleanName)?.ifBlank { null } ?: host, version = answer.v ?: 1)
     }
 
     suspend fun isPaired(device: LanDevice): Boolean = device.id.isNotEmpty() && store.keyFor(device.id) != null
@@ -88,7 +88,7 @@ class LanSender(
             return PairStartResult.Failed(LanResult.Refused(LanErrorCode.BAD_REQUEST))
         }
         val key = LanCrypto.pairKey(secret, agreement.publicKey, tvPub)
-        val named = device.copy(id = tvId, name = answer.name?.take(LanValidation.MAX_NAME) ?: device.name)
+        val named = device.copy(id = tvId, name = answer.name?.let(LanValidation::cleanName)?.ifBlank { null } ?: device.name)
         return PairStartResult.Started(PairingHandle(named, sessionId, key))
     }
 

@@ -58,7 +58,7 @@ val castSyncModule = module {
     single(RECEIVER_PAIRINGS) { PairingStore(get(), createSecretCipher(), PairingStore.Role.RECEIVER) }
 
     single { LanSender(get(), get(SENDER_PAIRINGS), get(), get(), clock) }
-    single { LanReceiverController(get(), get(), get(RECEIVER_PAIRINGS), get(), clock) }
+    single { LanReceiverController(get(), get(), get(RECEIVER_PAIRINGS), get(), get(), clock) }
 
     single {
         DeviceSessionManager(

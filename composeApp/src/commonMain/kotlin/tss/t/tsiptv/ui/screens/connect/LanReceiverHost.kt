@@ -63,6 +63,8 @@ import kotlin.time.ExperimentalTime
 fun LanReceiverHost(
     onCast: (stream: CastStream) -> Unit,
     onAcceptPlaylist: (SharedPlaylist) -> Unit,
+    /** False while the TV cannot take a playlist now (e.g. an import is running). */
+    canTakePlaylists: Boolean = true,
 ) {
     val controller: LanReceiverController = koinInject()
     val scope = rememberCoroutineScope()
@@ -70,11 +72,11 @@ fun LanReceiverHost(
     val offers = remember { mutableStateListOf<LanReceiverEvent.PlaylistOffered>() }
     var notice by remember { mutableStateOf<String?>(null) }
 
-    // Only while resumed: the server stops in onPause (PRD §2.4).
+    // Only while resumed: the server stops in onPause (PRD §2.4). The controller applies these in
+    // order, so a fast pause/resume cannot leave it in the wrong state.
     LifecycleResumeEffect(controller) {
-        scope.launch { controller.start() }
-        // Not the composition scope: it is already cancelled when this runs on dispose.
-        onPauseOrDispose { kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch { controller.stop() } }
+        controller.setForeground(true)
+        onPauseOrDispose { controller.setForeground(false) }
     }
 
     LaunchedEffect(controller) {
@@ -88,6 +90,11 @@ fun LanReceiverHost(
                 is LanReceiverEvent.PlaylistOffered -> if (offers.size < MAX_QUEUED_OFFERS) offers.add(event)
             }
         }
+    }
+
+    // Offers are refused with NOT_ACCEPTING ("TV is busy") while the TV cannot take one.
+    LaunchedEffect(canTakePlaylists, offers.size) {
+        controller.engine.acceptingOffers = canTakePlaylists && offers.size < MAX_QUEUED_OFFERS
     }
 
     // Offers wait at most 2 minutes for an answer (PRD §7).

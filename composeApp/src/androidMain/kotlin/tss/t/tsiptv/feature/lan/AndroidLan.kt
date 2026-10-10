@@ -10,6 +10,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -22,7 +24,11 @@ import kotlinx.coroutines.withTimeoutOrNull
 import tss.t.tsiptv.feature.account.DeviceNameProvider
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import android.os.SystemClock
 import java.net.Inet4Address
+import java.net.Inet6Address
+import java.net.InetAddress
+import java.net.SocketTimeoutException
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.ServerSocket
@@ -155,8 +161,15 @@ class NsdLanDiscovery(private val context: Context) : LanDiscovery {
 }
 
 /**
- * The TV's receiver: a TCP server on a random port plus its NSD registration. At most
- * [MAX_CONNECTIONS] requests at once; every request is read with a size cap and a timeout.
+ * The TV's receiver: a TCP server plus its NSD registration (protocol v1, one request per
+ * connection). Abuse limits (QC round 1):
+ * - only peers on the local network (site-local, link-local, unique-local IPv6) or this device
+ *   itself (loopback, e.g. `adb forward`) are served;
+ * - at most [MAX_CONNECTIONS] connections, at most [MAX_PER_IP] per remote LAN address;
+ * - every connection has a total deadline of [LanProtocol.READ_TIMEOUT_MS] from accept (not per
+ *   read), so trickling bytes cannot hold a slot;
+ * - an unauthenticated request is read up to [LanProtocol.MAX_REQUEST_BYTES]; only a signed request
+ *   from a paired phone may go on up to [LanProtocol.MAX_OFFER_BYTES].
  */
 class NsdSocketLanServer(private val context: Context) : LanServer {
     override val isSupported: Boolean = true
@@ -165,54 +178,138 @@ class NsdSocketLanServer(private val context: Context) : LanServer {
     private var server: ServerSocket? = null
     private var registration: NsdManager.RegistrationListener? = null
     private val active = AtomicInteger(0)
+    private val perAddress = ConcurrentHashMap<InetAddress, AtomicInteger>()
 
-    override suspend fun start(serviceName: String, deviceId: String, handler: suspend (String) -> String): Int =
-        withContext(Dispatchers.IO) {
-            stop()
-            val socket = ServerSocket(0)
-            server = socket
-            val serverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-            scope = serverScope
-            serverScope.launch {
-                while (isActive) {
-                    val client = try {
-                        socket.accept()
-                    } catch (_: Exception) {
-                        break
-                    }
-                    if (active.incrementAndGet() > MAX_CONNECTIONS) {
+    override suspend fun start(
+        serviceName: String,
+        deviceId: String,
+        preferredPort: Int,
+        largeRequestAllowed: suspend (prefix: String) -> Boolean,
+        handler: suspend (String) -> String,
+    ): Int = withContext(Dispatchers.IO) {
+        stop()
+        val socket = bind(preferredPort)
+        server = socket
+        val serverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        scope = serverScope
+        serverScope.launch {
+            while (isActive) {
+                val client = try {
+                    socket.accept()
+                } catch (_: Exception) {
+                    break
+                }
+                val remote = client.inetAddress
+                if (remote == null || !isLocalPeer(remote)) {
+                    runCatching { client.close() }
+                    continue
+                }
+                val forAddress = perAddress.computeIfAbsent(remote) { AtomicInteger(0) }
+                // Loopback is this device itself (or `adb forward` during development): no LAN peer
+                // can use it, so only the total cap applies there.
+                val perIpCap = if (remote.isLoopbackAddress) MAX_CONNECTIONS else MAX_PER_IP
+                if (active.incrementAndGet() > MAX_CONNECTIONS || forAddress.incrementAndGet() > perIpCap) {
+                    active.decrementAndGet()
+                    forAddress.decrementAndGet()
+                    runCatching { client.close() }
+                    continue
+                }
+                launch {
+                    try {
+                        serve(client, largeRequestAllowed, handler)
+                    } finally {
                         active.decrementAndGet()
-                        runCatching { client.close() }
-                        continue
-                    }
-                    launch {
-                        try {
-                            serve(client, handler)
-                        } finally {
-                            active.decrementAndGet()
-                        }
+                        if (forAddress.decrementAndGet() <= 0) perAddress.remove(remote, forAddress)
                     }
                 }
             }
-            register(serviceName, deviceId, socket.localPort)
-            socket.localPort
         }
+        register(serviceName, deviceId, socket.localPort)
+        socket.localPort
+    }
 
-    private suspend fun serve(client: Socket, handler: suspend (String) -> String) {
-        client.use { s ->
-            runCatching {
-                s.soTimeout = LanProtocol.READ_TIMEOUT_MS
-                val line = s.getInputStream().readLineCapped(LanProtocol.MAX_OFFER_BYTES)
-                val answer = if (line == null) {
-                    LanProtocol.json.encodeToString(LanResponse.serializer(), LanResponse.error(LanErrorCode.TOO_LARGE))
-                } else {
-                    handler(line)
-                }
-                s.getOutputStream().apply {
-                    write((answer + "\n").toByteArray(Charsets.UTF_8))
-                    flush()
+    /** [preferred] when it is a free unprivileged port, else a random one. */
+    private fun bind(preferred: Int): ServerSocket {
+        if (preferred in 1024..65535) {
+            val socket = ServerSocket()
+            try {
+                socket.reuseAddress = true
+                socket.bind(InetSocketAddress(preferred))
+                return socket
+            } catch (_: Exception) {
+                runCatching { socket.close() }
+            }
+        }
+        return ServerSocket(0)
+    }
+
+    private suspend fun serve(
+        client: Socket,
+        largeRequestAllowed: suspend (prefix: String) -> Boolean,
+        handler: suspend (String) -> String,
+    ) = coroutineScope {
+        val deadline = SystemClock.elapsedRealtime() + LanProtocol.READ_TIMEOUT_MS
+        // Closing the socket is the only way to interrupt a blocking read: do it at the deadline.
+        val watchdog = launch {
+            delay(LanProtocol.READ_TIMEOUT_MS.toLong())
+            runCatching { client.close() }
+        }
+        try {
+            client.use { s ->
+                runCatching {
+                    val line = s.getInputStream().readRequestLine(s, deadline, largeRequestAllowed)
+                    val answer = if (line == null) {
+                        LanProtocol.json.encodeToString(LanResponse.serializer(), LanResponse.error(LanErrorCode.TOO_LARGE))
+                    } else {
+                        handler(line)
+                    }
+                    s.getOutputStream().apply {
+                        write((answer + "\n").toByteArray(Charsets.UTF_8))
+                        flush()
+                    }
                 }
             }
+        } finally {
+            watchdog.cancel()
+        }
+    }
+
+    /**
+     * One `\n`-terminated request line, read within [deadline]. Up to [LanProtocol.MAX_REQUEST_BYTES]
+     * for anyone; beyond that only when [largeRequestAllowed] accepts the start of the line (checked
+     * once), up to [LanProtocol.MAX_OFFER_BYTES]. null when too long.
+     */
+    private suspend fun InputStream.readRequestLine(
+        socket: Socket,
+        deadline: Long,
+        largeRequestAllowed: suspend (prefix: String) -> Boolean,
+    ): String? {
+        val out = ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
+        var max = LanProtocol.MAX_REQUEST_BYTES
+        var checked = false
+        while (true) {
+            val left = deadline - SystemClock.elapsedRealtime()
+            if (left <= 0) throw SocketTimeoutException("deadline")
+            socket.soTimeout = left.toInt().coerceAtLeast(1)
+            val n = read(buffer)
+            if (n < 0) return if (out.size() > 0) out.toString(Charsets.UTF_8.name()) else null
+            val newline = (0 until n).firstOrNull { buffer[it] == '\n'.code.toByte() }
+            val take = newline ?: n
+            if (out.size() + take > max) {
+                if (checked) return null
+                checked = true
+                // Decide on the first 64 KiB: they carry the request type and the senderId.
+                val room = max - out.size()
+                out.write(buffer, 0, room)
+                if (!largeRequestAllowed(out.toString(Charsets.UTF_8.name()))) return null
+                max = LanProtocol.MAX_OFFER_BYTES
+                if (out.size() + (take - room) > max) return null
+                out.write(buffer, room, take - room)
+            } else {
+                out.write(buffer, 0, take)
+            }
+            if (newline != null) return out.toString(Charsets.UTF_8.name())
         }
     }
 
@@ -259,6 +356,23 @@ class NsdSocketLanServer(private val context: Context) : LanServer {
     }.getOrDefault(emptyList())
 
     private companion object {
-        const val MAX_CONNECTIONS = 4
+        const val MAX_CONNECTIONS = 8
+        const val MAX_PER_IP = 2
+
+        /** Same device, or a private / link-local LAN address: never a routed public peer. */
+        fun isLocalPeer(address: InetAddress): Boolean {
+            val a = (address as? Inet6Address)?.let { v6 ->
+                // IPv4-mapped (::ffff:a.b.c.d) is judged as IPv4.
+                val b = v6.address
+                if (b.take(10).all { it == 0.toByte() } && b[10] == 0xFF.toByte() && b[11] == 0xFF.toByte()) {
+                    InetAddress.getByAddress(b.copyOfRange(12, 16))
+                } else {
+                    v6
+                }
+            } ?: address
+            if (a.isLoopbackAddress || a.isSiteLocalAddress || a.isLinkLocalAddress) return true
+            // IPv6 unique local addresses fc00::/7.
+            return a is Inet6Address && (a.address[0].toInt() and 0xFE) == 0xFC
+        }
     }
 }

@@ -45,6 +45,9 @@ class LanReceiverEngine(
     private var session: Session? = null
     private val failedSessions = ArrayDeque<Long>()
     private var lockedUntil = 0L
+
+    /** After the TV user cancelled (or ignored) a code screen, new pairings wait this long. */
+    private var cooldownUntil = 0L
     private val nonces = LinkedHashMap<String, Long>()
 
     private val _prompt = MutableStateFlow<PairingPrompt?>(null)
@@ -53,10 +56,26 @@ class LanReceiverEngine(
     private val _events = MutableSharedFlow<LanReceiverEvent>(extraBufferCapacity = 16, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val events: SharedFlow<LanReceiverEvent> = _events
 
-    /** Off outside Home-like screens; offers are refused with NOT_ACCEPTING then. */
+    /**
+     * Whether a playlist offer can be shown now. The TV host turns it off while it cannot take one
+     * (an import running, the offer queue full); offers are then refused with NOT_ACCEPTING and the
+     * phone says "TV is busy". Casts are not affected.
+     */
+    @kotlin.concurrent.Volatile
     var acceptingOffers: Boolean = true
 
     suspend fun handle(line: String): String = encode(handleRequest(line))
+
+    /**
+     * Whether a request line may be longer than [LanProtocol.MAX_REQUEST_BYTES]: only a signed
+     * request whose sender is paired with this TV (its MAC is still checked by [handle]). [prefix] is
+     * the start of the line, as read so far. Unauthenticated clients are thus held to 64 KiB.
+     */
+    suspend fun allowsLargeRequest(prefix: String): Boolean {
+        if (!SIGNED_TYPE.containsMatchIn(prefix)) return false
+        val senderId = SENDER_ID.find(prefix)?.groupValues?.get(1) ?: return false
+        return store.nameOf(senderId) != null
+    }
 
     private fun encode(response: LanResponse) = LanProtocol.json.encodeToString(LanResponse.serializer(), response)
 
@@ -85,13 +104,16 @@ class LanReceiverEngine(
 
     private suspend fun pairStart(request: PairStartRequest): LanResponse = mutex.withLock {
         if (request.v != LanProtocol.VERSION) return LanResponse.error(LanErrorCode.UNSUPPORTED_VERSION)
-        if (request.senderId.isBlank() || request.senderId.length > 64 || request.senderName.isBlank()) {
+        val name = LanValidation.cleanName(request.senderName)
+        if (request.senderId.isBlank() || request.senderId.length > 64 || name.isEmpty()) {
             return LanResponse.error(LanErrorCode.BAD_REQUEST)
         }
         val now = clock()
         expireSession(now)
         if (now < lockedUntil) return LanResponse.error(LanErrorCode.LOCKED)
-        if (session != null) return LanResponse.error(LanErrorCode.BUSY)
+        // One code screen at a time, and none right after the TV user closed one: a LAN client cannot
+        // keep a full-screen prompt over playback.
+        if (session != null || now < cooldownUntil) return LanResponse.error(LanErrorCode.BUSY)
         val agreement = keyAgreement.create() ?: return LanResponse.error(LanErrorCode.NOT_ACCEPTING)
         val senderPub = LanCrypto.unb64(request.pub) ?: return LanResponse.error(LanErrorCode.BAD_REQUEST)
         val secret = try {
@@ -100,7 +122,6 @@ class LanReceiverEngine(
             return LanResponse.error(LanErrorCode.BAD_REQUEST)
         }
         val key = LanCrypto.pairKey(secret, senderPub, agreement.publicKey)
-        val name = request.senderName.take(LanValidation.MAX_NAME)
         val s = Session(
             id = LanCrypto.newNonce(),
             senderId = request.senderId,
@@ -139,12 +160,24 @@ class LanReceiverEngine(
 
     /** The TV user closed the code screen. */
     suspend fun cancelPairing() = mutex.withLock {
+        if (session != null) {
+            val now = clock()
+            endSession(failed = true, now = now)
+            cooldownUntil = now + PAIR_COOLDOWN_MS
+        }
+    }
+
+    /** The receiver stopped (app paused): drop the code screen without a cooldown. */
+    suspend fun abortPairing() = mutex.withLock {
         if (session != null) endSession(failed = true, now = clock())
     }
 
     private fun expireSession(now: Long) {
         val s = session ?: return
-        if (now >= s.expiresAt) endSession(failed = true, now = now)
+        if (now >= s.expiresAt) {
+            endSession(failed = true, now = now)
+            cooldownUntil = now + PAIR_COOLDOWN_MS
+        }
     }
 
     private fun endSession(failed: Boolean, now: Long) {
@@ -200,7 +233,9 @@ class LanReceiverEngine(
             is PlaylistCommand -> {
                 if (!acceptingOffers) return LanResponse.error(LanErrorCode.NOT_ACCEPTING)
                 LanValidation.checkPlaylist(command.playlist)?.let { return LanResponse.error(it) }
-                _events.emit(LanReceiverEvent.PlaylistOffered(command.playlist, senderName, now))
+                val shown = command.playlist.copy(name = LanValidation.cleanName(command.playlist.name, LanValidation.MAX_NAME))
+                if (shown.name.isEmpty()) return LanResponse.error(LanErrorCode.BAD_REQUEST)
+                _events.emit(LanReceiverEvent.PlaylistOffered(shown, senderName, now))
                 LanResponse.ok()
             }
         }
@@ -208,5 +243,9 @@ class LanReceiverEngine(
 
     companion object {
         const val MAX_NONCES = 512
+        const val PAIR_COOLDOWN_MS = 30_000L
+
+        private val SIGNED_TYPE = Regex(""""type"\s*:\s*"signed"""")
+        private val SENDER_ID = Regex(""""senderId"\s*:\s*"([^"\\]{1,64})"""")
     }
 }
