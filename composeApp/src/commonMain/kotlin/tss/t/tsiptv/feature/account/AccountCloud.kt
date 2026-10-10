@@ -60,7 +60,10 @@ class FirestoreAccountCloud(private val firestore: FirebaseFirestore) : AccountC
             val ids = if (metaSnap.exists) metaSnap.data(DevicesMeta.serializer()).ids else emptyList()
             when {
                 device.id in ids -> {
-                    set(devices(uid).document(device.id), RegisteredDevice.serializer(), device)
+                    // Listed but its document is missing or stale: rewrite it, keeping createdAt (rules).
+                    val existing = get(devices(uid).document(device.id))
+                    val createdAt = if (existing.exists) existing.data(RegisteredDevice.serializer()).createdAt else device.createdAt
+                    set(devices(uid).document(device.id), RegisteredDevice.serializer(), device.copy(createdAt = createdAt))
                     RegisterResult.Registered
                 }
                 ids.size >= max -> RegisterResult.LimitReached

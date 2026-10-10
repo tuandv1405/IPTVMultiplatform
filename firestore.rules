@@ -66,8 +66,151 @@ service cloud.firestore {
 
     // ---- 1. app user data -------------------------------------------------
 
-    match /users/{userId}/{document=**} {
+    // The user document itself, and every subcollection the app owns freely
+    // (e.g. deactiveRequest). The collections below have their own rules and
+    // are excluded here, or this wildcard would grant them everything.
+    match /users/{userId} {
       allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/{coll}/{document=**} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && !(coll in ['devices', 'meta', 'quota', 'sync']);
+    }
+
+    // ---- 1b. devices, quotas, sync (docs/prd-tv-cast-and-sync.md) ------------
+    // Rules cannot count a collection, so meta/devices.ids is the list of
+    // registered device ids (at most 4). A device is added or removed together
+    // with its id, in one transaction.
+
+    function devicesMetaPath(uid) {
+      return /databases/$(database)/documents/users/$(uid)/meta/devices;
+    }
+
+    function devicePath(uid, id) {
+      return /databases/$(database)/documents/users/$(uid)/devices/$(id);
+    }
+
+    function validDevice(id) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['id', 'platform', 'name', 'appVersion', 'createdAt', 'lastSeen']) &&
+        d.id == id && d.platform in ['android_phone', 'android_tv', 'ios', 'desktop'] &&
+        text(d.name, 1, 60) && text(d.appVersion, 0, 40) &&
+        d.createdAt is int && d.lastSeen is int;
+    }
+
+    function idsAfter(uid) {
+      return getAfter(devicesMetaPath(uid)).data.ids;
+    }
+
+    function idsBefore(uid) {
+      return exists(devicesMetaPath(uid)) ? get(devicesMetaPath(uid)).data.ids : [];
+    }
+
+    match /users/{userId}/devices/{deviceId} {
+      allow read: if isOwner(userId);
+      // Only together with its id in meta/devices (which caps the count).
+      allow create: if isOwner(userId) && validDevice(deviceId) &&
+        existsAfter(devicesMetaPath(userId)) && deviceId in idsAfter(userId);
+      allow update: if isOwner(userId) && validDevice(deviceId) &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        deviceId in idsBefore(userId);
+      // Signing a device out (own or remote) also removes its id.
+      allow delete: if isOwner(userId) &&
+        (!existsAfter(devicesMetaPath(userId)) || !(deviceId in idsAfter(userId)));
+    }
+
+    match /users/{userId}/meta/devices {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) &&
+        request.resource.data.keys().hasOnly(['ids', 'updatedAt']) &&
+        request.resource.data.ids is list &&
+        request.resource.data.ids.size() <= 4 &&
+        request.resource.data.ids.toSet().size() == request.resource.data.ids.size() &&
+        request.resource.data.updatedAt is int &&
+        (
+          // Add exactly one id, whose device document is created in the same write.
+          (request.resource.data.ids.size() == idsBefore(userId).size() + 1 &&
+            request.resource.data.ids.hasAll(idsBefore(userId)) &&
+            existsAfter(devicePath(userId, request.resource.data.ids.removeAll(idsBefore(userId))[0])) &&
+            !exists(devicePath(userId, request.resource.data.ids.removeAll(idsBefore(userId))[0]))) ||
+          // Remove exactly one id, whose device document is deleted in the same write.
+          (request.resource.data.ids.size() == idsBefore(userId).size() - 1 &&
+            idsBefore(userId).hasAll(request.resource.data.ids) &&
+            !existsAfter(devicePath(userId, idsBefore(userId).removeAll(request.resource.data.ids)[0])))
+        );
+      allow delete: if false;
+    }
+
+    // Daily quotas (PRD §6). Without a backend these rules are the only guard:
+    // counters only grow (by at most 1 per write) within a day, stay under the
+    // caps, and the document can never be deleted to reset them.
+    function dayOf(t) {
+      return t.year() * 10000 + t.month() * 100 + t.day();
+    }
+
+    function plausibleDay(d) {
+      return d is int && (d == dayOf(request.time) ||
+        d == dayOf(request.time - duration.value(14, 'h')) ||
+        d == dayOf(request.time + duration.value(14, 'h')));
+    }
+
+    function step(n, old) {
+      return n is int && n >= old && n <= old + 1;
+    }
+
+    function quotaPath(uid) {
+      return /databases/$(database)/documents/users/$(uid)/quota/daily;
+    }
+
+    function validQuota() {
+      let q = request.resource.data;
+      return q.keys().hasOnly(['day', 'sends', 'sendRewards', 'syncs', 'syncRewards', 'syncAds', 'networks', 'updatedAt']) &&
+        q.keys().hasAll(['day', 'sends', 'sendRewards', 'syncs', 'syncRewards', 'syncAds', 'networks', 'updatedAt']) &&
+        plausibleDay(q.day) && q.updatedAt is int &&
+        q.networks is list && q.networks.size() <= 10 &&
+        q.sendRewards <= 5 && q.sends <= 3 + q.sendRewards &&
+        q.syncRewards <= 2 && q.syncs <= 1 + q.syncRewards &&
+        q.syncAds is int && q.syncAds >= 0 && q.syncAds <= 1;
+    }
+
+    // A fresh day: every counter starts at 0 and this write adds at most 1.
+    function freshQuota() {
+      let q = request.resource.data;
+      return step(q.sends, 0) && step(q.sendRewards, 0) && step(q.syncs, 0) && step(q.syncRewards, 0);
+    }
+
+    match /users/{userId}/quota/daily {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && validQuota() && freshQuota();
+      allow update: if isOwner(userId) && validQuota() && (
+        (request.resource.data.day == resource.data.day &&
+          step(request.resource.data.sends, resource.data.sends) &&
+          step(request.resource.data.sendRewards, resource.data.sendRewards) &&
+          step(request.resource.data.syncs, resource.data.syncs) &&
+          step(request.resource.data.syncRewards, resource.data.syncRewards)) ||
+        (request.resource.data.day > resource.data.day && freshQuota())
+      );
+      allow delete: if false;
+    }
+
+    // The account's sync slot: owner only, written only by a registered device
+    // and only together with one more counted sync in the quota document.
+    match /users/{userId}/sync/current {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) &&
+        request.resource.data.keys().hasOnly(['v', 'fromDeviceId', 'fromDeviceName', 'createdAt', 'playlistCount', 'payload']) &&
+        request.resource.data.v == 1 &&
+        text(request.resource.data.fromDeviceName, 1, 60) &&
+        request.resource.data.createdAt is int &&
+        request.resource.data.playlistCount is int && request.resource.data.playlistCount <= 100 &&
+        text(request.resource.data.payload, 2, 262144) &&
+        exists(devicesMetaPath(userId)) &&
+        request.resource.data.fromDeviceId in get(devicesMetaPath(userId)).data.ids &&
+        getAfter(quotaPath(userId)).data.syncs ==
+          ((exists(quotaPath(userId)) && get(quotaPath(userId)).data.day == getAfter(quotaPath(userId)).data.day)
+            ? get(quotaPath(userId)).data.syncs + 1 : 1);
+      allow delete: if isOwner(userId);
     }
 
     // ---- 2a. requests to become a contributor ----------------------------
