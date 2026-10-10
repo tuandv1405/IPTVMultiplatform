@@ -112,3 +112,17 @@ web-backend 51/51; QC probes 10/10; billing server 31/31; `check_guides.py` OK (
 Device: `TSIPTV_SUBS_QA` only (name checked before each install), headless, stopped afterwards; it
 is now in the phone layout, portrait.
 
+## QC round 2 fixes (2026-10-10)
+
+| # | Fix | Verified (TV layout on `TSIPTV_SUBS_QA`, entered with the D-pad) |
+|---|---|---|
+| N1 | **Plans screen on TV.** The list opens with the disclosure at the top (`scrollToItem(disclosure)`), never scrolled past it. Focus starts on the first enabled plan button just below it, or on the disclosure itself when there is nothing to buy. The status card, the disclosure, the "couldn't load prices" / "not available" notice and each card's name + features are focusable, non-clickable rows (`tvReadable`, outline when focused, TV only), so UP/DOWN reach and scroll every part in reading order. Each card repeats "Renews automatically until you cancel in Google Play." right above its buy buttons. | **With prices** (new debug switch `-Ptsiptv.debugDemoBilling=true`: sample "(demo)" prices, nothing purchasable, never reports a purchase): entry shows the disclosure + "No ads" card with "Subscribe · 25.000 ₫ (demo) / month" focused; UP ×3 → card text → disclosure → "Your plan: Free" (scrolled into view); DOWN → yearly → Unlimited card text → "Sign in to subscribe". **Without prices:** entry shows the disclosure focused and visible, then the notice and the cards. Note: Compose `clickable` is not focusable in touch mode, so the entry focus works when the screen is opened with the D-pad (as on a TV), not after a tap on an emulator. |
+| N2 | "Get Unlimited" rows hidden while no billing server URL is configured (`PurchaseVerifier.enabled`). | code |
+| N3 | `/billing/verify`: with `BILLING_TRUST_PROXY`, the client address is the `X-Forwarded-For` entry `BILLING_TRUSTED_PROXY_HOPS` (default 1) from the right; spoofed left entries are ignored; falls back to the socket address. | server test (32/32) |
+| N4 | Terms (vi/en) and in-app strings (7 locales) use the same wording: No ads "removes all ads; rewarded ads only if you choose to watch one (for an extra send or sync)"; Unlimited "raises the daily limits to 200 playlist sends to TV / 50 device syncs (fair use)". | screenshots above |
+| EOL | Root `.gitattributes`: `web/public/**` and `web/guides-src/**` as `text eol=lf` (images, fonts, gz, pdf `binary`); `build_guides.stale_pages()` normalises CRLF before comparing. | `check_guides.py` OK in this Windows worktree |
+
+**Checks:** `desktopTest` 589 / 0 failures; `compileCommonMainKotlinMetadata`, `assembleDebug`,
+`assembleRelease` (R8) green; Firestore rules suites 51/51; billing server 32/32; `check_guides.py` OK.
+AVD stopped; it is in the TV layout, landscape, with no playlist (its earlier QA data is gone).
+
