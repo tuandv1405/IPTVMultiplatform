@@ -110,4 +110,7 @@
     <string name="lan_pair_code_expired">Der Code ist abgelaufen. Beginne erneut.</string>
     <string name="lan_tv_busy">Der TV ist beschäftigt. Öffne den TS IPTV-Startbildschirm auf dem TV und versuche es erneut.</string>
     <string name="devices_unknown">Unbekanntes Gerät (keine Details)</string>
+    <string name="lan_pair_open_tv_screen">Öffne zum Koppeln auf dem TV „TV &amp; Geräte“ und versuche es erneut.</string>
+    <string name="lan_tv_pairing_open">Koppeln ist möglich, solange dieser Bildschirm offen ist: Ein neues Handy erhält hier seinen Code.</string>
+    <string name="lan_tv_importing">„%1$s“ wird hinzugefügt …</string>
 </resources>

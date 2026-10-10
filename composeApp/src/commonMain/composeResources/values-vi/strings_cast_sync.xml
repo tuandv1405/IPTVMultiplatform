@@ -111,4 +111,7 @@
     <string name="lan_pair_code_expired">Mã đã hết hạn. Hãy bắt đầu lại.</string>
     <string name="lan_tv_busy">TV đang bận. Mở màn hình chính TS IPTV trên TV rồi thử lại.</string>
     <string name="devices_unknown">Thiết bị không rõ (không có thông tin)</string>
+    <string name="lan_pair_open_tv_screen">Để ghép nối, hãy mở TV &amp; thiết bị trên TV rồi thử lại.</string>
+    <string name="lan_tv_pairing_open">Có thể ghép nối khi màn hình này đang mở: điện thoại mới sẽ nhận mã tại đây.</string>
+    <string name="lan_tv_importing">Đang thêm “%1$s”…</string>
 </resources>

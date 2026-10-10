@@ -110,4 +110,7 @@
     <string name="lan_pair_code_expired">コードの有効期限が切れました。最初からやり直してください。</string>
     <string name="lan_tv_busy">テレビは使用中です。テレビで TS IPTV のホームを開いてから、もう一度お試しください。</string>
     <string name="devices_unknown">不明なデバイス（詳細なし）</string>
+    <string name="lan_pair_open_tv_screen">ペア設定するには、テレビで「テレビとデバイス」を開いてから、もう一度お試しください。</string>
+    <string name="lan_tv_pairing_open">この画面を表示している間はペア設定できます。新しいスマホのコードはここに表示されます。</string>
+    <string name="lan_tv_importing">「%1$s」を追加しています…</string>
 </resources>

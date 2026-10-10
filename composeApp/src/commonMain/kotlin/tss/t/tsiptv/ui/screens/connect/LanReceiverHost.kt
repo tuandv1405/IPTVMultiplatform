@@ -39,6 +39,7 @@ import tsiptv.composeapp.generated.resources.lan_cancel
 import tsiptv.composeapp.generated.resources.lan_tv_accept
 import tsiptv.composeapp.generated.resources.lan_tv_cast_from
 import tsiptv.composeapp.generated.resources.lan_tv_decline
+import tsiptv.composeapp.generated.resources.lan_tv_importing
 import tsiptv.composeapp.generated.resources.lan_tv_offer_message
 import tsiptv.composeapp.generated.resources.lan_tv_offer_title
 import tsiptv.composeapp.generated.resources.lan_tv_pair_message
@@ -145,6 +146,7 @@ fun LanReceiverHost(
                     stringResource(Res.string.lan_tv_accept),
                     {
                         offers.remove(offer)
+                        scope.launch { notice = getString(Res.string.lan_tv_importing, offer.playlist.name) }
                         onAcceptPlaylist(offer.playlist)
                     },
                     Modifier.focusRequester(accept),

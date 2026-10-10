@@ -136,7 +136,8 @@ class HomeViewModel(
      * @param name The name of the IPTV source
      * @param url The URL of the IPTV source
      */
-    fun parseIptvSource(name: String, url: String) {
+    fun parseIptvSource(name: String, url: String, fromLan: Boolean = false) {
+        importFromLan = fromLan
         runImport {
             when (val outcome = playlistImporter.importFromUrl(name, url)) {
                 is ImportOutcome.SingleStream -> _uiState.update {
@@ -156,7 +157,8 @@ class HomeViewModel(
      * Import a playlist or `.strm` file the user picked. A file with the same display name as an
      * earlier import asks before replacing it.
      */
-    fun importFile(name: String, file: PickedPlaylistFile, confirmedReplace: Boolean = false) {
+    fun importFile(name: String, file: PickedPlaylistFile, confirmedReplace: Boolean = false, fromLan: Boolean = false) {
+        importFromLan = fromLan
         when (file) {
             PickedPlaylistFile.Cancelled -> Unit
             is PickedPlaylistFile.TooLarge -> _uiState.update {
@@ -185,9 +187,13 @@ class HomeViewModel(
         }
     }
 
+    /** The running (or last) import came from a phone (TV: imported in the background from Home). */
+    private var importFromLan = false
+
     private fun runImport(block: suspend () -> Unit) {
         importJob?.cancel()
-        _uiState.update { it.copy(isLoading = true) }
+        val fromLan = importFromLan
+        _uiState.update { it.copy(isLoading = true, importFromLan = fromLan) }
         importJob = viewModelScope.launch {
             try {
                 block()
@@ -280,6 +286,7 @@ class HomeViewModel(
                     channelCount = result.channelCount,
                     skipped = emptyMap(),
                     fromRefresh = fromRefresh,
+                    fromLan = importFromLan && !fromRefresh,
                     source = SourceImportSummary(result.channelCount, result.movieCount, result.seriesCount, result.skippedCount, result.report),
                 ),
             )
@@ -353,7 +360,7 @@ class HomeViewModel(
                 playListName = playlist.name,
                 categories = iptvDatabase.getCategoriesByPlaylist(playlist.id),
                 selectedCategory = null,
-                importSummary = ImportSummary(result.channelCount, result.skipped, fromRefresh = false),
+                importSummary = ImportSummary(result.channelCount, result.skipped, fromRefresh = false, fromLan = importFromLan),
             )
         }
         getAllChannelForIptvSource(playlist.id)
@@ -833,6 +840,8 @@ data class ImportSummary(
     val channelCount: Int,
     val skipped: Map<SkipReason, Int>,
     val fromRefresh: Boolean,
+    /** Sent from a phone and imported in the background on the TV (shown on top of any screen). */
+    val fromLan: Boolean = false,
     /** F3: set for a TS IPTV Source (its own message and Details). */
     val source: SourceImportSummary? = null,
 ) {
@@ -886,6 +895,8 @@ data class HomeUiState(
     val top3MostPlayedChannels: List<ChannelWithHistory> = emptyList(),
     val allPlayedChannels: List<ChannelWithHistory> = emptyList(),
     val importSummary: ImportSummary? = null,
+    /** The running (or last) import is a playlist accepted from a phone (TV). */
+    val importFromLan: Boolean = false,
     val pendingSingleStream: PendingSingleStream? = null,
     /** Display name of a picked file that would replace an earlier import. */
     val pendingFileReplace: String? = null,

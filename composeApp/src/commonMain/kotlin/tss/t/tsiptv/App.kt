@@ -526,36 +526,20 @@ fun App() {
                                 viewModelStoreOwner = appViewModelStore
                             )
                             val homeUIState by homeViewModel.uiState.collectAsStateWithLifecycle()
-                            val coroutineScope = rememberCoroutineScope()
-                            var showPopupSuccess by remember { mutableStateOf(false) }
-
+                            // The result comes from state, not a one-shot event, so it is never lost
+                            // when the import finishes before this screen is resumed (QC r2 N1). Only
+                            // a summary produced after the screen opened is shown here; refreshes and
+                            // playlists imported from a phone on a TV have their own dialogs.
+                            val summaryAtEntry = remember { homeUIState.importSummary }
                             val summary = homeUIState.importSummary
-                            if (showPopupSuccess && summary != null) {
+                            if (summary != null && summary !== summaryAtEntry && !summary.fromRefresh && !summary.fromLan) {
                                 ImportSummaryDialog(
                                     summary = summary,
                                     onDismiss = {
-                                        showPopupSuccess = false
                                         homeViewModel.onEmitEvent(HomeEvent.OnDismissImportSummary)
                                         navController.popBackStack()
                                     },
                                 )
-                            }
-
-                            LifecycleResumeEffect(Unit) {
-                                val job = coroutineScope.launch {
-                                    homeViewModel.homeUIEvent.collect {
-                                        when (it) {
-                                            HomeEvent.OnParseIPTVSourceSuccess -> {
-                                                showPopupSuccess = true
-                                            }
-
-                                            else -> {}
-                                        }
-                                    }
-                                }
-                                onPauseOrDispose {
-                                    job.cancel()
-                                }
                             }
 
                             ImportIPTVScreen(
@@ -697,9 +681,25 @@ fun App() {
                     // While the import screen is open (a playlist being added), a new offer is
                     // refused and the phone says "TV is busy".
                     val currentEntry by navController.currentBackStackEntryAsState()
-                    val importing = currentEntry?.destination?.hasRoute<NavRoutes.ImportIptv>() == true
+                    val onImportScreen = currentEntry?.destination?.hasRoute<NavRoutes.ImportIptv>() == true
+                    val lanState by homeViewModel.uiState.collectAsStateWithLifecycle()
+                    val lanImporting = lanState.isLoading && lanState.importFromLan
+                    // A playlist from a phone is imported in the background (QC r2 N1): the result
+                    // shows here over any screen. Only an import that needs the user (a single
+                    // stream, a TS IPTV Source preview, an error) opens the import screen.
+                    lanState.importSummary?.takeIf { it.fromLan }?.let { summary ->
+                        ImportSummaryDialog(
+                            summary = summary,
+                            onDismiss = { homeViewModel.onEmitEvent(HomeEvent.OnDismissImportSummary) },
+                        )
+                    }
+                    val needsUser = lanState.importFromLan && !lanState.isLoading &&
+                        (lanState.pendingSingleStream != null || lanState.sourceImport != null || lanState.error != null)
+                    LaunchedEffect(needsUser) {
+                        if (needsUser && !onImportScreen) navController.navigate(NavRoutes.ImportIptv)
+                    }
                     LanReceiverHost(
-                        canTakePlaylists = !importing,
+                        canTakePlaylists = !onImportScreen && !lanImporting,
                         onCast = { stream ->
                             val id = playerViewModel.playCast(stream)
                             if (navController.currentBackStackEntry?.destination?.hasRoute<NavRoutes.Player>() != true) {
@@ -707,19 +707,17 @@ fun App() {
                             }
                         },
                         onAcceptPlaylist = { shared ->
-                            // The normal importer, with its progress / source preview / summary dialogs.
-                            if (navController.currentBackStackEntry?.destination?.hasRoute<NavRoutes.ImportIptv>() != true) {
-                                navController.navigate(NavRoutes.ImportIptv)
-                            }
+                            // The normal importer, in the background: playback and navigation stay.
                             val content = shared.content
                             if (content != null) {
                                 homeViewModel.importFile(
                                     shared.name,
                                     PickedPlaylistFile.Picked(shared.fileName ?: "playlist.m3u", content.encodeToByteArray()),
                                     confirmedReplace = true,
+                                    fromLan = true,
                                 )
                             } else {
-                                homeViewModel.parseIptvSource(shared.name, shared.url.orEmpty())
+                                homeViewModel.parseIptvSource(shared.name, shared.url.orEmpty(), fromLan = true)
                             }
                         },
                     )

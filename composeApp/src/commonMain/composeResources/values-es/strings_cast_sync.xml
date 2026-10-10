@@ -110,4 +110,7 @@
     <string name="lan_pair_code_expired">El código caducó. Empieza de nuevo.</string>
     <string name="lan_tv_busy">La TV está ocupada. Abre el inicio de TS IPTV en la TV e inténtalo de nuevo.</string>
     <string name="devices_unknown">Dispositivo desconocido (sin detalles)</string>
+    <string name="lan_pair_open_tv_screen">Para vincular, abre TV y dispositivos en la TV y vuelve a intentarlo.</string>
+    <string name="lan_tv_pairing_open">La vinculación está abierta mientras se muestra esta pantalla: un teléfono nuevo recibe aquí su código.</string>
+    <string name="lan_tv_importing">Añadiendo «%1$s»…</string>
 </resources>

@@ -111,4 +111,7 @@
     <string name="lan_pair_code_expired">The code expired. Start again.</string>
     <string name="lan_tv_busy">The TV is busy. Open TS IPTV home on the TV and try again.</string>
     <string name="devices_unknown">Unknown device (no details)</string>
+    <string name="lan_pair_open_tv_screen">To pair, open TV &amp; devices on the TV, then try again.</string>
+    <string name="lan_tv_pairing_open">Pairing is open while this screen is shown: a new phone gets its code here.</string>
+    <string name="lan_tv_importing">Adding “%1$s”…</string>
 </resources>
