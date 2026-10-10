@@ -48,18 +48,18 @@ class EntitlementRepositoryTest {
     }
 
     private fun <T> withRepo(
-        storage: InMemoryKeyValueStorage = InMemoryKeyValueStorage(),
+        storage: tss.t.tsiptv.core.storage.KeyValueStorage = InMemoryKeyValueStorage(),
         uid: MutableStateFlow<String?> = MutableStateFlow(null),
+        server: ServerEntitlementSource = FakeServer(),
         block: suspend (EntitlementRepository, FakeBilling, FakeServer, FakeVerifier) -> T,
     ): T = runBlocking {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         try {
             val billing = FakeBilling()
-            val server = FakeServer()
             val verifier = FakeVerifier()
             val repo = EntitlementRepository(billing, server, verifier, uid, storage, scope) { now }
             repo.start()
-            withTimeout(5_000) { block(repo, billing, server, verifier) }
+            withTimeout(5_000) { block(repo, billing, server as? FakeServer ?: FakeServer(), verifier) }
         } finally {
             scope.cancel()
         }
@@ -104,6 +104,42 @@ class EntitlementRepositoryTest {
             uid.value = null
             repo.await { it.plan == Plan.FREE }
         }
+    }
+
+    /** QC B8: a storage failure loses only the cache; the gates still get an entitlement. */
+    @Test
+    fun brokenStorageFallsBackToNoCache() {
+        val broken = object : tss.t.tsiptv.core.storage.KeyValueStorage by InMemoryKeyValueStorage() {
+            override suspend fun getString(key: String, defaultValue: String): String = error("disk")
+            override suspend fun putString(key: String, value: String) = error("disk")
+            override suspend fun remove(key: String) = error("disk")
+        }
+        withRepo(broken) { repo, billing, _, _ ->
+            assertEquals(Plan.FREE, repo.await { true }.plan)
+            billing.purchases.value = PlayPurchases.Loaded(listOf(OwnedPurchase(billing.catalog.noAdsId, "t", OwnedPurchaseState.PURCHASED, true, true)))
+            repo.await { it.plan == Plan.NO_ADS }
+        }
+    }
+
+    /** QC B9: a failed server listener is retried instead of staying unknown. */
+    @Test
+    fun serverListenerIsRetriedAfterAFailure() {
+        var calls = 0
+        val doc = ServerEntitlement(Plan.UNLIMITED, true, SubscriptionStatus.ACTIVE, "tsiptv_unlimited", "monthly", now + 1_000_000, true)
+        val flaky = object : ServerEntitlementSource {
+            override fun observe(uid: String): Flow<ServerEntitlement?> = kotlinx.coroutines.flow.flow {
+                if (calls++ == 0) throw IllegalStateException("offline")
+                emit(doc)
+            }
+        }
+        withRepo(uid = MutableStateFlow("u1"), server = flaky) { repo, billing, _, _ ->
+            billing.purchases.value = PlayPurchases.Loaded(emptyList())
+            assertTrue(repo.await { it.plan == Plan.UNLIMITED }.verified)
+        }
+        assertEquals(2, calls)
+        assertEquals(2_000L, EntitlementRepository.serverRetryDelayMs(0))
+        assertEquals(4_000L, EntitlementRepository.serverRetryDelayMs(1))
+        assertEquals(300_000L, EntitlementRepository.serverRetryDelayMs(50))
     }
 
     @Test

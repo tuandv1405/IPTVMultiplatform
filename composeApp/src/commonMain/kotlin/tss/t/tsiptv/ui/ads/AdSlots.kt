@@ -3,6 +3,7 @@ package tss.t.tsiptv.ui.ads
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -112,29 +113,47 @@ fun BannerAdSlot(
             }
             if (result == null) AdSkeleton(Modifier.fillMaxWidth().height(height))
         }
-        if (removeAdsLink && result == AdLoadResult.LOADED) RemoveAdsLink()
+        // The row is reserved while the banner loads, so nothing below moves when the link appears.
+        if (removeAdsLink) RemoveAdsLink(visible = result == AdLoadResult.LOADED)
     }
 }
 
+/** Gap between an ad and the "Remove ads" link (QC B2). */
+private val REMOVE_ADS_GAP = 8.dp
+
+/** The link's touch target: a full 48 dp row, entirely below [REMOVE_ADS_GAP]. */
+private val REMOVE_ADS_ROW = 48.dp
+
 /**
- * "Remove ads": a small text link in the app's own style, right-aligned **below** an ad slot, never
- * over the ad or inside the ad view (AdMob policy), opening the plans screen.
+ * "Remove ads": a small text link in the app's own style, right-aligned **below** an ad slot (an
+ * 8 dp gap, then a 48 dp touch row that cannot reach the ad), never over the ad or inside the ad
+ * view (AdMob policy), opening the plans screen. [visible] false keeps the row's space empty.
  */
 @Composable
-fun RemoveAdsLink(modifier: Modifier = Modifier) {
+fun RemoveAdsLink(modifier: Modifier = Modifier, visible: Boolean = true) {
     val open = LocalOpenPlans.current ?: return
-    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-        Text(
-            text = stringResource(Res.string.remove_ads_link),
-            color = TSColors.AccentCyan,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .clickable(onClick = open)
-                .padding(horizontal = 10.dp, vertical = 6.dp),
-        )
+    Column(modifier.fillMaxWidth()) {
+        Spacer(Modifier.height(REMOVE_ADS_GAP))
+        Box(Modifier.fillMaxWidth().height(REMOVE_ADS_ROW), contentAlignment = Alignment.CenterEnd) {
+            if (visible) {
+                Box(
+                    modifier = Modifier
+                        .height(REMOVE_ADS_ROW)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = open)
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(Res.string.remove_ads_link),
+                        color = TSColors.AccentCyan,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
     }
 }
 

@@ -6,8 +6,8 @@
     <string name="plans_unlimited_name">Unlimited</string>
     <string name="plans_feature_no_ads">Sin anuncios: ni anuncios de AdMob ni ofertas de Shopee</string>
     <string name="plans_feature_rewarded_kept">Puedes seguir viendo un anuncio con recompensa para un envío o una sincronización extra</string>
-    <string name="plans_feature_unlimited_send">Envíos de listas a la TV ilimitados</string>
-    <string name="plans_feature_unlimited_sync">Sincronización de dispositivos ilimitada</string>
+    <string name="plans_feature_unlimited_send">Envío de listas a la TV: hasta 200 al día (uso razonable)</string>
+    <string name="plans_feature_unlimited_sync">Sincronización de dispositivos: hasta 50 al día (uso razonable)</string>
     <string name="plans_feature_no_tasks">Sin necesidad de ver anuncios con recompensa</string>
     <string name="plans_price_month">%1$s / mes</string>
     <string name="plans_price_year">%1$s / año</string>
@@ -43,7 +43,11 @@
     <string name="plans_msg_deferred">El nuevo plan empieza cuando termine el periodo actual.</string>
     <string name="remove_ads_link">Quitar anuncios</string>
     <string name="quota_upgrade_unlimited">Obtener Unlimited</string>
-    <string name="quota_upgrade_unlimited_desc">Envíos y sincronizaciones ilimitados, sin anuncios</string>
-    <string name="send_tv_unlimited">Envíos ilimitados (plan Unlimited)</string>
-    <string name="sync_unlimited">Sincronizaciones ilimitadas (plan Unlimited)</string>
+    <string name="quota_upgrade_unlimited_desc">Hasta 200 envíos y 50 sincronizaciones al día, sin anuncios</string>
+    <string name="send_tv_unlimited">Plan Unlimited: hasta 200 envíos al día (uso razonable)</string>
+    <string name="sync_unlimited">Plan Unlimited: hasta 50 sincronizaciones al día (uso razonable)</string>
+    <string name="plans_unlimited_coming_soon">Próximamente</string>
+    <string name="plans_msg_restore_failed">No se pudo conectar con Google Play. Comprueba tu conexión e inténtalo de nuevo.</string>
+    <string name="quota_fair_use_reached">Has alcanzado el límite de uso razonable de hoy del plan Unlimited. Se reinicia a medianoche.</string>
+    <string name="quota_unlimited_pending">Se alcanzó el límite de hoy porque nuestro servidor aún no ha confirmado tu plan Unlimited. Abre Planes de suscripción y toca Restaurar compras, o inténtalo más tarde.</string>
 </resources>

@@ -6,8 +6,8 @@
     <string name="plans_unlimited_name">Unlimited</string>
     <string name="plans_feature_no_ads">Sans pub : ni annonces AdMob ni offres Shopee</string>
     <string name="plans_feature_rewarded_kept">Vous pouvez toujours regarder une annonce avec récompense pour un envoi ou une synchronisation en plus</string>
-    <string name="plans_feature_unlimited_send">Envois de playlists vers la TV illimités</string>
-    <string name="plans_feature_unlimited_sync">Synchronisation des appareils illimitée</string>
+    <string name="plans_feature_unlimited_send">Envoi de playlists vers la TV : jusqu’à 200 par jour (usage raisonnable)</string>
+    <string name="plans_feature_unlimited_sync">Synchronisation des appareils : jusqu’à 50 par jour (usage raisonnable)</string>
     <string name="plans_feature_no_tasks">Aucune annonce avec récompense nécessaire</string>
     <string name="plans_price_month">%1$s / mois</string>
     <string name="plans_price_year">%1$s / an</string>
@@ -43,7 +43,11 @@
     <string name="plans_msg_deferred">Le nouveau forfait démarre à la fin de la période en cours.</string>
     <string name="remove_ads_link">Supprimer les pubs</string>
     <string name="quota_upgrade_unlimited">Passer à Unlimited</string>
-    <string name="quota_upgrade_unlimited_desc">Envois et synchronisations illimités, sans pub</string>
-    <string name="send_tv_unlimited">Envois illimités (forfait Unlimited)</string>
-    <string name="sync_unlimited">Synchronisations illimitées (forfait Unlimited)</string>
+    <string name="quota_upgrade_unlimited_desc">Jusqu’à 200 envois et 50 synchronisations par jour, sans pub</string>
+    <string name="send_tv_unlimited">Forfait Unlimited : jusqu’à 200 envois par jour (usage raisonnable)</string>
+    <string name="sync_unlimited">Forfait Unlimited : jusqu’à 50 synchronisations par jour (usage raisonnable)</string>
+    <string name="plans_unlimited_coming_soon">Bientôt disponible</string>
+    <string name="plans_msg_restore_failed">Impossible de joindre Google Play. Vérifiez votre connexion et réessayez.</string>
+    <string name="quota_fair_use_reached">Vous avez atteint la limite d’usage raisonnable du jour du forfait Unlimited. Elle se réinitialise à minuit.</string>
+    <string name="quota_unlimited_pending">La limite du jour est atteinte car notre serveur n’a pas encore confirmé votre forfait Unlimited. Ouvrez Abonnements et touchez Restaurer les achats, ou réessayez plus tard.</string>
 </resources>

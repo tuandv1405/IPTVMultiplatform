@@ -77,6 +77,9 @@ import tsiptv.composeapp.generated.resources.send_tv_task_rewarded
 import tsiptv.composeapp.generated.resources.send_tv_tasks
 import tsiptv.composeapp.generated.resources.send_tv_title
 import tsiptv.composeapp.generated.resources.send_tv_unlimited
+import tsiptv.composeapp.generated.resources.quota_fair_use_reached
+import tsiptv.composeapp.generated.resources.quota_unlimited_pending
+import tss.t.tsiptv.feature.account.QuotaPlan
 import tsiptv.composeapp.generated.resources.quota_upgrade_unlimited
 import tsiptv.composeapp.generated.resources.quota_upgrade_unlimited_desc
 import androidx.compose.material.icons.rounded.AllInclusive
@@ -174,12 +177,18 @@ private fun PickTv(
                         }
                     }
                 }
-                // Unlimited (docs/prd-subscriptions.md §2.2): no counter and no rewarded task.
-                q.unlimited && (q.remaining == null || q.remaining > 0) -> ConnectBody(stringResource(Res.string.send_tv_unlimited))
+                // Verified Unlimited (docs/prd-subscriptions.md §2.2): fair use, no counter, no task.
+                q.plan == QuotaPlan.UNLIMITED_VERIFIED && (q.remaining == null || q.remaining > 0) ->
+                    ConnectBody(stringResource(Res.string.send_tv_unlimited))
                 q.remaining != null -> {
                     ConnectBody(
-                        if (q.remaining > 0) stringResource(Res.string.send_tv_remaining, q.remaining.toInt())
-                        else stringResource(Res.string.send_tv_quota_reached),
+                        when {
+                            q.remaining > 0 -> stringResource(Res.string.send_tv_remaining, q.remaining.toInt())
+                            // Unlimited used up: say why instead of offering an upgrade (QC B1).
+                            q.plan == QuotaPlan.UNLIMITED_VERIFIED -> stringResource(Res.string.quota_fair_use_reached)
+                            q.plan == QuotaPlan.UNLIMITED_UNVERIFIED -> stringResource(Res.string.quota_unlimited_pending)
+                            else -> stringResource(Res.string.send_tv_quota_reached)
+                        },
                     )
                     // Rewarded ads only (PRD §3.3): never banner clicks or timed interstitials.
                     if (q.canEarn && q.remaining == 0L) {
@@ -191,7 +200,7 @@ private fun PickTv(
                             onClick = viewModel::watchAdForSend,
                         )
                     }
-                    if (!q.unlimited && q.remaining == 0L) UpgradeUnlimitedItem(onBeforeOpen = onDismiss)
+                    if (q.plan == QuotaPlan.FREE && q.remaining == 0L) UpgradeUnlimitedItem(onBeforeOpen = onDismiss)
                 }
             }
         }

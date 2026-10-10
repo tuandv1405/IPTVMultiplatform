@@ -18,6 +18,7 @@ import tss.t.tsiptv.core.billing.PlanAction
 import tss.t.tsiptv.core.billing.PlanOffer
 import tss.t.tsiptv.core.billing.PlayPurchases
 import tss.t.tsiptv.core.billing.PurchaseLaunch
+import tss.t.tsiptv.core.billing.PurchaseVerifier
 import tss.t.tsiptv.core.billing.ReplaceFrom
 import tss.t.tsiptv.core.billing.ReplacementMode
 import tss.t.tsiptv.core.billing.ReplacementPolicy
@@ -28,6 +29,9 @@ val LocalOpenPlans = staticCompositionLocalOf<(() -> Unit)?> { null }
 /** One-shot messages of the plans screen. */
 enum class PlansMessage {
     PURCHASED, PENDING, FAILED, ALREADY_OWNED, RESTORED, NOTHING_TO_RESTORE, UNAVAILABLE, SIGN_IN_REQUIRED, DEFERRED,
+
+    /** Restore could not reach Google Play (QC B5). */
+    RESTORE_FAILED,
 }
 
 /** A plan card's button for one base plan. */
@@ -39,6 +43,11 @@ data class PlansUiState(
     val loadingOffers: Boolean = true,
     val noAdsOffers: List<OfferRow> = emptyList(),
     val unlimitedOffers: List<OfferRow> = emptyList(),
+    /**
+     * Unlimited is sold only once the billing server is configured (QC B1): without it the rules
+     * cannot lift the caps, so "Unlimited" would be 8 sends / 3 syncs a day.
+     */
+    val unlimitedForSale: Boolean = false,
     val signedIn: Boolean = false,
     val busy: Boolean = false,
     val message: PlansMessage? = null,
@@ -53,10 +62,16 @@ data class PlansUiState(
 class PlansViewModel(
     private val billing: BillingGateway,
     private val entitlements: EntitlementRepository,
+    verifier: PurchaseVerifier,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(PlansUiState(supported = billing.isSupported))
+    private val unlimitedForSale = verifier.enabled
+
+    private val _state = MutableStateFlow(PlansUiState(supported = billing.isSupported, unlimitedForSale = unlimitedForSale))
     val state: StateFlow<PlansUiState> = _state
+
+    /** The purchase in flight is a deferred downgrade: report that, not "your plan is active" (QC B7). */
+    private var launchedDeferred = false
 
     init {
         viewModelScope.launch {
@@ -66,11 +81,13 @@ class PlansViewModel(
         }
         viewModelScope.launch {
             billing.events.collect { event ->
+                val deferred = launchedDeferred
+                launchedDeferred = false
                 _state.update {
                     it.copy(
                         busy = false,
                         message = when (event) {
-                            BillingEvent.PURCHASED -> PlansMessage.PURCHASED
+                            BillingEvent.PURCHASED -> if (deferred) PlansMessage.DEFERRED else PlansMessage.PURCHASED
                             BillingEvent.PENDING -> PlansMessage.PENDING
                             BillingEvent.CANCELED -> null
                             BillingEvent.ALREADY_OWNED -> PlansMessage.ALREADY_OWNED
@@ -104,7 +121,7 @@ class PlansViewModel(
             // Only while Play has not answered yet; a failed or unavailable store shows "couldn't load prices".
             loadingOffers = billing.isSupported && s.offers.isEmpty() && s.purchases is PlayPurchases.Unknown,
             noAdsOffers = rows(Plan.NO_ADS),
-            unlimitedOffers = rows(Plan.UNLIMITED),
+            unlimitedOffers = if (unlimitedForSale) rows(Plan.UNLIMITED) else emptyList(),
             signedIn = s.signedIn,
             manageUrl = ReplacementPolicy.manageUrl(ReplacementPolicy.PACKAGE_NAME, s.entitlement.productId),
         )
@@ -113,6 +130,7 @@ class PlansViewModel(
     fun buy(offer: PlanOffer) {
         val s = _state.value
         if (s.busy) return
+        if (offer.plan == Plan.UNLIMITED && !unlimitedForSale) return
         val uid = entitlements.signedInUid.value
         // Unlimited's features need an account (PRD §2).
         if (offer.plan == Plan.UNLIMITED && uid == null) {
@@ -122,10 +140,13 @@ class PlansViewModel(
         val replace = replacementFor(offer)
         _state.update { it.copy(busy = true, message = null) }
         viewModelScope.launch {
+            launchedDeferred = replace?.mode == ReplacementMode.DEFERRED
             val result = billing.launchPurchase(offer, uid?.let(ReplacementPolicy::accountHash), replace)
+            if (result != PurchaseLaunch.STARTED) launchedDeferred = false
             _state.update {
                 when (result) {
-                    PurchaseLaunch.STARTED -> it.copy(busy = false, message = if (replace?.mode == ReplacementMode.DEFERRED) PlansMessage.DEFERRED else null)
+                    // The outcome (bought, deferred, pending, cancelled) arrives as a billing event.
+                    PurchaseLaunch.STARTED -> it.copy(busy = false)
                     PurchaseLaunch.SIGN_IN_REQUIRED -> it.copy(busy = false, message = PlansMessage.SIGN_IN_REQUIRED)
                     PurchaseLaunch.UNAVAILABLE -> it.copy(busy = false, message = PlansMessage.UNAVAILABLE)
                     PurchaseLaunch.FAILED -> it.copy(busy = false, message = PlansMessage.FAILED)
@@ -154,7 +175,7 @@ class PlansViewModel(
         _state.update { it.copy(busy = true, message = null) }
         viewModelScope.launch {
             val ok = entitlements.restore()
-            _state.update { it.copy(busy = false, message = if (ok) it.message else PlansMessage.FAILED) }
+            _state.update { it.copy(busy = false, message = if (ok) it.message else PlansMessage.RESTORE_FAILED) }
         }
     }
 

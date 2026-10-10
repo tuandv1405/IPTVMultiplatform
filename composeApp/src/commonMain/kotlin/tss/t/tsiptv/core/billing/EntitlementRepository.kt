@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
@@ -117,9 +117,16 @@ class EntitlementRepository(
             if (u == null) flowOf(ServerState.SignedOut)
             else flow<ServerState> {
                 emitAll(server.observe(u).map { ServerState.Loaded(it) })
-            }.onStart { emit(ServerState.Unknown) }
-                // Offline or no permission: keep "unknown" (the cache and Play still decide).
-                .catch { emit(ServerState.Unknown) }
+            }
+                // Offline or no permission: "unknown" (the cache and Play still decide), then try
+                // again with a growing delay instead of staying unknown (QC B9).
+                .retryWhen { cause, attempt ->
+                    if (cause is kotlinx.coroutines.CancellationException) return@retryWhen false
+                    emit(ServerState.Unknown)
+                    delay(serverRetryDelayMs(attempt))
+                    true
+                }
+                .onStart { emit(ServerState.Unknown) }
         }
 
     private suspend fun verifyNew(uid: String, purchases: List<OwnedPurchase>) {
@@ -144,26 +151,43 @@ class EntitlementRepository(
         return candidates.minOrNull()
     }
 
-    private suspend fun readCache(): CachedEntitlement? {
+    /** The cached plan, or null; a storage failure must never block the gates (QC B8). */
+    private suspend fun readCache(): CachedEntitlement? = try {
         val plan = Plan.fromWire(storage.getString(KEY_PLAN, ""))
-        if (plan == Plan.FREE) return null
-        val at = storage.getLong(KEY_CONFIRMED_AT, 0L)
-        return CachedEntitlement(plan, storage.getString(KEY_PRODUCT, "").ifEmpty { null }, at)
+        if (plan == Plan.FREE) null
+        else CachedEntitlement(plan, storage.getString(KEY_PRODUCT, "").ifEmpty { null }, storage.getLong(KEY_CONFIRMED_AT, 0L))
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
     }
 
-    private suspend fun writeCache(value: CachedEntitlement) {
+    // Storage failures only lose the cache; they never stop the entitlement from updating.
+    private suspend fun writeCache(value: CachedEntitlement) = safely {
         storage.putString(KEY_PLAN, value.plan.wireName)
         storage.putString(KEY_PRODUCT, value.productId.orEmpty())
         storage.putLong(KEY_CONFIRMED_AT, value.confirmedAtMs)
     }
 
-    private suspend fun clearCache() {
+    private suspend fun clearCache() = safely {
         storage.remove(KEY_PLAN)
         storage.remove(KEY_PRODUCT)
         storage.remove(KEY_CONFIRMED_AT)
     }
 
+    private suspend fun safely(block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (_: Exception) {
+        }
+    }
+
     companion object {
+        /** 2 s, 4 s, 8 s … at most 5 min between attempts to read the server document. */
+        fun serverRetryDelayMs(attempt: Long): Long = (2_000L shl attempt.coerceAtMost(8).toInt()).coerceAtMost(5 * 60_000L)
+
         const val KEY_PLAN = "billing_cached_plan"
         const val KEY_PRODUCT = "billing_cached_product"
         const val KEY_CONFIRMED_AT = "billing_cached_at_ms"

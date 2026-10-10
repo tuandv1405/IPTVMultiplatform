@@ -22,8 +22,8 @@ data class SendQuotaInfo(
     val remaining: Long?,
     val canEarn: Boolean,
     val rewards: tss.t.tsiptv.feature.account.RewardAvailability,
-    /** Unlimited plan: no counter, no rewarded task (docs/prd-subscriptions.md §2.2). */
-    val unlimited: Boolean = false,
+    /** The quota side of the plan (docs/prd-subscriptions.md §2.2): wording, tasks and upgrade row. */
+    val plan: tss.t.tsiptv.feature.account.QuotaPlan = tss.t.tsiptv.feature.account.QuotaPlan.FREE,
 )
 
 sealed interface TvSendStep {
@@ -134,7 +134,7 @@ class TvSendViewModel(
                         remaining = q?.let(policy::remainingSends),
                         canEarn = q?.let(policy::canEarnSendReward) ?: false,
                         rewards = quotas.rewardAvailability(),
-                        unlimited = policy.unlimited,
+                        plan = policy.plan,
                     ),
                 )
             }

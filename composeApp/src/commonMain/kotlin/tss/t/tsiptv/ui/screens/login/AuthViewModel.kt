@@ -175,12 +175,6 @@ class AuthViewModel(
                         }
                     }
 
-                    ProfileScreenActions.Subscription -> {
-                        _uiState.update {
-                            it.copy(showSubscriptionPopup = true)
-                        }
-                    }
-
                     ProfileScreenActions.Notification -> {
                         _uiState.update {
                             it.copy(showNotificationDialog = true)
@@ -260,13 +254,6 @@ class AuthViewModel(
                         changePasswordError = null,
                         isChangePasswordLoading = false
                     )
-                }
-            }
-
-            // Subscription popup
-            LoginEvents.OnDismissSubscriptionPopup -> {
-                _uiState.update {
-                    it.copy(showSubscriptionPopup = false)
                 }
             }
 
@@ -1063,8 +1050,6 @@ data class AuthUiState(
     val confirmPasswordValue: String = "",
     val isChangePasswordLoading: Boolean = false,
     val changePasswordError: String? = null,
-
-    val showSubscriptionPopup: Boolean = false,
 
     val showNotificationDialog: Boolean = false,
     val notificationPermissionGranted: Boolean = false,

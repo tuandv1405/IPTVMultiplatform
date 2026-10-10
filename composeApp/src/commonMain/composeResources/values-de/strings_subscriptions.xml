@@ -6,8 +6,8 @@
     <string name="plans_unlimited_name">Unlimited</string>
     <string name="plans_feature_no_ads">Ohne Werbung: keine AdMob-Anzeigen und keine Shopee-Angebote</string>
     <string name="plans_feature_rewarded_kept">Du kannst weiterhin eine Anzeige mit Prämie für ein zusätzliches Senden oder Synchronisieren ansehen</string>
-    <string name="plans_feature_unlimited_send">Playlists unbegrenzt an den Fernseher senden</string>
-    <string name="plans_feature_unlimited_sync">Unbegrenzte Gerätesynchronisierung</string>
+    <string name="plans_feature_unlimited_send">Playlists an den Fernseher senden: bis zu 200 pro Tag (Fair Use)</string>
+    <string name="plans_feature_unlimited_sync">Gerätesynchronisierung: bis zu 50 pro Tag (Fair Use)</string>
     <string name="plans_feature_no_tasks">Keine Anzeigen mit Prämie nötig</string>
     <string name="plans_price_month">%1$s / Monat</string>
     <string name="plans_price_year">%1$s / Jahr</string>
@@ -43,7 +43,11 @@
     <string name="plans_msg_deferred">Das neue Abo beginnt, wenn der aktuelle Zeitraum endet.</string>
     <string name="remove_ads_link">Werbung entfernen</string>
     <string name="quota_upgrade_unlimited">Unlimited holen</string>
-    <string name="quota_upgrade_unlimited_desc">Unbegrenzt senden und synchronisieren, ohne Werbung</string>
-    <string name="send_tv_unlimited">Unbegrenztes Senden (Unlimited-Abo)</string>
-    <string name="sync_unlimited">Unbegrenztes Synchronisieren (Unlimited-Abo)</string>
+    <string name="quota_upgrade_unlimited_desc">Bis zu 200 Sendungen und 50 Synchronisierungen pro Tag, ohne Werbung</string>
+    <string name="send_tv_unlimited">Unlimited-Abo: bis zu 200 Sendungen pro Tag (Fair Use)</string>
+    <string name="sync_unlimited">Unlimited-Abo: bis zu 50 Synchronisierungen pro Tag (Fair Use)</string>
+    <string name="plans_unlimited_coming_soon">Demnächst</string>
+    <string name="plans_msg_restore_failed">Google Play ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="quota_fair_use_reached">Du hast das heutige Fair-Use-Limit des Unlimited-Abos erreicht. Es wird um Mitternacht zurückgesetzt.</string>
+    <string name="quota_unlimited_pending">Das heutige Limit ist erreicht, weil dein Unlimited-Abo von unserem Server noch nicht bestätigt ist. Öffne Abos und tippe auf Käufe wiederherstellen, oder versuche es später.</string>
 </resources>

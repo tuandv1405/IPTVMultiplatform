@@ -6,8 +6,8 @@
     <string name="plans_unlimited_name">Unlimited</string>
     <string name="plans_feature_no_ads">无广告：不显示 AdMob 广告和 Shopee 优惠</string>
     <string name="plans_feature_rewarded_kept">仍可观看激励广告以获得额外的发送或同步次数</string>
-    <string name="plans_feature_unlimited_send">无限次将播放列表发送到电视</string>
-    <string name="plans_feature_unlimited_sync">无限次设备同步</string>
+    <string name="plans_feature_unlimited_send">将播放列表发送到电视：每天最多 200 次（合理使用）</string>
+    <string name="plans_feature_unlimited_sync">设备同步：每天最多 50 次（合理使用）</string>
     <string name="plans_feature_no_tasks">无需观看激励广告</string>
     <string name="plans_price_month">%1$s / 月</string>
     <string name="plans_price_year">%1$s / 年</string>
@@ -43,7 +43,11 @@
     <string name="plans_msg_deferred">新方案将在当前周期结束后开始。</string>
     <string name="remove_ads_link">移除广告</string>
     <string name="quota_upgrade_unlimited">升级到 Unlimited</string>
-    <string name="quota_upgrade_unlimited_desc">无限次发送和同步，无广告</string>
-    <string name="send_tv_unlimited">无限次发送（Unlimited 方案）</string>
-    <string name="sync_unlimited">无限次同步（Unlimited 方案）</string>
+    <string name="quota_upgrade_unlimited_desc">每天最多发送 200 次、同步 50 次，无广告</string>
+    <string name="send_tv_unlimited">Unlimited 方案：每天最多发送 200 次（合理使用）</string>
+    <string name="sync_unlimited">Unlimited 方案：每天最多同步 50 次（合理使用）</string>
+    <string name="plans_unlimited_coming_soon">即将推出</string>
+    <string name="plans_msg_restore_failed">无法连接 Google Play。请检查网络后重试。</string>
+    <string name="quota_fair_use_reached">你已达到 Unlimited 方案今天的合理使用上限，将在午夜重置。</string>
+    <string name="quota_unlimited_pending">由于服务器尚未确认你的 Unlimited 方案，今天的次数已用完。请打开订阅方案并点按“恢复购买”，或稍后再试。</string>
 </resources>

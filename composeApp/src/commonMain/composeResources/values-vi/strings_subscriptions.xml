@@ -7,8 +7,8 @@
     <string name="plans_unlimited_name">Unlimited</string>
     <string name="plans_feature_no_ads">Không quảng cáo: không có quảng cáo AdMob và ưu đãi Shopee</string>
     <string name="plans_feature_rewarded_kept">Vẫn có thể xem quảng cáo có thưởng để thêm lượt gửi hoặc đồng bộ</string>
-    <string name="plans_feature_unlimited_send">Gửi danh sách phát tới TV không giới hạn</string>
-    <string name="plans_feature_unlimited_sync">Đồng bộ thiết bị không giới hạn</string>
+    <string name="plans_feature_unlimited_send">Gửi danh sách phát tới TV: tối đa 200 lần mỗi ngày (sử dụng hợp lý)</string>
+    <string name="plans_feature_unlimited_sync">Đồng bộ thiết bị: tối đa 50 lần mỗi ngày (sử dụng hợp lý)</string>
     <string name="plans_feature_no_tasks">Không cần xem quảng cáo có thưởng</string>
     <string name="plans_price_month">%1$s / tháng</string>
     <string name="plans_price_year">%1$s / năm</string>
@@ -44,7 +44,11 @@
     <string name="plans_msg_deferred">Gói mới bắt đầu khi kỳ hiện tại kết thúc.</string>
     <string name="remove_ads_link">Xoá quảng cáo</string>
     <string name="quota_upgrade_unlimited">Nâng cấp Unlimited</string>
-    <string name="quota_upgrade_unlimited_desc">Gửi và đồng bộ không giới hạn, không quảng cáo</string>
-    <string name="send_tv_unlimited">Gửi không giới hạn (gói Unlimited)</string>
-    <string name="sync_unlimited">Đồng bộ không giới hạn (gói Unlimited)</string>
+    <string name="quota_upgrade_unlimited_desc">Tối đa 200 lần gửi và 50 lần đồng bộ mỗi ngày, không quảng cáo</string>
+    <string name="send_tv_unlimited">Gói Unlimited: tối đa 200 lần gửi mỗi ngày (sử dụng hợp lý)</string>
+    <string name="sync_unlimited">Gói Unlimited: tối đa 50 lần đồng bộ mỗi ngày (sử dụng hợp lý)</string>
+    <string name="plans_unlimited_coming_soon">Sắp ra mắt</string>
+    <string name="plans_msg_restore_failed">Không kết nối được Google Play. Hãy kiểm tra mạng và thử lại.</string>
+    <string name="quota_fair_use_reached">Bạn đã dùng hết giới hạn sử dụng hợp lý hôm nay của gói Unlimited. Giới hạn đặt lại lúc nửa đêm.</string>
+    <string name="quota_unlimited_pending">Đã hết lượt hôm nay vì gói Unlimited của bạn chưa được máy chủ xác nhận. Mở Gói đăng ký và chọn Khôi phục giao dịch, hoặc thử lại sau.</string>
 </resources>

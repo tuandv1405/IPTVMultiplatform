@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -29,7 +30,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import tsiptv.composeapp.generated.resources.plans_msg_restore_failed
+import tsiptv.composeapp.generated.resources.plans_unlimited_coming_soon
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -118,9 +123,44 @@ fun PlansScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    val firstFocus = remember { FocusRequester() }
+    val backFocus = remember { FocusRequester() }
+    val initialFocus = remember { FocusRequester() }
     val open: (String) -> Unit = { url -> scope.launch { getUrlOpener().openUrl(url) } }
-    LaunchedEffect(Unit) { if (isTvLayout) firstFocus.requestFocusAfterLayout() }
+
+    // TV (QC B6): start on the first enabled plan button, or on "Manage" when there are no prices,
+    // once the offers are known; the controls then follow the reading order top to bottom.
+    val firstOffer = (state.noAdsOffers + state.unlimitedOffers).firstOrNull { it.action != PlanAction.CURRENT }
+    val focusTarget = when {
+        state.loadingOffers -> "wait"
+        firstOffer != null -> "offer:${firstOffer.offer.productId}:${firstOffer.offer.basePlanId}"
+        state.supported -> "manage"
+        else -> "back"
+    }
+    val listState = rememberLazyListState()
+    // Index of the list item that holds the target (mirrors the items below), so it can be brought
+    // into composition before it is focused: an item off screen cannot take focus.
+    val targetItem = when {
+        firstOffer == null -> 4 // "links": status, disclosure, notice, noads, unlimited, links
+        firstOffer.offer.plan == Plan.NO_ADS -> 2
+        else -> 3
+    } + (if (!state.supported || state.loadingOffers || (state.noAdsOffers.isEmpty() && state.unlimitedOffers.isEmpty())) 1 else 0)
+    var initialFocusDone by remember { mutableStateOf(false) }
+    LaunchedEffect(focusTarget) {
+        if (!isTvLayout || initialFocusDone || focusTarget == "wait") return@LaunchedEffect
+        if (focusTarget == "back") {
+            initialFocusDone = backFocus.requestFocusAfterLayout()
+            return@LaunchedEffect
+        }
+        repeat(5) {
+            listState.scrollToItem(targetItem)
+            if (initialFocus.requestFocusAfterLayout()) {
+                initialFocusDone = true
+                return@LaunchedEffect
+            }
+            kotlinx.coroutines.delay(100)
+        }
+    }
+    fun Modifier.initialIf(match: Boolean) = if (match) focusRequester(initialFocus) else this
 
     Column(Modifier.fillMaxSize().background(TSColors.BackgroundColor).statusBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = if (isTvLayout) 40.dp else 8.dp, vertical = 8.dp)) {
@@ -128,15 +168,19 @@ fun PlansScreen(
                 title = stringResource(Res.string.plans_title),
                 icon = Icons.AutoMirrored.Rounded.ArrowBack,
                 onClick = onBack,
-                modifier = Modifier.widthIn(max = 420.dp).focusRequester(firstFocus),
+                modifier = Modifier.widthIn(max = 420.dp).focusRequester(backFocus),
             )
         }
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = if (isTvLayout) 48.dp else 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item("status") { StatusCard(state.entitlement) }
+
+            // Before any plan card and purchase button, never in fine print (Play policy, QC B3).
+            item("disclosure") { ConnectBody(stringResource(Res.string.plans_disclosure), color = TSColors.TextPrimary) }
 
             if (!state.supported) {
                 item("not_available") { ConnectBody(stringResource(Res.string.plans_not_available), color = TSColors.TextPrimary) }
@@ -157,7 +201,9 @@ fun PlansScreen(
                     features = listOf(Res.string.plans_feature_no_ads, Res.string.plans_feature_rewarded_kept),
                     highlighted = state.entitlement.plan == Plan.NO_ADS,
                 ) {
-                    state.noAdsOffers.forEach { row -> OfferButton(row, state.busy) { viewModel.buy(row.offer) } }
+                    state.noAdsOffers.forEach { row ->
+                        OfferButton(row, state.busy, Modifier.initialIf(row === firstOffer)) { viewModel.buy(row.offer) }
+                    }
                 }
             }
             item("unlimited") {
@@ -171,22 +217,30 @@ fun PlansScreen(
                     ),
                     highlighted = state.entitlement.plan == Plan.UNLIMITED,
                 ) {
-                    if (state.supported && !state.signedIn && state.unlimitedOffers.isNotEmpty()) {
-                        ConnectBody(stringResource(Res.string.plans_unlimited_needs_account))
-                        ConnectButton(stringResource(Res.string.plans_sign_in_to_subscribe), onSignIn, Modifier.fillMaxWidth(), primary = true)
-                    } else {
-                        state.unlimitedOffers.forEach { row -> OfferButton(row, state.busy) { viewModel.buy(row.offer) } }
+                    when {
+                        // Sold only once the billing server can confirm it (QC B1).
+                        !state.unlimitedForSale && state.entitlement.plan != Plan.UNLIMITED ->
+                            ConnectBody(stringResource(Res.string.plans_unlimited_coming_soon), color = TSColors.AccentCyan)
+                        state.supported && !state.signedIn && state.unlimitedOffers.isNotEmpty() -> {
+                            ConnectBody(stringResource(Res.string.plans_unlimited_needs_account))
+                            ConnectButton(stringResource(Res.string.plans_sign_in_to_subscribe), onSignIn, Modifier.fillMaxWidth(), primary = true)
+                        }
+                        else -> state.unlimitedOffers.forEach { row ->
+                            OfferButton(row, state.busy, Modifier.initialIf(row === firstOffer)) { viewModel.buy(row.offer) }
+                        }
                     }
                 }
             }
 
-            // Shown before any purchase button is reached, never hidden in fine print (Play policy).
-            item("disclosure") { ConnectBody(stringResource(Res.string.plans_disclosure), color = TSColors.TextPrimary) }
-
             item("links") {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     if (state.supported) {
-                        TvMenuItem(title = stringResource(Res.string.plans_manage), icon = Icons.Rounded.Settings, onClick = { open(state.manageUrl) })
+                        TvMenuItem(
+                            title = stringResource(Res.string.plans_manage),
+                            icon = Icons.Rounded.Settings,
+                            onClick = { open(state.manageUrl) },
+                            modifier = Modifier.initialIf(focusTarget == "manage"),
+                        )
                         TvMenuItem(
                             title = stringResource(Res.string.plans_restore),
                             icon = Icons.Rounded.Restore,
@@ -206,12 +260,14 @@ fun PlansScreen(
         val text = when (message) {
             PlansMessage.PURCHASED -> Res.string.plans_msg_purchased
             PlansMessage.PENDING -> Res.string.plans_msg_pending
-            PlansMessage.FAILED, PlansMessage.UNAVAILABLE -> if (message == PlansMessage.UNAVAILABLE) Res.string.plans_not_available else Res.string.plans_msg_failed
+            PlansMessage.FAILED -> Res.string.plans_msg_failed
+            PlansMessage.UNAVAILABLE -> Res.string.plans_not_available
             PlansMessage.ALREADY_OWNED -> Res.string.plans_msg_already_owned
             PlansMessage.RESTORED -> Res.string.plans_msg_restored
             PlansMessage.NOTHING_TO_RESTORE -> Res.string.plans_msg_nothing_to_restore
             PlansMessage.SIGN_IN_REQUIRED -> Res.string.plans_unlimited_needs_account
             PlansMessage.DEFERRED -> Res.string.plans_msg_deferred
+            PlansMessage.RESTORE_FAILED -> Res.string.plans_msg_restore_failed
         }
         MessageDialog(title = stringResource(Res.string.plans_title), text = stringResource(text), onDismiss = viewModel::clearMessage)
     }
@@ -274,7 +330,7 @@ private fun PlanCard(
 
 /** One base plan: price and period from Play, the trial when offered, and the action. */
 @Composable
-private fun OfferButton(row: OfferRow, busy: Boolean, onClick: () -> Unit) {
+private fun OfferButton(row: OfferRow, busy: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val offer = row.offer
     val price = priceText(offer)
     offer.freeTrialPeriod?.let { trial ->
@@ -291,7 +347,7 @@ private fun OfferButton(row: OfferRow, busy: Boolean, onClick: () -> Unit) {
     ConnectButton(
         text = "$action · $price",
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         primary = row.action != PlanAction.CURRENT,
         enabled = row.action != PlanAction.CURRENT && !busy,
     )

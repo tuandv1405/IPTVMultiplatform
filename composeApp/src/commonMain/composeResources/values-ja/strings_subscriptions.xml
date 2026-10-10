@@ -6,8 +6,8 @@
     <string name="plans_unlimited_name">Unlimited</string>
     <string name="plans_feature_no_ads">広告なし：AdMob 広告も Shopee のおすすめも表示されません</string>
     <string name="plans_feature_rewarded_kept">リワード広告を見て送信や同期の回数を増やすこともできます</string>
-    <string name="plans_feature_unlimited_send">テレビへのプレイリスト送信が無制限</string>
-    <string name="plans_feature_unlimited_sync">デバイス同期が無制限</string>
+    <string name="plans_feature_unlimited_send">テレビへのプレイリスト送信：1 日最大 200 回（適正利用）</string>
+    <string name="plans_feature_unlimited_sync">デバイス同期：1 日最大 50 回（適正利用）</string>
     <string name="plans_feature_no_tasks">リワード広告を見る必要はありません</string>
     <string name="plans_price_month">%1$s / 月</string>
     <string name="plans_price_year">%1$s / 年</string>
@@ -43,7 +43,11 @@
     <string name="plans_msg_deferred">新しいプランは現在の期間の終了後に始まります。</string>
     <string name="remove_ads_link">広告を削除</string>
     <string name="quota_upgrade_unlimited">Unlimited にする</string>
-    <string name="quota_upgrade_unlimited_desc">送信と同期が無制限、広告なし</string>
-    <string name="send_tv_unlimited">送信は無制限（Unlimited プラン）</string>
-    <string name="sync_unlimited">同期は無制限（Unlimited プラン）</string>
+    <string name="quota_upgrade_unlimited_desc">1 日最大 200 回の送信と 50 回の同期、広告なし</string>
+    <string name="send_tv_unlimited">Unlimited プラン：1 日最大 200 回の送信（適正利用）</string>
+    <string name="sync_unlimited">Unlimited プラン：1 日最大 50 回の同期（適正利用）</string>
+    <string name="plans_unlimited_coming_soon">近日公開</string>
+    <string name="plans_msg_restore_failed">Google Play に接続できませんでした。接続を確認してもう一度お試しください。</string>
+    <string name="quota_fair_use_reached">Unlimited プランの本日の適正利用上限に達しました。午前 0 時にリセットされます。</string>
+    <string name="quota_unlimited_pending">Unlimited プランがまだサーバーで確認されていないため、本日の上限に達しました。サブスクリプションを開いて「購入を復元」をタップするか、後でもう一度お試しください。</string>
 </resources>
