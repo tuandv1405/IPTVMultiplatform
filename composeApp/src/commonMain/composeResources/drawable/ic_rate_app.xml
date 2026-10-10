@@ -1,0 +1,31 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+  <path
+      android:pathData="M32,0C36.418,0 40,3.582 40,8V32C40,36.418 36.418,40 32,40H8C3.582,40 0,36.418 0,32V8C0,3.582 3.582,0 8,0H32Z">
+    <aapt:attr name="android:fillColor">
+      <gradient
+          android:startX="0"
+          android:startY="20"
+          android:endX="40"
+          android:endY="20"
+          android:type="linear">
+        <item android:offset="0" android:color="#FFEC4899"/>
+        <item android:offset="1" android:color="#FFDB2777"/>
+      </gradient>
+    </aapt:attr>
+  </path>
+  <!-- Material "star", 24dp glyph scaled to 16dp and centred in the 40dp tile like the other profile icons. -->
+  <group
+      android:translateX="12"
+      android:translateY="12"
+      android:scaleX="0.6667"
+      android:scaleY="0.6667">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,17.27L18.18,21l-1.64,-7.03L22,9.24l-7.19,-0.61L12,2 9.19,8.63 2,9.24l5.46,4.73L5.82,21z"/>
+  </group>
+</vector>

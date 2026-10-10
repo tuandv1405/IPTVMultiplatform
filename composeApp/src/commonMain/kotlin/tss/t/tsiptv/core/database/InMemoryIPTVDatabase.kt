@@ -247,7 +247,8 @@ class InMemoryIPTVDatabase : IPTVDatabase {
                 programCount = list.size,
                 name = channel?.name,
                 categoryId = channel?.categoryId,
-                logoUrl = channel?.logoUrl,
+                logoUrl = channel?.logoUrl?.takeIf { it.isNotBlank() }
+                    ?: list.mapNotNull { it.logo?.takeIf { l -> l.isNotBlank() } }.maxOrNull(),
                 isFavorite = channel?.isFavorite?.let { if (it) "1" else "0" },
             )
         }

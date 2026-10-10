@@ -33,3 +33,6 @@ __pycache__/
 
 # CocoaPods (VLCKit): Podfile and Podfile.lock are committed, the Pods are not.
 iosApp/Pods/
+
+# Claude Code agent worktrees
+.claude/worktrees/

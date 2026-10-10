@@ -125,13 +125,13 @@ object IconTitleActionItemDefaults {
 
     private val _def = DefColors(
         titleTextColor = TSColors.TextPrimary,
-        descriptionTextColor = TSColors.SecondaryBackgroundColor,
+        descriptionTextColor = TSColors.TextSecondary,
     )
 
     @Composable
     fun colors(
         titleTextColor: Color = TSColors.TextPrimary,
-        descriptionTextColor: Color = TSColors.SecondaryBackgroundColor,
+        descriptionTextColor: Color = TSColors.TextSecondary,
         bgColor: Color = Color.Unspecified,
         iconTinColor: Color = TSColors.White,
     ) = _def.copy(

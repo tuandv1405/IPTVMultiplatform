@@ -404,4 +404,6 @@
         <item quantity="one">Se omitió %1$d elemento</item>
         <item quantity="other">Se omitieron %1$d elementos</item>
     </plurals>
+    <string name="ad_label">Anuncio</string>
+    <string name="privacy_options_title">Opciones de privacidad</string>
 </resources>

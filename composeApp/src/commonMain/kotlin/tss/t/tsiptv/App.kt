@@ -151,7 +151,9 @@ fun App() {
             // Leave the splash for Home, but stay put on Login (opened from
             // Settings, where a failed attempt must not bounce the user) and on
             // Home after logging out.
-            isTvMode -> {
+            // QA only (debug build with -Ptsiptv.debugSkipLogin=true): the phone layout signed
+            // out, as the TV layout already works, to check screens without a real account.
+            isTvMode || tss.t.tsiptv.utils.DebugFlags.skipLogin -> {
                 if (navController.currentBackStackEntry?.destination
                         ?.hasRoute<NavRoutes.Splash>() != false
                 ) {

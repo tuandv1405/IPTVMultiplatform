@@ -20,6 +20,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import org.jetbrains.compose.resources.painterResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.ic_profile_gradient
 import tss.t.tsiptv.core.database.entity.ChannelWithProgramCount
@@ -54,11 +55,14 @@ fun DetailProgramItem(
                 contentDescription = "",
                 model = ImageRequest.Builder(LocalPlatformContext.current)
                     .data(
-                        program.logo ?: channel.logoUrl
-                        ?: Res.drawable.ic_profile_gradient
+                        program.logo?.takeIf { it.isNotBlank() }
+                            ?: channel.logoUrl?.takeIf { it.isNotBlank() }
+                            ?: Res.drawable.ic_profile_gradient
                     )
                     .crossfade(200)
                     .build(),
+                // A logo that fails to load must not leave an empty tile.
+                error = painterResource(Res.drawable.ic_profile_gradient),
                 contentScale = ContentScale.Crop
             )
             Column(

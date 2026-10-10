@@ -1,5 +1,28 @@
 package tss.t.tsiptv.ui.screens.home.homeiptvlist
 
+import tss.t.tsiptv.core.ads.AdsPolicy
+import tss.t.tsiptv.ui.ads.rememberAdsState
+import tss.t.tsiptv.core.ads.AdPlacement
+import tss.t.tsiptv.ui.ads.BannerAdSlot
+import tss.t.tsiptv.ui.screens.ads.rememberShopeeFallback
+import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.HOME_BANNER_ITEM_KEY
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlin.math.abs
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
@@ -128,6 +151,17 @@ fun HomeIPTVPlaylistScreen(
     LaunchedEffect(Unit) {
         adsViewModel.loadAds()
     }
+    // PRD R5: native ad slots in the channel list (none during the first 24 h or on TV).
+    val adsState = rememberAdsState()
+    val channelRows = remember(homeUiState.listChannels, adsState.any) {
+        AdsPolicy.interleave(homeUiState.listChannels, withAds = adsState.any)
+    }
+    // PRD R3: the sticky banner overlay's height (the list keeps that much room for it) and the
+    // pinned category chips' height (the banner pins right under them).
+    var bannerHeightPx by remember { mutableStateOf(0) }
+    var stickyHeaderHeightPx by remember { mutableStateOf(0) }
+    val density = LocalDensity.current
+    val bannerSpace = with(density) { if (bannerHeightPx > 0) bannerHeightPx.toDp() + 8.dp else 0.dp }
 
     LaunchedEffect(Unit) {
         snapshotFlow { scrollState.layoutInfo.visibleItemsInfo to isEmpty }
@@ -229,10 +263,12 @@ fun HomeIPTVPlaylistScreen(
                             else -> {
                                 homeItemList(
                                     adsViewModel = adsViewModel,
+                                    channelRows = channelRows,
                                     homeUiState = homeUiState,
                                     playerUIState = playerUIState,
                                     onHomeEvent = onHomeEvent,
-                                    categoryListState = categoryListState
+                                    categoryListState = categoryListState,
+                                    bannerSpace = bannerSpace,
                                 )
                             }
                         }
@@ -249,6 +285,67 @@ fun HomeIPTVPlaylistScreen(
                             item {
                                 Spacer(
                                     Modifier.height(MiniPlayerHeight)
+                                )
+                            }
+                        }
+                    }
+
+                    // PRD R3: ONE banner for the screen. It sits on its list item under the category chips
+                    // and, once that scrolls up, stays pinned under the sticky chips (never re-created).
+                    if (!isEmpty && !targetState) {
+                        val topPx = with(density) { it.calculateTopPadding().roundToPx() }
+                        // N1: composed (and so requested) only once its row or the pinned position is on
+                        // screen; from then on the same AdView is kept for the screen.
+                        // "On screen" = its top is above the bottom bar. It must stay there for a
+                        // moment: the rows above it (Now Playing, Continue watching) load a little
+                        // after the channels and push it down again on a cold start.
+                        val bottomBarPx = with(density) { contentPadding.calculateBottomPadding().roundToPx() }
+                        // A new width (rotation) means a new AdView and request: wait again until
+                        // the banner is on screen at that width (QC AdMob r3, R3-1).
+                        val windowWidthPx = LocalWindowInfo.current.containerSize.width
+                        var bannerStarted by remember(windowWidthPx) { mutableStateOf(false) }
+                        LaunchedEffect(scrollState, bottomBarPx, windowWidthPx) {
+                            snapshotFlow {
+                                val y = homeBannerY(scrollState, pinnedY = 0)
+                                y != BANNER_OFF_SCREEN &&
+                                    y < scrollState.layoutInfo.viewportEndOffset - bottomBarPx
+                            }.collectLatest { onScreen ->
+                                if (onScreen && !bannerStarted) {
+                                    delay(BANNER_START_DELAY_MS)
+                                    bannerStarted = true
+                                }
+                            }
+                        }
+                        if (bannerStarted) {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .offset {
+                                        val y = homeBannerY(
+                                            scrollState,
+                                            pinnedY = if (showStickyHeader) stickyHeaderHeightPx else topPx,
+                                        )
+                                        IntOffset(
+                                            0,
+                                            if (y == BANNER_OFF_SCREEN) {
+                                                scrollState.layoutInfo.viewportEndOffset * 2
+                                            } else {
+                                                y
+                                            },
+                                        )
+                                    }
+                                    .onSizeChanged { size -> bannerHeightPx = size.height }
+                                    .background(TSColors.BackgroundColor)
+                                    // N3: a swipe that starts on the banner scrolls the list; taps still
+                                    // reach the ad.
+                                    .scrollListOnDrag(scrollState)
+                            ) {
+                                BannerAdSlot(
+                                    placement = AdPlacement.HOME_BANNER,
+                                    // A gap above and below (part of the overlay, not the ad) where a
+                                    // swipe always scrolls the list.
+                                    modifier = Modifier.padding(vertical = 8.dp),
+                                    fallback = rememberShopeeFallback(adsViewModel),
                                 )
                             }
                         }
@@ -275,6 +372,7 @@ fun HomeIPTVPlaylistScreen(
                 CategoryRow(
                     homeUiState = homeUiState,
                     modifier = Modifier.fillMaxWidth()
+                        .onSizeChanged { size -> stickyHeaderHeightPx = size.height }
                         .background(TSColors.BackgroundColor)
                         .hazeEffect(hazeState)
                         .padding(top = it.calculateTopPadding())
@@ -285,6 +383,74 @@ fun HomeIPTVPlaylistScreen(
             }
         }
     )
+}
+
+/**
+ * Where the sticky Home banner goes: on its list item while that is below [pinnedY], pinned at
+ * [pinnedY] once the item has scrolled up past it, and off screen while the item is still further
+ * down (or the channel list is not shown).
+ */
+private const val BANNER_OFF_SCREEN = Int.MIN_VALUE
+
+/** The banner row must be on screen this long before the banner is created (and requested). */
+private const val BANNER_START_DELAY_MS = 500L
+
+/**
+ * Where the sticky Home banner goes: on its list item while that is below [pinnedY], pinned at
+ * [pinnedY] once the item has scrolled up past it, and [BANNER_OFF_SCREEN] while the item is still
+ * further down (or the channel list is not shown).
+ */
+private fun homeBannerY(listState: LazyListState, pinnedY: Int): Int {
+    val info = listState.layoutInfo
+    val item = info.visibleItemsInfo.firstOrNull { it.key == HOME_BANNER_ITEM_KEY }
+    if (item != null) return maxOf(item.offset, pinnedY)
+    val scrolledPast = info.visibleItemsInfo.any {
+        val key = it.key as? String ?: return@any false
+        key.startsWith("ch:") || key.startsWith("ad:")
+    }
+    return if (scrolledPast) pinnedY else BANNER_OFF_SCREEN
+}
+
+/**
+ * Vertical drags that start on this element scroll [listState] (with fling) instead of going to
+ * the child view. Only a drag past the touch slop is consumed, so taps are untouched and the ad's
+ * own click handling stays as it is; a consumed drag cancels the touch for the ad view, so a swipe
+ * never turns into an accidental click.
+ */
+@Composable
+private fun Modifier.scrollListOnDrag(listState: LazyListState): Modifier {
+    val scope = rememberCoroutineScope()
+    val fling = ScrollableDefaults.flingBehavior()
+    return pointerInput(listState) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            val tracker = VelocityTracker()
+            tracker.addPosition(down.uptimeMillis, down.position)
+            var dragging = false
+            var pending = 0f
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                if (!change.pressed) break
+                tracker.addPosition(change.uptimeMillis, change.position)
+                val dy = change.positionChange().y
+                if (!dragging) {
+                    pending += dy
+                    if (abs(pending) > viewConfiguration.touchSlop) {
+                        dragging = true
+                        listState.dispatchRawDelta(-pending)
+                    }
+                } else {
+                    listState.dispatchRawDelta(-dy)
+                }
+                if (dragging) change.consume()
+            }
+            if (dragging) {
+                val velocity = tracker.calculateVelocity().y
+                scope.launch { listState.scroll { with(fling) { performFling(-velocity) } } }
+            }
+        }
+    }
 }
 
 private fun LazyListScope.homeLoadingItemList(shimmerColor: Float) {

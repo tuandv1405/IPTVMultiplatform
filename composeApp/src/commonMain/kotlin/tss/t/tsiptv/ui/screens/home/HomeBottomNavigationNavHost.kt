@@ -256,11 +256,15 @@ fun HomeBottomNavigationNavHost(
             val appRating: AppRatingController = koinInject()
             val scope = rememberCoroutineScope()
             var showOpenFailed by remember { mutableStateOf(false) }
+            // UMP: "Privacy options" only where the consent rules require it (docs/prd-admob.md §5).
+            val adsPlatform: tss.t.tsiptv.core.ads.AdsPlatform = koinInject()
+            val privacyOptionsRequired by adsPlatform.privacyOptionsRequired.collectAsStateWithLifecycle()
 
             ProfileScreen(
                 authState = authState,
                 hazeState = hazeState,
                 showRateApp = appRating.canOpenStoreListing,
+                showPrivacyOptions = privacyOptionsRequired,
             ) { event ->
                 val action = (event as? LoginEvents.OnProfileActionEvent)?.action
                 when (action) {
@@ -269,6 +273,8 @@ fun HomeBottomNavigationNavHost(
                     }
 
                     ProfileScreenActions.Addons -> rootNavController.navigate(NavRoutes.Addons)
+
+                    ProfileScreenActions.PrivacyOptions -> adsPlatform.showPrivacyOptions()
 
                     ProfileScreenActions.BecomeContributor -> scope.launch {
                         if (!getUrlOpener().openUrl(AppLinks.CONTRIBUTOR_URL)) {

@@ -54,6 +54,8 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.ic_lock
+import tsiptv.composeapp.generated.resources.privacy_options_title
 import tsiptv.composeapp.generated.resources.addons_title
 import tsiptv.composeapp.generated.resources.ic_addons
 import tsiptv.composeapp.generated.resources.account_group_title
@@ -66,8 +68,8 @@ import tsiptv.composeapp.generated.resources.change_password_guide
 import tsiptv.composeapp.generated.resources.change_password_title
 import tsiptv.composeapp.generated.resources.confirm_new_password
 import tsiptv.composeapp.generated.resources.contributor_entry_title
-import tsiptv.composeapp.generated.resources.ic_like
-import tsiptv.composeapp.generated.resources.ic_share
+import tsiptv.composeapp.generated.resources.ic_contributor
+import tsiptv.composeapp.generated.resources.ic_rate_app
 import tsiptv.composeapp.generated.resources.rate_app_title
 import tsiptv.composeapp.generated.resources.current_password
 import tsiptv.composeapp.generated.resources.deactivate_dialog_message
@@ -127,6 +129,8 @@ enum class ProfileScreenActions(val value: Int) {
     BecomeContributor(7),
     /** F2: Profile → Addons (the addon manager). */
     Addons(8),
+    /** AdMob/UMP privacy options (docs/prd-admob.md §5), shown only where UMP requires it. */
+    PrivacyOptions(9),
     Logout(10);
 
 }
@@ -137,6 +141,7 @@ fun ProfileScreen(
     authState: AuthUiState,
     hazeState: HazeState,
     showRateApp: Boolean = false,
+    showPrivacyOptions: Boolean = false,
     onProfileEvent: (LoginEvents) -> Unit = {},
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -166,13 +171,13 @@ fun ProfileScreen(
             ),
             ProfileItem(
                 title = Res.string.contributor_entry_title,
-                icon = Res.drawable.ic_share,
+                icon = Res.drawable.ic_contributor,
                 action = ProfileScreenActions.BecomeContributor
             )
         )
     }
 
-    val preferencesGroupItems = remember(showRateApp) {
+    val preferencesGroupItems = remember(showRateApp, showPrivacyOptions) {
         listOfNotNull(
             ProfileItem(
                 title = Res.string.addons_title,
@@ -186,9 +191,14 @@ fun ProfileScreen(
             ),
             ProfileItem(
                 title = Res.string.rate_app_title,
-                icon = Res.drawable.ic_like,
+                icon = Res.drawable.ic_rate_app,
                 action = ProfileScreenActions.RateApp
-            ).takeIf { showRateApp }
+            ).takeIf { showRateApp },
+            ProfileItem(
+                title = Res.string.privacy_options_title,
+                icon = Res.drawable.ic_lock,
+                action = ProfileScreenActions.PrivacyOptions
+            ).takeIf { showPrivacyOptions }
         )
     }
     Box(

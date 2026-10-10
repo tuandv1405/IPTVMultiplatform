@@ -45,8 +45,11 @@ class XMLTVEPGParser(
         val processedContent = escapeUnescapedAmpersands(content)
 
         val xmltvDocument = xml.decodeFromString<XMLTVDocument>(processedContent)
+        val channelIcons = xmltvDocument.channel.mapNotNull { c ->
+            c.icon?.src?.trim()?.takeIf { it.isNotEmpty() }?.let { c.id to it }
+        }.toMap()
         val programs = xmltvDocument.programme.mapNotNull {
-            it.toIPTVProgram(preferredLanguage)
+            it.toIPTVProgram(preferredLanguage, channelIcon = channelIcons[it.channel])
         }
         val names = LinkedHashMap<String, String>()
         for (channel in xmltvDocument.channel) {

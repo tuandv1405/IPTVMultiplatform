@@ -55,7 +55,12 @@ import tss.t.tsiptv.ui.screens.programs.uimodel.ProgramEvent
 import tss.t.tsiptv.ui.screens.programs.widgets.ChannelInProgramItem
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
-import tss.t.tsiptv.ui.widgets.AdsItem
+import tss.t.tsiptv.core.ads.AdPlacement
+import tss.t.tsiptv.core.ads.AdsPolicy
+import tss.t.tsiptv.ui.ads.NativeAdSlot
+import tss.t.tsiptv.ui.ads.NativeAdStyle
+import tss.t.tsiptv.ui.ads.rememberAdsState
+import tss.t.tsiptv.ui.screens.ads.rememberShopeeFallback
 import tss.t.tsiptv.ui.widgets.DialogButtonFlowLayout
 import tss.t.tsiptv.ui.widgets.HorizontalDividersGradient
 import tss.t.tsiptv.ui.widgets.TSAppBar
@@ -88,6 +93,11 @@ fun ChannelXProgramListScreen(
 
     LaunchedEffect(Unit) {
         adsViewModel.loadAds()
+    }
+    // PRD R5: native ad slots in the schedule list (none during the first 24 h or on TV).
+    val adsState = rememberAdsState()
+    val programRows = remember(uiState.programList, adsState.any) {
+        AdsPolicy.interleave(uiState.programList, withAds = adsState.any)
     }
 
     Scaffold(
@@ -165,23 +175,27 @@ fun ChannelXProgramListScreen(
                     }
                 }
 
-                items(uiState.programList.size) {
-                    val item = uiState.programList[it]
-                    ChannelInProgramItem(item) {
-                        viewModel.navigateToSelectedProgramList(it)
-                    }
-                    HorizontalDividersGradient()
-
-                    val showAds = remember(it, item) {
-                        if (it % 5 == 0) {
-                            item
-                        } else {
-                            null
+                items(
+                    count = programRows.size,
+                    contentType = { index -> if (programRows[index] is AdsPolicy.Row.Ad) "ad" else "channel" },
+                ) { index ->
+                    when (val row = programRows[index]) {
+                        is AdsPolicy.Row.Item -> {
+                            ChannelInProgramItem(row.item) {
+                                viewModel.navigateToSelectedProgramList(it)
+                            }
+                            HorizontalDividersGradient()
                         }
-                    }
-                    showAds?.let {
-                        adsViewModel.RefreshAdsForKeyWithLifeCycle(it.channelId + it.programCount) {
-                            AdsItem(it)
+
+                        // PRD R5: a native ad shaped like a schedule row (flat, 60 dp tile).
+                        is AdsPolicy.Row.Ad -> {
+                            NativeAdSlot(
+                                placement = AdPlacement.PROGRAMS_NATIVE,
+                                slot = row.slot,
+                                style = ProgramsNativeAdStyle,
+                                fallback = rememberShopeeFallback(adsViewModel, row.slot),
+                                divider = { HorizontalDividersGradient() },
+                            )
                         }
                     }
                 }
@@ -211,3 +225,13 @@ fun ChannelXProgramListScreen(
         )
     }
 }
+
+/** Native ads in the Programs list look like its flat rows (no card, 60 dp tile, 16 dp padding). */
+private val ProgramsNativeAdStyle = NativeAdStyle(
+    background = TSColors.BackgroundColor,
+    cornerRadius = 0.dp,
+    iconSize = 60.dp,
+    iconCorner = 12.dp,
+    horizontalPadding = 16.dp,
+    verticalPadding = 16.dp,
+)

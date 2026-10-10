@@ -260,4 +260,21 @@ class XMLTVEPGParserTest {
         println("[DEBUG_LOG] Program logo URL: ${program.logo}")
     }
 
+    @Test
+    fun programmeWithoutIconUsesItsChannelIcon() {
+        val xml = """
+            <tv>
+              <channel id="news.example"><display-name>News</display-name><icon src="https://example.com/news.png"/></channel>
+              <channel id="bare.example"><display-name>Bare</display-name></channel>
+              <programme start="20260101000000 +0000" stop="20260101010000 +0000" channel="news.example"><title>No icon</title></programme>
+              <programme start="20260101010000 +0000" stop="20260101020000 +0000" channel="news.example"><title>Own icon</title><icon src="https://example.com/show.png"/></programme>
+              <programme start="20260101000000 +0000" stop="20260101010000 +0000" channel="bare.example"><title>Nothing</title></programme>
+            </tv>
+        """.trimIndent()
+        val programs = tss.t.tsiptv.core.parser.epg.XMLTVEPGParser().parse(xml).associateBy { it.title }
+        kotlin.test.assertEquals("https://example.com/news.png", programs.getValue("No icon").logo)
+        kotlin.test.assertEquals("https://example.com/show.png", programs.getValue("Own icon").logo)
+        kotlin.test.assertEquals(null, programs.getValue("Nothing").logo)
+    }
+
 }
