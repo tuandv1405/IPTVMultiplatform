@@ -406,4 +406,15 @@
     </plurals>
     <string name="ad_label">Annonce</string>
     <string name="privacy_options_title">Options de confidentialité</string>
+    <string name="notif_enable">Recevoir des notifications</string>
+    <string name="notif_rationale">Recevez des nouvelles sur les mises à jour de TS IPTV et les nouveaux guides. Sans publicité ni suggestion de contenu.</string>
+    <string name="notif_general">Actualités générales</string>
+    <string name="notif_general_desc">Annonces et nouveaux guides</string>
+    <string name="notif_updates">Mises à jour de l’app</string>
+    <string name="notif_updates_desc">Quand une nouvelle version est disponible</string>
+    <string name="notif_blocked">Les notifications sont bloquées dans les paramètres du système.</string>
+    <string name="notif_open_settings">Ouvrir les paramètres</string>
+    <string name="notif_unsupported">Les notifications ne sont pas disponibles sur cet appareil.</string>
+    <string name="notif_tv_note">La plupart des écrans d’accueil de TV n’affichent pas les notifications.</string>
+    <string name="notif_debug_token">Jeton FCM (version de débogage)</string>
 </resources>

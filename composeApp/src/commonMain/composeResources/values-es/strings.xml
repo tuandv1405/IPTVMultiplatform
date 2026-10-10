@@ -406,4 +406,15 @@
     </plurals>
     <string name="ad_label">Anuncio</string>
     <string name="privacy_options_title">Opciones de privacidad</string>
+    <string name="notif_enable">Recibir notificaciones</string>
+    <string name="notif_rationale">Recibe novedades sobre actualizaciones de TS IPTV y nuevas guías. Sin anuncios ni sugerencias de contenido.</string>
+    <string name="notif_general">Novedades generales</string>
+    <string name="notif_general_desc">Anuncios y nuevas guías</string>
+    <string name="notif_updates">Actualizaciones de la app</string>
+    <string name="notif_updates_desc">Cuando hay una nueva versión</string>
+    <string name="notif_blocked">Las notificaciones están bloqueadas en los ajustes del sistema.</string>
+    <string name="notif_open_settings">Abrir ajustes</string>
+    <string name="notif_unsupported">Las notificaciones no están disponibles en este dispositivo.</string>
+    <string name="notif_tv_note">La mayoría de las pantallas de inicio de TV no muestran notificaciones.</string>
+    <string name="notif_debug_token">Token FCM (compilación de depuración)</string>
 </resources>

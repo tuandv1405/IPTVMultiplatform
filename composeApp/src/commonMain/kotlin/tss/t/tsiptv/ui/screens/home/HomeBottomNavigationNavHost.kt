@@ -274,6 +274,8 @@ fun HomeBottomNavigationNavHost(
 
                     ProfileScreenActions.Addons -> rootNavController.navigate(NavRoutes.Addons)
 
+                    ProfileScreenActions.Notification -> rootNavController.navigate(NavRoutes.NotificationSettings)
+
                     ProfileScreenActions.PrivacyOptions -> adsPlatform.showPrivacyOptions()
 
                     ProfileScreenActions.BecomeContributor -> scope.launch {

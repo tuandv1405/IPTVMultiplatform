@@ -398,4 +398,15 @@
     </plurals>
     <string name="ad_label">広告</string>
     <string name="privacy_options_title">プライバシー設定</string>
+    <string name="notif_enable">通知を受け取る</string>
+    <string name="notif_rationale">TS IPTV のアップデートや新しいガイドのお知らせを受け取ります。広告やコンテンツのおすすめはありません。</string>
+    <string name="notif_general">一般のお知らせ</string>
+    <string name="notif_general_desc">お知らせと新しいガイド</string>
+    <string name="notif_updates">アプリのアップデート</string>
+    <string name="notif_updates_desc">新しいバージョンが公開されたとき</string>
+    <string name="notif_blocked">通知はシステム設定でブロックされています。</string>
+    <string name="notif_open_settings">設定を開く</string>
+    <string name="notif_unsupported">このデバイスでは通知を利用できません。</string>
+    <string name="notif_tv_note">ほとんどのテレビのホーム画面では通知は表示されません。</string>
+    <string name="notif_debug_token">FCM トークン（デバッグビルド）</string>
 </resources>
