@@ -102,6 +102,32 @@ class TsiptvSourceServiceTest {
         assertEquals("TSIPTV_SOURCE", db.getPlaylistById(playlistId)!!.format)
     }
 
+    /** Device QC 1: the name typed on import is the local name, kept over refreshes; the same name clears it. */
+    @Test
+    fun typedNameIsKeptAsTheLocalNameOverRefreshes() = runBlocking<Unit> {
+        val storage = tss.t.tsiptv.core.storage.InMemoryKeyValueStorage()
+        val named = TsiptvSourceService(db, http, addons, history, nowMs = { now }, displayNames = StorageSourceDisplayNames(storage))
+        http.ok(root, rootDoc(""))
+        suspend fun import(name: String?) {
+            val fetched = named.fetchLink(root) as TsiptvSourceService.LinkFetch.Source
+            named.store(named.resolve(fetched.preview), adultConfirmed = false, displayName = name)
+        }
+        import("QA Composed")
+        assertEquals("QA Composed", db.getPlaylistById(playlistId)!!.name)
+        now += 60_000
+        named.refresh(playlistId, force = true)
+        assertEquals("QA Composed", db.getPlaylistById(playlistId)!!.name)
+        // Typing the source's own name (or importing again without a name keeps the earlier choice).
+        import(null)
+        assertEquals("QA Composed", db.getPlaylistById(playlistId)!!.name)
+        import("Root")
+        assertEquals("Root", db.getPlaylistById(playlistId)!!.name)
+        // Remove forgets it.
+        import("Mine")
+        named.remove(playlistId)
+        assertEquals("", storage.getString("source_display_name:$playlistId", ""))
+    }
+
     @Test
     fun previewCountsRootItemsAndHostsBeforeAnythingIsStored() = runBlocking<Unit> {
         http.ok(root, rootDoc("""{"id":"live","type":"m3u","url":"$m3u"}"""))

@@ -35,6 +35,7 @@ val tsiptvModule = module {
             mediaHistory = get<IPTVDatabase>().stremioStores,
             nowMs = nowMs,
             uiLanguage = { customAppLocale },
+            displayNames = tss.t.tsiptv.core.tsiptv.StorageSourceDisplayNames(get()),
         )
     }
 }

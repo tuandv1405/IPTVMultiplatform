@@ -304,11 +304,14 @@ fun HomeIPTVPlaylistScreen(
                         // the banner is on screen at that width (QC AdMob r3, R3-1).
                         val windowWidthPx = LocalWindowInfo.current.containerSize.width
                         var bannerStarted by remember(windowWidthPx) { mutableStateOf(false) }
-                        LaunchedEffect(scrollState, bottomBarPx, windowWidthPx) {
+                        // Device QC 1: at least half the banner must be above the bottom bar (a banner
+                        // nearly hidden behind the navigation was requested before).
+                        val expectedBannerPx = with(density) { tss.t.tsiptv.ui.ads.rememberBannerHeight().roundToPx() }
+                        LaunchedEffect(scrollState, bottomBarPx, windowWidthPx, expectedBannerPx) {
                             snapshotFlow {
                                 val y = homeBannerY(scrollState, pinnedY = 0)
                                 y != BANNER_OFF_SCREEN &&
-                                    y < scrollState.layoutInfo.viewportEndOffset - bottomBarPx
+                                    y + expectedBannerPx / 2 <= scrollState.layoutInfo.viewportEndOffset - bottomBarPx
                             }.collectLatest { onScreen ->
                                 if (onScreen && !bannerStarted) {
                                     delay(BANNER_START_DELAY_MS)
