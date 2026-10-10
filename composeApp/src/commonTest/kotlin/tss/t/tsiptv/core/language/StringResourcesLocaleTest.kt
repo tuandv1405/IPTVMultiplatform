@@ -30,8 +30,14 @@ class StringResourcesLocaleTest {
         error("composeResources not found")
     }
 
-    private fun text(locale: String): String =
-        FileSystem.SYSTEM.read(resourcesDir.div(locale).div("strings.xml")) { readUtf8() }
+    /** Every `strings*.xml` of the locale (features may keep their strings in their own file). */
+    private fun text(locale: String): String {
+        val fs = FileSystem.SYSTEM
+        return fs.list(resourcesDir.div(locale))
+            .filter { it.name.startsWith("strings") && it.name.endsWith(".xml") }
+            .sortedBy { it.name }
+            .joinToString("\n") { file -> fs.read(file) { readUtf8() } }
+    }
 
     private fun keys(locale: String): Set<String> =
         STRING_NAME.findAll(text(locale)).map { it.groupValues[1] }.toSet()
@@ -128,6 +134,23 @@ class StringResourcesLocaleTest {
             "source_section_continue", "source_section_movies", "source_section_series", "source_section_radio",
             "source_section_channels", "source_search_hint", "addons_from_sources", "source_stream_default",
             "source_import_done",
+        )
+        for (locale in locales) {
+            assertEquals(emptySet(), required - keys(locale), locale)
+        }
+    }
+
+    /** AC-X1: TV cast, send to TV, device limit and sync (docs/prd-tv-cast-and-sync.md §9). */
+    @Test
+    fun castSyncKeysArePresent() {
+        val required = setOf(
+            "connect_title", "lan_cast_title", "lan_conditions_title", "lan_conditions_body", "lan_connect_by_ip",
+            "lan_pair_enter_code", "lan_pair_wrong_code", "lan_tv_pair_title", "lan_tv_pair_message",
+            "lan_tv_offer_title", "lan_tv_offer_message", "lan_tv_accept", "lan_tv_decline", "lan_tv_receive_title",
+            "send_tv_action", "send_tv_remaining", "send_tv_quota_reached", "send_tv_tasks", "send_tv_task_rewarded",
+            "devices_limit_title", "devices_limit_message", "devices_sign_out_remote", "devices_cancel_sign_in",
+            "devices_removed_notice", "sync_title", "sync_new_available", "sync_merge", "sync_replace",
+            "sync_replace_confirm_message", "sync_task_rewarded",
         )
         for (locale in locales) {
             assertEquals(emptySet(), required - keys(locale), locale)

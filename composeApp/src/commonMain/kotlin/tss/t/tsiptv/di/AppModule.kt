@@ -196,4 +196,5 @@ fun getCommonModules(): List<Module> = listOf(
     stremioModule,
     tss.t.tsiptv.core.tsiptv.di.tsiptvModule,
     tss.t.tsiptv.ui.screens.source.tsiptvUiModule,
+    tss.t.tsiptv.feature.account.di.castSyncModule,
 )

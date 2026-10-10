@@ -42,4 +42,4 @@ val androidModule = module {
 /**
  * Function to get all Android modules
  */
-fun getAndroidModules(): List<Module> = listOf(androidModule)
+fun getAndroidModules(): List<Module> = listOf(androidModule, tss.t.tsiptv.feature.lan.androidLanModule)

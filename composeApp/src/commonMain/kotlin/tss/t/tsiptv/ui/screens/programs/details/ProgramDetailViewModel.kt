@@ -41,7 +41,7 @@ class ProgramDetailViewModel(
                 )
             }
             runCatching {
-                val programList = getCurrentProgramChannelUC(channel.channelId)
+                val programList = getCurrentProgramChannelUC(channel.channelId, channel.playlistId)
                 _uiState.update {
                     it.copy(
                         programList = programList,

@@ -11,9 +11,9 @@ class GetCurrentProgramChannelList(
 ) {
     // Goes through IPTVDatabase (not the DAO) so programmes that two guides both list
     // for one channel are shown once.
-    suspend operator fun invoke(channelId: String): List<IPTVProgram> {
+    suspend operator fun invoke(channelId: String, playlistId: String? = null): List<IPTVProgram> {
         return withContext(Dispatchers.IO) {
-            iptvDatabase.getProgramsForChannel(channelId)
+            iptvDatabase.getProgramsForChannel(channelId, playlistId)
         }
     }
 }

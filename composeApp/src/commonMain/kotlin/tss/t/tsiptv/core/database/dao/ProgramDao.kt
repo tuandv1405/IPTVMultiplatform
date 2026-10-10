@@ -59,8 +59,8 @@ interface ProgramDao {
      * @param channelId The ID of the channel
      * @return A flow of programs for the channel
      */
-    @Query("SELECT DISTINCT title, startTime, * FROM programs WHERE channelId = :channelId ORDER BY startTime ASC")
-    suspend fun getProgramsForChannel(channelId: String): List<ProgramEntity>
+    @Query("SELECT DISTINCT title, startTime, * FROM programs WHERE channelId = :channelId AND (:playlistId IS NULL OR playlistId = :playlistId) ORDER BY startTime ASC")
+    suspend fun getProgramsForChannel(channelId: String, playlistId: String?): List<ProgramEntity>
 
     /**
      * Gets distinct channel IDs from programs for a playlist.
@@ -80,7 +80,7 @@ interface ProgramDao {
      */
     @Query(
         """
-        SELECT p.channelId, MIN(c.name) AS name, MIN(c.categoryId) AS categoryId,
+        SELECT p.channelId, MIN(p.playlistId) AS playlistId, MIN(c.name) AS name, MIN(c.categoryId) AS categoryId,
             COALESCE(MIN(NULLIF(c.logoUrl, '')), MAX(NULLIF(p.logo, ''))) AS logoUrl,
             MAX(c.isFavorite) AS isFavorite, COUNT(DISTINCT p.startTime || '|' || p.title) AS programCount
         FROM programs p
@@ -103,9 +103,10 @@ interface ProgramDao {
      * @param endTime The end time of the range
      * @return A flow of programs for the channel within the time range
      */
-    @Query("SELECT * FROM programs WHERE channelId = :channelId AND startTime >= :startTime AND endTime <= :endTime ORDER BY startTime ASC")
+    @Query("SELECT * FROM programs WHERE channelId = :channelId AND (:playlistId IS NULL OR playlistId = :playlistId) AND startTime >= :startTime AND endTime <= :endTime ORDER BY startTime ASC")
     suspend fun getProgramsForChannelInTimeRange(
         channelId: String,
+        playlistId: String?,
         startTime: Long,
         endTime: Long,
     ): List<ProgramEntity>
@@ -117,9 +118,10 @@ interface ProgramDao {
      * @param currentTime The current time
      * @return A flow of current and upcoming programs for the channel
      */
-    @Query("SELECT * FROM programs WHERE channelId = :channelId AND endTime > :currentTime ORDER BY startTime ASC")
+    @Query("SELECT * FROM programs WHERE channelId = :channelId AND (:playlistId IS NULL OR playlistId = :playlistId) AND endTime > :currentTime ORDER BY startTime ASC")
     suspend fun getCurrentAndUpcomingProgramsForChannel(
         channelId: String,
+        playlistId: String?,
         currentTime: Long,
     ): List<ProgramEntity>
 
@@ -130,8 +132,8 @@ interface ProgramDao {
      * @param currentTime The current time
      * @return The current program, or null if not found
      */
-    @Query("SELECT * FROM programs WHERE channelId = :channelId AND startTime <= :currentTime AND endTime > :currentTime LIMIT 1")
-    suspend fun getCurrentProgramForChannel(channelId: String, currentTime: Long): ProgramEntity?
+    @Query("SELECT * FROM programs WHERE channelId = :channelId AND (:playlistId IS NULL OR playlistId = :playlistId) AND startTime <= :currentTime AND endTime > :currentTime LIMIT 1")
+    suspend fun getCurrentProgramForChannel(channelId: String, playlistId: String?, currentTime: Long): ProgramEntity?
 
     /**
      * Inserts a program.

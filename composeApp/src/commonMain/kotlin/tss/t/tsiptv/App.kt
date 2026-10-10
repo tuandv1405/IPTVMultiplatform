@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import dev.chrisbanes.haze.rememberHazeState
@@ -92,6 +93,18 @@ import androidx.navigation.NavHostController
 import tss.t.tsiptv.utils.PlatformUtils
 import tss.t.tsiptv.utils.getScreenOrientationUtils
 import kotlin.reflect.typeOf
+import kotlinx.coroutines.flow.first
+import tss.t.tsiptv.core.database.IPTVDatabase
+import tss.t.tsiptv.feature.lan.CastCommand
+import tss.t.tsiptv.feature.lan.CastStream
+import tss.t.tsiptv.feature.lan.LanSender
+import tss.t.tsiptv.feature.lan.LanValidation
+import tss.t.tsiptv.platform.PickedPlaylistFile
+import tss.t.tsiptv.player.ui.LocalCastAction
+import tss.t.tsiptv.ui.screens.connect.AccountHost
+import tss.t.tsiptv.ui.screens.connect.ConnectScreen
+import tss.t.tsiptv.ui.screens.connect.LanReceiverHost
+import tss.t.tsiptv.ui.screens.connect.TvSendDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
 @Composable
@@ -181,6 +194,7 @@ fun App() {
         CompositionLocalProvider(
             LocalUiMode provides uiMode,
             LocalIsTvMode provides isTvMode,
+            tss.t.tsiptv.ui.screens.connect.LocalSignInAction provides { navController.navigate(NavRoutes.Login) },
         ) {
             StreamVaultTheme {
                 NavHost(
@@ -362,6 +376,9 @@ fun App() {
                                     onDismissRequest = { homeViewModel.onEmitEvent(HomeEvent.OnDismissNotice) },
                                 )
                             }
+                            // Device limit, "signed out elsewhere" and a new sync (prd-tv-cast-and-sync).
+                            AccountHost(onOpenConnect = { navController.navigate(NavRoutes.Connect) })
+
                             homeUIState.importSummary
                                 ?.takeIf { it.fromRefresh && it.skippedTotal > 0 }
                                 ?.let { summary ->
@@ -482,13 +499,25 @@ fun App() {
                                     hasStreamChoice = playerViewModel.channelStreams.collectAsStateWithLifecycle().value != null,
                                 )
                             } else {
-                                PlayerScreen(
-                                    mediaItem = mediaItem,
-                                    homeUIState = homeUIState,
-                                    mediaPlayer = playerViewModel.player,
-                                    playerControlState = playerUIState,
-                                    onEvent = onPlayerEvent,
-                                )
+                                // Cast to a TS IPTV TV on the same Wi-Fi (prd-tv-cast-and-sync §2).
+                                var castCommand by remember { mutableStateOf<CastCommand?>(null) }
+                                val lanSender: LanSender = koinInject()
+                                CompositionLocalProvider(
+                                    LocalCastAction provides if (lanSender.isSupported && mediaItem.uri.isNotEmpty()) {
+                                        { castCommand = CastCommand(mediaItem.toCastStream(playerViewModel.player)) }
+                                    } else null,
+                                ) {
+                                    PlayerScreen(
+                                        mediaItem = mediaItem,
+                                        homeUIState = homeUIState,
+                                        mediaPlayer = playerViewModel.player,
+                                        playerControlState = playerUIState,
+                                        onEvent = onPlayerEvent,
+                                    )
+                                }
+                                castCommand?.let { command ->
+                                    TvSendDialog(command = command, onDismiss = { castCommand = null })
+                                }
                             }
                         }
 
@@ -497,36 +526,20 @@ fun App() {
                                 viewModelStoreOwner = appViewModelStore
                             )
                             val homeUIState by homeViewModel.uiState.collectAsStateWithLifecycle()
-                            val coroutineScope = rememberCoroutineScope()
-                            var showPopupSuccess by remember { mutableStateOf(false) }
-
+                            // The result comes from state, not a one-shot event, so it is never lost
+                            // when the import finishes before this screen is resumed (QC r2 N1). Only
+                            // a summary produced after the screen opened is shown here; refreshes and
+                            // playlists imported from a phone on a TV have their own dialogs.
+                            val summaryAtEntry = remember { homeUIState.importSummary }
                             val summary = homeUIState.importSummary
-                            if (showPopupSuccess && summary != null) {
+                            if (summary != null && summary !== summaryAtEntry && !summary.fromRefresh && !summary.fromLan) {
                                 ImportSummaryDialog(
                                     summary = summary,
                                     onDismiss = {
-                                        showPopupSuccess = false
                                         homeViewModel.onEmitEvent(HomeEvent.OnDismissImportSummary)
                                         navController.popBackStack()
                                     },
                                 )
-                            }
-
-                            LifecycleResumeEffect(Unit) {
-                                val job = coroutineScope.launch {
-                                    homeViewModel.homeUIEvent.collect {
-                                        when (it) {
-                                            HomeEvent.OnParseIPTVSourceSuccess -> {
-                                                showPopupSuccess = true
-                                            }
-
-                                            else -> {}
-                                        }
-                                    }
-                                }
-                                onPauseOrDispose {
-                                    job.cancel()
-                                }
                             }
 
                             ImportIPTVScreen(
@@ -605,6 +618,25 @@ fun App() {
                             )
                         }
 
+                        composable<NavRoutes.Connect> {
+                            val homeViewModel = koinViewModel<HomeViewModel>(viewModelStoreOwner = appViewModelStore)
+                            val database: IPTVDatabase = koinInject()
+                            ConnectScreen(
+                                isTvLayout = isTvMode,
+                                onBack = { navController.popBackStack() },
+                                onSyncApplied = {
+                                    // Replace may have removed the playlist on screen: pick another one.
+                                    appScope.launch {
+                                        val all = database.getAllPlaylists().first()
+                                        val current = homeViewModel.uiState.value.playListId
+                                        if (current == null || all.none { p -> p.id == current }) {
+                                            all.firstOrNull()?.let { homeViewModel.onEmitEvent(HomeEvent.OnRequestChangePlaylist(it)) }
+                                        }
+                                    }
+                                },
+                            )
+                        }
+
                         composable<NavRoutes.DiscoverSearch> { entry ->
                             val discoverViewModel = koinViewModel<DiscoverViewModel>(viewModelStoreOwner = appViewModelStore)
                             DiscoverSearchScreen(
@@ -641,9 +673,89 @@ fun App() {
                         }
                     }
                 )
+
+                // TV: receive casts and playlists from paired phones while the app is open.
+                if (isTvMode) {
+                    val homeViewModel = koinViewModel<HomeViewModel>(viewModelStoreOwner = appViewModelStore)
+                    val playerViewModel = koinViewModel<PlayerViewModel>(viewModelStoreOwner = appViewModelStore)
+                    // While the import screen is open (a playlist being added), a new offer is
+                    // refused and the phone says "TV is busy".
+                    val currentEntry by navController.currentBackStackEntryAsState()
+                    val onImportScreen = currentEntry?.destination?.hasRoute<NavRoutes.ImportIptv>() == true
+                    val lanState by homeViewModel.uiState.collectAsStateWithLifecycle()
+                    val lanImporting = lanState.isLoading && lanState.importFromLan
+                    // A playlist from a phone is imported in the background (QC r2 N1): the result
+                    // shows here over any screen. Only an import that needs the user (a single
+                    // stream, a TS IPTV Source preview, an error) opens the import screen.
+                    lanState.importSummary?.takeIf { it.fromLan }?.let { summary ->
+                        ImportSummaryDialog(
+                            summary = summary,
+                            onDismiss = { homeViewModel.onEmitEvent(HomeEvent.OnDismissImportSummary) },
+                        )
+                    }
+                    val needsUser = lanState.importFromLan &&
+                        (lanState.pendingSingleStream != null || lanState.sourceImport != null || lanState.error != null)
+                    // The import screen this flow opened is closed again once nothing waits for the
+                    // user there any more (QC r3 N6), so later offers are not refused as "busy".
+                    var lanOpenedImport by remember { mutableStateOf(false) }
+                    LaunchedEffect(needsUser, lanState.isLoading, onImportScreen) {
+                        when {
+                            needsUser && !lanState.isLoading && !onImportScreen -> {
+                                lanOpenedImport = true
+                                navController.navigate(NavRoutes.ImportIptv)
+                            }
+                            lanOpenedImport && !needsUser && !lanState.isLoading -> {
+                                lanOpenedImport = false
+                                if (onImportScreen) navController.popBackStack()
+                            }
+                        }
+                    }
+                    LanReceiverHost(
+                        canTakePlaylists = !onImportScreen && !lanImporting,
+                        // One phone import at a time: the next offer waits (QC r3 N5).
+                        importRunning = lanImporting,
+                        onCast = { stream ->
+                            val id = playerViewModel.playCast(stream)
+                            if (navController.currentBackStackEntry?.destination?.hasRoute<NavRoutes.Player>() != true) {
+                                navController.navigate(NavRoutes.Player(id))
+                            }
+                        },
+                        onAcceptPlaylist = { shared ->
+                            // The normal importer, in the background: playback and navigation stay.
+                            val content = shared.content
+                            if (content != null) {
+                                homeViewModel.importFile(
+                                    shared.name,
+                                    PickedPlaylistFile.Picked(shared.fileName ?: "playlist.m3u", content.encodeToByteArray()),
+                                    confirmedReplace = true,
+                                    fromLan = true,
+                                )
+                            } else {
+                                homeViewModel.parseIptvSource(shared.name, shared.url.orEmpty(), fromLan = true)
+                            }
+                        },
+                    )
+                }
             }
         }
     }
+}
+
+/** What a paired TV needs to play [this] where the phone is (prd-tv-cast-and-sync §2.2). */
+private fun tss.t.tsiptv.player.models.MediaItem.toCastStream(player: tss.t.tsiptv.player.MediaPlayer): CastStream {
+    val duration = player.duration.value
+    val isLive = duration <= 0
+    return CastStream(
+        url = uri,
+        title = title,
+        logo = artworkUri?.takeIf { LanValidation.isHttpUrl(it) },
+        mimeType = mimeType,
+        headers = headers,
+        drm = drm,
+        subtitles = subtitles.filter { LanValidation.isHttpUrl(it.url) },
+        isLive = isLive,
+        positionMs = if (isLive) null else player.currentPosition.value,
+    )
 }
 
 /** F3: plays a Source Home channel through the Home flow ([HomeEvent.OnPlaySourceChannel]). */

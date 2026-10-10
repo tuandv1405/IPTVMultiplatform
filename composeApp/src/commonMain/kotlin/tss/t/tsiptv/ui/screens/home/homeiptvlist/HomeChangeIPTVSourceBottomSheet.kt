@@ -1,6 +1,19 @@
 package tss.t.tsiptv.ui.screens.home.homeiptvlist
 
 import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.Cast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import tsiptv.composeapp.generated.resources.send_tv_action
+import tsiptv.composeapp.generated.resources.send_tv_file_unavailable
+import tss.t.tsiptv.core.database.entity.toPlaylist
+import tss.t.tsiptv.core.model.PlaylistSourceType
+import tss.t.tsiptv.feature.lan.PlaylistCommand
+import tss.t.tsiptv.feature.lan.SharedPlaylist
+import tss.t.tsiptv.ui.screens.connect.MessageDialog
+import tss.t.tsiptv.ui.screens.connect.TvSendDialog
 import androidx.compose.foundation.layout.width
 
 import androidx.compose.foundation.background
@@ -108,13 +121,29 @@ private fun BodyContent(
     onChange: (PlaylistWithChannelCount) -> Unit,
 ) {
     Spacer(Modifier.height(12.dp))
+    // "Gửi tới TV" per playlist (prd-tv-cast-and-sync §3.1). File playlists keep no content to send.
+    var sendTo by remember { mutableStateOf<PlaylistWithChannelCount?>(null) }
+    var fileNotice by remember { mutableStateOf(false) }
+    sendTo?.let { item ->
+        val p = item.playlist.toPlaylist()
+        TvSendDialog(
+            command = PlaylistCommand(SharedPlaylist(name = p.name, url = p.url, epgUrls = p.epgUrls)),
+            onDismiss = { sendTo = null },
+        )
+    }
+    if (fileNotice) {
+        MessageDialog(stringResource(Res.string.send_tv_action), stringResource(Res.string.send_tv_file_unavailable)) { fileNotice = false }
+    }
     LazyColumn {
         items(totalPlaylist.size) {
             val playlist = totalPlaylist[it]
             PlaylistItem(
                 selected = currentPlaylistId == playlist.playlist.id,
                 playlist = playlist,
-                onChange = onChange
+                onChange = onChange,
+                onSendToTv = {
+                    if (playlist.playlist.toPlaylist().sourceType == PlaylistSourceType.FILE) fileNotice = true else sendTo = playlist
+                },
             )
             Spacer(Modifier.height(12.dp))
         }
@@ -126,6 +155,7 @@ private fun PlaylistItem(
     selected: Boolean,
     playlist: PlaylistWithChannelCount,
     onChange: (PlaylistWithChannelCount) -> Unit,
+    onSendToTv: (() -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier
@@ -184,6 +214,14 @@ private fun PlaylistItem(
                 ),
                 style = TSTextStyles.normal11
             )
+            if (onSendToTv != null) {
+                androidx.compose.material3.Icon(
+                    androidx.compose.material.icons.Icons.Rounded.Cast,
+                    contentDescription = stringResource(Res.string.send_tv_action),
+                    tint = TSColors.AccentCyan,
+                    modifier = Modifier.padding(start = 10.dp).size(22.dp).clip(TSShapes.roundedShape4).clickable(onClick = onSendToTv),
+                )
+            }
         }
         Spacer(Modifier.height(2.dp))
         Row {

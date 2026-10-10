@@ -195,6 +195,8 @@ class AuthRepositoryImpl(
         return try {
             _authState.value = _authState.value.copy(isLoading = true, error = null)
 
+            // E.g. free this device's slot in the account's device list (needs the account).
+            SignOutHooks.runAll()
             firebaseAuth.signOut()
             clearAuthToken()
 

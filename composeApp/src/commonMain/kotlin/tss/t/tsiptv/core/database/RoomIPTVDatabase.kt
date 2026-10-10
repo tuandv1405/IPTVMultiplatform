@@ -71,12 +71,12 @@ class RoomIPTVDatabase(
         return channelDao.getChannelById(id)?.toChannel()
     }
 
-    override fun getChannelsByCategory(categoryId: String): Flow<List<Channel>> {
+    override fun getChannelsByCategory(categoryId: String, playlistId: String?): Flow<List<Channel>> {
         // The pattern matches the JSON text of groupsJson, where `\` is stored as `\\` and `"`
         // as `\"`; then every `\`, `%` and `_` is escaped for LIKE … ESCAPE '\'.
         val escaped = categoryId.replace("\\", "\\\\\\\\").replace("\"", "\\\\\"")
             .replace("%", "\\%").replace("_", "\\_")
-        return channelDao.getChannelsByCategory(categoryId, escaped).map { channelEntities ->
+        return channelDao.getChannelsByCategory(categoryId, escaped, playlistId).map { channelEntities ->
             channelEntities.map { it.toChannel() }
         }
     }
@@ -162,11 +162,21 @@ class RoomIPTVDatabase(
     /** The body of [replacePlaylistContent]; must run inside a writer transaction. */
     internal suspend fun replacePlaylistContentLocked(
         playlist: Playlist,
-        categories: List<Category>,
-        channels: List<Channel>,
-        attributes: Map<String, Map<String, String>>,
-        legacyIds: Map<String, String>,
+        categoriesIn: List<Category>,
+        channelsIn: List<Channel>,
+        attributesIn: Map<String, Map<String, String>>,
+        legacyIdsIn: Map<String, String>,
     ) {
+        // Ids another playlist already uses are namespaced: storing them as they are would take that
+        // playlist's rows over (channel.id is the primary key on its own, QC r3).
+        val taken = channelsIn.map { it.id }.distinct().chunked(900)
+            .flatMap { channelDao.idsOwnedElsewhere(it, playlist.id) }.toSet()
+        val (channels, renamed) = ChannelIdNamespace.resolve(playlist.id, channelsIn, taken)
+        val takenCategories = categoriesIn.map { it.id }.distinct().chunked(900)
+            .flatMap { categoryDao.idsOwnedElsewhere(it, playlist.id) }.toSet()
+        val categories = ChannelIdNamespace.resolveCategories(playlist.id, categoriesIn, takenCategories)
+        val attributes = if (renamed.isEmpty()) attributesIn else attributesIn.mapKeys { (id, _) -> renamed[id] ?: id }
+        val legacyIds = if (renamed.isEmpty()) legacyIdsIn else legacyIdsIn.mapKeys { (id, _) -> renamed[id] ?: id }
         run {
             run {
                 val stored = channelDao.getChannelsInPlaylistOnce(playlist.id)
@@ -267,40 +277,44 @@ class RoomIPTVDatabase(
         return programDao.getProgramById(id)?.toIPTVProgram()
     }
 
-    override suspend fun getProgramsForChannel(channelId: String): List<IPTVProgram> {
-        return programDao.getProgramsForChannel(channelId).map { it.toIPTVProgram() }.distinctProgrammes()
+    override suspend fun getProgramsForChannel(channelId: String, playlistId: String?): List<IPTVProgram> {
+        return programDao.getProgramsForChannel(channelId, playlistId).map { it.toIPTVProgram() }.distinctProgrammes()
     }
 
     override suspend fun getProgramsForChannelInTimeRange(
         channelId: String,
         startTime: Long,
         endTime: Long,
+        playlistId: String?,
     ): List<IPTVProgram> {
-        return programDao.getProgramsForChannelInTimeRange(channelId, startTime, endTime)
+        return programDao.getProgramsForChannelInTimeRange(channelId, playlistId, startTime, endTime)
             .map { it.toIPTVProgram() }.distinctProgrammes()
     }
 
     override suspend fun getCurrentAndUpcomingProgramsForChannel(
         channelId: String,
         currentTime: Long,
+        playlistId: String?,
     ): List<IPTVProgram> {
-        return programDao.getCurrentAndUpcomingProgramsForChannel(channelId, currentTime)
+        return programDao.getCurrentAndUpcomingProgramsForChannel(channelId, playlistId, currentTime)
             .map { it.toIPTVProgram() }.distinctProgrammes()
     }
 
     override suspend fun getCurrentProgramForChannel(
         channelId: String,
         currentTime: Long,
+        playlistId: String?,
     ): IPTVProgram? {
-        return programDao.getCurrentProgramForChannel(channelId, currentTime)?.toIPTVProgram()
+        return programDao.getCurrentProgramForChannel(channelId, playlistId, currentTime)?.toIPTVProgram()
     }
 
+    // Ids are scoped by playlist (ProgramIds): two playlists with the same guide keep their own rows.
     override suspend fun insertProgram(program: IPTVProgram, playlistId: String) {
-        programDao.insertProgram(program.toProgramEntity(playlistId))
+        programDao.insertProgram(program.copy(id = ProgramIds.scoped(playlistId, program.id)).toProgramEntity(playlistId))
     }
 
     override suspend fun insertPrograms(programs: List<IPTVProgram>, playlistId: String) {
-        programDao.insertPrograms(programs.map { it.toProgramEntity(playlistId) })
+        programDao.insertPrograms(programs.map { it.copy(id = ProgramIds.scoped(playlistId, it.id)).toProgramEntity(playlistId) })
     }
 
     override suspend fun deleteProgram(program: IPTVProgram) {

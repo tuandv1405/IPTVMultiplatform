@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_title">TV et appareils</string>
+    <string name="connect_desc">Lire sur la TV, envoyer des playlists, synchroniser</string>
+
+    <string name="lan_cast_title">Lire sur la TV</string>
+    <string name="lan_cast_searching">Recherche de téléviseurs sur ce Wi-Fi…</string>
+    <string name="lan_cast_none_found">Aucune TV trouvée</string>
+    <string name="lan_conditions_title">Pour que votre TV apparaisse</string>
+    <string name="lan_conditions_body">• Téléphone et TV sur le même réseau Wi-Fi (pas un réseau invité, pas les données mobiles)\n• Le routeur laisse les appareils se voir (pas d’isolation des clients / AP) et ne bloque pas mDNS\n• TS IPTV est ouverte sur la TV, ou sur l’écran « Recevoir du téléphone »\n• Les deux apps sont à jour\n• Le VPN est désactivé sur les deux appareils\nToujours rien ? Utilisez « Se connecter par adresse IP » avec l’adresse affichée sur la TV.</string>
+    <string name="lan_connect_by_ip">Se connecter par adresse IP</string>
+    <string name="lan_ip_hint">ex. 192.168.1.20:47123</string>
+    <string name="lan_ip_invalid">Adresse non valide</string>
+    <string name="lan_connect">Se connecter</string>
+    <string name="lan_cancel">Annuler</string>
+    <string name="lan_close">Fermer</string>
+    <string name="lan_forget">Oublier cette TV</string>
+    <string name="lan_paired_badge">Associée</string>
+    <string name="lan_paired_tvs">Téléviseurs associés</string>
+    <string name="lan_no_paired_tvs">Aucune TV associée</string>
+    <string name="lan_pair_title">Associer à %1$s</string>
+    <string name="lan_pair_enter_code">Saisissez le code à 6 chiffres affiché sur la TV</string>
+    <string name="lan_pair_wrong_code">Code incorrect. Vérifiez le code sur la TV.</string>
+    <string name="lan_pair_failed">Échec de l’association. Réessayez.</string>
+    <string name="lan_pair_busy">La TV est en cours d’association avec un autre appareil</string>
+    <string name="lan_pair_locked">Trop de tentatives échouées. Attendez 10 minutes.</string>
+    <string name="lan_cast_sent">Lecture sur %1$s</string>
+    <string name="lan_send_failed">Impossible de joindre la TV. Vérifiez que TS IPTV y est ouverte et sur le même Wi-Fi.</string>
+    <string name="lan_error_clock">Les horloges du téléphone et de la TV diffèrent. Vérifiez la date et l’heure.</string>
+    <string name="lan_error_rejected">La TV a refusé ce contenu</string>
+    <string name="lan_not_supported">Pas encore disponible sur cet appareil</string>
+
+    <string name="lan_tv_pair_title">Associer un téléphone</string>
+    <string name="lan_tv_pair_message">Saisissez ce code sur %1$s pour lui permettre d’envoyer vers cette TV.</string>
+    <string name="lan_tv_paired">Associée à %1$s</string>
+    <string name="lan_tv_cast_from">Lecture depuis %1$s</string>
+    <string name="lan_tv_offer_title">Recevoir une playlist</string>
+    <string name="lan_tv_offer_message">Recevoir la playlist « %1$s » de %2$s ?</string>
+    <string name="lan_tv_accept">Recevoir</string>
+    <string name="lan_tv_decline">Refuser</string>
+    <string name="lan_tv_receive_title">Recevoir du téléphone</string>
+    <string name="lan_tv_receive_ready">Prête à recevoir sous le nom « %1$s »</string>
+    <string name="lan_tv_receive_address">Connexion par IP : %1$s</string>
+    <string name="lan_tv_receive_off">La réception n’a pas pu démarrer sur cette TV</string>
+    <string name="lan_tv_receive_hint">Gardez TS IPTV ouverte sur la TV. Sur le téléphone, touchez l’icône TV dans le lecteur, ou Envoyer à la TV sur une playlist.</string>
+    <string name="lan_tv_paired_phones">Téléphones associés</string>
+    <string name="lan_tv_unpair">Dissocier</string>
+    <string name="lan_tv_no_paired">Aucun téléphone</string>
+
+    <string name="send_tv_action">Envoyer à la TV</string>
+    <string name="send_tv_title">Envoyer une playlist à la TV</string>
+    <string name="send_tv_remaining">Encore %1$d envois aujourd’hui</string>
+    <string name="send_tv_quota_reached">Plus aucun envoi aujourd’hui</string>
+    <string name="send_tv_tasks">Faites une tâche pour obtenir plus d’envois</string>
+    <string name="send_tv_task_rewarded">Regardez 1 annonce avec récompense pour 1 envoi de plus</string>
+    <string name="send_tv_sent">Envoyé. Confirmez sur la TV.</string>
+    <string name="send_tv_sign_in">Connectez-vous pour envoyer des playlists à une TV</string>
+    <string name="send_tv_file_too_large">Fichier de plus de 1 Mo. Envoyez plutôt un lien.</string>
+    <string name="send_tv_file_unavailable">Les playlists de fichier ne sont pas conservées après l’import. Choisissez à nouveau le fichier dans Ajouter une playlist pour l’envoyer.</string>
+    <string name="send_tv_need_input">Saisissez d’abord un lien ou choisissez un fichier</string>
+    <string name="send_tv_pick_file">Envoyer un fichier à la TV</string>
+
+    <string name="reward_ad_unavailable">Aucune annonce disponible. Réessayez plus tard.</string>
+    <string name="reward_granted">Vous en avez 1 de plus</string>
+    <string name="reward_limit_reached">Plus de récompenses aujourd’hui</string>
+
+    <string name="reward_unavailable_first_day">Les tâches publicitaires s’ouvrent après vos 24 premières heures avec l’app.</string>
+    <string name="reward_unavailable_consent">Les tâches publicitaires demandent votre consentement. Modifiez-le dans Profil › Options de confidentialité.</string>
+    <string name="reward_unavailable_tv">Pas de tâches publicitaires sur l’affichage TV. Utilisez votre téléphone.</string>
+    <string name="reward_unavailable_platform">Les tâches publicitaires ne sont pas encore disponibles sur cet appareil.</string>
+
+    <string name="devices_title">Appareils connectés</string>
+    <string name="devices_count">%1$d/%2$d appareils</string>
+    <string name="devices_limit_title">Limite de %1$d appareils atteinte</string>
+    <string name="devices_limit_message">Ce compte est connecté sur %1$d appareils. Déconnectez-en un pour continuer ici.</string>
+    <string name="devices_sign_out_remote">Déconnecter à distance</string>
+    <string name="devices_cancel_sign_in">Annuler la connexion</string>
+    <string name="devices_this_device">Cet appareil</string>
+    <string name="devices_last_seen">Actif : %1$s</string>
+    <string name="devices_removed_notice">Cet appareil a été déconnecté depuis un autre appareil.</string>
+    <string name="devices_remove_confirm">Déconnecter %1$s ? Il sera déconnecté à la prochaine ouverture de l’app.</string>
+    <string name="devices_error">Impossible de charger les appareils</string>
+
+    <string name="sync_title">Synchronisation des appareils</string>
+    <string name="sync_push">Synchroniser les playlists sur mon compte</string>
+    <string name="sync_push_desc">Enregistrer les %1$d playlists de cet appareil pour vos autres appareils</string>
+    <string name="sync_pushed">%1$d playlists synchronisées</string>
+    <string name="sync_skipped_files">%1$d playlists de fichier n’ont pas été synchronisées</string>
+    <string name="sync_remaining">Encore %1$d synchronisations aujourd’hui</string>
+    <string name="sync_quota_reached">Plus aucune synchronisation aujourd’hui</string>
+    <string name="sync_task_rewarded">Regardez 2 annonces avec récompense pour 1 synchronisation de plus (%1$d/2)</string>
+    <string name="sync_new_available">Nouvelle synchronisation depuis %1$s</string>
+    <string name="sync_merge">Fusionner</string>
+    <string name="sync_merge_desc">Ajouter les playlists manquantes, garder les vôtres</string>
+    <string name="sync_replace">Remplacer</string>
+    <string name="sync_replace_desc">Utiliser exactement les playlists synchronisées</string>
+    <string name="sync_later">Plus tard</string>
+    <string name="sync_replace_confirm_title">Remplacer les playlists ?</string>
+    <string name="sync_replace_confirm_message">%1$d playlists seront supprimées : %2$s. %3$d seront ajoutées.</string>
+    <string name="sync_applied">Appliqué : %1$d ajoutées, %2$d mises à jour, %3$d supprimées</string>
+    <string name="sync_apply_failed_some">%1$d playlists n’ont pas pu être chargées</string>
+    <string name="sync_applying">Application %1$d/%2$d…</string>
+    <string name="sync_none">Aucune synchronisation</string>
+    <string name="sync_current_from">Synchronisation actuelle : %1$s, %2$s</string>
+    <string name="sync_too_large">Trop de playlists à synchroniser (100 max.)</string>
+    <string name="sync_sign_in">Connectez-vous pour utiliser la synchronisation et les appareils</string>
+    <string name="sync_error">Échec de la synchronisation. Réessayez.</string>
+    <string name="send_tv_sign_in_button">Se connecter</string>
+    <string name="send_tv_not_counted">Envoyée. Le compteur du jour n’a pas pu être enregistré ; cet envoi n’est pas décompté.</string>
+    <string name="lan_pair_code_expired">Le code a expiré. Recommencez.</string>
+    <string name="lan_tv_busy">La TV est occupée. Ouvrez l’accueil de TS IPTV sur la TV et réessayez.</string>
+    <string name="devices_unknown">Appareil inconnu (aucun détail)</string>
+    <string name="lan_pair_open_tv_screen">Pour associer, ouvrez TV et appareils sur la TV, puis réessayez.</string>
+    <string name="lan_tv_pairing_open">L’association est ouverte tant que cet écran est affiché : un nouveau téléphone reçoit son code ici.</string>
+    <string name="lan_tv_importing">Ajout de « %1$s »…</string>
+    <string name="lan_tv_unpair_confirm">Dissocier « %1$s » ? Il faudra un nouveau code pour envoyer à cette TV.</string>
+</resources>

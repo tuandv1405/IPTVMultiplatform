@@ -250,6 +250,7 @@ object AdMobTestIds {
     const val APP_OPEN = "ca-app-pub-3940256099942544/9257395921"
     const val BANNER = "ca-app-pub-3940256099942544/9214589741"
     const val NATIVE = "ca-app-pub-3940256099942544/2247696110"
+    const val REWARDED = "ca-app-pub-3940256099942544/5224354917"
 }
 
 val adMobLocalProperties = Properties().apply {
@@ -275,6 +276,8 @@ val releaseAdMobAppId = adMobSetting("TSIPTV_ADMOB_APP_ID", AdMobTestIds.APP)
 val releaseAdMobAppOpenUnit = adMobSetting("TSIPTV_ADMOB_APP_OPEN_UNIT", AdMobTestIds.APP_OPEN)
 val releaseAdMobBannerUnit = adMobSetting("TSIPTV_ADMOB_BANNER_UNIT", AdMobTestIds.BANNER)
 val releaseAdMobNativeUnit = adMobSetting("TSIPTV_ADMOB_NATIVE_UNIT", AdMobTestIds.NATIVE)
+// Extra send / sync tasks (docs/prd-tv-cast-and-sync.md §3.3).
+val releaseAdMobRewardedUnit = adMobSetting("TSIPTV_ADMOB_REWARDED_UNIT", AdMobTestIds.REWARDED)
 
 val hasReleaseSigning = listOf(
     releaseStoreFile,
@@ -325,6 +328,7 @@ android {
             resValue("string", "admob_app_open_unit", AdMobTestIds.APP_OPEN)
             resValue("string", "admob_banner_unit", AdMobTestIds.BANNER)
             resValue("string", "admob_native_unit", AdMobTestIds.NATIVE)
+            resValue("string", "admob_rewarded_unit", AdMobTestIds.REWARDED)
             // QA: `-Ptsiptv.debugAdsNoFirstDay=true` skips the 24 h ad-free period (debug only).
             resValue(
                 "bool",
@@ -367,6 +371,7 @@ android {
             resValue("string", "admob_app_open_unit", releaseAdMobAppOpenUnit)
             resValue("string", "admob_banner_unit", releaseAdMobBannerUnit)
             resValue("string", "admob_native_unit", releaseAdMobNativeUnit)
+            resValue("string", "admob_rewarded_unit", releaseAdMobRewardedUnit)
             resValue("bool", "debug_ads_skip_first_day", "false")
             resValue("bool", "debug_skip_login", "false")
             resValue("integer", "debug_app_open_timeout_ms", "0")
