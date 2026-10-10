@@ -216,3 +216,18 @@ damaged playlist restores its channels, now namespaced. The QC TV AVD still show
 channel id alone). The migration: create the new tables, copy the rows, and drop the namespacing
 suffix where it is no longer needed. That is a larger change across DAOs and navigation, so it was
 not done here.
+
+## QC round 4 fixes (2026-10-10)
+
+| # | Fix | Where | Verified |
+|---|---|---|---|
+| N9 | **The EPG is kept per playlist.** XMLTV programme ids are `<channel>_<start>` and were the single-column primary key, so parsing playlist B's guide replaced playlist A's rows.<br>• Stored ids are now scoped by playlist: `p:<playlistId>\|<id>` (`ProgramIds`, applied in `insertProgram(s)` of Room and the in-memory DB). TS IPTV Source ids (`tsg:<playlistId>#…`) were already scoped and are left as they are.<br>• **Readers.** The per-channel queries take an optional `playlistId`: the list, the time range, current and upcoming, and the current programme for the player and Home EPG line. Callers pass the channel's playlist.<br>• The Programs tab rows (`ChannelWithProgramCount`) now carry `playlistId`, which the detail list uses.<br>• Counts, the de-dup on read (channel, start, title) and delete-by-playlist already filter by the `playlistId` column. `getProgramById`/`deleteProgramById` have no callers outside the DB.<br>• **Old unscoped rows:** they keep their `playlistId` column, so they are still found per playlist until the next parse of that playlist deletes and rewrites them. Nothing reads them by id. | `ProgramIds`, `ProgramDao`, `IPTVDatabase`, `RoomIPTVDatabase`, `InMemoryIPTVDatabase`, `HomeViewModel`, `SourceHomeViewModel`, `GetCurrentProgramChannelList`, `ProgramDetailViewModel` | `RoomImportPipelineTest.twoPlaylistsWithTheSameGuideKeepTheirOwnProgrammes`. **Device (TSIPTV_ADS_QA, headless):** PA and PB were imported with the same 3 channels and the same guide (4 programmes per channel). DB pulled with `run-as`: PA `news.qa` 4 (`p:1507720565\|news.qa_…`), PB `news.qa` 4 (`p:562958582\|…`). PA kept its 4 after PB's guide was parsed. Programs tab: "News QA – 4 Programs"; the detail list showed 4, not doubled. |
+| N10 | **Related channels stay in their playlist.** `getChannelsByCategory` now takes the channel's `playlistId` (`(… OR …) AND (:playlistId IS NULL OR playlistId = :playlistId)`). I checked the other channel queries: `getAllChannels` and `searchChannels` are global by design and have no callers outside the DB; the rest already filter by playlist or id. | `ChannelDao`, `IPTVDatabase`, `HomeViewModel.getRelatedChannels` | Test `relatedChannelsStayInTheirPlaylist`. **Device:** PB's player for "News Two" listed only PB's 2 "News" channels, although PA and several other playlists on the AVD also have a "News" group. |
+| N11 | **Shown ids never carry the playlist tag.** Channel rows (Home, search, player list) show the guide id without `@<tag>` (`ChannelIdNamespace.displayId(channel.guideId)`), and so does the mini player fallback. | `HomeChannelItem`, `HomeMiniPlayer` | Device: PB's namespaced channels show "news.qa" and "news2.qa". |
+
+**Release note (draft):** `play-store/release-notes/next-draft.md`, EN and VI. URL playlists hit by the
+old channel-loss bug recover on their next refresh; affected file playlists have to be imported again.
+
+**Emulator note:** today TSIPTV_ADS_QA only started headless (`-no-window`). The windowed emulator
+crashed at start in the Qt OpenGL setup ("Failed to load opengl32sw"); this is a host or emulator issue,
+not the app.
