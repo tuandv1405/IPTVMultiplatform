@@ -406,4 +406,10 @@
     </plurals>
     <string name="ad_label">Ad</string>
     <string name="privacy_options_title">Privacy options</string>
+    <string name="addons_help_title">What are addons?</string>
+    <string name="addons_help_body">An addon is a small web service that follows the Stremio addon format. It can add catalogues, details and stream links to TS IPTV.\n• To add one, copy its manifest link (it ends with /manifest.json), select Add addon and paste it.\n• TS IPTV comes with no addons and recommends none: add only addons you run yourself or have the right to use.</string>
+    <string name="addons_help_expanded">Expanded</string>
+    <string name="addons_help_collapsed">Collapsed</string>
+    <string name="addons_help_guide">Full guide</string>
+    <string name="home_options_title">Sources and options</string>
 </resources>
