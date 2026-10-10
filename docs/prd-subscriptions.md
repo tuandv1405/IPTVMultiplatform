@@ -223,6 +223,11 @@ Client-side entitlement can be faked (a patched APK can skip every check), so th
      `source: "google_play"`, `updatedAt`. **Read-only** for the owner.
 4. Not deployed in this release; the deploy steps are in the hand-off.
 
+**Unlimited is sold only once the server is deployed (QC round 1).** The app offers
+`tsiptv_unlimited` only when `TSIPTV_BILLING_VERIFY_URL` is configured; otherwise the Unlimited
+card says "Coming soon". All copy (cards, quota screens, Terms, listing) states the fair-use caps:
+up to 200 sends and 50 syncs a day.
+
 **Until the server is deployed** the app trusts the local Play purchase state on that device
 (acknowledged, `PURCHASED`). Risk: a modified APK can unlock "no ads" and the client-side Unlimited
 view. Impact is bounded: ads are our revenue, but the Firestore caps still hold (§6.3), so a

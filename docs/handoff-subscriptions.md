@@ -81,4 +81,34 @@ Steps are in `telegram-bot/src/billing/README.md` › Deploy. In short:
 - iOS (StoreKit 2) and desktop purchases not built; they show "not available" and honour a server entitlement. iOS not compiled here.
 - The base plan of a local Play purchase is unknown to the client (Play does not say); without the server the upgrade uses `WITH_TIME_PRORATION` (always valid) instead of `CHARGE_PRORATED_PRICE`, and "Current plan" marks both base plans of the owned product.
 - A purchase made on another Play account while signed in as a different user still unlocks this device locally (PRD §10); the server refuses to link it to a second account.
-- "Remove ads" link is not shown on native rows (by design) and was checked in code only (the AVD had no playlist / ad fill).
+- "Remove ads" link is not shown on native rows (by design).
+
+## QC round 1 fixes (2026-10-10)
+
+`main` merged first (TV ads plan, support page, Addons help): no conflicts.
+
+| # | Fix | Verified |
+|---|---|---|
+| B1 | **Fair use stated everywhere, Unlimited sold only with the server.** Cards: "Send playlists to TV: up to 200 a day (fair use)", "Device sync: up to 50 a day (fair use)"; quota screens: "Unlimited plan: up to 200 sends / 50 syncs a day (fair use)"; Terms (section 4) and the listing paragraphs say the same. `PlansViewModel` offers `tsiptv_unlimited` only when `TSIPTV_BILLING_VERIFY_URL` is set (`PurchaseVerifier.enabled`); otherwise the card says "Coming soon" and `buy()` refuses. Quota used up: verified Unlimited → "You have reached today's fair-use limit…"; unverified Unlimited → "Today's limit is reached because your Unlimited plan is not confirmed by our server yet… Restore purchases"; Free / No ads → "Get Unlimited" row as before. **Deploy the billing server before selling Unlimited.** | TV AVD: Unlimited card "Coming soon" (this build has no verify URL) |
+| B2 | **"Remove ads" link:** 8 dp gap, then a 48 dp touch row below the slot; the row is reserved while the banner loads (no shift), the text appears when the banner has loaded or the fallback shows. | Phone AVD, uiautomator: banner WebView `[1,885][1079,1053]`, link touch target `[831,1074][1080,1200]` (21 px = 8 dp gap, 126 px = 48 dp); screenshot `qc1_phone_home.png` |
+| B3 | Disclosure moved above the plan cards (right after the status card). | TV AVD screenshot |
+| B4 | `web/public/terms/` §4 "Gói đăng ký / Subscriptions" and `web/public/privacy/` §1.7 + retention (vi/en): plans, fair use, auto-renewal, cancelling in Google Play, trials, refunds per Google Play, payments by Google Play, stored data, hashed account id, deletion with the account. Not deployed. | `check_guides.py`: OK (13 guides, 25 pages). Note: in this Windows worktree (`core.autocrlf=true`) the guide pages are checked out with CRLF and the script reports them "out of date"; with an LF checkout it is green. |
+| B5 | Restore failure → "Couldn't reach Google Play. Check your connection and try again." | TV AVD (no Google account): pressed Restore, got that message |
+| B6 | TV initial focus: the first enabled plan button, or "Manage in Google Play" when there are no prices (the list scrolls the target into composition first, then focuses it); order top to bottom. | TV AVD: focus starts on Manage; DPAD_DOWN → Restore → Terms → Privacy |
+| B7 | A deferred change reports "The new plan starts when the current period ends." only on the purchase callback (never "Your plan is active"); launching shows nothing. | code |
+| B8 | Cache read/write/clear wrapped; a throwing storage only loses the cache. | `brokenStorageFallsBackToNoCache` |
+| B9 | Server listener retries with backoff (2 s, 4 s … 5 min) and reports "unknown" meanwhile. | `serverListenerIsRetriedAfterAFailure` |
+| B10 | `showSubscriptionPopup` / `OnDismissSubscriptionPopup` removed. | build |
+| B11 | Stray literal `\r` removed from the `firestore.rules` header. | file bytes |
+| S1 | Revoked / voided purchases stay revoked. | server test |
+| S2 | A replacement (`linkedPurchaseToken`) without its own uid inherits the old record's uid; the old uid's entitlement is recomputed when it differs. | server tests |
+| S3 | `/billing/verify` rate limit: 30/min per address (before the token check), 10/min per uid → `429 {"error":"rate_limited"}` (env `BILLING_VERIFY_PER_UID_PER_MIN`, `BILLING_VERIFY_PER_IP_PER_MIN`, `BILLING_TRUST_PROXY=true` on Cloud Run). JWKS refetch for an unknown key id at most once per 60 s. | server tests |
+| S4 | Entitlement recompute in one Firestore transaction (`recomputeEntitlement`); purchase records stay last-write-wins upserts of fresh Play state (documented in the billing README). | server tests |
+| Docs | `docs/prd-tv-ads.md` T8: `users/{uid}/entitlements/current` and `noAds` via `EntitlementRepository.state`; a one-time consumable "Support" product needs its own INAPP / `consumeAsync` handling in `PlayBillingClient`. Listing: "no AdMob ads on Android TV" kept and checked against the TV ads plan (house ads, not AdMob; both plans remove them). | — |
+
+**Checks:** `desktopTest` 589 tests, 0 failures; `compileCommonMainKotlinMetadata`, `assembleDebug`,
+`assembleRelease` (R8, unsigned here) green; Firestore rules + devices/sync + subscriptions +
+web-backend 51/51; QC probes 10/10; billing server 31/31; `check_guides.py` OK (LF checkout).
+Device: `TSIPTV_SUBS_QA` only (name checked before each install), headless, stopped afterwards; it
+is now in the phone layout, portrait.
+

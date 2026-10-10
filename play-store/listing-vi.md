@@ -109,9 +109,13 @@ MIỄN PHÍ CÓ QUẢNG CÁO, HOẶC KHÔNG QUẢNG CÁO
 TS IPTV miễn phí và có quảng cáo trên điện thoại và máy tính bảng Android. Không
 có quảng cáo trong 24 giờ đầu sử dụng, và không có quảng cáo AdMob trên Android
 TV. Không muốn xem quảng cáo? Gói "Không quảng cáo" tắt toàn bộ quảng cáo, còn
-gói "Unlimited" bỏ thêm giới hạn hằng ngày khi gửi danh sách phát tới TV và đồng
-bộ thiết bị. Gói tự động gia hạn; huỷ bất cứ lúc nào trong Google Play.
+gói "Unlimited" nâng giới hạn hằng ngày lên tối đa 200 lần gửi danh sách phát
+tới TV và 50 lần đồng bộ thiết bị (sử dụng hợp lý). Gói tự động gia hạn; huỷ bất
+cứ lúc nào trong Google Play.
 ```
+
+Chỉ bán Unlimited (và dùng đoạn này) khi máy chủ thanh toán đã được triển khai;
+khi chưa có, ứng dụng ẩn nút mua Unlimited ("Sắp ra mắt").
 
 ---
 

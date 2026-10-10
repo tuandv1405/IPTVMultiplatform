@@ -112,10 +112,17 @@ FREE, WITH ADS, OR AD-FREE
 
 TS IPTV is free and shows ads on Android phones and tablets. There are no ads
 during your first 24 hours, and no AdMob ads on Android TV. Prefer no ads? The
-optional "No ads" subscription removes them all, and "Unlimited" also removes
-the daily limits on sending playlists to your TV and syncing your devices.
-Subscriptions renew automatically; cancel any time in Google Play.
+optional "No ads" subscription removes them all, and "Unlimited" also raises
+the daily limits to up to 200 playlist sends to your TV and 50 device syncs a
+day (fair use). Subscriptions renew automatically; cancel any time in Google
+Play.
 ```
+
+Wording check against the TV ads plan (`docs/prd-tv-ads.md`): "no AdMob ads on
+Android TV" stays true there, because the TV plan uses our own house cards and
+direct campaigns, not AdMob. Both subscriptions also remove those TV ads (T8).
+Sell Unlimited (and use this paragraph) only once the billing server is
+deployed: without it the app hides the Unlimited purchase ("Coming soon").
 
 ---
 
