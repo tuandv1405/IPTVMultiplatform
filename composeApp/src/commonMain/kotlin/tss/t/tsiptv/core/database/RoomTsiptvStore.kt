@@ -72,10 +72,10 @@ class RoomTsiptvStore(
                 // (favourites, last-watched and history carried over by channel id).
                 iptv.replacePlaylistContentLocked(
                     playlist = content.playlist,
-                    categories = content.categories,
-                    channels = content.channels,
-                    attributes = emptyMap(),
-                    legacyIds = emptyMap(),
+                    categoriesIn = content.categories,
+                    channelsIn = content.channels,
+                    attributesIn = emptyMap(),
+                    legacyIdsIn = emptyMap(),
                 )
                 dao.upsertSource(content.source.toEntity())
                 dao.deleteIncludes(playlistId)

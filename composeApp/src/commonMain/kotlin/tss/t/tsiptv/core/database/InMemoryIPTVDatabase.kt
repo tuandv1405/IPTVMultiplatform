@@ -85,11 +85,19 @@ class InMemoryIPTVDatabase : IPTVDatabase {
 
     override suspend fun replacePlaylistContent(
         playlist: Playlist,
-        categories: List<Category>,
-        channels: List<Channel>,
-        attributes: Map<String, Map<String, String>>,
-        legacyIds: Map<String, String>,
+        categoriesIn: List<Category>,
+        channelsIn: List<Channel>,
+        attributesIn: Map<String, Map<String, String>>,
+        legacyIdsIn: Map<String, String>,
     ) {
+        // Same rule as the Room database: an id owned by another playlist is namespaced.
+        val taken = this.channels.value.values.filter { it.playlistId != playlist.id }.map { it.id }.toSet()
+            .intersect(channelsIn.map { it.id }.toSet())
+        val (channels, renamed) = ChannelIdNamespace.resolve(playlist.id, channelsIn, taken)
+        val takenCategories = this.categories.value.values.filter { it.playlistId != playlist.id }.map { it.id }.toSet()
+        val categories = ChannelIdNamespace.resolveCategories(playlist.id, categoriesIn, takenCategories)
+        val attributes = attributesIn.mapKeys { (id, _) -> renamed[id] ?: id }
+        val legacyIds = legacyIdsIn.mapKeys { (id, _) -> renamed[id] ?: id }
         val previous = this.channels.value.values.filter { it.playlistId == playlist.id }
         val previousById = previous.associateBy { it.id }
         val removedIds = previous.map { it.id }.toSet()

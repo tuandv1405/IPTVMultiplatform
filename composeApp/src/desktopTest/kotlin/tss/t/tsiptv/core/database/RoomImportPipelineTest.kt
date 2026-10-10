@@ -73,6 +73,29 @@ class RoomImportPipelineTest {
     }
 
     @Test
+    fun twoPlaylistsWithTheSameEntriesKeepTheirChannels() = runBlocking {
+        // QC r3: channel.id is the primary key alone, so the second import used to take the
+        // first playlist's rows. Now the second copy is namespaced and both stay complete.
+        val text = TestAssets.read("kodi/reference.m3u")
+        val first = importer.importFromFile("First", "first.m3u", text.encodeToByteArray()).playlist.id
+        val second = importer.importFromFile("Second", "second.m3u", text.encodeToByteArray()).playlist.id
+        assertEquals(9, snapshot(first).size)
+        assertEquals(9, snapshot(second).size)
+        // Group categories (slugged titles) are kept by both too.
+        val groups = db.getAllCategoriesByPlayListId(first).map { it.name }.sorted()
+        assertEquals(groups, db.getAllCategoriesByPlayListId(second).map { it.name }.sorted())
+        assertTrue(groups.isNotEmpty())
+        // Attributes and the guide id follow the renamed rows.
+        val copy = snapshot(second).first { it.first.guideId == "channel-x" && !it.first.id.contains('~') }
+        assertEquals("val", copy.second["kodiprop:key"])
+        // Refreshing / re-importing either one keeps both.
+        importer.importFromFile("First", "first.m3u", text.encodeToByteArray())
+        importer.importFromFile("Second", "second.m3u", text.encodeToByteArray())
+        assertEquals(9, snapshot(first).size)
+        assertEquals(9, snapshot(second).size)
+    }
+
+    @Test
     fun headersAndDrmArePersisted() = runBlocking {
         val result = assertIs<ImportOutcome.Imported>(
             importer.importFromUrl("DRM", "https://lists.example.com/drm.m3u")

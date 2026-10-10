@@ -121,4 +121,8 @@ interface ChannelDao {
      */
     @Query("DELETE FROM channel WHERE playlistId = :playlistId")
     suspend fun deleteChannelsByPlaylist(playlistId: String)
+
+    /** Which of [ids] belong to a playlist other than [playlistId] (call with at most 900 ids). */
+    @Query("SELECT id FROM channel WHERE id IN (:ids) AND playlistId != :playlistId")
+    suspend fun idsOwnedElsewhere(ids: List<String>, playlistId: String): List<String>
 }

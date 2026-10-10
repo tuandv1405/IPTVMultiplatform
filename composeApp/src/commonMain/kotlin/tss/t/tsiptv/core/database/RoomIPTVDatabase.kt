@@ -162,11 +162,21 @@ class RoomIPTVDatabase(
     /** The body of [replacePlaylistContent]; must run inside a writer transaction. */
     internal suspend fun replacePlaylistContentLocked(
         playlist: Playlist,
-        categories: List<Category>,
-        channels: List<Channel>,
-        attributes: Map<String, Map<String, String>>,
-        legacyIds: Map<String, String>,
+        categoriesIn: List<Category>,
+        channelsIn: List<Channel>,
+        attributesIn: Map<String, Map<String, String>>,
+        legacyIdsIn: Map<String, String>,
     ) {
+        // Ids another playlist already uses are namespaced: storing them as they are would take that
+        // playlist's rows over (channel.id is the primary key on its own, QC r3).
+        val taken = channelsIn.map { it.id }.distinct().chunked(900)
+            .flatMap { channelDao.idsOwnedElsewhere(it, playlist.id) }.toSet()
+        val (channels, renamed) = ChannelIdNamespace.resolve(playlist.id, channelsIn, taken)
+        val takenCategories = categoriesIn.map { it.id }.distinct().chunked(900)
+            .flatMap { categoryDao.idsOwnedElsewhere(it, playlist.id) }.toSet()
+        val categories = ChannelIdNamespace.resolveCategories(playlist.id, categoriesIn, takenCategories)
+        val attributes = if (renamed.isEmpty()) attributesIn else attributesIn.mapKeys { (id, _) -> renamed[id] ?: id }
+        val legacyIds = if (renamed.isEmpty()) legacyIdsIn else legacyIdsIn.mapKeys { (id, _) -> renamed[id] ?: id }
         run {
             run {
                 val stored = channelDao.getChannelsInPlaylistOnce(playlist.id)
