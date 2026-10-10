@@ -414,4 +414,5 @@
     <string name="addons_help_collapsed">Đã thu gọn</string>
     <string name="addons_help_guide">Hướng dẫn chi tiết</string>
     <string name="home_options_title">Nguồn &amp; tuỳ chọn</string>
+    <string name="plans_play_billing_unavailable">Thanh toán Google Play hiện không khả dụng. Hãy đăng nhập Google Play hoặc cập nhật Cửa hàng Play, rồi thử lại.</string>
 </resources>

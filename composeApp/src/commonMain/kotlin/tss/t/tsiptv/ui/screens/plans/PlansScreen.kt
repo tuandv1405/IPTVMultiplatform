@@ -77,6 +77,7 @@ import tsiptv.composeapp.generated.resources.plans_price_year
 import tsiptv.composeapp.generated.resources.plans_prices_unavailable
 import tsiptv.composeapp.generated.resources.plans_privacy
 import tsiptv.composeapp.generated.resources.plans_restore
+import tsiptv.composeapp.generated.resources.plans_play_billing_unavailable
 import tsiptv.composeapp.generated.resources.plans_sign_in_to_subscribe
 import tsiptv.composeapp.generated.resources.plans_status_auto_renew_off
 import tsiptv.composeapp.generated.resources.plans_status_current
@@ -189,6 +190,11 @@ fun PlansScreen(
                 item("not_available") {
                     ConnectBody(stringResource(Res.string.plans_not_available), color = TSColors.TextPrimary, modifier = Modifier.tvReadable(isTvLayout))
                 }
+            } else if (state.playUnavailable && state.noAdsOffers.isEmpty() && state.unlimitedOffers.isEmpty()) {
+                // Play is there but cannot bill right now: say what to do; Restore below retries.
+                item("play_unavailable") {
+                    ConnectBody(stringResource(Res.string.plans_play_billing_unavailable), color = TSColors.TextPrimary, modifier = Modifier.tvReadable(isTvLayout))
+                }
             } else if (state.loadingOffers) {
                 item("loading") {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -279,6 +285,7 @@ fun PlansScreen(
             PlansMessage.SIGN_IN_REQUIRED -> Res.string.plans_unlimited_needs_account
             PlansMessage.DEFERRED -> Res.string.plans_msg_deferred
             PlansMessage.RESTORE_FAILED -> Res.string.plans_msg_restore_failed
+            PlansMessage.PLAY_UNAVAILABLE -> Res.string.plans_play_billing_unavailable
         }
         MessageDialog(title = stringResource(Res.string.plans_title), text = stringResource(text), onDismiss = viewModel::clearMessage)
     }

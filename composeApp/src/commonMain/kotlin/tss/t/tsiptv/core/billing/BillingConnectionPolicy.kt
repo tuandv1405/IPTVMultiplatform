@@ -4,7 +4,8 @@ package tss.t.tsiptv.core.billing
  * When the Play Billing client may (re)connect and query (pure; the Android client drives it).
  *
  * - Failed connections and lost services back off exponentially: [initialDelayMs], doubling up to
- *   [maxDelayMs]; a successful connection resets it.
+ *   [maxDelayMs]. Only a successful call ([onCallSucceeded]) resets it: a service that connects but
+ *   then fails every call keeps backing off instead of retrying every second.
  * - Nothing is attempted while waiting for the next try (no polling while disconnected).
  * - "Billing unavailable" (no Play Store or no account) stops all attempts until the next app start
  *   or a user action ([onUserAction]: Restore, a purchase).
@@ -53,8 +54,12 @@ class BillingConnectionPolicy(
 
     fun onConnected() {
         state = State.CONNECTED
-        failures = 0
         nextAttemptAtMs = 0L
+    }
+
+    /** A call (query) succeeded: the connection is healthy, the backoff starts over. */
+    fun onCallSucceeded() {
+        failures = 0
     }
 
     /** A failed attempt or a lost service. Returns the delay until the next attempt. */

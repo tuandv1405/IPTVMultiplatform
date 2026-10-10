@@ -32,10 +32,30 @@ class BillingConnectionPolicyTest {
         assertTrue(p.mayConnect(3_000))
         p.onConnecting()
         p.onConnected()
+        p.onCallSucceeded()
         assertEquals(0, p.failures)
         assertFalse(p.mayConnect(3_000)) // already connected
         // A lost service starts over at one second.
         assertEquals(1_000L, p.onFailure(10_000))
+    }
+
+    /** BB3: a service that connects but fails every call keeps backing off (no 1 s loop). */
+    @Test
+    fun connectingAloneDoesNotResetTheBackoff() {
+        val p = BillingConnectionPolicy()
+        var now = 0L
+        val delays = (0 until 5).map {
+            p.onConnecting()
+            p.onConnected() // setup OK...
+            val d = p.onFailure(now) // ...but the query answered "disconnected"
+            now += d
+            d
+        }
+        assertEquals(listOf(1_000L, 2_000L, 4_000L, 8_000L, 16_000L), delays)
+        p.onConnecting()
+        p.onConnected()
+        p.onCallSucceeded()
+        assertEquals(1_000L, p.onFailure(now))
     }
 
     @Test

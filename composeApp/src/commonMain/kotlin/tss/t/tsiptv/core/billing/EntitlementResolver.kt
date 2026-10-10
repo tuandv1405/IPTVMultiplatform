@@ -63,9 +63,17 @@ object EntitlementResolver {
         return Entitlement(plan = cache.plan, source = EntitlementSource.CACHE, status = SubscriptionStatus.ACTIVE, productId = cache.productId)
     }
 
-    /** Both sources have answered: the cache is no longer needed. */
-    fun settled(server: ServerState, play: PlayPurchases): Boolean =
-        server !is ServerState.Unknown && (play is PlayPurchases.Loaded || play is PlayPurchases.Unavailable)
+    /**
+     * Both sources have answered: the cache is no longer needed. A store that is unavailable here
+     * settles only when no cached plan is still valid: the cache bridges at most [CACHE_MAX_AGE_MS]
+     * anyway, and a subscriber must not see ads because Play is briefly unreachable.
+     */
+    fun settled(server: ServerState, play: PlayPurchases, cache: CachedEntitlement? = null, nowMs: Long = 0L): Boolean =
+        server !is ServerState.Unknown && when (play) {
+            is PlayPurchases.Loaded -> true
+            PlayPurchases.Unavailable -> fromCache(cache, nowMs) == null
+            else -> false
+        }
 
     fun resolve(
         server: ServerState,
@@ -77,7 +85,7 @@ object EntitlementResolver {
         val fromServer = (server as? ServerState.Loaded)?.let { fromServer(it.doc, nowMs) }
         val fromPlay = (play as? PlayPurchases.Loaded)?.let { fromPlay(it.purchases, catalog) }
         val fresh = best(fromServer, fromPlay)
-        if (settled(server, play)) return fresh ?: Entitlement.FREE
+        if (settled(server, play, cache, nowMs)) return fresh ?: Entitlement.FREE
         return best(fresh, fromCache(cache, nowMs)) ?: Entitlement.FREE
     }
 

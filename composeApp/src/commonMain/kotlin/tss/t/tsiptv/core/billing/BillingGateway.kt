@@ -31,6 +31,15 @@ interface BillingGateway {
     /** Connects if needed, then re-reads purchases and, if not loaded, the product details. */
     fun refresh()
 
+    /**
+     * Google Play is installed but billing answered "unavailable" (no account signed in to Play, Play
+     * updating, ...). Usually temporary: purchases stay unsettled so a cached plan keeps working.
+     */
+    val playBillingUnavailable: StateFlow<Boolean> get() = NeverUnavailable
+
+    /** A user action (opening the plans screen): refresh, ignoring the backoff and "unavailable". */
+    fun retry() = refresh()
+
     /** Re-reads purchases now; true when the store answered. */
     suspend fun restore(): Boolean
 
@@ -51,3 +60,5 @@ class UnavailableBillingGateway(override val catalog: ProductCatalog = ProductCa
     override suspend fun restore(): Boolean = false
     override suspend fun launchPurchase(offer: PlanOffer, accountHash: String?, replace: ReplaceFrom?) = PurchaseLaunch.UNAVAILABLE
 }
+
+private val NeverUnavailable: StateFlow<Boolean> = MutableStateFlow(false).asStateFlow()
