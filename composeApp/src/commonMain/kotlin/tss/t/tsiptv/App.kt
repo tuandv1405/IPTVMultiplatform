@@ -188,7 +188,10 @@ fun App() {
             pushManager.consumeLink()
             // One bad target must never stop later links from being handled.
             try { when (target) {
-                tss.t.tsiptv.feature.push.PushTarget.Home -> navController.popBackStack<NavRoutes.Home>(inclusive = false)
+                tss.t.tsiptv.feature.push.PushTarget.Home -> {
+                    navController.popBackStack<NavRoutes.Home>(inclusive = false)
+                    pushManager.requestHomeTab()
+                }
                 tss.t.tsiptv.feature.push.PushTarget.Addons -> navController.navigate(NavRoutes.Addons)
                 tss.t.tsiptv.feature.push.PushTarget.NotificationSettings -> navController.navigate(NavRoutes.NotificationSettings)
                 tss.t.tsiptv.feature.push.PushTarget.Store -> if (!appRating.openStoreListing()) showOpenLinkFailed = true

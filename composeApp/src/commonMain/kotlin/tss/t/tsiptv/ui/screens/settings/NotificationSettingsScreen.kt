@@ -1,6 +1,13 @@
 package tss.t.tsiptv.ui.screens.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.Role
+import tss.t.tsiptv.ui.tv.LocalFocusRingColor
+import tss.t.tsiptv.ui.tv.TvDefaults
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -50,7 +57,7 @@ import tss.t.tsiptv.feature.push.PushManager
 import tss.t.tsiptv.feature.push.PushPermission
 import tss.t.tsiptv.ui.screens.addons.PillButton
 import tss.t.tsiptv.ui.themes.TSColors
-import tss.t.tsiptv.ui.tv.TvFocusableSurface
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 
 /**
  * Profile › Notifications (docs/prd-push-notifications.md): the master switch (asks for the Android
@@ -141,22 +148,35 @@ private fun Note(text: String) {
 
 @Composable
 private fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit, description: String? = null) {
-    TvFocusableSurface(
-        onClick = { onChange(!checked) },
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        focusedScale = 1.02f,
-    ) {
-        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(title, color = TSColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                description?.let { Text(it, color = TSColors.TextSecondary, fontSize = 13.sp) }
-            }
-            Switch(
-                checked = checked,
-                onCheckedChange = null,
-                colors = SwitchDefaults.colors(checkedTrackColor = TSColors.AccentCyan),
+    // One toggleable node with the switch role: TalkBack reads title, state and "switch" together.
+    val interaction = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .graphicsLayer { val k = if (focused) 1.02f else 1f; scaleX = k; scaleY = k }
+            .clip(shape)
+            .background(if (focused) TvDefaults.focusedSurfaceColor else TvDefaults.surfaceColor, shape)
+            .border(2.dp, if (focused) LocalFocusRingColor.current else androidx.compose.ui.graphics.Color.Transparent, shape)
+            .toggleable(
+                value = checked,
+                interactionSource = interaction,
+                indication = null,
+                role = Role.Switch,
+                onValueChange = onChange,
             )
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, color = TSColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            description?.let { Text(it, color = TSColors.TextSecondary, fontSize = 13.sp) }
         }
+        Switch(
+            checked = checked,
+            onCheckedChange = null,
+            colors = SwitchDefaults.colors(checkedTrackColor = TSColors.AccentCyan),
+        )
     }
 }

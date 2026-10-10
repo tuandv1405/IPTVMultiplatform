@@ -41,6 +41,8 @@ class MainActivity : ComponentActivity(), KoinComponent {
     /** A tapped notification: its `link` extra (from our notification or FCM's data) goes through the allowlist. */
     private fun handlePushIntent(intent: android.content.Intent?) {
         val extras = intent?.extras ?: return
+        // Reopened from Recents: Android re-delivers the original (notification) intent with its extras.
+        if (intent.flags and android.content.Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return
         val fromFcm = extras.containsKey("google.message_id")
         val link = extras.getString(tss.t.tsiptv.feature.push.AndroidPushPlatform.EXTRA_LINK)
         if (!fromFcm && link == null) return
