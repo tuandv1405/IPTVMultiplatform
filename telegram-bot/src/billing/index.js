@@ -29,6 +29,6 @@ export function createBilling({ config, store, verifyIdToken, serviceAccountKey 
     serviceAccountEmail: config.pushServiceAccount,
     fetch,
   });
-  const routes = createBillingRoutes({ service, verifyIdToken, verifyPushToken, log });
+  const routes = createBillingRoutes({ service, verifyIdToken, verifyPushToken, log, rateLimit: config.rateLimit });
   return { service, routes };
 }

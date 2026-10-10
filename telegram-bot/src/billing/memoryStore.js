@@ -33,6 +33,12 @@ export function createMemoryBillingStore() {
     async putAccount(accountHash, uid) {
       accounts.set(accountHash, { uid });
     },
+    /** Read and write in one synchronous step (no await in between), like the Firestore transaction. */
+    async recomputeEntitlement(uid, compute) {
+      const doc = compute([...purchases.values()].filter((p) => p.uid === uid).map(clone));
+      entitlements.set(uid, clone(doc));
+      return clone(doc);
+    },
     async writeEntitlement(uid, doc) {
       entitlements.set(uid, clone(doc));
     },

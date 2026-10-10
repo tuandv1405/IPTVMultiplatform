@@ -41,6 +41,19 @@ export function createFirestoreBillingStore(db) {
     async putAccount(accountHash, uid) {
       await accountRef(accountHash).set({ uid, updatedAt: Date.now() }, { merge: true });
     },
+    /**
+     * Reads the uid's purchases and writes the entitlement in one transaction (S4). If a verify and
+     * an RTDN change the same user's purchases at once, Firestore retries the later transaction with
+     * fresh reads, so the document always matches the purchases it was computed from.
+     */
+    async recomputeEntitlement(uid, compute) {
+      return db.runTransaction(async (tx) => {
+        const snap = await tx.get(db.collection("billing_purchases").where("uid", "==", uid));
+        const doc = compute(snap.docs.map((d) => d.data()));
+        tx.set(entitlementRef(uid), doc);
+        return doc;
+      });
+    },
     async writeEntitlement(uid, doc) {
       // Date values become Firestore timestamps, which the quota rules compare with request.time.
       await entitlementRef(uid).set(doc);

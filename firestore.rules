@@ -2,7 +2,7 @@ rules_version = '2';
 
 // TS IPTV — Cloud Firestore security rules.
 //
-// 1. users/{uid}/**: private per-user data of the app; entitlements/* is read-only\r
+// 1. users/{uid}/**: private per-user data of the app; entitlements/* is read-only
 //    (written by the billing server, docs/prd-subscriptions.md).
 // 2. The contributor programme (docs/prd-contributor-requests.md). While it runs
 //    on Firestore, browsers write here directly, so these rules ARE the backend:

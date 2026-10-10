@@ -61,6 +61,28 @@ Errors (`{"error": "<code>"}`):
   expiresAt (timestamp), autoRenewing, source, updatedAt`. Owner read-only (`firestore.rules`).
 - Needs one single-field index (automatic): `billing_purchases.uid`.
 
+## Consistency, abuse limits
+
+- **Revoked is sticky.** Once a purchase is revoked or voided it stays `revoked: true`, even if a
+  later Play re-read still reports the line item active.
+- **Upgrades / downgrades** (`linkedPurchaseToken`) without an account id inherit the replaced
+  purchase's uid; if the replaced purchase belonged to another uid, that user's entitlement is
+  recomputed too.
+- **Concurrent verify and RTDN (race).** Purchase records are upserts of fresh Play state (last
+  write wins; both writers just read Play, and `revoked` / the uid link cannot be undone by a later
+  write: linking is a first-claim-wins transaction). The entitlement document is rebuilt by
+  `recomputeEntitlement`, which reads the user's purchases and writes `entitlements/current` in **one
+  Firestore transaction**: if another request changes that user's purchases meanwhile, Firestore
+  retries with fresh reads, so the document always matches the purchases it was computed from. A
+  stale Play read can still land last for a single purchase record; the next RTDN (Play sends one
+  for every state change) corrects it.
+- **Rate limits** on `/billing/verify` (in memory, per instance): 10 a minute per uid and 30 a minute
+  per client address (`BILLING_VERIFY_PER_UID_PER_MIN`, `BILLING_VERIFY_PER_IP_PER_MIN`; set
+  `BILLING_TRUST_PROXY=true` on Cloud Run so the address comes from `X-Forwarded-For`). Over the
+  limit: `429 {"error":"rate_limited"}`.
+- **JWKS:** an unknown `kid` in a push token forces at most one JWKS refetch per minute; the normal
+  refresh is hourly.
+
 ## Files
 
 `googleAuth.js` (service-account JWT or metadata-server tokens), `playApi.js` (subscriptionsv2.get,

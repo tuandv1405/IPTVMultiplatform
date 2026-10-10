@@ -53,22 +53,47 @@ export function createBillingService({ playApi, store, packageName, productPlans
     }
   }
 
+  /**
+   * Rebuilds users/{uid}/entitlements/current from the uid's purchases. Stores that support it
+   * (firestoreStore.js) read the purchases and write the document in one transaction, so a verify
+   * and an RTDN for the same user cannot leave a stale entitlement behind (S4).
+   */
   async function recompute(uid) {
+    if (typeof store.recomputeEntitlement === "function") {
+      return store.recomputeEntitlement(uid, (purchases) => computeEntitlement(purchases, now()));
+    }
     const purchases = await store.listPurchasesByUid(uid);
     const doc = computeEntitlement(purchases, now());
     await store.writeEntitlement(uid, doc);
     return doc;
   }
 
+  /** A revoked / voided purchase stays revoked, whatever a later Play re-read says (S1). */
+  const merged = (existing, record, extra = {}) => ({
+    ...existing,
+    ...record,
+    ...extra,
+    revoked: Boolean(existing?.revoked || record.revoked),
+  });
+
   /**
    * An upgrade / downgrade / re-subscribe carries the token it replaces. Mark the old purchase and
    * refresh its state from Play (an immediate replacement expires it; a deferred one keeps it active
-   * until renewal, so it is not simply dropped).
+   * until renewal, so it is not simply dropped). When the old purchase belonged to another uid than
+   * [uid], that user's entitlement is recomputed too (S2).
    */
-  async function handleReplaced(record) {
+  async function handleReplaced(record, uid) {
     if (!record.linkedPurchaseTokenHash) return;
     const old = await store.getPurchase(record.linkedPurchaseTokenHash);
     if (!old) return;
+    try {
+      await refreshReplaced(old, record);
+    } finally {
+      if (old.uid && old.uid !== uid) await recompute(old.uid);
+    }
+  }
+
+  async function refreshReplaced(old, record) {
     let refreshed = old;
     if (old.purchaseToken) {
       try {
@@ -117,10 +142,10 @@ export function createBillingService({ playApi, store, packageName, productPlans
       if (existing?.uid && existing.uid !== uid) throw new BillingError(409, "linked_to_other_account");
 
       record = await acknowledgeIfNeeded(record);
-      const linked = await store.linkPurchase({ ...existing, ...record, replaced: existing?.replaced ?? false }, uid);
+      const linked = await store.linkPurchase(merged(existing, record, { replaced: existing?.replaced ?? false }), uid);
       if (!linked.ok) throw new BillingError(409, "linked_to_other_account");
       await store.putAccount(hash, uid);
-      await handleReplaced(record);
+      await handleReplaced(record, uid);
       return recompute(uid);
     },
 
@@ -168,18 +193,20 @@ export function createBillingService({ playApi, store, packageName, productPlans
 
       let uid = existing?.uid ?? null;
       if (!uid && record.accountHash) uid = (await store.getAccount(record.accountHash))?.uid ?? null;
+      // An upgrade / downgrade made without an account id inherits the replaced purchase's account (S2).
+      if (!uid && record.linkedPurchaseTokenHash) uid = (await store.getPurchase(record.linkedPurchaseTokenHash))?.uid ?? null;
 
       if (!uid) {
         // Kept unlinked; the app links it when a signed-in user verifies it (first claim wins).
-        await store.putPurchase({ ...existing, ...record, uid: null });
+        await store.putPurchase(merged(existing, record, { uid: null }));
         log.info?.("billing: RTDN for a purchase not linked to any account", { type: n.notificationType, productId: record.productId });
         return { outcome: "unlinked" };
       }
       if (record.accountHash && existing?.uid && record.accountHash !== accountHash(existing.uid)) {
         log.warn?.("billing: RTDN account hash differs from the linked account; keeping the link", { productId: record.productId });
       }
-      await store.putPurchase({ ...existing, ...record, uid, replaced: existing?.replaced ?? false });
-      await handleReplaced(record);
+      await store.putPurchase(merged(existing, record, { uid, replaced: existing?.replaced ?? false }));
+      await handleReplaced(record, uid);
       await recompute(uid);
       return { outcome: "updated", uid, state: record.state };
     },

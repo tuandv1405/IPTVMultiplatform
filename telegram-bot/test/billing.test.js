@@ -472,3 +472,127 @@ test("http rtdn: OIDC required; 204 on success, 400 malformed, 500 transient", a
   assert.equal(res.status, 500);
   assert.ok(logs.every((line) => !line.includes(TOKEN_A) && !line.includes(TOKEN_B)), "tokens never logged");
 });
+
+// ---- QC round 1 (S1-S4) ----------------------------------------------------------------------
+
+test("S1: a revoked purchase stays revoked when a later RTDN or verify re-reads it as active", async () => {
+  const current = v2({ ack: "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED" });
+  const { store, service } = setup(() => current);
+  await service.verifyPurchase({ uid: "u1", productId: "tsiptv_unlimited", purchaseToken: TOKEN_A });
+  await service.handleRtdn(rtdn(TOKEN_A, NotificationType.REVOKED));
+  // Play still reports the line item ACTIVE for a while; the record must not come back to life.
+  await service.handleRtdn(rtdn(TOKEN_A, NotificationType.RENEWED));
+  assert.equal(store.purchases.get(sha256Hex(TOKEN_A)).revoked, true);
+  assert.equal(store.entitlements.get("u1").plan, "free");
+  const doc = await service.verifyPurchase({ uid: "u1", productId: "tsiptv_unlimited", purchaseToken: TOKEN_A });
+  assert.equal(doc.plan, "free");
+
+  // Voided, then re-read: still revoked.
+  const s2 = setup(() => current);
+  await s2.service.verifyPurchase({ uid: "u2", productId: "tsiptv_unlimited", purchaseToken: TOKEN_B });
+  await s2.service.handleRtdn({ packageName: PKG, voidedPurchaseNotification: { purchaseToken: TOKEN_B } });
+  await s2.service.handleRtdn(rtdn(TOKEN_B, NotificationType.RECOVERED));
+  assert.equal(s2.store.entitlements.get("u2").plan, "free");
+});
+
+test("S2: an upgrade without an account id inherits the replaced purchase's uid; the old uid is recomputed", async () => {
+  const { store, service } = setup({
+    [TOKEN_A]: v2({ productId: "tsiptv_noads", state: "SUBSCRIPTION_STATE_EXPIRED", expiry: NOW - 1 }),
+    [TOKEN_B]: v2({ linked: TOKEN_A }),
+  });
+  await store.linkPurchase(purchaseFromV2(v2({ productId: "tsiptv_noads" }), { purchaseToken: TOKEN_A, nowMs: NOW }), "u1");
+  const out = await service.handleRtdn(rtdn(TOKEN_B, NotificationType.PURCHASED));
+  assert.deepEqual([out.outcome, out.uid], ["updated", "u1"]);
+  assert.equal(store.purchases.get(sha256Hex(TOKEN_B)).uid, "u1");
+  assert.equal(store.entitlements.get("u1").plan, "unlimited");
+
+  // The replacement verified by another account: the old owner's entitlement is recomputed (now free).
+  const s2 = setup({
+    [TOKEN_A]: v2({ productId: "tsiptv_noads", state: "SUBSCRIPTION_STATE_EXPIRED", expiry: NOW - 1 }),
+    [TOKEN_B]: v2({ linked: TOKEN_A }),
+  });
+  await s2.store.linkPurchase(purchaseFromV2(v2({ productId: "tsiptv_noads" }), { purchaseToken: TOKEN_A, nowMs: NOW }), "old");
+  await s2.store.writeEntitlement("old", { plan: "no_ads", active: true });
+  await s2.service.verifyPurchase({ uid: "new", productId: "tsiptv_unlimited", purchaseToken: TOKEN_B });
+  assert.equal(s2.store.entitlements.get("old").plan, "free");
+  assert.equal(s2.store.entitlements.get("new").plan, "unlimited");
+});
+
+test("S3: /billing/verify is rate limited per uid and per address", async () => {
+  let t = NOW;
+  const ctx = setup({ [TOKEN_A]: v2() });
+  const r = createBillingRoutes({
+    service: ctx.service,
+    verifyIdToken: async (tok) => ({ uid: tok.slice(3) }),
+    verifyPushToken: async () => ({}),
+    log: silent,
+    rateLimit: { perUid: 2, perIp: 3, windowMs: 60_000 },
+    now: () => t,
+  });
+  const call = async (uid, ip = "10.0.0.1") => {
+    const req = request({ url: "/billing/verify", headers: { authorization: `Bearer ID-${uid}` }, body: { productId: "tsiptv_unlimited", purchaseToken: TOKEN_A } });
+    req.socket = { remoteAddress: ip };
+    const res = response();
+    await r.handle(req, res);
+    return res.status;
+  };
+  assert.equal(await call("u1"), 200);
+  assert.equal(await call("u1"), 200);
+  assert.equal(await call("u1", "10.0.0.2"), 429); // 3rd for u1
+  assert.equal(await call("u2"), 409); // 3rd for the address, passes the limit (token is u1's)
+  assert.equal(await call("u3"), 429); // 4th for the address
+  t += 60_000;
+  assert.equal(await call("u1"), 200);
+  const res = response();
+  const req = request({ url: "/billing/verify", headers: {}, body: {} });
+  req.socket = { remoteAddress: "10.0.0.9" };
+  await r.handle(req, res);
+  assert.equal(res.status, 401);
+});
+
+test("S3: unknown key ids refetch the JWKS at most once per cooldown", async () => {
+  let t = NOW;
+  let jwksCalls = 0;
+  const fetch = async () => {
+    jwksCalls++;
+    return { ok: true, json: async () => ({ keys: [jwk] }) };
+  };
+  const verify = createPushTokenVerifier({ audience: AUD, serviceAccountEmail: PUSH_SA, fetch, now: () => t });
+  await verify(`Bearer ${jwt(goodClaims())}`);
+  assert.equal(jwksCalls, 1);
+  for (let i = 0; i < 5; i++) await assert.rejects(verify(`Bearer ${jwt(goodClaims(), { kid: `bogus${i}` })}`), { status: 401 });
+  assert.equal(jwksCalls, 2, "one forced refetch, then the cooldown");
+  t += 61_000;
+  await assert.rejects(verify(`Bearer ${jwt(goodClaims(), { kid: "bogus" })}`), { status: 401 });
+  assert.equal(jwksCalls, 3);
+  // The normal cache expiry still refetches.
+  t += 2 * 60 * 60 * 1000;
+  await verify(`Bearer ${jwt(goodClaims({ iat: t / 1000 - 10, exp: t / 1000 + 3600 }))}`);
+  assert.equal(jwksCalls, 4);
+});
+
+test("S4: the entitlement is recomputed through the store's atomic recomputeEntitlement", async () => {
+  const { store, service } = setup({ [TOKEN_A]: v2() });
+  let atomic = 0;
+  const original = store.recomputeEntitlement;
+  store.recomputeEntitlement = async (uid, compute) => {
+    atomic++;
+    return original(uid, compute);
+  };
+  store.writeEntitlement = async () => assert.fail("non-atomic write used");
+  await service.verifyPurchase({ uid: "u1", productId: "tsiptv_unlimited", purchaseToken: TOKEN_A });
+  await service.handleRtdn(rtdn(TOKEN_A, NotificationType.RENEWED));
+  assert.equal(atomic, 2);
+  assert.equal(store.entitlements.get("u1").plan, "unlimited");
+
+  // Concurrent verify + RTDN for the same user end with the document matching the stored purchases.
+  const s2 = setup({ [TOKEN_A]: v2(), [TOKEN_B]: v2({ productId: "tsiptv_noads" }) });
+  await Promise.all([
+    s2.service.verifyPurchase({ uid: "u1", productId: "tsiptv_unlimited", purchaseToken: TOKEN_A }),
+    s2.service.verifyPurchase({ uid: "u1", productId: "tsiptv_noads", purchaseToken: TOKEN_B }),
+    s2.service.handleRtdn(rtdn(TOKEN_A, NotificationType.RENEWED)),
+  ]);
+  const expected = computeEntitlement(await s2.store.listPurchasesByUid("u1"), NOW);
+  assert.equal(s2.store.entitlements.get("u1").plan, expected.plan);
+  assert.equal(expected.plan, "unlimited");
+});

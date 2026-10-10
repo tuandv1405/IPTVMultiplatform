@@ -7,6 +7,7 @@ const GOOGLE_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
 const ISSUERS = new Set(["accounts.google.com", "https://accounts.google.com"]);
 const SKEW_S = 60;
 const JWKS_TTL_MS = 60 * 60 * 1000;
+const UNKNOWN_KID_COOLDOWN_MS = 60 * 1000;
 
 export class PushAuthError extends Error {
   constructor(message) {
@@ -30,6 +31,9 @@ export function createPushTokenVerifier({ audience, serviceAccountEmail, fetch =
   if (!audience || !serviceAccountEmail) throw new Error("push audience and service account email are required");
   let keys = null; // Map kid -> KeyObject
   let fetchedAt = 0;
+  // An unknown kid forces a refetch (keys rotate), but at most once per cooldown, so tokens with
+  // made-up kids cannot make us hammer Google's JWKS endpoint (S3).
+  let lastForcedAt = -Infinity;
 
   async function loadKeys(force) {
     if (keys && !force && now() - fetchedAt < JWKS_TTL_MS) return keys;
@@ -59,7 +63,10 @@ export function createPushTokenVerifier({ audience, serviceAccountEmail, fetch =
     }
     if (header.alg !== "RS256" || !header.kid) throw new PushAuthError("unsupported token algorithm");
     let key = (await loadKeys(false)).get(header.kid);
-    if (!key) key = (await loadKeys(true)).get(header.kid); // keys rotate
+    if (!key && now() - lastForcedAt >= UNKNOWN_KID_COOLDOWN_MS) {
+      lastForcedAt = now();
+      key = (await loadKeys(true)).get(header.kid); // keys rotate
+    }
     if (!key) throw new PushAuthError("unknown signing key");
     const ok = createVerify("RSA-SHA256").update(`${h}.${p}`).verify(key, Buffer.from(s, "base64url"));
     if (!ok) throw new PushAuthError("bad signature");

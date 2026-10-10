@@ -57,15 +57,55 @@ export function entitlementToJson(doc) {
 }
 
 /**
+ * A fixed-window counter per key, in memory (one instance; enough to stop a client hammering the
+ * Play API through /billing/verify). Old windows are dropped as keys are touched.
+ */
+export function createRateLimiter({ limit, windowMs = 60_000, now = Date.now, maxKeys = 10_000 }) {
+  const windows = new Map(); // key -> { start, count }
+  return function allow(key) {
+    const t = now();
+    let w = windows.get(key);
+    if (!w || t - w.start >= windowMs) {
+      if (windows.size >= maxKeys) {
+        for (const [k, v] of windows) if (t - v.start >= windowMs) windows.delete(k);
+        if (windows.size >= maxKeys) windows.delete(windows.keys().next().value);
+      }
+      w = { start: t, count: 0 };
+      windows.set(key, w);
+    }
+    w.count += 1;
+    return w.count <= limit;
+  };
+}
+
+/** The client address: the socket's, or the first X-Forwarded-For hop when behind a trusted proxy. */
+function clientAddress(req, trustProxy) {
+  if (trustProxy) {
+    const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+    if (forwarded) return forwarded;
+  }
+  return req.socket?.remoteAddress || "unknown";
+}
+
+/**
  * @param {object} deps
  * @param {ReturnType<import("./service.js").createBillingService>} deps.service
  * @param {(idToken: string) => Promise<{ uid: string }>} deps.verifyIdToken Firebase Auth ID token check
  * @param {(authorization: string | undefined) => Promise<object>} deps.verifyPushToken OIDC check (oidc.js)
+ * @param {{ perUid?: number, perIp?: number, windowMs?: number, trustProxy?: boolean }} [deps.rateLimit]
+ *   /billing/verify limits (default 10 per uid and 30 per address a minute; 429 `rate_limited`)
+ * @param {() => number} [deps.now]
  * @returns {{ verify(req, res): Promise<void>, rtdn(req, res): Promise<void>, handle(req, res): Promise<boolean> }}
  */
-export function createBillingRoutes({ service, verifyIdToken, verifyPushToken, log = console }) {
+export function createBillingRoutes({ service, verifyIdToken, verifyPushToken, log = console, rateLimit = {}, now = Date.now }) {
+  const windowMs = rateLimit.windowMs ?? 60_000;
+  const allowIp = createRateLimiter({ limit: rateLimit.perIp ?? 30, windowMs, now });
+  const allowUid = createRateLimiter({ limit: rateLimit.perUid ?? 10, windowMs, now });
+
   async function verify(req, res) {
     try {
+      // Before the ID-token check, so a flood of junk tokens is cheap to refuse too.
+      if (!allowIp(clientAddress(req, rateLimit.trustProxy))) throw new BillingError(429, "rate_limited");
       const match = /^Bearer\s+(\S+)$/.exec(String(req.headers.authorization || ""));
       if (!match) throw new BillingError(401, "unauthenticated");
       let uid;
@@ -75,6 +115,7 @@ export function createBillingRoutes({ service, verifyIdToken, verifyPushToken, l
         throw new BillingError(401, "unauthenticated");
       }
       if (!uid) throw new BillingError(401, "unauthenticated");
+      if (!allowUid(uid)) throw new BillingError(429, "rate_limited");
       const body = await readJson(req);
       const doc = await service.verifyPurchase({ uid, productId: body.productId, purchaseToken: body.purchaseToken });
       send(res, 200, { entitlement: entitlementToJson(doc) });
