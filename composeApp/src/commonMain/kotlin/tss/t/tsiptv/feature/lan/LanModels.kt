@@ -71,6 +71,9 @@ object LanErrorCode {
     const val LOCKED = "LOCKED"
     const val BAD_URL = "BAD_URL"
     const val NOT_ACCEPTING = "NOT_ACCEPTING"
+
+    /** pair_start while the TV is not on its "TV & devices" screen (pairing mode). */
+    const val PAIRING_CLOSED = "PAIRING_CLOSED"
 }
 
 // -------------------------------------------------------------------------------------------------

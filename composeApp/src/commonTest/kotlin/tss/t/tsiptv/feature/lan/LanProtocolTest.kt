@@ -37,7 +37,10 @@ class LanProtocolTest {
         val factory = LanKeyAgreementFactory { FakeAgreement() }
         val tvStore = PairingStore(InMemoryKeyValueStorage(), FakeCipher(), PairingStore.Role.RECEIVER)
         val phoneStore = PairingStore(InMemoryKeyValueStorage(), FakeCipher(), PairingStore.Role.SENDER)
-        val engine = LanReceiverEngine({ "tv-1" to "Living room" }, tvStore, factory, { now }, { code })
+        val engine = LanReceiverEngine({ "tv-1" to "Living room" }, tvStore, factory, { now }, { code }).apply {
+            // As if the TV showed its "TV & devices" screen (pairing mode).
+            pairingOpen = true
+        }
         var lastRequest: String? = null
         val transport = object : LanTransport {
             override suspend fun exchange(host: String, port: Int, line: String, maxAnswerBytes: Int): String {
@@ -162,14 +165,61 @@ class LanProtocolTest {
     @Test
     fun onlyPairedSendersMayExceedTheRequestCap() = runBlocking<Unit> {
         val h = Harness()
-        val prefix = { id: String -> "{\"type\":\"signed\",\"v\":1,\"senderId\":\"$id\",\"ts\":1,\"nonce\":\"n\",\"body\":\"" }
-        assertFalse(h.engine.allowsLargeRequest(prefix("pixel")))
+        val prefix = { id: String, ts: Long ->
+            "{\"type\":\"signed\",\"v\":1,\"senderId\":\"$id\",\"ts\":$ts,\"nonce\":\"${LanCrypto.newNonce()}\",\"body\":\""
+        }
+        assertFalse(h.engine.allowsLargeRequest(prefix("pixel", h.now)))
         assertEquals(LanResult.Ok, h.pair())
         val phoneId = h.tvStore.load().single().id
-        assertTrue(h.engine.allowsLargeRequest(prefix(phoneId)))
-        assertFalse(h.engine.allowsLargeRequest(prefix(phoneId).replace("signed", "hello")))
+        assertTrue(h.engine.allowsLargeRequest(prefix(phoneId, h.now)))
+        // Not the exact envelope, or a stale timestamp: refused.
+        assertFalse(h.engine.allowsLargeRequest(prefix(phoneId, h.now).replace("signed", "hello")))
+        assertFalse(h.engine.allowsLargeRequest(" " + prefix(phoneId, h.now)))
+        assertFalse(h.engine.allowsLargeRequest("{\"x\":\"" + prefix(phoneId, h.now)))
+        assertFalse(h.engine.allowsLargeRequest(prefix(phoneId, h.now - LanProtocol.TIMESTAMP_WINDOW_MS - 1)))
         assertFalse(h.engine.allowsLargeRequest("{\"type\":\"pair_start\",\"senderId\":\"$phoneId\""))
         assertFalse(h.engine.allowsLargeRequest("x".repeat(1000)))
+        // At most LARGE_PER_SENDER grants a minute per sender.
+        repeat(LanReceiverEngine.LARGE_PER_SENDER - 1) { assertTrue(h.engine.allowsLargeRequest(prefix(phoneId, h.now))) }
+        assertFalse(h.engine.allowsLargeRequest(prefix(phoneId, h.now)))
+        h.now += LanReceiverEngine.LARGE_WINDOW_MS
+        assertTrue(h.engine.allowsLargeRequest(prefix(phoneId, h.now)))
+        // The real sender's envelope matches the gate.
+        assertTrue(LanProtocol.json.encodeToString(LanRequest.serializer(),
+            SignedRequest(senderId = phoneId, ts = h.now, nonce = LanCrypto.newNonce(), body = "{}", mac = "m")).let {
+            h.now += LanReceiverEngine.LARGE_WINDOW_MS
+            h.engine.allowsLargeRequest(it)
+        })
+    }
+
+    @Test
+    fun pairingOnlyWhileTheTvScreenIsOpen() = runBlocking<Unit> {
+        val h = Harness()
+        h.engine.pairingOpen = false
+        // QC r2 N2: nothing pops up over playback or Home.
+        assertEquals(PairStartResult.Failed(LanResult.Refused(LanErrorCode.PAIRING_CLOSED)), h.phone.startPairing(h.tv))
+        assertNull(h.engine.pairingPrompt.value)
+        h.engine.pairingOpen = true
+        assertEquals(LanResult.Ok, h.pair())
+        // Paired phones still cast while pairing is closed.
+        h.engine.pairingOpen = false
+        assertEquals(LanResult.Ok, h.phone.send(h.tv, PingCommand))
+    }
+
+    @Test
+    fun expiredCodesEscalateTheCooldown() = runBlocking<Unit> {
+        val h = Harness()
+        var expected = LanReceiverEngine.PAIR_COOLDOWN_MS
+        repeat(3) {
+            assertIs<PairStartResult.Started>(h.phone.startPairing(h.tv))
+            h.now += LanProtocol.PAIR_CODE_TTL_MS
+            // The expiry is noticed on the next request: still in the cooldown just before its end.
+            assertEquals(PairStartResult.Failed(LanResult.Refused(LanErrorCode.BUSY)), h.phone.startPairing(h.tv))
+            h.now += expected - 1
+            assertEquals(PairStartResult.Failed(LanResult.Refused(LanErrorCode.BUSY)), h.phone.startPairing(h.tv))
+            h.now += 1
+            expected *= 2
+        }
     }
 
     @Test

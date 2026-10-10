@@ -33,7 +33,7 @@ class JvmLanPairingTest {
     fun pairAndCastOverTheEngine() = runBlocking<Unit> {
         val factory = LanKeyAgreementFactory { JvmLanKeyAgreement() }
         val tvStore = PairingStore(InMemoryKeyValueStorage(), FakeCipher(), PairingStore.Role.RECEIVER)
-        val engine = LanReceiverEngine({ "tv" to "TV" }, tvStore, factory, { 5_000L }, { "654321" })
+        val engine = LanReceiverEngine({ "tv" to "TV" }, tvStore, factory, { 5_000L }, { "654321" }).apply { pairingOpen = true }
         val transport = object : LanTransport {
             override suspend fun exchange(host: String, port: Int, line: String, maxAnswerBytes: Int) = engine.handle(line)
         }

@@ -64,6 +64,7 @@ import tsiptv.composeapp.generated.resources.lan_tv_no_paired
 import tsiptv.composeapp.generated.resources.lan_tv_paired_phones
 import tsiptv.composeapp.generated.resources.lan_tv_receive_address
 import tsiptv.composeapp.generated.resources.lan_tv_receive_hint
+import tsiptv.composeapp.generated.resources.lan_tv_pairing_open
 import tsiptv.composeapp.generated.resources.lan_tv_receive_off
 import tsiptv.composeapp.generated.resources.lan_tv_receive_ready
 import tsiptv.composeapp.generated.resources.lan_tv_receive_title
@@ -139,6 +140,16 @@ fun ConnectScreen(
     val firstItem = remember { FocusRequester() }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
+    // TV: pairing mode only while this screen is shown and resumed (QC r2 N2).
+    if (isTvLayout) {
+        androidx.lifecycle.compose.LifecycleResumeEffect(receiver) {
+            scope.launch { receiver.setPairingOpen(true) }
+            onPauseOrDispose {
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch { receiver.setPairingOpen(false) }
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.onApplied = onSyncApplied
         viewModel.refresh()
@@ -174,6 +185,7 @@ fun ConnectScreen(
                         ReceiverState.Failed, ReceiverState.Unsupported -> ConnectBody(stringResource(Res.string.lan_tv_receive_off))
                     }
                     ConnectBody(stringResource(Res.string.lan_tv_receive_hint))
+                    ConnectBody(stringResource(Res.string.lan_tv_pairing_open), color = TSColors.AccentCyan)
                 }
                 item("receive_conditions") {
                     var open by remember { mutableStateOf(false) }

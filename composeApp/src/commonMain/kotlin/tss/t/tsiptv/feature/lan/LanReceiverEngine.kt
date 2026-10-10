@@ -46,8 +46,19 @@ class LanReceiverEngine(
     private val failedSessions = ArrayDeque<Long>()
     private var lockedUntil = 0L
 
-    /** After the TV user cancelled (or ignored) a code screen, new pairings wait this long. */
+    /** After the TV user cancelled (or ignored) a code screen, new pairings wait until then. */
     private var cooldownUntil = 0L
+
+    /** Code screens that ran out in a row: each one doubles the next cooldown. */
+    private var expiredInARow = 0
+
+    /**
+     * Pairing mode: true only while the TV shows its "TV & devices" screen. Outside it every
+     * pair_start is refused with PAIRING_CLOSED, so no LAN client can put the full-screen code over
+     * playback or Home. Paired phones are not affected (casts and offers are signed).
+     */
+    @kotlin.concurrent.Volatile
+    var pairingOpen: Boolean = false
     private val nonces = LinkedHashMap<String, Long>()
 
     private val _prompt = MutableStateFlow<PairingPrompt?>(null)
@@ -66,15 +77,37 @@ class LanReceiverEngine(
 
     suspend fun handle(line: String): String = encode(handleRequest(line))
 
+    /** Large-request grants per sender (time of each grant), for [allowsLargeRequest]'s rate limit. */
+    private val largeGrants = HashMap<String, ArrayDeque<Long>>()
+
     /**
-     * Whether a request line may be longer than [LanProtocol.MAX_REQUEST_BYTES]: only a signed
-     * request whose sender is paired with this TV (its MAC is still checked by [handle]). [prefix] is
-     * the start of the line, as read so far. Unauthenticated clients are thus held to 64 KiB.
+     * Whether a request line may be longer than [LanProtocol.MAX_REQUEST_BYTES]. [prefix] is the start
+     * of the line as read so far (64 KiB). Protocol v1 puts the MAC after the body, so the header
+     * cannot be authenticated before the body is read; the gate is therefore:
+     * - the line starts with the exact envelope the apps write, `{"type":"signed","v":1,"senderId":
+     *   "…","ts":…,"nonce":"…"` (no regex search anywhere in the body);
+     * - that senderId is a phone paired with this TV;
+     * - ts is within the request window (a captured old request cannot be reused for this);
+     * - at most [LARGE_PER_SENDER] grants per sender per [LARGE_WINDOW_MS].
+     * The full request, including the MAC, is still checked by [handle]. A header MAC is protocol v2.
      */
     suspend fun allowsLargeRequest(prefix: String): Boolean {
-        if (!SIGNED_TYPE.containsMatchIn(prefix)) return false
-        val senderId = SENDER_ID.find(prefix)?.groupValues?.get(1) ?: return false
-        return store.nameOf(senderId) != null
+        val header = SIGNED_HEADER.find(prefix) ?: return false
+        if (header.range.first != 0) return false
+        val senderId = header.groupValues[1]
+        val ts = header.groupValues[2].toLongOrNull() ?: return false
+        val now = clock()
+        if (ts < now - LanProtocol.TIMESTAMP_WINDOW_MS || ts > now + LanProtocol.TIMESTAMP_WINDOW_MS) return false
+        if (store.nameOf(senderId) == null) return false
+        return mutex.withLock {
+            val grants = largeGrants.getOrPut(senderId) { ArrayDeque() }
+            while (grants.isNotEmpty() && now - grants.first() >= LARGE_WINDOW_MS) grants.removeFirst()
+            if (grants.size >= LARGE_PER_SENDER) return@withLock false
+            grants.addLast(now)
+            // Bounded: forget senders that have no grant in the window.
+            if (largeGrants.size > PairingStore.MAX_PEERS * 2) largeGrants.entries.removeAll { it.value.isEmpty() }
+            true
+        }
     }
 
     private fun encode(response: LanResponse) = LanProtocol.json.encodeToString(LanResponse.serializer(), response)
@@ -110,6 +143,7 @@ class LanReceiverEngine(
         }
         val now = clock()
         expireSession(now)
+        if (!pairingOpen) return LanResponse.error(LanErrorCode.PAIRING_CLOSED)
         if (now < lockedUntil) return LanResponse.error(LanErrorCode.LOCKED)
         // One code screen at a time, and none right after the TV user closed one: a LAN client cannot
         // keep a full-screen prompt over playback.
@@ -152,6 +186,7 @@ class LanReceiverEngine(
             }
             paired = s
             endSession(failed = false, now = now)
+            expiredInARow = 0
         }
         store.put(paired.senderId, paired.senderName, paired.key, clock())
         _events.emit(LanReceiverEvent.Paired(paired.senderName))
@@ -176,7 +211,10 @@ class LanReceiverEngine(
         val s = session ?: return
         if (now >= s.expiresAt) {
             endSession(failed = true, now = now)
-            cooldownUntil = now + PAIR_COOLDOWN_MS
+            // Escalating: 30 s, 60 s, 2 min, ... up to 10 min while codes keep running out unused.
+            val factor = 1L shl expiredInARow.coerceAtMost(5)
+            cooldownUntil = now + minOf(PAIR_COOLDOWN_MS * factor, PAIR_MAX_COOLDOWN_MS)
+            expiredInARow++
         }
     }
 
@@ -244,8 +282,14 @@ class LanReceiverEngine(
     companion object {
         const val MAX_NONCES = 512
         const val PAIR_COOLDOWN_MS = 30_000L
+        const val PAIR_MAX_COOLDOWN_MS = 10 * 60_000L
 
-        private val SIGNED_TYPE = Regex(""""type"\s*:\s*"signed"""")
-        private val SENDER_ID = Regex(""""senderId"\s*:\s*"([^"\\]{1,64})"""")
+        const val LARGE_PER_SENDER = 3
+        const val LARGE_WINDOW_MS = 60_000L
+
+        /** The exact start of a v1 signed request as the apps encode it (field order is fixed). */
+        private val SIGNED_HEADER = Regex(
+            """^\{"type":"signed","v":1,"senderId":"([A-Za-z0-9._:-]{1,64})","ts":(-?\d{1,19}),"nonce":"[A-Za-z0-9+/=_-]{1,64}","""
+        )
     }
 }

@@ -98,6 +98,12 @@ class LanReceiverController(
 
     suspend fun unpair(id: String) = store.remove(id)
 
+    /** The TV's "TV & devices" screen is shown (pairing mode) or left; leaving drops an open code. */
+    suspend fun setPairingOpen(open: Boolean) {
+        engine.pairingOpen = open
+        if (!open) engine.abortPairing()
+    }
+
     companion object {
         const val KEY_PORT = "lan_receiver_port"
     }

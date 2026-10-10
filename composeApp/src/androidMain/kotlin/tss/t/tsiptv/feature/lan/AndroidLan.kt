@@ -248,16 +248,22 @@ class NsdSocketLanServer(private val context: Context) : LanServer {
         largeRequestAllowed: suspend (prefix: String) -> Boolean,
         handler: suspend (String) -> String,
     ) = coroutineScope {
-        val deadline = SystemClock.elapsedRealtime() + LanProtocol.READ_TIMEOUT_MS
-        // Closing the socket is the only way to interrupt a blocking read: do it at the deadline.
+        val acceptedAt = SystemClock.elapsedRealtime()
+        val deadline = java.util.concurrent.atomic.AtomicLong(acceptedAt + LanProtocol.READ_TIMEOUT_MS)
+        // Closing the socket is the only way to interrupt a blocking read: do it at the deadline
+        // (which a granted large offer may move later, see readRequestLine).
         val watchdog = launch {
-            delay(LanProtocol.READ_TIMEOUT_MS.toLong())
+            while (true) {
+                val left = deadline.get() - SystemClock.elapsedRealtime()
+                if (left <= 0) break
+                delay(left)
+            }
             runCatching { client.close() }
         }
         try {
             client.use { s ->
                 runCatching {
-                    val line = s.getInputStream().readRequestLine(s, deadline, largeRequestAllowed)
+                    val line = s.getInputStream().readRequestLine(s, deadline, acceptedAt, largeRequestAllowed)
                     val answer = if (line == null) {
                         LanProtocol.json.encodeToString(LanResponse.serializer(), LanResponse.error(LanErrorCode.TOO_LARGE))
                     } else {
@@ -281,7 +287,8 @@ class NsdSocketLanServer(private val context: Context) : LanServer {
      */
     private suspend fun InputStream.readRequestLine(
         socket: Socket,
-        deadline: Long,
+        deadline: java.util.concurrent.atomic.AtomicLong,
+        acceptedAt: Long,
         largeRequestAllowed: suspend (prefix: String) -> Boolean,
     ): String? {
         val out = ByteArrayOutputStream()
@@ -289,7 +296,7 @@ class NsdSocketLanServer(private val context: Context) : LanServer {
         var max = LanProtocol.MAX_REQUEST_BYTES
         var checked = false
         while (true) {
-            val left = deadline - SystemClock.elapsedRealtime()
+            val left = deadline.get() - SystemClock.elapsedRealtime()
             if (left <= 0) throw SocketTimeoutException("deadline")
             socket.soTimeout = left.toInt().coerceAtLeast(1)
             val n = read(buffer)
@@ -304,6 +311,9 @@ class NsdSocketLanServer(private val context: Context) : LanServer {
                 out.write(buffer, 0, room)
                 if (!largeRequestAllowed(out.toString(Charsets.UTF_8.name()))) return null
                 max = LanProtocol.MAX_OFFER_BYTES
+                // A large offer from a paired phone may take longer: 10 s + 1 s per 100 KB of the
+                // offer limit, at most 30 s from accept.
+                deadline.set(acceptedAt + LARGE_DEADLINE_MS)
                 if (out.size() + (take - room) > max) return null
                 out.write(buffer, room, take - room)
             } else {
@@ -358,6 +368,10 @@ class NsdSocketLanServer(private val context: Context) : LanServer {
     private companion object {
         const val MAX_CONNECTIONS = 8
         const val MAX_PER_IP = 2
+
+        /** 10 s + MAX_OFFER_BYTES / (100 KB/s), capped at 30 s (about 25.7 s). */
+        val LARGE_DEADLINE_MS: Long =
+            minOf(30_000L, LanProtocol.READ_TIMEOUT_MS + LanProtocol.MAX_OFFER_BYTES.toLong() * 1000 / (100 * 1024))
 
         /** Same device, or a private / link-local LAN address: never a routed public peer. */
         fun isLocalPeer(address: InetAddress): Boolean {

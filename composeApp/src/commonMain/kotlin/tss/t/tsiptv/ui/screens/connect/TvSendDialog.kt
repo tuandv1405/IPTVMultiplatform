@@ -72,6 +72,7 @@ import tsiptv.composeapp.generated.resources.send_tv_sign_in_button
 import tsiptv.composeapp.generated.resources.send_tv_not_counted
 import tsiptv.composeapp.generated.resources.lan_pair_code_expired
 import tsiptv.composeapp.generated.resources.lan_tv_busy
+import tsiptv.composeapp.generated.resources.lan_pair_open_tv_screen
 import tsiptv.composeapp.generated.resources.send_tv_task_rewarded
 import tsiptv.composeapp.generated.resources.send_tv_tasks
 import tsiptv.composeapp.generated.resources.send_tv_title
@@ -289,6 +290,7 @@ internal fun messageText(message: TvSendMessage): StringResource = when (message
     TvSendMessage.REWARD_CAPPED -> Res.string.reward_limit_reached
     TvSendMessage.CODE_EXPIRED -> Res.string.lan_pair_code_expired
     TvSendMessage.TV_BUSY -> Res.string.lan_tv_busy
+    TvSendMessage.OPEN_TV_SCREEN -> Res.string.lan_pair_open_tv_screen
     TvSendMessage.SEND_NOT_COUNTED -> Res.string.send_tv_not_counted
 }
 

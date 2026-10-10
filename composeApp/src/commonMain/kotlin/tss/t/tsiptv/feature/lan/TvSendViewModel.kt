@@ -43,6 +43,9 @@ enum class TvSendMessage {
     /** NOT_ACCEPTING: the TV cannot take a playlist now (open TS IPTV home on the TV). */
     TV_BUSY,
 
+    /** PAIRING_CLOSED: pairing needs the TV's "TV & devices" screen open. */
+    OPEN_TV_SCREEN,
+
     /** The TV has the playlist, but today's send could not be counted (shown on the Done step). */
     SEND_NOT_COUNTED,
 }
@@ -309,6 +312,7 @@ class TvSendViewModel(
             LanErrorCode.LOCKED -> TvSendMessage.PAIR_LOCKED
             LanErrorCode.EXPIRED -> TvSendMessage.CLOCK
             LanErrorCode.NOT_ACCEPTING -> TvSendMessage.TV_BUSY
+            LanErrorCode.PAIRING_CLOSED -> TvSendMessage.OPEN_TV_SCREEN
             LanErrorCode.TOO_LARGE -> TvSendMessage.REJECTED
             else -> TvSendMessage.REJECTED
         }
