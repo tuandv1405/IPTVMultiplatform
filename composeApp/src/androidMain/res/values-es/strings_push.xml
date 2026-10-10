@@ -1,0 +1,4 @@
+<resources>
+    <string name="push_channel_general">General</string>
+    <string name="push_channel_updates">Actualizaciones de la app</string>
+</resources>

@@ -17,4 +17,6 @@ val androidLanModule = module {
     single<LanServer> { NsdSocketLanServer(get()) }
     // AdMob rewarded ads behind the ads layer's consent / 24 h / TV rules (test unit in debug).
     single<RewardedAdGateway> { AdMobRewardedAdGateway(get(), get(), get()) }
+    // Firebase Cloud Messaging (docs/prd-push-notifications.md).
+    single<tss.t.tsiptv.feature.push.PushPlatform> { tss.t.tsiptv.feature.push.AndroidPushPlatform(get()) }
 }

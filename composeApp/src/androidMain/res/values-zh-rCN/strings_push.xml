@@ -1,0 +1,4 @@
+<resources>
+    <string name="push_channel_general">常规</string>
+    <string name="push_channel_updates">应用更新</string>
+</resources>

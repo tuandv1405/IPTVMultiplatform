@@ -87,6 +87,8 @@ kotlin {
             implementation(libs.firebase.firestore)
             implementation(libs.firebase.storage)
             implementation(libs.firebase.crashlytics)
+            // Push notifications (docs/prd-push-notifications.md)
+            implementation(libs.firebase.messaging)
             // Add Firebase App Check dependencies
             implementation("com.google.firebase:firebase-appcheck-playintegrity")
             implementation("com.google.firebase:firebase-appcheck-debug")
