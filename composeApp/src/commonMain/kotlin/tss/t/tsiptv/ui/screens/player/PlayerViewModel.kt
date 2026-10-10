@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.flow.first
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.firebase.analystics.AnalyticsConstants
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
@@ -237,7 +239,20 @@ class PlayerViewModel(
             withContext(Dispatchers.Main) {
                 _mediaPlayer.prepare(item)
                 _mediaPlayer.play()
-                stream.positionMs?.takeIf { !stream.isLive && it > 0 }?.let { _mediaPlayer.seekTo(it) }
+            }
+            val start = stream.positionMs?.takeIf { !stream.isLive && it > 0 } ?: return@launch
+            // prepare() swaps the source asynchronously: a seek now would be lost and the TV would
+            // start at 0. Seek once this item is loaded (same rule as MediaProgressTracker's resume).
+            val loaded = withTimeoutOrNull(CAST_SEEK_WAIT_MS) {
+                kotlinx.coroutines.flow.combine(_mediaPlayer.currentMedia, _mediaPlayer.duration) { media, duration ->
+                    (media?.id == item.id) to (duration > 0)
+                }.first { (current, hasDuration) -> !current || hasDuration }
+            }
+            if (loaded != null && loaded.first && loaded.second && _mediaPlayer.currentMedia.value?.id == item.id) {
+                val duration = _mediaPlayer.duration.value
+                // Never past the end (a phone position of a longer cut, or a rounding at the end).
+                val target = if (duration > CAST_END_MARGIN_MS) minOf(start, duration - CAST_END_MARGIN_MS) else start
+                withContext(Dispatchers.Main) { _mediaPlayer.seekTo(target) }
             }
         }
         return item.id
@@ -482,6 +497,12 @@ fun isAddonItemId(id: String?): Boolean =
 /** Streams cast from a phone (TV side): VOD items get VOD controls, live ones play like a channel. */
 const val CAST_VOD_MEDIA_ID_PREFIX = "castvod:"
 const val CAST_LIVE_MEDIA_ID_PREFIX = "cast:"
+
+/** How long a cast VOD may take to load before its start position is given up (it then plays from 0). */
+private const val CAST_SEEK_WAIT_MS = 60_000L
+
+/** A cast VOD never starts closer than this to its end. */
+private const val CAST_END_MARGIN_MS = 5_000L
 
 data class PlayerUIState(
     val isFullScreen: Boolean = false,
