@@ -30,56 +30,64 @@ Phát danh sách IPTV M3U, XSPF, JSON của bạn kèm lịch phát sóng EPG.
 ```
 TS IPTV là trình phát dành cho những danh sách phát IPTV mà bạn đã có sẵn.
 
-Ứng dụng không đi kèm bất kỳ kênh nào. Bạn mang danh sách phát của mình đến —
-một đường dẫn M3U từ nhà cung cấp, một tệp XSPF, một nguồn JSON, bất cứ thứ gì
-bạn đang dùng — và TS IPTV biến nó thành một trải nghiệm xem truyền hình gọn
-gàng, nhanh và dễ duyệt trên mọi thiết bị của bạn.
+Ứng dụng không đi kèm bất kỳ kênh nào. Bạn mang nguồn của mình đến: một đường dẫn
+M3U từ nhà cung cấp, một tệp XSPF, một nguồn JSON hay một nguồn TS IPTV Source.
+TS IPTV biến nó thành một trải nghiệm xem truyền hình gọn gàng, nhanh và dễ duyệt
+trên mọi thiết bị của bạn.
 
 ỨNG DỤNG LÀM ĐƯỢC GÌ
 
-• Nhập danh sách phát M3U và M3U8, tệp XSPF, nguồn JSON và các danh mục kiểu
-  iptv-org, từ đường dẫn hoặc từ tệp trên máy.
-• Đọc lịch phát sóng XMLTV (EPG) để bạn biết chương trình đang chiếu và sắp
-  chiếu, hiển thị đúng giờ ở mọi múi giờ.
-• Tự động chia kênh thành nhóm dựa trên thông tin group-title, tvg-group và
-  category có sẵn trong danh sách phát của bạn.
-• Ghi nhớ những gì bạn đã xem để bạn xem tiếp từ chỗ đang dở.
-• Tiếp tục phát khi chạy nền, kèm điều khiển media đầy đủ trên màn hình khoá và
-  trong khu vực thông báo.
-• Hoạt động ngoại tuyến với mọi thứ không cần mạng: danh sách phát, nhóm kênh
-  và dữ liệu lịch phát sóng được lưu ngay trên thiết bị của bạn.
+• Nhập danh sách phát M3U, M3U8, XSPF, JSON và danh mục kiểu iptv-org, từ đường
+  dẫn hoặc từ tệp trên máy.
+• Đọc playlist kiểu Kodi: header riêng cho từng kênh, DRM (Widevine, ClearKey,
+  PlayReady trên Android), thông tin catch-up và tệp .strm.
+• Định dạng TS IPTV Source: tự tạo nguồn của mình với trang chủ, màu sắc, kênh,
+  phim lẻ và phim bộ. Hướng dẫn và trình kiểm tra có trên trang web của chúng tôi.
+• Tự thêm addon tương thích Stremio để duyệt danh mục, tìm kiếm và xem tiếp từ
+  vị trí cũ. Ứng dụng không cài sẵn addon nào.
+• Đổi luồng phát hoặc bật phụ đề ngay khi đang xem.
+• Lịch phát sóng XMLTV (EPG): biết chương trình đang chiếu và sắp chiếu, đúng
+  giờ ở mọi múi giờ.
+• Tự chia kênh theo nhóm, ghi nhớ lịch sử xem, phát nền kèm điều khiển trên màn
+  hình khoá.
 
 DÀNH CHO MỌI MÀN HÌNH
 
-TS IPTV được viết bằng Kotlin Multiplatform, chạy gốc trên Android, iOS,
-Windows, macOS và Linux. Giao diện thích ứng từ điện thoại trên tay tới màn
-hình máy tính mà không có cảm giác là một ứng dụng điện thoại bị kéo giãn.
+Điện thoại, máy tính bảng và Android TV (điều khiển hoàn toàn bằng remote), cùng
+iOS và máy tính từ một mã nguồn Kotlin Multiplatform.
 
-DỮ LIỆU CỦA BẠN VẪN LÀ CỦA BẠN
+MIỄN PHÍ, CÓ QUẢNG CÁO
 
-Danh sách phát, kênh, lịch phát sóng và lịch sử xem nằm trong cơ sở dữ liệu cục
-bộ trên thiết bị của bạn. Chúng tôi không tải chúng lên, không lập chỉ mục và
-không thể nhìn thấy chúng. Việc đăng nhập là tuỳ chọn và chỉ để đồng bộ hồ sơ
-của bạn giữa các thiết bị.
+TS IPTV miễn phí và có quảng cáo trên điện thoại và máy tính bảng Android. Không
+có quảng cáo trong 24 giờ đầu sử dụng, và không có quảng cáo AdMob trên Android
+TV. Người dùng ở EU, Anh và một số bang của Mỹ có thể chọn mức cá nhân hoá quảng
+cáo, và đổi lại bất cứ lúc nào trong mục Tuỳ chọn quyền riêng tư.
+
+DỮ LIỆU CỦA BẠN
+
+Danh sách phát, kênh, lịch phát sóng và lịch sử xem được lưu trên thiết bị của
+bạn. Để cải thiện ứng dụng, chúng tôi nhận thống kê ẩn danh như định dạng
+playlist, số kênh và tên miền của nguồn, không bao giờ nhận tên đăng nhập, mật
+khẩu hay đường dẫn đầy đủ. Đăng nhập là tuỳ chọn. Chi tiết trong chính sách
+quyền riêng tư.
 
 QUAN TRỌNG: ỨNG DỤNG KHÔNG CUNG CẤP NỘI DUNG
 
 TS IPTV không đi kèm, không lưu trữ, không lập chỉ mục và không phát lại bất kỳ
-kênh truyền hình nào. Đây là một trình phát, giống như một trình đọc PDF không
-phải là nhà xuất bản. Bạn chịu trách nhiệm về các nguồn mình thêm vào và phải
-có quyền sử dụng hợp pháp đối với chúng. Nếu bạn chưa có sẵn danh sách phát từ
-một nhà cung cấp mà bạn đăng ký, ứng dụng sẽ hiện một thư viện trống — và đó là
-điều được thiết kế có chủ đích.
+kênh truyền hình nào. Đây là một trình phát. Bạn chịu trách nhiệm về các nguồn
+mình thêm vào và phải có quyền sử dụng hợp pháp đối với chúng. Nếu bạn chưa có
+danh sách phát từ nhà cung cấp mà bạn đăng ký, ứng dụng sẽ hiện một thư viện
+trống, và đó là điều được thiết kế có chủ đích.
 
 ĐỊNH DẠNG ĐƯỢC HỖ TRỢ
 
-Danh sách phát: M3U, M3U8, XSPF, JSON, JSON kiểu iptv-org
+Danh sách phát: M3U, M3U8 (kể cả thuộc tính Kodi), XSPF, JSON, iptv-org,
+TS IPTV Source, .strm
 Lịch phát sóng: XMLTV (.xml và .xml.gz)
-Luồng phát: HLS, DASH, HTTP tuần tự, và mọi định dạng khác mà nền tảng của bạn
-giải mã được
+Luồng phát: HLS, DASH, HTTP tuần tự, và định dạng khác mà thiết bị giải mã được
 
-Có câu hỏi, gặp lỗi, hay muốn chúng tôi hỗ trợ thêm một định dạng? Hãy liên hệ
-— địa chỉ email có trong trang giới thiệu và ngay trong ứng dụng.
+Có câu hỏi, gặp lỗi hay muốn hỗ trợ thêm định dạng? Hãy liên hệ qua email trong
+trang giới thiệu và ngay trong ứng dụng.
 ```
 
 ---
