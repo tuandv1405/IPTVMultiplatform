@@ -15,7 +15,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.SubcomposeAsyncImage
+import tss.t.tsiptv.ui.screens.source.initials
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.programs_today_format
@@ -37,11 +41,9 @@ fun ChannelInProgramItem(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AsyncImage(
-            model = item.logoUrl,
-            contentDescription = item.channelId,
-            modifier = Modifier.size(60.dp)
-                .clip(TSShapes.roundedShape8)
+        ChannelAvatar(
+            name = item.name ?: item.channelId,
+            logoUrl = item.logoUrl,
         )
         Spacer(Modifier.width(12.dp))
         Column(
@@ -64,4 +66,35 @@ fun ChannelInProgramItem(
         }
         Spacer(Modifier.width(12.dp))
     }
+}
+
+/**
+ * The channel's logo on a tile; the channel's initials when it has no logo or the logo fails to
+ * load (many guides and playlists carry no logo for some channels).
+ */
+@Composable
+private fun ChannelAvatar(name: String, logoUrl: String?) {
+    val shape = TSShapes.roundedShape8
+    val tile = Modifier.size(60.dp).clip(shape).background(TSColors.SecondaryBackgroundColor, shape)
+    val fallback: @Composable () -> Unit = {
+        Box(tile, contentAlignment = Alignment.Center) {
+            Text(
+                text = initials(name),
+                style = TSTextStyles.semiBold15,
+                color = TSColors.TextSecondary,
+            )
+        }
+    }
+    if (logoUrl.isNullOrBlank()) {
+        fallback()
+        return
+    }
+    SubcomposeAsyncImage(
+        model = logoUrl,
+        contentDescription = name,
+        contentScale = ContentScale.Fit,
+        modifier = tile.padding(6.dp),
+        loading = { fallback() },
+        error = { fallback() },
+    )
 }

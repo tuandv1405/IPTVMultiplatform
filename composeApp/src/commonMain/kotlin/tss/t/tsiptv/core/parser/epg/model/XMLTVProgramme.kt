@@ -35,8 +35,10 @@ data class XMLTVProgramme(
      */
     /**
      * @param preferredLanguage `lang` of the title / description to prefer; otherwise the first
+     * @param channelIcon the `<channel><icon>` of this programme's channel, used when the programme
+     *   has no icon of its own (the Programs tab shows it as the channel's avatar)
      */
-    fun toIPTVProgram(preferredLanguage: String? = null): IPTVProgram? {
+    fun toIPTVProgram(preferredLanguage: String? = null, channelIcon: String? = null): IPTVProgram? {
         val startTime = parseXMLTVDateTime(start)
         val endTime = parseXMLTVDateTime(stop)
 
@@ -59,7 +61,7 @@ data class XMLTVProgramme(
             category = category?.map {
                 it.value
             },
-            logo = icon?.src,
+            logo = icon?.src?.takeIf { it.isNotBlank() } ?: channelIcon,
             credits = credits?.let {
                 IPTVProgram.Credits(
                     director = it.director,

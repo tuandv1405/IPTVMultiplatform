@@ -80,7 +80,8 @@ interface ProgramDao {
      */
     @Query(
         """
-        SELECT p.channelId, MIN(c.name) AS name, MIN(c.categoryId) AS categoryId, MIN(c.logoUrl) AS logoUrl,
+        SELECT p.channelId, MIN(c.name) AS name, MIN(c.categoryId) AS categoryId,
+            COALESCE(MIN(NULLIF(c.logoUrl, '')), MAX(NULLIF(p.logo, ''))) AS logoUrl,
             MAX(c.isFavorite) AS isFavorite, COUNT(DISTINCT p.startTime || '|' || p.title) AS programCount
         FROM programs p
         LEFT JOIN channel c ON c.playlistId = p.playlistId
