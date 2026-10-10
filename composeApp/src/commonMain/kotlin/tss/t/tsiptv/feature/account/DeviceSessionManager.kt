@@ -163,6 +163,24 @@ class DeviceSessionManager(
 
     suspend fun myDeviceId(): String = local.installationId()
 
+    /**
+     * Push notifications (docs/prd-push-notifications.md R4): stores [token] on this device's document,
+     * only when signed in and this installation is registered on the account. false otherwise or on
+     * a network error (tried again with the next token or start).
+     */
+    suspend fun storePushToken(token: String): Boolean {
+        val uid = _uid.value ?: return false
+        if (storage.getString(KEY_REGISTERED_UID) != uid) return false
+        return try {
+            cloud.updateFcmToken(uid, local.installationId(), token)
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     companion object {
         const val KEY_REGISTERED_UID = "device_registered_uid"
     }

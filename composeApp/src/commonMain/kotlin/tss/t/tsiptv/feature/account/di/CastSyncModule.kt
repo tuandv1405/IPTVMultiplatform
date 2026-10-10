@@ -73,6 +73,18 @@ val castSyncModule = module {
     single { QuotaService(get(), get(), get(), clock) }
     single { SyncService(get(), get(), get(), get(), get(), get(), getOrNull(), get(), clock) }
 
+    // Push notifications (docs/prd-push-notifications.md); Android overrides the platform.
+    single<tss.t.tsiptv.feature.push.PushPlatform> { tss.t.tsiptv.feature.push.NoPushPlatform }
+    single {
+        tss.t.tsiptv.feature.push.PushManager(
+            platform = get(),
+            storage = get(),
+            languages = get(),
+            sessions = get(),
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+        )
+    }
+
     viewModelOf(::TvSendViewModel)
     viewModel { ConnectViewModel(get(), get(), get(), get(SENDER_PAIRINGS)) }
 }

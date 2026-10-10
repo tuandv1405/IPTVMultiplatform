@@ -22,6 +22,9 @@ interface AccountCloud {
     suspend fun touchDevice(uid: String, device: RegisteredDevice)
     suspend fun removeDevice(uid: String, deviceId: String)
 
+    /** Push notifications: this device's FCM token on its own (registered) device document. */
+    suspend fun updateFcmToken(uid: String, deviceId: String, token: String)
+
     suspend fun loadQuota(uid: String): QuotaState?
 
     /** Reads the quota, applies [transform] and writes the result (null = no write), atomically. */
@@ -99,6 +102,10 @@ class FirestoreAccountCloud(private val firestore: FirebaseFirestore) : AccountC
         )
     }
 
+    override suspend fun updateFcmToken(uid: String, deviceId: String, token: String) {
+        devices(uid).document(deviceId).update("fcmToken" to token)
+    }
+
     override suspend fun removeDevice(uid: String, deviceId: String) {
         firestore.runTransaction {
             val metaSnap = get(meta(uid))
@@ -159,6 +166,12 @@ class InMemoryAccountCloud : AccountCloud {
     }
 
     override suspend fun removeDevice(uid: String, deviceId: String) = mutex.withLock { devices[uid]?.remove(deviceId); Unit }
+
+    val fcmTokens = mutableMapOf<Pair<String, String>, String>()
+    override suspend fun updateFcmToken(uid: String, deviceId: String, token: String) = mutex.withLock {
+        if (devices[uid]?.containsKey(deviceId) == true) fcmTokens[uid to deviceId] = token
+        Unit
+    }
 
     override suspend fun loadQuota(uid: String) = mutex.withLock { quotas[uid] }
 

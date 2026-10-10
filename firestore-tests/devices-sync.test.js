@@ -119,6 +119,20 @@ test("another user can neither read nor change my devices", async () => {
   await assertSucceeds(getDoc(deviceRef(user("u1"), "u1", "d1")));
 });
 
+test("a registered device may store its FCM token (string, at most 4096)", async () => {
+  await seedDevices("u1", ["d1"]);
+  const db = user("u1");
+  await assertSucceeds(updateDoc(deviceRef(db, "u1", "d1"), { fcmToken: "tok-123" }));
+  await assertFails(updateDoc(deviceRef(db, "u1", "d1"), { fcmToken: 42 }));
+  await assertFails(updateDoc(deviceRef(db, "u1", "d1"), { fcmToken: "" }));
+  await assertFails(updateDoc(deviceRef(db, "u1", "d1"), { fcmToken: "x".repeat(4097) }));
+  await assertFails(updateDoc(deviceRef(db, "u1", "d1"), { other: "x" }));
+  // Not on an unlisted device, not on someone else's.
+  await seed((s) => setDoc(deviceRef(s, "u1", "ghost"), device("ghost")));
+  await assertFails(updateDoc(deviceRef(db, "u1", "ghost"), { fcmToken: "tok" }));
+  await assertFails(updateDoc(deviceRef(user("u2"), "u1", "d1"), { fcmToken: "tok" }));
+});
+
 // ---- quota ----------------------------------------------------------------------
 
 const today = () => { const t = new Date(); return t.getUTCFullYear() * 10000 + (t.getUTCMonth() + 1) * 100 + t.getUTCDate(); };
