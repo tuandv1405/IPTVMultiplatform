@@ -67,9 +67,10 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         return channels.value[id]
     }
 
-    override fun getChannelsByCategory(categoryId: String): Flow<List<Channel>> {
+    override fun getChannelsByCategory(categoryId: String, playlistId: String?): Flow<List<Channel>> {
         return channels.map { channelMap ->
             channelMap.values
+                .filter { playlistId == null || it.playlistId == playlistId }
                 .filter { it.categoryId == categoryId || it.groups.any { g -> g.equals(categoryId, ignoreCase = true) } }
                 .sortedBy(Channel::sortIndex)
         }
@@ -240,7 +241,11 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         val guideIds = playlistChannels.flatMap { listOfNotNull(it.epgId, it.id) }.toSet()
         val sourcePrefix = "tsg:$playlistId#"
         return programs.value.values
-            .filter { it.id.startsWith(sourcePrefix) || (!it.id.startsWith("tsg:") && it.channelId in guideIds) }
+            .filter {
+                it.id.startsWith(sourcePrefix) || ProgramIds.belongsTo(it.id, playlistId) ||
+                    // Rows stored before scoped ids.
+                    (!it.id.startsWith("tsg:") && !it.id.startsWith("p:") && it.channelId in guideIds)
+            }
             .sortedBy { it.startTime }
             .distinctProgrammes()
     }
@@ -258,6 +263,7 @@ class InMemoryIPTVDatabase : IPTVDatabase {
                 logoUrl = channel?.logoUrl?.takeIf { it.isNotBlank() }
                     ?: list.mapNotNull { it.logo?.takeIf { l -> l.isNotBlank() } }.maxOrNull(),
                 isFavorite = channel?.isFavorite?.let { if (it) "1" else "0" },
+                playlistId = playlistId,
             )
         }
 
@@ -265,16 +271,22 @@ class InMemoryIPTVDatabase : IPTVDatabase {
         return programs.value[id]
     }
 
-    override suspend fun getProgramsForChannel(channelId: String): List<IPTVProgram> {
-        return programs.value.values.filter { it.channelId == channelId }.sortedBy { it.startTime }.distinctProgrammes()
+    /** Programmes stored for [playlistId] (scoped ids), or all when it is null. */
+    private fun programsFor(playlistId: String?): Collection<IPTVProgram> =
+        if (playlistId == null) programs.value.values
+        else programs.value.values.filter { ProgramIds.belongsTo(it.id, playlistId) }
+
+    override suspend fun getProgramsForChannel(channelId: String, playlistId: String?): List<IPTVProgram> {
+        return programsFor(playlistId).filter { it.channelId == channelId }.sortedBy { it.startTime }.distinctProgrammes()
     }
 
     override suspend fun getProgramsForChannelInTimeRange(
         channelId: String,
         startTime: Long,
         endTime: Long,
+        playlistId: String?,
     ): List<IPTVProgram> {
-        return programs.value.values.filter {
+        return programsFor(playlistId).filter {
             it.channelId == channelId &&
                     it.startTime >= startTime &&
                     it.endTime <= endTime
@@ -284,8 +296,9 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     override suspend fun getCurrentAndUpcomingProgramsForChannel(
         channelId: String,
         currentTime: Long,
+        playlistId: String?,
     ): List<IPTVProgram> {
-        return programs.value.values.filter {
+        return programsFor(playlistId).filter {
             it.channelId == channelId &&
                     it.endTime > currentTime
         }.sortedBy { it.startTime }.distinctProgrammes()
@@ -294,8 +307,9 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     override suspend fun getCurrentProgramForChannel(
         channelId: String,
         currentTime: Long,
+        playlistId: String?,
     ): IPTVProgram? {
-        return programs.value.values.find {
+        return programsFor(playlistId).find {
             it.channelId == channelId &&
                     it.startTime <= currentTime &&
                     it.endTime > currentTime
@@ -303,11 +317,13 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     }
 
     override suspend fun insertProgram(program: IPTVProgram, playlistId: String) {
-        programs.value = programs.value + (program.id to program)
+        val scoped = program.copy(id = ProgramIds.scoped(playlistId, program.id))
+        programs.value = programs.value + (scoped.id to scoped)
     }
 
     override suspend fun insertPrograms(programs: List<IPTVProgram>, playlistId: String) {
-        this.programs.value = this.programs.value + programs.associateBy { it.id }
+        this.programs.value = this.programs.value +
+            programs.map { it.copy(id = ProgramIds.scoped(playlistId, it.id)) }.associateBy { it.id }
     }
 
     override suspend fun deleteProgram(program: IPTVProgram) {
@@ -325,8 +341,9 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     override suspend fun deleteProgramsForPlaylist(playlistId: String) {
         // F3: a source's programmes carry its playlist id in their id.
         val sourcePrefix = "tsg:$playlistId#"
-        programs.value = programs.value.filterKeys { !it.startsWith(sourcePrefix) }
-        // Since IPTVProgram doesn't have playlistId, we need to find programs by channels in the playlist
+        val scopedPrefix = ProgramIds.prefix(playlistId)
+        programs.value = programs.value.filterKeys { !it.startsWith(sourcePrefix) && !it.startsWith(scopedPrefix) }
+        // Rows stored before scoped ids: found through the playlist's channels.
         val channelsInPlaylist =
             channels.value.values.filter { it.playlistId == playlistId }.map { it.id }
         programs.value =

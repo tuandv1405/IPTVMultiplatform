@@ -66,7 +66,7 @@ interface IPTVDatabase {
      * @param categoryId The ID of the category to get channel for
      * @return A flow of channel in the given category
      */
-    fun getChannelsByCategory(categoryId: String): Flow<List<Channel>>
+    fun getChannelsByCategory(categoryId: String, playlistId: String? = null): Flow<List<Channel>>
 
     /**
      * Searches for channel by name.
@@ -253,7 +253,7 @@ interface IPTVDatabase {
      * @param channelId The ID of the channel
      * @return A list of programs for the channel
      */
-    suspend fun getProgramsForChannel(channelId: String): List<IPTVProgram>
+    suspend fun getProgramsForChannel(channelId: String, playlistId: String? = null): List<IPTVProgram>
 
     /**
      * Gets programs for a channel within a time range.
@@ -263,7 +263,7 @@ interface IPTVDatabase {
      * @param endTime The end time of the range
      * @return A list of programs for the channel within the time range
      */
-    suspend fun getProgramsForChannelInTimeRange(channelId: String, startTime: Long, endTime: Long): List<IPTVProgram>
+    suspend fun getProgramsForChannelInTimeRange(channelId: String, startTime: Long, endTime: Long, playlistId: String? = null): List<IPTVProgram>
 
     /**
      * Gets current and upcoming programs for a channel.
@@ -272,7 +272,7 @@ interface IPTVDatabase {
      * @param currentTime The current time
      * @return A list of current and upcoming programs for the channel
      */
-    suspend fun getCurrentAndUpcomingProgramsForChannel(channelId: String, currentTime: Long): List<IPTVProgram>
+    suspend fun getCurrentAndUpcomingProgramsForChannel(channelId: String, currentTime: Long, playlistId: String? = null): List<IPTVProgram>
 
     /**
      * Gets the current program for a channel.
@@ -281,7 +281,7 @@ interface IPTVDatabase {
      * @param currentTime The current time
      * @return The current program, or null if not found
      */
-    suspend fun getCurrentProgramForChannel(channelId: String, currentTime: Long): IPTVProgram?
+    suspend fun getCurrentProgramForChannel(channelId: String, currentTime: Long, playlistId: String? = null): IPTVProgram?
 
     /**
      * Inserts or updates a program.

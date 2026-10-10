@@ -188,7 +188,7 @@ class SourceHomeViewModel(
     @OptIn(kotlin.time.ExperimentalTime::class)
     suspend fun currentProgramme(channel: tss.t.tsiptv.core.model.Channel): String? = runCatching {
         val shiftMs = ((channel.epgShiftHours ?: 0.0) * 3_600_000).toLong()
-        database.getCurrentProgramForChannel(channel.guideId, kotlin.time.Clock.System.now().toEpochMilliseconds() - shiftMs)?.title
+        database.getCurrentProgramForChannel(channel.guideId, kotlin.time.Clock.System.now().toEpochMilliseconds() - shiftMs, channel.playlistId)?.title
     }.getOrNull()?.takeIf { it.isNotBlank() }
 
     fun setQuery(text: String) {

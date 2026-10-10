@@ -755,7 +755,8 @@ class HomeViewModel(
     fun getRelatedChannels(channel: Channel) {
         viewModelScope.launch(Dispatchers.IO) {
             val categoryId = channel.categoryId ?: return@launch
-            iptvDatabase.getChannelsByCategory(categoryId)
+            // Related channels come from the same playlist only (QC r4 N10).
+            iptvDatabase.getChannelsByCategory(categoryId, channel.playlistId)
                 .catch {
                     emit(_uiState.value.listChannels)
                 }
@@ -819,9 +820,10 @@ class HomeViewModel(
             val shiftMs = (shiftHours * 3_600_000).toLong()
             val currentProgram = iptvDatabase.getCurrentProgramForChannel(
                 channelId = channel.guideId,
-                currentTime = Clock.System.now().toEpochMilliseconds() - shiftMs
+                currentTime = Clock.System.now().toEpochMilliseconds() - shiftMs,
+                playlistId = channel.playlistId,
             )?.shiftedBy(shiftMs)
-            val programForChannel = iptvDatabase.getProgramsForChannel(channel.guideId)
+            val programForChannel = iptvDatabase.getProgramsForChannel(channel.guideId, channel.playlistId)
                 .map { it.shiftedBy(shiftMs) }
             if (currentProgram == null) {
                 return@launch

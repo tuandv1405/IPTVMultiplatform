@@ -58,11 +58,12 @@ interface ChannelDao {
     @Query(
         """
         SELECT * FROM channel
-        WHERE categoryId = :categoryId OR groupsJson LIKE '%"' || :escapedCategoryId || '"%' ESCAPE '\'
+        WHERE (categoryId = :categoryId OR groupsJson LIKE '%"' || :escapedCategoryId || '"%' ESCAPE '\')
+            AND (:playlistId IS NULL OR playlistId = :playlistId)
         ORDER BY sortIndex, rowid
     """
     )
-    fun getChannelsByCategory(categoryId: String, escapedCategoryId: String): Flow<List<ChannelEntity>>
+    fun getChannelsByCategory(categoryId: String, escapedCategoryId: String, playlistId: String?): Flow<List<ChannelEntity>>
 
     /**
      * Gets channel by playlist.

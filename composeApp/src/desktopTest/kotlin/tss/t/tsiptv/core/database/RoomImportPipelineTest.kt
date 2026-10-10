@@ -96,6 +96,47 @@ class RoomImportPipelineTest {
     }
 
     @Test
+    fun twoPlaylistsWithTheSameGuideKeepTheirOwnProgrammes() = runBlocking {
+        // QC r4 N9: programme ids were "<channel>_<start>" in both, so parsing B's guide replaced A's.
+        val text = TestAssets.read("kodi/reference.m3u")
+        val a = importer.importFromFile("A", "a.m3u", text.encodeToByteArray()).playlist.id
+        val b = importer.importFromFile("B", "b.m3u", text.encodeToByteArray()).playlist.id
+        val guide = (0 until 4).map { i ->
+            tss.t.tsiptv.core.parser.model.IPTVProgram(
+                id = "channel-x_${1_000L + i}", channelId = "channel-x", title = "Show $i",
+                startTime = clock - 3_600_000L + i * 600_000L, endTime = clock - 3_000_000L + i * 600_000L,
+            )
+        }
+        db.deleteProgramsForPlaylist(a)
+        db.insertPrograms(guide, a)
+        db.deleteProgramsForPlaylist(b)
+        db.insertPrograms(guide, b)
+        assertEquals(4, db.getProgramsForChannel("channel-x", a).size)
+        assertEquals(4, db.getProgramsForChannel("channel-x", b).size)
+        assertEquals(db.countValidPrograms(a), db.countValidPrograms(b))
+        // Re-parsing A (delete + insert) leaves B alone, and the other way round.
+        db.deleteProgramsForPlaylist(a)
+        db.insertPrograms(guide, a)
+        assertEquals(4, db.getProgramsForChannel("channel-x", b).size)
+        db.deleteProgramsForPlaylist(b)
+        assertEquals(4, db.getProgramsForChannel("channel-x", a).size)
+        assertEquals(0, db.getProgramsForChannel("channel-x", b).size)
+        // The Programs tab rows carry their playlist, for the per-channel list.
+        assertEquals(setOf(a), db.getChannelsWithValidProgramCounts(a, clock).map { it.playlistId }.toSet())
+    }
+
+    @Test
+    fun relatedChannelsStayInTheirPlaylist() = runBlocking {
+        val text = TestAssets.read("kodi/reference.m3u")
+        val a = importer.importFromFile("A", "a.m3u", text.encodeToByteArray()).playlist.id
+        importer.importFromFile("B", "b.m3u", text.encodeToByteArray())
+        val channel = snapshot(a).first { it.first.categoryId != null }.first
+        val related = db.getChannelsByCategory(channel.categoryId!!, a).first()
+        assertTrue(related.isNotEmpty())
+        assertTrue(related.all { it.playlistId == a })
+    }
+
+    @Test
     fun headersAndDrmArePersisted() = runBlocking {
         val result = assertIs<ImportOutcome.Imported>(
             importer.importFromUrl("DRM", "https://lists.example.com/drm.m3u")
