@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import dev.chrisbanes.haze.rememberHazeState
@@ -193,6 +194,7 @@ fun App() {
         CompositionLocalProvider(
             LocalUiMode provides uiMode,
             LocalIsTvMode provides isTvMode,
+            tss.t.tsiptv.ui.screens.connect.LocalSignInAction provides { navController.navigate(NavRoutes.Login) },
         ) {
             StreamVaultTheme {
                 NavHost(
@@ -692,7 +694,12 @@ fun App() {
                 if (isTvMode) {
                     val homeViewModel = koinViewModel<HomeViewModel>(viewModelStoreOwner = appViewModelStore)
                     val playerViewModel = koinViewModel<PlayerViewModel>(viewModelStoreOwner = appViewModelStore)
+                    // While the import screen is open (a playlist being added), a new offer is
+                    // refused and the phone says "TV is busy".
+                    val currentEntry by navController.currentBackStackEntryAsState()
+                    val importing = currentEntry?.destination?.hasRoute<NavRoutes.ImportIptv>() == true
                     LanReceiverHost(
+                        canTakePlaylists = !importing,
                         onCast = { stream ->
                             val id = playerViewModel.playCast(stream)
                             if (navController.currentBackStackEntry?.destination?.hasRoute<NavRoutes.Player>() != true) {

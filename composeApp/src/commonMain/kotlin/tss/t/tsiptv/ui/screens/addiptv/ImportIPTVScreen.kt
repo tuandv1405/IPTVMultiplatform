@@ -396,7 +396,7 @@ fun ImportIPTVScreen(
                             val url = inputSourceUrl.trim()
                             when {
                                 LanValidation.isHttpUrl(url) -> sendCommand = PlaylistCommand(
-                                    SharedPlaylist(name = inputSourceName.trim().ifBlank { url.substringAfterLast('/').ifBlank { url } }.take(LanValidation.MAX_NAME), url = url)
+                                    SharedPlaylist(name = LanValidation.cleanName(inputSourceName, LanValidation.MAX_NAME).ifBlank { LanValidation.nameFromUrl(url) }, url = url)
                                 )
                                 sendFilePicker.isAvailable -> sendFilePicker.launch()
                                 else -> sendNotice = Res.string.send_tv_need_input

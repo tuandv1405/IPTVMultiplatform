@@ -105,4 +105,9 @@
     <string name="sync_too_large">Zu viele Playlists zum Synchronisieren (max. 100)</string>
     <string name="sync_sign_in">Melde dich an, um Synchronisierung und Geräte zu nutzen</string>
     <string name="sync_error">Synchronisierung fehlgeschlagen. Versuche es erneut.</string>
+    <string name="send_tv_sign_in_button">Anmelden</string>
+    <string name="send_tv_not_counted">Gesendet. Der heutige Zähler konnte nicht gespeichert werden; dieser Versand wird nicht angerechnet.</string>
+    <string name="lan_pair_code_expired">Der Code ist abgelaufen. Beginne erneut.</string>
+    <string name="lan_tv_busy">Der TV ist beschäftigt. Öffne den TS IPTV-Startbildschirm auf dem TV und versuche es erneut.</string>
+    <string name="devices_unknown">Unbekanntes Gerät (keine Details)</string>
 </resources>

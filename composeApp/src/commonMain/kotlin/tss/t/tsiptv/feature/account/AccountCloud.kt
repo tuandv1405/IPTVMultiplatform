@@ -48,14 +48,29 @@ class FirestoreAccountCloud(private val firestore: FirebaseFirestore) : AccountC
     private fun quota(uid: String) = user(uid).collection("quota").document("daily")
     private fun sync(uid: String) = user(uid).collection("sync").document("current")
 
-    override suspend fun listDevices(uid: String): List<RegisteredDevice> =
-        devices(uid).get().documents.map { it.data(RegisteredDevice.serializer()).copy(id = it.id) }
+    private suspend fun registeredIds(uid: String): List<String> =
+        meta(uid).get().let { if (it.exists) it.data(DevicesMeta.serializer()).ids else emptyList() }
 
-    override suspend fun isDeviceRegistered(uid: String, deviceId: String): Boolean =
-        devices(uid).document(deviceId).get().exists
+    /**
+     * The registered devices as the rules count them: one entry per id in `meta/devices.ids`, with its
+     * document's details, or a [RegisteredDevice.ghost] when that document is missing. Documents whose
+     * id is not listed do not take a slot and are left out.
+     */
+    override suspend fun listDevices(uid: String): List<RegisteredDevice> {
+        val ids = registeredIds(uid)
+        if (ids.isEmpty()) return emptyList()
+        val docs = devices(uid).get().documents.associate { it.id to it.data(RegisteredDevice.serializer()).copy(id = it.id) }
+        return ids.map { id -> docs[id] ?: RegisteredDevice(id = id, ghost = true) }
+    }
 
-    override suspend fun registerDevice(uid: String, device: RegisteredDevice, max: Int): RegisterResult =
-        firestore.runTransaction {
+    override suspend fun isDeviceRegistered(uid: String, deviceId: String): Boolean = deviceId in registeredIds(uid)
+
+    override suspend fun registerDevice(uid: String, device: RegisteredDevice, max: Int): RegisterResult {
+        // A leftover document whose id is not listed (written before the rules existed) can be neither
+        // updated nor re-created by the rules in the registering write: delete it first.
+        val doc = devices(uid).document(device.id)
+        if (device.id !in registeredIds(uid) && doc.get().exists) doc.delete()
+        return firestore.runTransaction {
             val metaSnap = get(meta(uid))
             val ids = if (metaSnap.exists) metaSnap.data(DevicesMeta.serializer()).ids else emptyList()
             when {
@@ -74,6 +89,7 @@ class FirestoreAccountCloud(private val firestore: FirebaseFirestore) : AccountC
                 }
             }
         }
+    }
 
     override suspend fun touchDevice(uid: String, device: RegisteredDevice) {
         devices(uid).document(device.id).update(

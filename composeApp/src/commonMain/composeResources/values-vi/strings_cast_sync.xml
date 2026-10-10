@@ -106,4 +106,9 @@
     <string name="sync_too_large">Quá nhiều danh sách để đồng bộ (tối đa 100)</string>
     <string name="sync_sign_in">Đăng nhập để dùng đồng bộ và giới hạn thiết bị</string>
     <string name="sync_error">Không đồng bộ được. Hãy thử lại.</string>
+    <string name="send_tv_sign_in_button">Đăng nhập</string>
+    <string name="send_tv_not_counted">Đã gửi. Không lưu được lượt gửi hôm nay; lượt này không bị trừ.</string>
+    <string name="lan_pair_code_expired">Mã đã hết hạn. Hãy bắt đầu lại.</string>
+    <string name="lan_tv_busy">TV đang bận. Mở màn hình chính TS IPTV trên TV rồi thử lại.</string>
+    <string name="devices_unknown">Thiết bị không rõ (không có thông tin)</string>
 </resources>

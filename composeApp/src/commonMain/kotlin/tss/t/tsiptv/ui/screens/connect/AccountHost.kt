@@ -67,8 +67,8 @@ fun AccountHost(onOpenConnect: () -> Unit) {
             val first = remember { FocusRequester() }
             g.devices.forEachIndexed { index, device ->
                 TvMenuItem(
-                    title = device.name,
-                    description = stringResource(Res.string.devices_last_seen, device.lastSeen.formatDynamic(TimeStampFormat.yyyyMMdd_HHmmss.formatStr)) +
+                    title = device.displayName(),
+                    description = device.lastSeenText() +
                         "\n" + stringResource(Res.string.devices_sign_out_remote),
                     icon = if (device.platform == DevicePlatform.ANDROID_TV) Icons.Rounded.Tv else Icons.Rounded.Devices,
                     modifier = if (index == 0) Modifier.focusRequester(first) else Modifier,

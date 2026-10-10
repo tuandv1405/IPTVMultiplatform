@@ -1,5 +1,8 @@
 package tss.t.tsiptv.ui.screens.connect
 
+import tsiptv.composeapp.generated.resources.devices_unknown
+import tsiptv.composeapp.generated.resources.devices_last_seen
+import tss.t.tsiptv.utils.formatDynamic
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -41,6 +45,8 @@ fun ConnectDialog(
     ) {
         Column(
             modifier = Modifier
+                // Text fields (connect by IP, the pairing code) stay above the keyboard.
+                .imePadding()
                 .padding(16.dp)
                 .widthIn(min = 300.dp, max = 560.dp)
                 .heightIn(max = 640.dp)
@@ -114,3 +120,16 @@ fun ConnectSectionTitle(text: String) {
         modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
     )
 }
+
+/** A device's name, or "Unknown device" for a slot without details ([RegisteredDevice.ghost]). */
+@Composable
+fun tss.t.tsiptv.feature.account.RegisteredDevice.displayName(): String =
+    if (ghost || name.isBlank()) org.jetbrains.compose.resources.stringResource(tsiptv.composeapp.generated.resources.Res.string.devices_unknown) else name
+
+/** "Last seen …", or empty for a slot without details. */
+@Composable
+fun tss.t.tsiptv.feature.account.RegisteredDevice.lastSeenText(): String =
+    if (ghost || lastSeen <= 0) "" else org.jetbrains.compose.resources.stringResource(
+        tsiptv.composeapp.generated.resources.Res.string.devices_last_seen,
+        lastSeen.formatDynamic(tss.t.tsiptv.utils.TimeStampFormat.yyyyMMdd_HHmmss.formatStr),
+    )

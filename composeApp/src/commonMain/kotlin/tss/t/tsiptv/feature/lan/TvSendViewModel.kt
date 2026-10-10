@@ -36,6 +36,15 @@ sealed interface TvSendStep {
 enum class TvSendMessage {
     UNREACHABLE, WRONG_CODE, PAIR_FAILED, PAIR_BUSY, PAIR_LOCKED, CLOCK, REJECTED, NOT_SUPPORTED,
     IP_INVALID, QUOTA_REACHED, SIGN_IN, REWARD_GRANTED, REWARD_UNAVAILABLE, REWARD_CAPPED,
+
+    /** The TV ended the pairing (3 wrong codes, or the 2 minutes passed): start again. */
+    CODE_EXPIRED,
+
+    /** NOT_ACCEPTING: the TV cannot take a playlist now (open TS IPTV home on the TV). */
+    TV_BUSY,
+
+    /** The TV has the playlist, but today's send could not be counted (shown on the Done step). */
+    SEND_NOT_COUNTED,
 }
 
 data class TvSendUiState(
@@ -65,6 +74,7 @@ class TvSendViewModel(
     private var command: LanCommand? = null
     private var discoveryJob: Job? = null
     private var pairing: PairingHandle? = null
+    private var wrongCodes = 0
     private var target: LanDevice? = null
 
     private val isPlaylist get() = command is PlaylistCommand
@@ -175,6 +185,7 @@ class TvSendViewModel(
         when (val result = sender.startPairing(device)) {
             is PairStartResult.Started -> {
                 pairing = result.handle
+                wrongCodes = 0
                 target = result.handle.device
                 _state.update { it.copy(step = TvSendStep.EnterCode(result.handle.device.name)) }
             }
@@ -197,7 +208,20 @@ class TvSendViewModel(
                     send(handle.device)
                 }
                 is LanResult.Refused -> when (result.code) {
-                    LanErrorCode.WRONG_CODE -> _state.update { it.copy(step = TvSendStep.EnterCode(handle.device.name, TvSendMessage.WRONG_CODE)) }
+                    LanErrorCode.WRONG_CODE -> {
+                        wrongCodes++
+                        if (wrongCodes >= LanProtocol.PAIR_MAX_WRONG_CODES) {
+                            // The TV closed this pairing after the 3rd wrong code.
+                            pairing = null
+                            _state.update { it.copy(step = TvSendStep.Pick, message = TvSendMessage.CODE_EXPIRED) }
+                        } else {
+                            _state.update { it.copy(step = TvSendStep.EnterCode(handle.device.name, TvSendMessage.WRONG_CODE)) }
+                        }
+                    }
+                    LanErrorCode.EXPIRED -> {
+                        pairing = null
+                        _state.update { it.copy(step = TvSendStep.Pick, message = TvSendMessage.CODE_EXPIRED) }
+                    }
                     else -> {
                         pairing = null
                         _state.update { it.copy(step = TvSendStep.Pick, message = TvSendMessage.PAIR_FAILED) }
@@ -221,13 +245,15 @@ class TvSendViewModel(
         _state.update { it.copy(step = TvSendStep.Sending) }
         when (val result = sender.send(device, cmd)) {
             LanResult.Ok -> {
+                var counted = true
                 if (cmd is PlaylistCommand) {
-                    quotas.recordSend(LanValidation.networkId(device.host))
+                    counted = recordSendWithRetry(LanValidation.networkId(device.host))
                     refreshQuota()
                 }
                 _state.update { s ->
                     s.copy(
                         step = TvSendStep.Done(device.name),
+                        message = if (counted) null else TvSendMessage.SEND_NOT_COUNTED,
                         targets = s.targets.map { if (it.device.id == device.id) it.copy(paired = true) else it },
                     )
                 }
@@ -235,6 +261,18 @@ class TvSendViewModel(
             LanResult.Unpaired -> beginPairing(device)
             else -> _state.update { it.copy(step = TvSendStep.Pick, message = messageFor(result)) }
         }
+    }
+
+    /**
+     * The TV already accepted the playlist, so the send is counted even on a flaky network: up to
+     * [RECORD_ATTEMPTS] tries with a short back-off. false when it still could not be written.
+     */
+    private suspend fun recordSendWithRetry(networkId: String?): Boolean {
+        repeat(RECORD_ATTEMPTS) { attempt ->
+            if (quotas.recordSend(networkId)) return true
+            if (attempt < RECORD_ATTEMPTS - 1) kotlinx.coroutines.delay(RECORD_BACKOFF_MS * (attempt + 1))
+        }
+        return false
     }
 
     fun watchAdForSend() {
@@ -270,7 +308,7 @@ class TvSendViewModel(
             LanErrorCode.BUSY -> TvSendMessage.PAIR_BUSY
             LanErrorCode.LOCKED -> TvSendMessage.PAIR_LOCKED
             LanErrorCode.EXPIRED -> TvSendMessage.CLOCK
-            LanErrorCode.NOT_ACCEPTING -> TvSendMessage.NOT_SUPPORTED
+            LanErrorCode.NOT_ACCEPTING -> TvSendMessage.TV_BUSY
             LanErrorCode.TOO_LARGE -> TvSendMessage.REJECTED
             else -> TvSendMessage.REJECTED
         }
@@ -278,5 +316,10 @@ class TvSendViewModel(
 
     override fun onCleared() {
         discoveryJob?.cancel()
+    }
+
+    private companion object {
+        const val RECORD_ATTEMPTS = 3
+        const val RECORD_BACKOFF_MS = 1_000L
     }
 }

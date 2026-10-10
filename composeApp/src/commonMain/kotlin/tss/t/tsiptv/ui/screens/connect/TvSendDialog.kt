@@ -68,6 +68,10 @@ import tsiptv.composeapp.generated.resources.send_tv_quota_reached
 import tsiptv.composeapp.generated.resources.send_tv_remaining
 import tsiptv.composeapp.generated.resources.send_tv_sent
 import tsiptv.composeapp.generated.resources.send_tv_sign_in
+import tsiptv.composeapp.generated.resources.send_tv_sign_in_button
+import tsiptv.composeapp.generated.resources.send_tv_not_counted
+import tsiptv.composeapp.generated.resources.lan_pair_code_expired
+import tsiptv.composeapp.generated.resources.lan_tv_busy
 import tsiptv.composeapp.generated.resources.send_tv_task_rewarded
 import tsiptv.composeapp.generated.resources.send_tv_tasks
 import tsiptv.composeapp.generated.resources.send_tv_title
@@ -80,6 +84,9 @@ import tss.t.tsiptv.feature.lan.TvSendViewModel
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.tv.TvMenuItem
 import tss.t.tsiptv.ui.tv.requestFocusAfterLayout
+
+/** Opens the sign-in screen (provided at the app root; null where there is none). */
+val LocalSignInAction = androidx.compose.runtime.staticCompositionLocalOf<(() -> Unit)?> { null }
 
 /**
  * Phone: pick a TV, pair on first use, send [command] (a cast or a playlist). PRD §2.1 / §3.1.
@@ -114,6 +121,7 @@ fun TvSendDialog(command: LanCommand, onDismiss: () -> Unit) {
                     stringResource(if (isPlaylist) Res.string.send_tv_sent else Res.string.lan_cast_sent, step.tvName),
                     color = TSColors.TextPrimary,
                 )
+                state.message?.let { ConnectBody(stringResource(messageText(it)), color = TSColors.AccentCyan) }
                 val close = remember { FocusRequester() }
                 ConnectButtonRow { ConnectButton(stringResource(Res.string.lan_close), onDismiss, Modifier.focusRequester(close), primary = true) }
                 LaunchedEffect(Unit) { close.requestFocusAfterLayout() }
@@ -141,12 +149,26 @@ private fun PickTv(
         ConnectButtonRow { ConnectButton(stringResource(Res.string.lan_close), onDismiss) }
         return
     }
-    state.message?.let { ConnectBody(stringResource(messageText(it)), color = TSColors.AccentCyan) }
+    val signedOut = isPlaylist && state.quota?.signedIn == false
+    // Signed out: the sign-in line below says it once, with its button.
+    state.message?.takeUnless { signedOut && it == TvSendMessage.SIGN_IN }?.let {
+        ConnectBody(stringResource(messageText(it)), color = TSColors.AccentCyan)
+    }
 
     if (isPlaylist) {
         state.quota?.let { q ->
             when {
-                !q.signedIn -> ConnectBody(stringResource(Res.string.send_tv_sign_in))
+                !q.signedIn -> {
+                    ConnectBody(stringResource(Res.string.send_tv_sign_in))
+                    LocalSignInAction.current?.let { signIn ->
+                        ConnectButtonRow {
+                            ConnectButton(stringResource(Res.string.send_tv_sign_in_button), {
+                                onDismiss()
+                                signIn()
+                            }, primary = true)
+                        }
+                    }
+                }
                 q.remaining != null -> {
                     ConnectBody(
                         if (q.remaining > 0) stringResource(Res.string.send_tv_remaining, q.remaining.toInt())
@@ -168,7 +190,13 @@ private fun PickTv(
     }
 
     val firstTarget = remember { FocusRequester() }
-    if (state.targets.isEmpty()) {
+    var showHelp by remember { mutableStateOf(false) }
+    // After a few seconds with nothing found, "No TV found" and the conditions replace the spinner.
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(6_000)
+        if (viewModel.state.value.targets.isEmpty()) showHelp = true
+    }
+    if (state.targets.isEmpty() && !showHelp) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)) {
             if (state.searching) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = TSColors.AccentCyan)
             Spacer(Modifier.width(10.dp))
@@ -187,12 +215,6 @@ private fun PickTv(
     }
     LaunchedEffect(state.targets.isNotEmpty()) { if (state.targets.isNotEmpty()) firstTarget.requestFocusAfterLayout() }
 
-    var showHelp by remember { mutableStateOf(false) }
-    // After a few seconds with nothing found, the conditions are shown without asking.
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(6_000)
-        if (viewModel.state.value.targets.isEmpty()) showHelp = true
-    }
     if (state.targets.isEmpty() && showHelp) ConnectBody(stringResource(Res.string.lan_cast_none_found), color = TSColors.TextPrimary)
     if (showHelp) {
         ConnectSectionTitle(stringResource(Res.string.lan_conditions_title))
@@ -265,6 +287,9 @@ internal fun messageText(message: TvSendMessage): StringResource = when (message
     TvSendMessage.REWARD_GRANTED -> Res.string.reward_granted
     TvSendMessage.REWARD_UNAVAILABLE -> Res.string.reward_ad_unavailable
     TvSendMessage.REWARD_CAPPED -> Res.string.reward_limit_reached
+    TvSendMessage.CODE_EXPIRED -> Res.string.lan_pair_code_expired
+    TvSendMessage.TV_BUSY -> Res.string.lan_tv_busy
+    TvSendMessage.SEND_NOT_COUNTED -> Res.string.send_tv_not_counted
 }
 
 /**

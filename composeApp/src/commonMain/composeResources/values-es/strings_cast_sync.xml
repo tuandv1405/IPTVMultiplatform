@@ -105,4 +105,9 @@
     <string name="sync_too_large">Demasiadas listas para sincronizar (máx. 100)</string>
     <string name="sync_sign_in">Inicia sesión para usar la sincronización y los dispositivos</string>
     <string name="sync_error">No se pudo sincronizar. Inténtalo de nuevo.</string>
+    <string name="send_tv_sign_in_button">Iniciar sesión</string>
+    <string name="send_tv_not_counted">Enviada. No se pudo guardar el recuento de hoy; este envío no se descuenta.</string>
+    <string name="lan_pair_code_expired">El código caducó. Empieza de nuevo.</string>
+    <string name="lan_tv_busy">La TV está ocupada. Abre el inicio de TS IPTV en la TV e inténtalo de nuevo.</string>
+    <string name="devices_unknown">Dispositivo desconocido (sin detalles)</string>
 </resources>

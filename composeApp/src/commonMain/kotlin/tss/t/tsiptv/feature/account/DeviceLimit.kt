@@ -11,6 +11,12 @@ data class RegisteredDevice(
     val appVersion: String = "",
     val createdAt: Long = 0,
     val lastSeen: Long = 0,
+    /**
+     * Listed in `meta/devices.ids` (which the rules count) but without its document: still takes a
+     * slot, so it is shown ("Unknown device") and can be removed. Never stored.
+     */
+    @kotlinx.serialization.Transient
+    val ghost: Boolean = false,
 )
 
 /** What to do with this device at sign-in or at a start while signed in. */

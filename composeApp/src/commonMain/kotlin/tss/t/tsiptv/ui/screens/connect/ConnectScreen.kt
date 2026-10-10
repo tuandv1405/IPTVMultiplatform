@@ -286,8 +286,8 @@ fun ConnectScreen(
                     item("device_${device.id}") {
                         val mine = device.id == state.myDeviceId
                         TvMenuItem(
-                            title = device.name + if (mine) "  (" + stringResource(Res.string.devices_this_device) + ")" else "",
-                            description = stringResource(Res.string.devices_last_seen, device.lastSeen.formatDynamic(TimeStampFormat.yyyyMMdd_HHmmss.formatStr)) +
+                            title = device.displayName() + if (mine) "  (" + stringResource(Res.string.devices_this_device) + ")" else "",
+                            description = device.lastSeenText() +
                                 if (mine) "" else "\n" + stringResource(Res.string.devices_sign_out_remote),
                             icon = if (device.platform == DevicePlatform.ANDROID_TV) Icons.Rounded.Tv else Icons.Rounded.Devices,
                             selected = mine,
@@ -310,7 +310,7 @@ fun ConnectScreen(
     }
     confirmRemove?.let { device ->
         ConnectDialog(title = stringResource(Res.string.devices_sign_out_remote), onDismissRequest = { confirmRemove = null }) {
-            ConnectBody(stringResource(Res.string.devices_remove_confirm, device.name), color = TSColors.TextPrimary)
+            ConnectBody(stringResource(Res.string.devices_remove_confirm, device.displayName()), color = TSColors.TextPrimary)
             val confirm = remember { FocusRequester() }
             ConnectButtonRow {
                 ConnectButton(stringResource(Res.string.lan_cancel), { confirmRemove = null })

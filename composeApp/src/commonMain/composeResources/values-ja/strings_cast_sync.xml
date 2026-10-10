@@ -105,4 +105,9 @@
     <string name="sync_too_large">同期するプレイリストが多すぎます（最大 100）</string>
     <string name="sync_sign_in">同期とデバイス管理を使うにはログインしてください</string>
     <string name="sync_error">同期できませんでした。もう一度お試しください。</string>
+    <string name="send_tv_sign_in_button">ログイン</string>
+    <string name="send_tv_not_counted">送信しました。本日の回数を保存できなかったため、この送信は回数に含まれません。</string>
+    <string name="lan_pair_code_expired">コードの有効期限が切れました。最初からやり直してください。</string>
+    <string name="lan_tv_busy">テレビは使用中です。テレビで TS IPTV のホームを開いてから、もう一度お試しください。</string>
+    <string name="devices_unknown">不明なデバイス（詳細なし）</string>
 </resources>

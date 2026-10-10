@@ -105,4 +105,9 @@
     <string name="sync_too_large">Trop de playlists à synchroniser (100 max.)</string>
     <string name="sync_sign_in">Connectez-vous pour utiliser la synchronisation et les appareils</string>
     <string name="sync_error">Échec de la synchronisation. Réessayez.</string>
+    <string name="send_tv_sign_in_button">Se connecter</string>
+    <string name="send_tv_not_counted">Envoyée. Le compteur du jour n’a pas pu être enregistré ; cet envoi n’est pas décompté.</string>
+    <string name="lan_pair_code_expired">Le code a expiré. Recommencez.</string>
+    <string name="lan_tv_busy">La TV est occupée. Ouvrez l’accueil de TS IPTV sur la TV et réessayez.</string>
+    <string name="devices_unknown">Appareil inconnu (aucun détail)</string>
 </resources>

@@ -106,4 +106,9 @@
     <string name="sync_too_large">Too many playlists to sync (max 100)</string>
     <string name="sync_sign_in">Sign in to use sync and devices</string>
     <string name="sync_error">Sync failed. Try again.</string>
+    <string name="send_tv_sign_in_button">Sign in</string>
+    <string name="send_tv_not_counted">Sent. Today’s count could not be saved; it will not use up a send.</string>
+    <string name="lan_pair_code_expired">The code expired. Start again.</string>
+    <string name="lan_tv_busy">The TV is busy. Open TS IPTV home on the TV and try again.</string>
+    <string name="devices_unknown">Unknown device (no details)</string>
 </resources>
