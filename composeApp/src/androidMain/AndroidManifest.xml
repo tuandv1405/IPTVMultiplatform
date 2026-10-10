@@ -69,6 +69,10 @@
         </activity>
 
         <!-- Push notifications: background "notification" messages use this channel and icon. -->
+        <!-- Push: no FCM token before the user switches notifications on (docs/prd-push-notifications.md). -->
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="false" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="general" />

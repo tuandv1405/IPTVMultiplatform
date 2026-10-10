@@ -24,6 +24,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.core.context.GlobalContext
@@ -83,6 +84,8 @@ class AndroidPushPlatform(private val context: Context) : PushPlatform {
 
     override suspend fun refreshToken() {
         if (!isSupported) return
+        // Auto-init is off in the manifest: no token exists before the user switches notifications on.
+        FirebaseMessaging.getInstance().isAutoInitEnabled = true
         val token = withTimeoutOrNull(20_000) {
             suspendCancellableCoroutine<String?> { cont ->
                 FirebaseMessaging.getInstance().token
@@ -91,6 +94,25 @@ class AndroidPushPlatform(private val context: Context) : PushPlatform {
         }
         if (token != null) _token.value = token
         if (isDebuggable(context)) Log.d(TAG, "FCM token: ${token ?: "(none)"}")
+    }
+
+    override suspend fun deleteToken() {
+        if (!isSupported) return
+        val messaging = FirebaseMessaging.getInstance()
+        messaging.isAutoInitEnabled = false
+        task { messaging.deleteToken() }
+        _token.value = null
+        if (isDebuggable(context)) Log.d(TAG, "FCM token deleted")
+    }
+
+    override fun refreshChannelNames(languageCode: String?) {
+        val localized = if (languageCode.isNullOrBlank()) context else {
+            val tag = if (languageCode == "zh") "zh-CN" else languageCode
+            val config = android.content.res.Configuration(context.resources.configuration)
+            config.setLocale(Locale.forLanguageTag(tag))
+            context.createConfigurationContext(config)
+        }
+        createChannels(context, localized)
     }
 
     override fun systemLanguage(): String = Locale.getDefault().language.ifEmpty { "en" }
@@ -117,14 +139,15 @@ class AndroidPushPlatform(private val context: Context) : PushPlatform {
         fun isDebuggable(context: Context) = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
         /** Channels exist before the first message so FCM can use `general` for background messages. */
-        fun createChannels(context: Context) {
+        fun createChannels(context: Context, names: Context = context) {
             if (Build.VERSION.SDK_INT < 26) return
             val nm = context.getSystemService(NotificationManager::class.java) ?: return
+            // Re-creating an existing channel only updates its name (the user's settings stay).
             nm.createNotificationChannel(
-                NotificationChannel(PushChannels.GENERAL, context.getString(R.string.push_channel_general), NotificationManager.IMPORTANCE_DEFAULT)
+                NotificationChannel(PushChannels.GENERAL, names.getString(R.string.push_channel_general), NotificationManager.IMPORTANCE_DEFAULT)
             )
             nm.createNotificationChannel(
-                NotificationChannel(PushChannels.UPDATES, context.getString(R.string.push_channel_updates), NotificationManager.IMPORTANCE_LOW)
+                NotificationChannel(PushChannels.UPDATES, names.getString(R.string.push_channel_updates), NotificationManager.IMPORTANCE_LOW)
             )
         }
     }
@@ -159,7 +182,8 @@ class TsFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         val push = manager() ?: return
-        if (!push.showMessages) return
+        // Read from storage: on a cold process the settings may not be loaded yet (runs off the main thread).
+        if (!runCatching { runBlocking { push.showMessagesStored() } }.getOrDefault(false)) return
         val n = message.notification
         val msg = PushMessage.from(n?.title, n?.body, message.data) ?: return
         show(this, msg, message.messageId?.hashCode() ?: msg.hashCode())
@@ -170,7 +194,10 @@ class TsFirebaseMessagingService : FirebaseMessagingService() {
             if (Build.VERSION.SDK_INT >= 33 &&
                 ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
             ) return
-            AndroidPushPlatform.createChannels(context)
+            // Only when missing: re-creating would reset names localized for the in-app language.
+            if (Build.VERSION.SDK_INT >= 26 &&
+                context.getSystemService(NotificationManager::class.java)?.getNotificationChannel(msg.channel) == null
+            ) AndroidPushPlatform.createChannels(context)
             val open = Intent(context, MainActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 // Checked against the allowlist when it is opened, never trusted as an intent.

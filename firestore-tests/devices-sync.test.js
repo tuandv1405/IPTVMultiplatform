@@ -3,7 +3,7 @@
 import { test, before, after, beforeEach } from "node:test";
 import { readFileSync } from "node:fs";
 import { assertFails, assertSucceeds, initializeTestEnvironment } from "@firebase/rules-unit-testing";
-import { deleteDoc, doc, getDoc, runTransaction, setDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { deleteDoc, deleteField, doc, getDoc, runTransaction, setDoc, updateDoc, writeBatch } from "firebase/firestore";
 
 let env;
 
@@ -131,6 +131,14 @@ test("a registered device may store its FCM token (string, at most 4096)", async
   await seed((s) => setDoc(deviceRef(s, "u1", "ghost"), device("ghost")));
   await assertFails(updateDoc(deviceRef(db, "u1", "ghost"), { fcmToken: "tok" }));
   await assertFails(updateDoc(deviceRef(user("u2"), "u1", "d1"), { fcmToken: "tok" }));
+});
+
+test("push opt-out removes the FCM token from the device document", async () => {
+  await seedDevices("u1", ["d1"]);
+  const db = user("u1");
+  await assertSucceeds(updateDoc(deviceRef(db, "u1", "d1"), { fcmToken: "tok-123" }));
+  await assertSucceeds(updateDoc(deviceRef(db, "u1", "d1"), { fcmToken: deleteField() }));
+  await assertFails(updateDoc(deviceRef(user("u2"), "u1", "d1"), { fcmToken: deleteField() }));
 });
 
 // ---- quota ----------------------------------------------------------------------

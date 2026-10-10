@@ -128,11 +128,20 @@ interface PushPlatform {
     suspend fun subscribe(topic: String): Boolean
     suspend fun unsubscribe(topic: String): Boolean
 
-    /** Asks the SDK for the token (fills [token]). */
+    /**
+     * Allows the SDK to create a token and asks for it (fills [token]). Called only while the user
+     * has notifications switched on (no token exists before opt-in).
+     */
     suspend fun refreshToken()
+
+    /** Opt-out: stops automatic token creation and deletes the token on the device and at FCM. */
+    suspend fun deleteToken()
 
     /** The device language, for the language topic when the app follows the system. */
     fun systemLanguage(): String
+
+    /** The in-app language changed (null = follow the system): channel names follow it. */
+    fun refreshChannelNames(languageCode: String?) = Unit
 
     /** Debug builds: shows [message] through the same code path as a received FCM message. */
     fun showTestNotification(message: PushMessage) = Unit
@@ -149,5 +158,6 @@ object NoPushPlatform : PushPlatform {
     override suspend fun subscribe(topic: String) = false
     override suspend fun unsubscribe(topic: String) = false
     override suspend fun refreshToken() = Unit
+    override suspend fun deleteToken() = Unit
     override fun systemLanguage() = "en"
 }

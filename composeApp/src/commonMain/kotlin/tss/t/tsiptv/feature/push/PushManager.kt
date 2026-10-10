@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -51,6 +51,9 @@ class PushManager(
 
     private val mutex = Mutex()
 
+    /** Bumped when a new token arrives: the topics are subscribed again for it. */
+    private val tokenEpoch = MutableStateFlow(0)
+
     fun start() {
         if (!platform.isSupported) return
         scope.launch {
@@ -61,20 +64,63 @@ class PushManager(
             )
             _asked.value = storage.getBoolean(KEY_ASKED, false)
             refreshPermission()
-            runCatching { platform.refreshToken() }
-            // Topics follow the settings and the app language.
-            combine(_settings, languages.observeLanguageSettings()) { s, lang ->
-                s to (lang.languageCode ?: platform.systemLanguage())
-            }.distinctUntilChanged().collect { (s, lang) -> syncTopics(PushTopics.wanted(s, lang)) }
+            launch { syncAccountToken() }
+            // Token and topics follow the settings and the app language (no token before opt-in).
+            launch {
+                languages.observeLanguageSettings().map { it.languageCode }.distinctUntilChanged()
+                    .collect { runCatching { platform.refreshChannelNames(it) } }
+            }
+            combine(_settings, languages.observeLanguageSettings(), tokenEpoch) { s, lang, epoch ->
+                Triple(s, lang.languageCode ?: platform.systemLanguage(), epoch)
+            }.distinctUntilChanged().collect { (s, lang) -> apply(s, lang) }
         }
-        scope.launch {
-            // The token goes to the device document only when signed in and registered (R4).
-            combine(platform.token.filterNotNull(), sessions.uid) { token, uid -> token to uid }
-                .distinctUntilChanged()
-                .collect { (token, uid) ->
+    }
+
+    private suspend fun apply(settings: PushSettings, language: String) {
+        if (settings.enabled) {
+            storage.putBoolean(KEY_TOKEN_ISSUED, true)
+            safe { platform.refreshToken(); true }
+            syncTopics(PushTopics.wanted(settings, language))
+        } else {
+            // Unsubscribe first: a topic call after deleteToken would create a new token.
+            syncTopics(emptySet())
+            if (storage.getBoolean(KEY_TOKEN_ISSUED, false)) {
+                safe { platform.deleteToken(); true }
+                storage.remove(KEY_TOKEN_ISSUED)
+                storage.remove(KEY_TOKEN)
+            }
+        }
+    }
+
+    /**
+     * The token on this device's account document (R4): written while notifications are on and the
+     * installation is registered (again after each full re-registration, never twice for the same
+     * value), removed on opt-out.
+     */
+    private suspend fun syncAccountToken() {
+        combine(platform.token, _settings.map { it.enabled }.distinctUntilChanged(), sessions.registration) { token, on, reg ->
+            Triple(token, on, reg)
+        }.distinctUntilChanged().collect { (token, on, reg) ->
+            if (on && token != null) {
+                val previous = storage.getString(KEY_TOKEN)
+                if (previous != token) {
                     storage.putString(KEY_TOKEN, token)
-                    if (uid != null) runCatching { sessions.storePushToken(token) }
+                    // A replaced token has none of the old subscriptions.
+                    if (previous.isNotEmpty()) storage.remove(KEY_TOPICS)
+                    tokenEpoch.value++
                 }
+                if (reg != null) {
+                    val mark = "${reg.uid}|$token"
+                    if (storage.getString(DeviceSessionManager.KEY_PUSH_TOKEN_STORED) != mark &&
+                        safe { sessions.storePushToken(reg, token) }
+                    ) storage.putString(DeviceSessionManager.KEY_PUSH_TOKEN_STORED, mark)
+                }
+            } else if (!on && reg != null) {
+                val stored = storage.getString(DeviceSessionManager.KEY_PUSH_TOKEN_STORED)
+                if (stored.startsWith("${reg.uid}|") && safe { sessions.storePushToken(reg, null) }) {
+                    storage.remove(DeviceSessionManager.KEY_PUSH_TOKEN_STORED)
+                }
+            }
         }
     }
 
@@ -118,9 +164,28 @@ class PushManager(
     /** Whether a message that arrives now may be shown (R7). */
     val showMessages: Boolean get() = _settings.value.enabled
 
+    /**
+     * [showMessages] from the stored choice, for the messaging service: a message can start the
+     * process before [start] loaded the settings.
+     */
+    suspend fun showMessagesStored(): Boolean = storage.getBoolean(KEY_ENABLED, false)
+
     /** A tapped notification's link: only allowed targets (R3); anything else opens Home. */
     fun onNotificationOpened(link: String?) {
         _links.tryEmit(PushLinkPolicy.parse(link) ?: PushTarget.Home)
+    }
+
+    private val _homeTabRequested = MutableStateFlow(false)
+
+    /** A Home link: the phone home screen also selects its Home tab (then calls [homeTabShown]). */
+    val homeTabRequested: StateFlow<Boolean> = _homeTabRequested.asStateFlow()
+
+    fun requestHomeTab() {
+        _homeTabRequested.value = true
+    }
+
+    fun homeTabShown() {
+        _homeTabRequested.value = false
     }
 
     /** The app handled the last link (so a later recomposition does not replay it). */
@@ -159,5 +224,8 @@ class PushManager(
         const val KEY_TOPICS = "push_subscribed_topics"
         const val KEY_TOKEN = "push_fcm_token"
         const val KEY_ASKED = "push_permission_asked"
+
+        /** A token was requested (opt-in): opt-out deletes it. */
+        const val KEY_TOKEN_ISSUED = "push_token_issued"
     }
 }

@@ -43,6 +43,16 @@ class DeviceSessionManager(
     private val _uid = MutableStateFlow<String?>(null)
     val uid: StateFlow<String?> = _uid
 
+    /**
+     * This installation's confirmed registration on the signed-in account (null while signed out,
+     * not yet registered, or over the limit). [Registration.generation] changes with every write of
+     * the whole device document, which drops fields such as `fcmToken` that must then be written again.
+     */
+    private val _registration = MutableStateFlow<Registration?>(null)
+    val registration: StateFlow<Registration?> = _registration
+
+    private var generation = 0
+
     private val mutex = Mutex()
 
     fun start() {
@@ -53,6 +63,7 @@ class DeviceSessionManager(
                 .distinctUntilChanged()
                 .collect { uid ->
                     _uid.value = uid
+                    if (uid == null || _registration.value?.uid != uid) _registration.value = null
                     if (uid != null) check()
                     else if (_gate.value is DeviceGate.LimitReached) _gate.value = DeviceGate.None
                 }
@@ -82,11 +93,16 @@ class DeviceSessionManager(
                 is DeviceCheck.Registered -> {
                     if (decision.touch) cloud.touchDevice(uid, myDevice(devices.first { it.id == myId }.createdAt))
                     if (!wasRegistered) storage.putString(KEY_REGISTERED_UID, uid)
+                    if (_registration.value?.uid != uid) _registration.value = Registration(uid, ++generation)
                     _gate.value = DeviceGate.None
                 }
                 DeviceCheck.Register -> register(uid)
-                is DeviceCheck.LimitReached -> _gate.value = DeviceGate.LimitReached(decision.devices)
+                is DeviceCheck.LimitReached -> {
+                    _registration.value = null
+                    _gate.value = DeviceGate.LimitReached(decision.devices)
+                }
                 DeviceCheck.RemovedElsewhere -> {
+                    _registration.value = null
                     storage.remove(KEY_REGISTERED_UID)
                     auth.signOut()
                     _gate.value = DeviceGate.RemovedElsewhere
@@ -103,6 +119,9 @@ class DeviceSessionManager(
         when (cloud.registerDevice(uid, myDevice())) {
             RegisterResult.Registered -> {
                 storage.putString(KEY_REGISTERED_UID, uid)
+                storage.remove(KEY_PUSH_TOKEN_STORED)
+                // A full document write: fcmToken (if any) is gone and is written again by the listener.
+                _registration.value = Registration(uid, ++generation)
                 _gate.value = DeviceGate.None
             }
             // Another device took the last slot meanwhile.
@@ -151,6 +170,7 @@ class DeviceSessionManager(
     /** Frees this device's slot while the account can still write. */
     private suspend fun beforeSignOut() {
         val uid = _uid.value ?: return
+        _registration.value = null
         if (storage.getString(KEY_REGISTERED_UID) != uid) return
         try {
             cloud.removeDevice(uid, local.installationId())
@@ -164,15 +184,17 @@ class DeviceSessionManager(
     suspend fun myDeviceId(): String = local.installationId()
 
     /**
-     * Push notifications (docs/prd-push-notifications.md R4): stores [token] on this device's document,
-     * only when signed in and this installation is registered on the account. false otherwise or on
-     * a network error (tried again with the next token or start).
+     * Push notifications (docs/prd-push-notifications.md R4): stores [token] on this device's document
+     * of [registration] (null removes the field), only while that registration is still the current
+     * one. false otherwise or on a network error (tried again with the next token, registration or start).
      */
-    suspend fun storePushToken(token: String): Boolean {
-        val uid = _uid.value ?: return false
+    suspend fun storePushToken(registration: Registration, token: String?): Boolean {
+        val uid = registration.uid
+        if (_registration.value != registration || _uid.value != uid) return false
         if (storage.getString(KEY_REGISTERED_UID) != uid) return false
         return try {
-            cloud.updateFcmToken(uid, local.installationId(), token)
+            if (token != null) cloud.updateFcmToken(uid, local.installationId(), token)
+            else cloud.clearFcmToken(uid, local.installationId())
             true
         } catch (e: CancellationException) {
             throw e
@@ -181,7 +203,13 @@ class DeviceSessionManager(
         }
     }
 
+    /** See [registration]. */
+    data class Registration(val uid: String, val generation: Int)
+
     companion object {
         const val KEY_REGISTERED_UID = "device_registered_uid"
+
+        /** "uid|token" last written to this device's document (PushManager skips rewriting it). */
+        const val KEY_PUSH_TOKEN_STORED = "push_token_stored"
     }
 }
