@@ -11,7 +11,14 @@ import tss.t.tsiptv.R
  * common `billingModule`, so these bindings override its "not available" defaults.
  */
 val androidBillingModule = module {
-    single<BillingGateway> { PlayBillingClient(get()) }
+    single<BillingGateway> {
+        val context = get<Context>()
+        val debuggable = (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        // QA (debug only): sample prices, nothing purchasable. Release defines the flag as false.
+        if (debuggable && context.resources.getBoolean(R.bool.debug_demo_billing)) DemoBillingGateway(
+            ProductCatalog(context.getString(R.string.billing_product_noads), context.getString(R.string.billing_product_unlimited))
+        ) else PlayBillingClient(context)
+    }
     single<PurchaseVerifier> {
         val url = get<Context>().getString(R.string.billing_verify_url).trim()
         if (url.isEmpty()) DisabledPurchaseVerifier

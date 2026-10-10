@@ -4,10 +4,10 @@
     <string name="plans_free_name">無料</string>
     <string name="plans_noads_name">広告なし</string>
     <string name="plans_unlimited_name">Unlimited</string>
-    <string name="plans_feature_no_ads">広告なし：AdMob 広告も Shopee のおすすめも表示されません</string>
-    <string name="plans_feature_rewarded_kept">リワード広告を見て送信や同期の回数を増やすこともできます</string>
-    <string name="plans_feature_unlimited_send">テレビへのプレイリスト送信：1 日最大 200 回（適正利用）</string>
-    <string name="plans_feature_unlimited_sync">デバイス同期：1 日最大 50 回（適正利用）</string>
+    <string name="plans_feature_no_ads">すべての広告を削除（AdMob 広告と Shopee のおすすめ）</string>
+    <string name="plans_feature_rewarded_kept">リワード広告は、送信や同期を増やすためにご自身で選んだ場合のみ表示</string>
+    <string name="plans_feature_unlimited_send">テレビへのプレイリスト送信の 1 日の上限を 200 回に引き上げ（適正利用）</string>
+    <string name="plans_feature_unlimited_sync">デバイス同期の 1 日の上限を 50 回に引き上げ（適正利用）</string>
     <string name="plans_feature_no_tasks">リワード広告を見る必要はありません</string>
     <string name="plans_price_month">%1$s / 月</string>
     <string name="plans_price_year">%1$s / 年</string>
@@ -50,4 +50,5 @@
     <string name="plans_msg_restore_failed">Google Play に接続できませんでした。接続を確認してもう一度お試しください。</string>
     <string name="quota_fair_use_reached">Unlimited プランの本日の適正利用上限に達しました。午前 0 時にリセットされます。</string>
     <string name="quota_unlimited_pending">Unlimited プランがまだサーバーで確認されていないため、本日の上限に達しました。サブスクリプションを開いて「購入を復元」をタップするか、後でもう一度お試しください。</string>
+    <string name="plans_card_disclosure">Google Play で解約するまで自動更新されます。</string>
 </resources>

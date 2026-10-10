@@ -5,10 +5,10 @@
     <string name="plans_free_name">Miễn phí</string>
     <string name="plans_noads_name">Không quảng cáo</string>
     <string name="plans_unlimited_name">Unlimited</string>
-    <string name="plans_feature_no_ads">Không quảng cáo: không có quảng cáo AdMob và ưu đãi Shopee</string>
-    <string name="plans_feature_rewarded_kept">Vẫn có thể xem quảng cáo có thưởng để thêm lượt gửi hoặc đồng bộ</string>
-    <string name="plans_feature_unlimited_send">Gửi danh sách phát tới TV: tối đa 200 lần mỗi ngày (sử dụng hợp lý)</string>
-    <string name="plans_feature_unlimited_sync">Đồng bộ thiết bị: tối đa 50 lần mỗi ngày (sử dụng hợp lý)</string>
+    <string name="plans_feature_no_ads">Tắt toàn bộ quảng cáo (quảng cáo AdMob và ưu đãi Shopee)</string>
+    <string name="plans_feature_rewarded_kept">Quảng cáo có thưởng chỉ hiện khi bạn tự chọn xem, để thêm lượt gửi hoặc đồng bộ</string>
+    <string name="plans_feature_unlimited_send">Nâng giới hạn hằng ngày lên 200 lần gửi danh sách phát tới TV (sử dụng hợp lý)</string>
+    <string name="plans_feature_unlimited_sync">Nâng giới hạn hằng ngày lên 50 lần đồng bộ thiết bị (sử dụng hợp lý)</string>
     <string name="plans_feature_no_tasks">Không cần xem quảng cáo có thưởng</string>
     <string name="plans_price_month">%1$s / tháng</string>
     <string name="plans_price_year">%1$s / năm</string>
@@ -51,4 +51,5 @@
     <string name="plans_msg_restore_failed">Không kết nối được Google Play. Hãy kiểm tra mạng và thử lại.</string>
     <string name="quota_fair_use_reached">Bạn đã dùng hết giới hạn sử dụng hợp lý hôm nay của gói Unlimited. Giới hạn đặt lại lúc nửa đêm.</string>
     <string name="quota_unlimited_pending">Đã hết lượt hôm nay vì gói Unlimited của bạn chưa được máy chủ xác nhận. Mở Gói đăng ký và chọn Khôi phục giao dịch, hoặc thử lại sau.</string>
+    <string name="plans_card_disclosure">Tự động gia hạn cho đến khi bạn huỷ trong Google Play.</string>
 </resources>

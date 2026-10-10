@@ -5,10 +5,10 @@
     <string name="plans_free_name">Free</string>
     <string name="plans_noads_name">No ads</string>
     <string name="plans_unlimited_name">Unlimited</string>
-    <string name="plans_feature_no_ads">No ads: no AdMob ads and no Shopee offers</string>
-    <string name="plans_feature_rewarded_kept">You can still watch a rewarded ad for an extra send or sync</string>
-    <string name="plans_feature_unlimited_send">Send playlists to TV: up to 200 a day (fair use)</string>
-    <string name="plans_feature_unlimited_sync">Device sync: up to 50 a day (fair use)</string>
+    <string name="plans_feature_no_ads">Removes all ads (AdMob ads and Shopee offers)</string>
+    <string name="plans_feature_rewarded_kept">Rewarded ads only if you choose to watch one, for an extra send or sync</string>
+    <string name="plans_feature_unlimited_send">Raises the daily limit to 200 playlist sends to TV (fair use)</string>
+    <string name="plans_feature_unlimited_sync">Raises the daily limit to 50 device syncs (fair use)</string>
     <string name="plans_feature_no_tasks">No rewarded ads needed</string>
     <string name="plans_price_month">%1$s / month</string>
     <string name="plans_price_year">%1$s / year</string>
@@ -51,4 +51,5 @@
     <string name="plans_msg_restore_failed">Couldn't reach Google Play. Check your connection and try again.</string>
     <string name="quota_fair_use_reached">You have reached today's fair-use limit of the Unlimited plan. It resets at midnight.</string>
     <string name="quota_unlimited_pending">Today's limit is reached because your Unlimited plan is not confirmed by our server yet. Open Subscription plans and tap Restore purchases, or try again later.</string>
+    <string name="plans_card_disclosure">Renews automatically until you cancel in Google Play.</string>
 </resources>

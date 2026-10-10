@@ -314,6 +314,8 @@ internal fun messageText(message: TvSendMessage): StringResource = when (message
 @Composable
 fun UpgradeUnlimitedItem(onBeforeOpen: () -> Unit = {}) {
     val open = tss.t.tsiptv.ui.screens.plans.LocalOpenPlans.current ?: return
+    // Unlimited is sold only once the billing server is configured (QC B1 / N2).
+    if (!org.koin.compose.koinInject<tss.t.tsiptv.core.billing.PurchaseVerifier>().enabled) return
     TvMenuItem(
         title = stringResource(Res.string.quota_upgrade_unlimited),
         description = stringResource(Res.string.quota_upgrade_unlimited_desc),

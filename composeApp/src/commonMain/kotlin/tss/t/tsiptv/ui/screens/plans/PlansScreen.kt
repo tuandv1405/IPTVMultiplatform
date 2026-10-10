@@ -33,6 +33,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.focus.onFocusChanged
+import tsiptv.composeapp.generated.resources.plans_card_disclosure
 import tsiptv.composeapp.generated.resources.plans_msg_restore_failed
 import tsiptv.composeapp.generated.resources.plans_unlimited_coming_soon
 import androidx.compose.runtime.rememberCoroutineScope
@@ -127,38 +130,32 @@ fun PlansScreen(
     val initialFocus = remember { FocusRequester() }
     val open: (String) -> Unit = { url -> scope.launch { getUrlOpener().openUrl(url) } }
 
-    // TV (QC B6): start on the first enabled plan button, or on "Manage" when there are no prices,
-    // once the offers are known; the controls then follow the reading order top to bottom.
+    // TV (QC B6, N1): the list opens with the disclosure at the top. Focus starts on the first enabled
+    // plan button right below it, or on the disclosure itself when there is nothing to buy. The status,
+    // the disclosure and the card texts are focusable (not clickable) rows, so the D-pad reaches and
+    // shows every part of the screen in reading order.
     val firstOffer = (state.noAdsOffers + state.unlimitedOffers).firstOrNull { it.action != PlanAction.CURRENT }
     val focusTarget = when {
         state.loadingOffers -> "wait"
         firstOffer != null -> "offer:${firstOffer.offer.productId}:${firstOffer.offer.basePlanId}"
-        state.supported -> "manage"
-        else -> "back"
+        else -> "disclosure"
     }
     val listState = rememberLazyListState()
-    // Index of the list item that holds the target (mirrors the items below), so it can be brought
-    // into composition before it is focused: an item off screen cannot take focus.
-    val targetItem = when {
-        firstOffer == null -> 4 // "links": status, disclosure, notice, noads, unlimited, links
-        firstOffer.offer.plan == Plan.NO_ADS -> 2
-        else -> 3
-    } + (if (!state.supported || state.loadingOffers || (state.noAdsOffers.isEmpty() && state.unlimitedOffers.isEmpty())) 1 else 0)
+    val disclosureFocus = remember { FocusRequester() }
     var initialFocusDone by remember { mutableStateOf(false) }
     LaunchedEffect(focusTarget) {
         if (!isTvLayout || initialFocusDone || focusTarget == "wait") return@LaunchedEffect
-        if (focusTarget == "back") {
-            initialFocusDone = backFocus.requestFocusAfterLayout()
-            return@LaunchedEffect
-        }
+        listState.scrollToItem(DISCLOSURE_ITEM)
+        val target = if (focusTarget == "disclosure") disclosureFocus else initialFocus
         repeat(5) {
-            listState.scrollToItem(targetItem)
-            if (initialFocus.requestFocusAfterLayout()) {
+            if (target.requestFocusAfterLayout()) {
                 initialFocusDone = true
                 return@LaunchedEffect
             }
             kotlinx.coroutines.delay(100)
         }
+        // The plan button could not be shown below the disclosure: start on the disclosure.
+        initialFocusDone = disclosureFocus.requestFocusAfterLayout() || backFocus.requestFocusAfterLayout()
     }
     fun Modifier.initialIf(match: Boolean) = if (match) focusRequester(initialFocus) else this
 
@@ -177,13 +174,21 @@ fun PlansScreen(
             contentPadding = PaddingValues(horizontal = if (isTvLayout) 48.dp else 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item("status") { StatusCard(state.entitlement) }
+            item("status") { StatusCard(state.entitlement, Modifier.tvReadable(isTvLayout)) }
 
             // Before any plan card and purchase button, never in fine print (Play policy, QC B3).
-            item("disclosure") { ConnectBody(stringResource(Res.string.plans_disclosure), color = TSColors.TextPrimary) }
+            item("disclosure") {
+                ConnectBody(
+                    stringResource(Res.string.plans_disclosure),
+                    color = TSColors.TextPrimary,
+                    modifier = Modifier.focusRequester(disclosureFocus).tvReadable(isTvLayout).padding(vertical = 6.dp),
+                )
+            }
 
             if (!state.supported) {
-                item("not_available") { ConnectBody(stringResource(Res.string.plans_not_available), color = TSColors.TextPrimary) }
+                item("not_available") {
+                    ConnectBody(stringResource(Res.string.plans_not_available), color = TSColors.TextPrimary, modifier = Modifier.tvReadable(isTvLayout))
+                }
             } else if (state.loadingOffers) {
                 item("loading") {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -192,7 +197,7 @@ fun PlansScreen(
                     }
                 }
             } else if (state.noAdsOffers.isEmpty() && state.unlimitedOffers.isEmpty()) {
-                item("no_prices") { ConnectBody(stringResource(Res.string.plans_prices_unavailable)) }
+                item("no_prices") { ConnectBody(stringResource(Res.string.plans_prices_unavailable), modifier = Modifier.tvReadable(isTvLayout)) }
             }
 
             item("noads") {
@@ -200,7 +205,10 @@ fun PlansScreen(
                     name = stringResource(Res.string.plans_noads_name),
                     features = listOf(Res.string.plans_feature_no_ads, Res.string.plans_feature_rewarded_kept),
                     highlighted = state.entitlement.plan == Plan.NO_ADS,
+                    isTvLayout = isTvLayout,
                 ) {
+                    // Short disclosure right above the buy buttons (QC N1).
+                    if (state.noAdsOffers.isNotEmpty()) CardDisclosure()
                     state.noAdsOffers.forEach { row ->
                         OfferButton(row, state.busy, Modifier.initialIf(row === firstOffer)) { viewModel.buy(row.offer) }
                     }
@@ -216,6 +224,7 @@ fun PlansScreen(
                         Res.string.plans_feature_no_tasks,
                     ),
                     highlighted = state.entitlement.plan == Plan.UNLIMITED,
+                    isTvLayout = isTvLayout,
                 ) {
                     when {
                         // Sold only once the billing server can confirm it (QC B1).
@@ -225,8 +234,11 @@ fun PlansScreen(
                             ConnectBody(stringResource(Res.string.plans_unlimited_needs_account))
                             ConnectButton(stringResource(Res.string.plans_sign_in_to_subscribe), onSignIn, Modifier.fillMaxWidth(), primary = true)
                         }
-                        else -> state.unlimitedOffers.forEach { row ->
-                            OfferButton(row, state.busy, Modifier.initialIf(row === firstOffer)) { viewModel.buy(row.offer) }
+                        else -> {
+                            if (state.unlimitedOffers.isNotEmpty()) CardDisclosure()
+                            state.unlimitedOffers.forEach { row ->
+                                OfferButton(row, state.busy, Modifier.initialIf(row === firstOffer)) { viewModel.buy(row.offer) }
+                            }
                         }
                     }
                 }
@@ -239,7 +251,6 @@ fun PlansScreen(
                             title = stringResource(Res.string.plans_manage),
                             icon = Icons.Rounded.Settings,
                             onClick = { open(state.manageUrl) },
-                            modifier = Modifier.initialIf(focusTarget == "manage"),
                         )
                         TvMenuItem(
                             title = stringResource(Res.string.plans_restore),
@@ -273,15 +284,43 @@ fun PlansScreen(
     }
 }
 
+/** Index of the disclosure item in the list (after "status"); the TV layout opens with it on top. */
+private const val DISCLOSURE_ITEM = 1
+
+/**
+ * TV only: a focusable, non-clickable row with a focus outline, so the D-pad can reach (and scroll
+ * into view) text that has no action (QC N1). No effect on the phone layout.
+ */
 @Composable
-private fun StatusCard(entitlement: Entitlement) {
+private fun Modifier.tvReadable(isTvLayout: Boolean): Modifier {
+    if (!isTvLayout) return this
+    var focused by remember { mutableStateOf(false) }
+    return this
+        .onFocusChanged { focused = it.isFocused }
+        .border(2.dp, if (focused) TSColors.AccentCyan else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(14.dp))
+        .focusable()
+}
+
+/** The short auto-renewal reminder just above a card's buy buttons (QC N1). */
+@Composable
+private fun CardDisclosure() {
+    Text(
+        text = stringResource(Res.string.plans_card_disclosure),
+        color = TSColors.TextSecondaryLight,
+        fontSize = 13.sp,
+        modifier = Modifier.padding(horizontal = 4.dp),
+    )
+}
+
+@Composable
+private fun StatusCard(entitlement: Entitlement, modifier: Modifier = Modifier) {
     val planName = when (entitlement.plan) {
         Plan.FREE -> stringResource(Res.string.plans_free_name)
         Plan.NO_ADS -> stringResource(Res.string.plans_noads_name)
         Plan.UNLIMITED -> stringResource(Res.string.plans_unlimited_name)
     }
     Column(
-        Modifier.fillMaxWidth().background(TSColors.SecondaryBackgroundColor, RoundedCornerShape(14.dp)).padding(14.dp),
+        modifier.fillMaxWidth().background(TSColors.SecondaryBackgroundColor, RoundedCornerShape(14.dp)).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(stringResource(Res.string.plans_status_current, planName), color = TSColors.TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
@@ -308,6 +347,7 @@ private fun PlanCard(
     name: String,
     features: List<StringResource>,
     highlighted: Boolean,
+    isTvLayout: Boolean,
     actions: @Composable () -> Unit,
 ) {
     Column(
@@ -317,11 +357,14 @@ private fun PlanCard(
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        ConnectSectionTitle(name)
-        features.forEach { feature ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Check, null, tint = TSColors.AccentGreen, modifier = Modifier.size(18.dp))
-                ConnectBody(stringResource(feature), color = TSColors.TextPrimary)
+        // The plan's name and features: one readable stop for the D-pad on TV.
+        Column(Modifier.fillMaxWidth().tvReadable(isTvLayout).padding(4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            ConnectSectionTitle(name)
+            features.forEach { feature ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Check, null, tint = TSColors.AccentGreen, modifier = Modifier.size(18.dp))
+                    ConnectBody(stringResource(feature), color = TSColors.TextPrimary)
+                }
             }
         }
         actions()

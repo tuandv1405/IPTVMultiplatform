@@ -4,10 +4,10 @@
     <string name="plans_free_name">Kostenlos</string>
     <string name="plans_noads_name">Ohne Werbung</string>
     <string name="plans_unlimited_name">Unlimited</string>
-    <string name="plans_feature_no_ads">Ohne Werbung: keine AdMob-Anzeigen und keine Shopee-Angebote</string>
-    <string name="plans_feature_rewarded_kept">Du kannst weiterhin eine Anzeige mit Prämie für ein zusätzliches Senden oder Synchronisieren ansehen</string>
-    <string name="plans_feature_unlimited_send">Playlists an den Fernseher senden: bis zu 200 pro Tag (Fair Use)</string>
-    <string name="plans_feature_unlimited_sync">Gerätesynchronisierung: bis zu 50 pro Tag (Fair Use)</string>
+    <string name="plans_feature_no_ads">Entfernt alle Anzeigen (AdMob-Anzeigen und Shopee-Angebote)</string>
+    <string name="plans_feature_rewarded_kept">Anzeigen mit Prämie nur, wenn du selbst eine ansiehst, für ein zusätzliches Senden oder Synchronisieren</string>
+    <string name="plans_feature_unlimited_send">Hebt das Tageslimit auf 200 Playlist-Sendungen an den Fernseher an (Fair Use)</string>
+    <string name="plans_feature_unlimited_sync">Hebt das Tageslimit auf 50 Gerätesynchronisierungen an (Fair Use)</string>
     <string name="plans_feature_no_tasks">Keine Anzeigen mit Prämie nötig</string>
     <string name="plans_price_month">%1$s / Monat</string>
     <string name="plans_price_year">%1$s / Jahr</string>
@@ -50,4 +50,5 @@
     <string name="plans_msg_restore_failed">Google Play ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.</string>
     <string name="quota_fair_use_reached">Du hast das heutige Fair-Use-Limit des Unlimited-Abos erreicht. Es wird um Mitternacht zurückgesetzt.</string>
     <string name="quota_unlimited_pending">Das heutige Limit ist erreicht, weil dein Unlimited-Abo von unserem Server noch nicht bestätigt ist. Öffne Abos und tippe auf Käufe wiederherstellen, oder versuche es später.</string>
+    <string name="plans_card_disclosure">Verlängert sich automatisch, bis du in Google Play kündigst.</string>
 </resources>

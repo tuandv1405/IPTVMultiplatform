@@ -352,6 +352,12 @@ android {
                 "debug_ads_skip_first_day",
                 ((project.findProperty("tsiptv.debugAdsNoFirstDay") as String?) == "true").toString(),
             )
+            // QA: `-Ptsiptv.debugDemoBilling=true` shows sample plan prices, nothing purchasable (debug only).
+            resValue(
+                "bool",
+                "debug_demo_billing",
+                ((project.findProperty("tsiptv.debugDemoBilling") as String?) == "true").toString(),
+            )
             // QA: `-Ptsiptv.debugAppOpenTimeoutMs=8000` lets slow emulators show the app open ad (debug only).
             resValue(
                 "integer",
@@ -390,6 +396,7 @@ android {
             resValue("string", "admob_native_unit", releaseAdMobNativeUnit)
             resValue("string", "admob_rewarded_unit", releaseAdMobRewardedUnit)
             resValue("bool", "debug_ads_skip_first_day", "false")
+            resValue("bool", "debug_demo_billing", "false")
             resValue("bool", "debug_skip_login", "false")
             resValue("integer", "debug_app_open_timeout_ms", "0")
             resValue("string", "debug_ump_geography", "")

@@ -4,10 +4,10 @@
     <string name="plans_free_name">Gratis</string>
     <string name="plans_noads_name">Sin anuncios</string>
     <string name="plans_unlimited_name">Unlimited</string>
-    <string name="plans_feature_no_ads">Sin anuncios: ni anuncios de AdMob ni ofertas de Shopee</string>
-    <string name="plans_feature_rewarded_kept">Puedes seguir viendo un anuncio con recompensa para un envío o una sincronización extra</string>
-    <string name="plans_feature_unlimited_send">Envío de listas a la TV: hasta 200 al día (uso razonable)</string>
-    <string name="plans_feature_unlimited_sync">Sincronización de dispositivos: hasta 50 al día (uso razonable)</string>
+    <string name="plans_feature_no_ads">Quita todos los anuncios (anuncios de AdMob y ofertas de Shopee)</string>
+    <string name="plans_feature_rewarded_kept">Anuncios con recompensa solo si eliges ver uno, para un envío o una sincronización extra</string>
+    <string name="plans_feature_unlimited_send">Sube el límite diario a 200 envíos de listas a la TV (uso razonable)</string>
+    <string name="plans_feature_unlimited_sync">Sube el límite diario a 50 sincronizaciones de dispositivos (uso razonable)</string>
     <string name="plans_feature_no_tasks">Sin necesidad de ver anuncios con recompensa</string>
     <string name="plans_price_month">%1$s / mes</string>
     <string name="plans_price_year">%1$s / año</string>
@@ -50,4 +50,5 @@
     <string name="plans_msg_restore_failed">No se pudo conectar con Google Play. Comprueba tu conexión e inténtalo de nuevo.</string>
     <string name="quota_fair_use_reached">Has alcanzado el límite de uso razonable de hoy del plan Unlimited. Se reinicia a medianoche.</string>
     <string name="quota_unlimited_pending">Se alcanzó el límite de hoy porque nuestro servidor aún no ha confirmado tu plan Unlimited. Abre Planes de suscripción y toca Restaurar compras, o inténtalo más tarde.</string>
+    <string name="plans_card_disclosure">Se renueva automáticamente hasta que lo canceles en Google Play.</string>
 </resources>
