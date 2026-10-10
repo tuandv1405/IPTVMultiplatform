@@ -103,7 +103,26 @@ add a "What's new in this version" style paragraph later.*
 | Website | `https://tsiptv-8bdd6.web.app/` |
 | Privacy policy | `https://tsiptv-8bdd6.web.app/privacy/?lang=en` |
 | Contains ads | **Yes** — see `data-safety.md` |
-| In-app purchases | No |
+| In-app purchases | **Yes** (from the subscriptions release, `docs/prd-subscriptions.md`): auto-renewing subscriptions "No ads" and "Unlimited". Play shows "In-app purchases" on the listing by itself once the products are active. |
+
+**Description paragraph to use once subscriptions ship** (replaces "FREE, WITH ADS"):
+
+```
+FREE, WITH ADS, OR AD-FREE
+
+TS IPTV is free and shows ads on Android phones and tablets. There are no ads
+during your first 24 hours, and no AdMob ads on Android TV. Prefer no ads? The
+optional "No ads" subscription removes them all, and "Unlimited" also raises
+the daily limits to up to 200 playlist sends to your TV and 50 device syncs a
+day (fair use). Subscriptions renew automatically; cancel any time in Google
+Play.
+```
+
+Wording check against the TV ads plan (`docs/prd-tv-ads.md`): "no AdMob ads on
+Android TV" stays true there, because the TV plan uses our own house cards and
+direct campaigns, not AdMob. Both subscriptions also remove those TV ads (T8).
+Sell Unlimited (and use this paragraph) only once the billing server is
+deployed: without it the app hides the Unlimited purchase ("Coming soon").
 
 ---
 

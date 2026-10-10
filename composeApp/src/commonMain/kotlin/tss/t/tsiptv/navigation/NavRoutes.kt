@@ -107,6 +107,10 @@ object NavRoutes {
     @Serializable
     data object Connect : RootRoutes
 
+    /** Subscription plans (docs/prd-subscriptions.md §3.1): Profile, "Remove ads", quota screens, TV Settings. */
+    @Serializable
+    data object Plans : RootRoutes
+
     /** F2: addon search (a `stremio:///search` link, or TV search). */
     @Serializable
     data class DiscoverSearch(

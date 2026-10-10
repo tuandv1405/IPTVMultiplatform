@@ -133,6 +133,8 @@ val commonModule = module {
             uiModes = get(),
             deviceIsTv = tss.t.tsiptv.utils.PlatformUtils.platform.isTv,
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            // No ads at all for subscribers (docs/prd-subscriptions.md §2.2).
+            entitlement = get<tss.t.tsiptv.core.billing.EntitlementRepository>().state,
             nowMs = tss.t.tsiptv.core.ads.AdsGate::systemNowMs,
         )
     }
@@ -197,4 +199,5 @@ fun getCommonModules(): List<Module> = listOf(
     tss.t.tsiptv.core.tsiptv.di.tsiptvModule,
     tss.t.tsiptv.ui.screens.source.tsiptvUiModule,
     tss.t.tsiptv.feature.account.di.castSyncModule,
+    tss.t.tsiptv.core.billing.di.billingModule,
 )

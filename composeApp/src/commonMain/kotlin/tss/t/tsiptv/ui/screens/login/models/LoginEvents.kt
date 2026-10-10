@@ -54,8 +54,6 @@ sealed interface LoginEvents {
     object OnSavePassword : LoginEvents
     object OnDismissChangePasswordDialog : LoginEvents
     
-    object OnDismissSubscriptionPopup : LoginEvents
-    
     object OnRequestNotificationPermission : LoginEvents
     object OnDismissNotificationDialog : LoginEvents
 

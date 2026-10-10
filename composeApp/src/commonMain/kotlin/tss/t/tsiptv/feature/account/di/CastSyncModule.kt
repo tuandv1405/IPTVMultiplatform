@@ -14,6 +14,7 @@ import tss.t.tsiptv.feature.account.DeviceSessionManager
 import tss.t.tsiptv.feature.account.UnavailableRewardedAdGateway
 import tss.t.tsiptv.feature.account.FirestoreAccountCloud
 import tss.t.tsiptv.feature.account.LocalDevice
+import tss.t.tsiptv.feature.account.QuotaPlan
 import tss.t.tsiptv.feature.account.QuotaService
 import tss.t.tsiptv.feature.account.RewardedAdGateway
 import tss.t.tsiptv.feature.account.SyncService
@@ -70,7 +71,11 @@ val castSyncModule = module {
             clock = clock,
         ).also { it.start() }
     }
-    single { QuotaService(get(), get(), get(), clock) }
+    single {
+        // Unlimited lifts the caps (docs/prd-subscriptions.md §2.2); read on every use.
+        val entitlements = get<tss.t.tsiptv.core.billing.EntitlementRepository>()
+        QuotaService(get(), get(), get(), clock, plan = { QuotaPlan.of(entitlements.current) })
+    }
     single { SyncService(get(), get(), get(), get(), get(), get(), getOrNull(), get(), clock) }
 
     viewModelOf(::TvSendViewModel)

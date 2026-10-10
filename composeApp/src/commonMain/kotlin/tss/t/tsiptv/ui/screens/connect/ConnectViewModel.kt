@@ -47,6 +47,8 @@ data class ConnectUiState(
     val quota: QuotaState? = null,
     val remainingSyncs: Long? = null,
     val canEarnSync: Boolean = false,
+    /** The quota side of the plan (docs/prd-subscriptions.md §2.2): wording, tasks and upgrade row. */
+    val syncPlan: tss.t.tsiptv.feature.account.QuotaPlan = tss.t.tsiptv.feature.account.QuotaPlan.FREE,
     val rewards: tss.t.tsiptv.feature.account.RewardAvailability = tss.t.tsiptv.feature.account.RewardAvailability.UNSUPPORTED,
     val currentSync: SyncDocument? = null,
     val incoming: SyncDocument? = null,
@@ -97,13 +99,15 @@ class ConnectViewModel(
             val quota = runCatching { quotas.current() }.getOrNull()
             sync.refresh()
             val current = sync.current()
+            val policy = quotas.policy
             _state.update {
                 it.copy(
                     loading = false,
                     devices = devices ?: it.devices,
                     quota = quota,
-                    remainingSyncs = quota?.let(quotas.policy::remainingSyncs),
-                    canEarnSync = quota?.let(quotas.policy::canEarnSyncReward) ?: false,
+                    remainingSyncs = quota?.let(policy::remainingSyncs),
+                    canEarnSync = quota?.let(policy::canEarnSyncReward) ?: false,
+                    syncPlan = policy.plan,
                     currentSync = current,
                     message = if (devices == null) ConnectMessage.DevicesFailed else it.message,
                 )

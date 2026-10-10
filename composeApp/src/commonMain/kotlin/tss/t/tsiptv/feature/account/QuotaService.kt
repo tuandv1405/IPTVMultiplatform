@@ -25,8 +25,12 @@ class QuotaService(
     private val rewarded: RewardedAdGateway,
     private val clock: () -> Long,
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
-    val policy: QuotaPolicy = QuotaPolicy(),
+    /** The subscription's quota side, read on every use (a plan can change while a sheet is open). */
+    private val plan: () -> QuotaPlan = { QuotaPlan.FREE },
 ) {
+    /** The rules for the current plan (docs/prd-subscriptions.md §2.2). */
+    val policy: QuotaPolicy get() = QuotaPolicy(plan())
+
     fun today(): Long = QuotaPolicy.dayKey(clock(), zone())
 
     /** Whether the rewarded-ad tasks can be offered now (else the UI explains why). */
@@ -68,6 +72,7 @@ class QuotaService(
         } catch (_: Exception) {
             return RewardResult.Failed
         }
+        val policy = policy
         val capped = when (placement) {
             RewardPlacement.EXTRA_SEND -> !policy.canEarnSendReward(before)
             RewardPlacement.EXTRA_SYNC -> !policy.canEarnSyncReward(before)

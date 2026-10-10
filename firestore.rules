@@ -2,7 +2,8 @@ rules_version = '2';
 
 // TS IPTV — Cloud Firestore security rules.
 //
-// 1. users/{uid}/**: private per-user data of the app (unchanged).
+// 1. users/{uid}/**: private per-user data of the app; entitlements/* is read-only
+//    (written by the billing server, docs/prd-subscriptions.md).
 // 2. The contributor programme (docs/prd-contributor-requests.md). While it runs
 //    on Firestore, browsers write here directly, so these rules ARE the backend:
 //    every limit the product promises is enforced below, not in the page.
@@ -75,7 +76,7 @@ service cloud.firestore {
 
     match /users/{userId}/{coll}/{document=**} {
       allow read: if isOwner(userId);
-      allow write: if isOwner(userId) && !(coll in ['devices', 'meta', 'quota', 'sync']);
+      allow write: if isOwner(userId) && !(coll in ['devices', 'meta', 'quota', 'sync', 'entitlements']);
     }
 
     // ---- 1b. devices, quotas, sync (docs/prd-tv-cast-and-sync.md) ------------
@@ -191,14 +192,38 @@ service cloud.firestore {
       return /databases/$(database)/documents/users/$(uid)/quota/daily;
     }
 
-    function validQuota() {
+    // Subscriptions (docs/prd-subscriptions.md §6): users/{uid}/entitlements/current is
+    // written only by the billing server (Admin SDK) after verifying the purchase with
+    // Google Play. A verified, active, unexpired Unlimited plan lifts the daily caps to
+    // the fair-use limits below. Without that document (server not deployed yet, or a
+    // purchase not processed yet) the user is treated as Free here.
+    function entitlementPath(uid) {
+      return /databases/$(database)/documents/users/$(uid)/entitlements/current;
+    }
+
+    function unlimitedDoc(e) {
+      return e.get('plan', 'free') == 'unlimited' &&
+        e.get('active', false) == true &&
+        e.get('expiresAt', null) is timestamp &&
+        e.get('expiresAt', null) > request.time;
+    }
+
+    function isUnlimited(uid) {
+      return exists(entitlementPath(uid)) && unlimitedDoc(get(entitlementPath(uid)).data);
+    }
+
+    // Free and "no ads": sends <= 3 + sendRewards, syncs <= 1 + syncRewards.
+    // Verified Unlimited: fair use, at most 200 sends and 50 syncs a day.
+    // Every other check (reward caps, +<=1 per write, no delete, day window) applies to all.
+    function validQuota(uid) {
       let q = request.resource.data;
       return q.keys().hasOnly(['day', 'sends', 'sendRewards', 'syncs', 'syncRewards', 'syncAds', 'networks', 'updatedAt']) &&
         q.keys().hasAll(['day', 'sends', 'sendRewards', 'syncs', 'syncRewards', 'syncAds', 'networks', 'updatedAt']) &&
         plausibleDay(q.day) && q.updatedAt is int &&
         validNetworks(q.networks) &&
-        q.sendRewards <= 5 && q.sends <= 3 + q.sendRewards &&
-        q.syncRewards <= 2 && q.syncs <= 1 + q.syncRewards &&
+        q.sendRewards <= 5 && q.syncRewards <= 2 &&
+        ((q.sends <= 3 + q.sendRewards && q.syncs <= 1 + q.syncRewards) ||
+          (q.sends <= 200 && q.syncs <= 50 && isUnlimited(uid))) &&
         q.syncAds is int && q.syncAds >= 0 && q.syncAds <= 1;
     }
 
@@ -210,8 +235,8 @@ service cloud.firestore {
 
     match /users/{userId}/quota/daily {
       allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && validQuota() && freshQuota();
-      allow update: if isOwner(userId) && validQuota() && (
+      allow create: if isOwner(userId) && validQuota(userId) && freshQuota();
+      allow update: if isOwner(userId) && validQuota(userId) && (
         (request.resource.data.day == resource.data.day &&
           step(request.resource.data.sends, resource.data.sends) &&
           step(request.resource.data.sendRewards, resource.data.sendRewards) &&
@@ -220,6 +245,13 @@ service cloud.firestore {
         (request.resource.data.day > resource.data.day && freshQuota())
       );
       allow delete: if false;
+    }
+
+    // Subscription entitlement (docs/prd-subscriptions.md §5.3, §6.1): written only by the
+    // billing server with the Admin SDK; the owner may read it, nobody may write it.
+    match /users/{userId}/entitlements/{docId} {
+      allow read: if isOwner(userId);
+      allow write: if false;
     }
 
     // The account's sync slot: owner only, written only by a registered device

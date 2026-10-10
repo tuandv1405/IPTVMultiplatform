@@ -201,6 +201,81 @@ class AdsPolicyTest {
         assertTrue(debug.adMob)
     }
 
+    // --- Subscriptions (docs/prd-subscriptions.md §2.2, AC-SUB4, AC-SUB5) ---------------------------
+
+    private fun <T> withGate(
+        platform: FakePlatform,
+        entitlement: MutableStateFlow<tss.t.tsiptv.core.billing.Entitlement?>,
+        block: suspend (AdsGate) -> T,
+    ): T = runBlocking {
+        val storage = InMemoryKeyValueStorage()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val gate = AdsGate(storage, platform, UiModeRepository(storage), false, scope, entitlement) { 100 * day }
+            withTimeout(5_000) { block(gate) }
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun subscriberFromAColdStartNeverStartsTheSdk() {
+        val platform = FakePlatform(consent = true, install = 1 * day)
+        val noAds = tss.t.tsiptv.core.billing.Entitlement(plan = tss.t.tsiptv.core.billing.Plan.NO_ADS, source = tss.t.tsiptv.core.billing.EntitlementSource.CACHE)
+        withGate(platform, MutableStateFlow(noAds)) { gate ->
+            kotlinx.coroutines.delay(300)
+            assertEquals(AdsState.NONE, gate.state.value)
+        }
+        assertEquals(0, platform.started)
+    }
+
+    @Test
+    fun gateWaitsForTheEntitlementBeforeStartingTheSdk() {
+        val platform = FakePlatform(consent = true, install = 1 * day)
+        val entitlement = MutableStateFlow<tss.t.tsiptv.core.billing.Entitlement?>(null)
+        withGate(platform, entitlement) { gate ->
+            kotlinx.coroutines.delay(300)
+            assertEquals(AdsState.NONE, gate.state.value)
+            assertEquals(0, platform.started)
+            entitlement.value = tss.t.tsiptv.core.billing.Entitlement.FREE
+            assertEquals(AdsState(adMob = true, fallback = true), gate.state.first { it.adMob })
+        }
+        assertTrue(platform.started > 0)
+    }
+
+    @Test
+    fun subscribingMidSessionRemovesEveryAdAndExpiryBringsThemBack() {
+        val platform = FakePlatform(consent = false, install = 1 * day)
+        val entitlement = MutableStateFlow<tss.t.tsiptv.core.billing.Entitlement?>(tss.t.tsiptv.core.billing.Entitlement.FREE)
+        withGate(platform, entitlement) { gate ->
+            gate.state.first { it.fallback } // Shopee fallback (no consent)
+            val unlimited = tss.t.tsiptv.core.billing.Entitlement(plan = tss.t.tsiptv.core.billing.Plan.UNLIMITED, source = tss.t.tsiptv.core.billing.EntitlementSource.SERVER)
+            entitlement.value = unlimited
+            gate.state.first { it == AdsState.NONE } // the fallback goes too
+            assertFalse(gate.rewardedAllowedNow) // Unlimited: no rewarded tasks
+            entitlement.value = tss.t.tsiptv.core.billing.Entitlement.FREE
+            gate.state.first { it.fallback }
+        }
+    }
+
+    @Test
+    fun noAdsSubscribersKeepTheOptInRewardedTasks() {
+        val noAds = tss.t.tsiptv.core.billing.Entitlement(plan = tss.t.tsiptv.core.billing.Plan.NO_ADS)
+        val unlimited = tss.t.tsiptv.core.billing.Entitlement(plan = tss.t.tsiptv.core.billing.Plan.UNLIMITED)
+        val free = tss.t.tsiptv.core.billing.Entitlement.FREE
+        assertTrue(AdsDecision.rewardedAllowed(true, consent = true, tv = false, adMobSupported = true, entitlement = noAds))
+        assertTrue(AdsDecision.rewardedAllowed(true, consent = true, tv = false, adMobSupported = true, entitlement = free))
+        assertFalse(AdsDecision.rewardedAllowed(true, consent = true, tv = false, adMobSupported = true, entitlement = unlimited))
+        assertFalse(AdsDecision.rewardedAllowed(false, consent = true, tv = false, adMobSupported = true, entitlement = noAds))
+        assertFalse(AdsDecision.rewardedAllowed(true, consent = false, tv = false, adMobSupported = true, entitlement = noAds))
+        assertFalse(AdsDecision.rewardedAllowed(true, consent = true, tv = true, adMobSupported = true, entitlement = noAds))
+        // Banners, native, app open and the fallback: none for any paid plan, nothing while unknown.
+        assertEquals(AdsState.NONE, AdsDecision.state(true, true, false, true, noAds))
+        assertEquals(AdsState.NONE, AdsDecision.state(true, true, false, true, unlimited))
+        assertEquals(AdsState.NONE, AdsDecision.state(true, true, false, true, null))
+        assertEquals(AdsState(adMob = true, fallback = true), AdsDecision.state(true, true, false, true, free))
+    }
+
     @Test
     fun desktopAndIosNeverRequestAdMob() {
         val state = gateState(FakePlatform(consent = true, install = null, isAdMobSupported = false), storage = InMemoryKeyValueStorage().also {

@@ -58,6 +58,7 @@ import tsiptv.composeapp.generated.resources.logout_dialog_message
 import tsiptv.composeapp.generated.resources.logout_dialog_title
 import tsiptv.composeapp.generated.resources.rate_app_desc
 import tsiptv.composeapp.generated.resources.rate_app_title
+import tsiptv.composeapp.generated.resources.plans_title
 import tsiptv.composeapp.generated.resources.settings_title
 import tsiptv.composeapp.generated.resources.ui_mode_title
 import tss.t.tsiptv.core.database.entity.PlaylistWithChannelCount
@@ -252,6 +253,17 @@ private fun SettingsMenu(
                     description = stringResource(Res.string.lan_tv_receive_title),
                     icon = Icons.Rounded.Cast,
                     onClick = onConnect
+                )
+            }
+            // Subscription plans (docs/prd-subscriptions.md §3.2); Play Billing works on Android TV.
+            tss.t.tsiptv.ui.screens.plans.LocalOpenPlans.current?.let { openPlans ->
+                TvMenuItem(
+                    title = stringResource(Res.string.plans_title),
+                    icon = Icons.Rounded.Star,
+                    onClick = {
+                        onDismissRequest()
+                        openPlans()
+                    }
                 )
             }
             TvMenuItem(

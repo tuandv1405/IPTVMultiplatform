@@ -155,6 +155,30 @@ them with Google for serving, measuring and protecting ads. See Google's
 app itself adds **no** user data to ad requests (no keywords, no content URLs,
 no email or user ID).*
 
+### Financial info → Purchase history (subscriptions)
+
+| Field | Answer |
+| --- | --- |
+| Collected | **Yes** (from the subscriptions release, `docs/prd-subscriptions.md`) |
+| Shared | No |
+| Processed ephemerally | No |
+| Required or optional | **Optional** — only when the user buys a subscription |
+| Purposes | App functionality; Account management; Fraud prevention, security and compliance |
+
+*Google Play processes the payment; the app and our server never see card or
+bank details. What we keep: the Play purchase token, product and base plan,
+subscription state, expiry and auto-renew flag, linked to the signed-in account
+(`telegram-bot/src/billing`, Firestore `billing_purchases`, `billing_accounts`
+and `users/{uid}/entitlements/current`), so the plan unlocks features on the
+user's other devices and cannot be claimed by another account. The purchase is
+tagged in Play with a SHA-256 hash of the account id (`obfuscatedAccountId`),
+never the email. The data is deleted with the account. Until the billing server
+is deployed, the purchase state stays on the device and in Google Play only;
+declare it anyway, because the server is part of the design.*
+
+**Do not** declare "Financial info › Payment info": no payment details are
+collected.
+
 ### Location → Approximate location
 
 Declare **Collected and shared for Advertising** (derived from the IP address by
@@ -168,13 +192,15 @@ Confirmed absent from the codebase:
 
 - Precise location — no location permission, no location API. (Approximate
   location: see AdMob above.)
-- Financial info — no payments, no in-app purchases.
+- Financial info › Payment info, Credit score, Other financial info — Google
+  Play handles payments. (Purchase history: **Yes** since the subscriptions
+  release, see above.)
 - Health and fitness, Messages, Contacts, Calendar — not touched.
 - Files and docs — the app reads a playlist file the user explicitly picks; it
   does not enumerate storage. Declare **No**.
 - Audio (voice or sound recordings) — the app plays audio, it never records it.
 - Web browsing history — not collected.
-- Installed apps / Purchase history — not collected.
+- Installed apps — not collected.
 
 ---
 

@@ -222,11 +222,16 @@ def render_all():
     return pages
 
 
+def _lf(data):
+    """Bytes with CRLF line endings as LF, so a Windows (core.autocrlf) checkout is not "stale"."""
+    return data.replace(b"\r\n", b"\n")
+
+
 def stale_pages():
-    """Output pages that are missing or differ from what the sources produce."""
+    """Output pages that are missing or differ from what the sources produce (line endings ignored)."""
     stale = []
     for target, text in render_all().items():
-        if not target.is_file() or target.read_bytes() != text.encode("utf-8"):
+        if not target.is_file() or _lf(target.read_bytes()) != _lf(text.encode("utf-8")):
             stale.append(target)
     return stale
 

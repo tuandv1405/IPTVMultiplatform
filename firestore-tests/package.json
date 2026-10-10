@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Tests for ../firestore.rules and the site's Firestore backend, against the Firebase emulators (nothing touches production)",
   "scripts": {
-    "test": "firebase emulators:exec --only firestore,auth --project tsiptv-8bdd6 \"node --import ./web-loader.mjs --test --test-concurrency=1 --test-force-exit --test-timeout=150000 rules.test.js devices-sync.test.js web-backend.test.js && node --import ./web-loader-http.mjs --test --test-force-exit --test-timeout=150000 web-http-backend.test.js\""
+    "test": "firebase emulators:exec --only firestore,auth --project tsiptv-8bdd6 \"node --import ./web-loader.mjs --test --test-concurrency=1 --test-force-exit --test-timeout=150000 rules.test.js devices-sync.test.js subscriptions.test.js web-backend.test.js && node --import ./web-loader-http.mjs --test --test-force-exit --test-timeout=150000 web-http-backend.test.js\""
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^3.0.4",
