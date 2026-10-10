@@ -36,7 +36,7 @@
   <section data-lang-pane="vi">
     <h1>Chính sách quyền riêng tư</h1>
     <p class="updated">Áp dụng cho ứng dụng <strong>TS IPTV</strong> (<code>tss.t.tsiptv</code>) trên Android, iOS và máy tính.<br>
-      Cập nhật lần cuối: <time datetime="2026-09-27">27/09/2026</time></p>
+      Cập nhật lần cuối: <time datetime="2026-10-10">10/10/2026</time></p>
 
     <p>TS IPTV là trình phát danh sách phát IPTV. Ứng dụng <strong>không cung cấp, không lưu trữ và không phát lại bất kỳ kênh truyền hình nào</strong>. Bạn tự cung cấp đường dẫn danh sách phát (M3U, XSPF, JSON, XMLTV…) và ứng dụng chỉ đọc, sắp xếp rồi phát nội dung từ nguồn đó.</p>
 
@@ -60,6 +60,9 @@
 
     <h3>1.6. Quảng cáo liên kết</h3>
     <p>Ứng dụng có thể hiển thị đề xuất sản phẩm liên kết (affiliate) của Shopee. Nội dung đề xuất được tải từ máy chủ của chúng tôi và <strong>không được cá nhân hoá theo hồ sơ của bạn</strong>. Khi bạn bấm vào một đề xuất, thiết bị sẽ mở Shopee, và từ thời điểm đó chính sách quyền riêng tư của Shopee được áp dụng.</p>
+
+    <h3>1.7. Thông báo</h3>
+    <p>Thông báo <strong>tắt theo mặc định</strong>. Chỉ khi bạn bật thông báo trong Hồ sơ › Thông báo, Firebase Cloud Messaging (Google) mới tạo cho thiết bị một mã đăng ký (token); trước đó không có mã nào được tạo. Chúng tôi chỉ dùng mã này để gửi những thông báo bạn đã chọn (tin tức và bản cập nhật của ứng dụng), theo chủ đề và ngôn ngữ của ứng dụng. Nếu bạn đã đăng nhập, mã được lưu cùng mục thiết bị trong tài khoản của bạn. Khi bạn tắt thông báo, mã bị xoá trên thiết bị và khỏi tài khoản; khi thiết bị đăng xuất, mục thiết bị cùng mã cũng bị xoá. Bạn có thể tắt thông báo bất cứ lúc nào trong ứng dụng hoặc trong cài đặt của thiết bị.</p>
 
     <h2>2. Dữ liệu chúng tôi KHÔNG thu thập</h2>
     <ul>
@@ -94,12 +97,13 @@
         <tbody>
           <tr><td>Internet / Trạng thái mạng</td><td>Tải danh sách phát, EPG và phát nội dung trực tuyến.</td></tr>
           <tr><td>Dịch vụ nền (phát media)</td><td>Tiếp tục phát và hiển thị điều khiển khi ứng dụng chạy nền.</td></tr>
+          <tr><td>Thông báo (Android 13 trở lên)</td><td>Hiển thị thông báo bạn đã bật. Chỉ được hỏi khi bạn bật thông báo trong ứng dụng.</td></tr>
         </tbody>
       </table>
     </div>
 
     <h2>5. Bên xử lý dữ liệu</h2>
-    <p>Chúng tôi dùng Google Firebase (Authentication, Analytics, Crashlytics, Firestore, Storage, App Check) làm hạ tầng. Dữ liệu được xử lý trên hạ tầng của Google. Xem <a href="https://firebase.google.com/support/privacy" rel="noopener">chính sách quyền riêng tư của Firebase</a>.</p>
+    <p>Chúng tôi dùng Google Firebase (Authentication, Analytics, Crashlytics, Firestore, Storage, App Check, Cloud Messaging) làm hạ tầng. Dữ liệu được xử lý trên hạ tầng của Google. Xem <a href="https://firebase.google.com/support/privacy" rel="noopener">chính sách quyền riêng tư của Firebase</a>.</p>
 
     <h2>6. Thời gian lưu trữ</h2>
     <ul>
@@ -127,7 +131,7 @@
   <section data-lang-pane="en" hidden>
     <h1>Privacy Policy</h1>
     <p class="updated">Applies to the <strong>TS IPTV</strong> app (<code>tss.t.tsiptv</code>) on Android, iOS and desktop.<br>
-      Last updated: <time datetime="2026-09-27">27 September 2026</time></p>
+      Last updated: <time datetime="2026-10-10">10 October 2026</time></p>
 
     <p>TS IPTV is an IPTV playlist player. The app <strong>does not provide, host or rebroadcast any television channel</strong>. You supply the playlist URLs (M3U, XSPF, JSON, XMLTV and similar); the app only reads them, organises the entries and plays the stream from the source you chose.</p>
 
@@ -151,6 +155,9 @@
 
     <h3>1.6. Affiliate offers</h3>
     <p>The app may show Shopee affiliate product offers. Offer content is fetched from our server and is <strong>not personalised to your profile</strong>. Tapping an offer opens Shopee, and Shopee's privacy policy applies from that point.</p>
+
+    <h3>1.7. Notifications</h3>
+    <p>Notifications are <strong>off by default</strong>. Only when you turn them on in Profile › Notifications does Firebase Cloud Messaging (Google) create a registration token for your device; no token exists before that. We use the token only to send the notifications you chose (app news and updates), by topic and app language. If you are signed in, the token is stored with your device entry in your account. When you turn notifications off, the token is deleted on the device and removed from your account; when the device is signed out, its device entry and the token are deleted too. You can turn notifications off at any time in the app or in your device settings.</p>
 
     <h2>2. What we do NOT collect</h2>
     <ul>
@@ -185,12 +192,13 @@
         <tbody>
           <tr><td>Internet / network state</td><td>Fetch playlists and EPG data, and play streams.</td></tr>
           <tr><td>Foreground service (media playback)</td><td>Keep playback running with media controls while the app is in the background.</td></tr>
+          <tr><td>Notifications (Android 13 and later)</td><td>Show the notifications you turned on. Asked only when you turn notifications on in the app.</td></tr>
         </tbody>
       </table>
     </div>
 
     <h2>5. Processors</h2>
-    <p>We use Google Firebase (Authentication, Analytics, Crashlytics, Firestore, Storage, App Check) as our infrastructure. Data is processed on Google's infrastructure. See the <a href="https://firebase.google.com/support/privacy" rel="noopener">Firebase privacy policy</a>.</p>
+    <p>We use Google Firebase (Authentication, Analytics, Crashlytics, Firestore, Storage, App Check, Cloud Messaging) as our infrastructure. Data is processed on Google's infrastructure. See the <a href="https://firebase.google.com/support/privacy" rel="noopener">Firebase privacy policy</a>.</p>
 
     <h2>6. Retention</h2>
     <ul>
