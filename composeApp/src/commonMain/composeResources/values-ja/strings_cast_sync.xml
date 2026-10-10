@@ -64,6 +64,11 @@
     <string name="reward_granted">1 回追加されました</string>
     <string name="reward_limit_reached">今日はこれ以上の特典はありません</string>
 
+    <string name="reward_unavailable_first_day">広告タスクはアプリを使い始めて 24 時間後に利用できます。</string>
+    <string name="reward_unavailable_consent">広告タスクには広告への同意が必要です。プロフィール › プライバシー設定で変更できます。</string>
+    <string name="reward_unavailable_tv">テレビ表示では広告タスクは使えません。スマホをご利用ください。</string>
+    <string name="reward_unavailable_platform">この端末ではまだ広告タスクを利用できません。</string>
+
     <string name="devices_title">ログイン中のデバイス</string>
     <string name="devices_count">%1$d/%2$d 台</string>
     <string name="devices_limit_title">%1$d 台の上限に達しました</string>

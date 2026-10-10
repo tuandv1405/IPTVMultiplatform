@@ -64,6 +64,11 @@
     <string name="reward_granted">已获得 1 次</string>
     <string name="reward_limit_reached">今天的奖励已领完</string>
 
+    <string name="reward_unavailable_first_day">广告任务将在您使用应用满 24 小时后开放。</string>
+    <string name="reward_unavailable_consent">广告任务需要您同意广告。请在“个人资料 › 隐私选项”中更改。</string>
+    <string name="reward_unavailable_tv">电视界面不提供广告任务，请使用手机。</string>
+    <string name="reward_unavailable_platform">此设备暂不支持广告任务。</string>
+
     <string name="devices_title">已登录的设备</string>
     <string name="devices_count">%1$d/%2$d 台设备</string>
     <string name="devices_limit_title">已达到 %1$d 台设备上限</string>

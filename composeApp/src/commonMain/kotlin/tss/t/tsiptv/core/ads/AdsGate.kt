@@ -47,6 +47,7 @@ class AdsGate(
         scope.launch {
             combine(firstDayOver, platform.canRequestAds, uiModes.observeUiMode()) { over, consent, mode ->
                 val tv = mode.resolveIsTv(deviceIsTv)
+                tvLayout = tv
                 if (over != true || tv) AdsState.NONE
                 else AdsState(adMob = platform.isAdMobSupported && consent, fallback = true)
             }.collect {
@@ -71,6 +72,14 @@ class AdsGate(
         }
         firstDayOver.value = true
     }
+
+    /** The TV layout is on (no ads there). Read by the rewarded-ad tasks to explain why they are off. */
+    @kotlin.concurrent.Volatile
+    var tvLayout: Boolean = deviceIsTv
+        private set
+
+    /** The 24 h ad-free start is over. */
+    val adFreePeriodOver: Boolean get() = firstDayOver.value == true
 
     /** The current decision without waiting (false until the first-use time has been read). */
     val adMobAllowedNow: Boolean get() = _state.value.adMob

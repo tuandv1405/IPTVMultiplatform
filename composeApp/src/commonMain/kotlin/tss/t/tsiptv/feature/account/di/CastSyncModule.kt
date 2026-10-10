@@ -11,7 +11,7 @@ import tss.t.tsiptv.core.security.createSecretCipher
 import tss.t.tsiptv.feature.account.AccountCloud
 import tss.t.tsiptv.feature.account.DeviceNameProvider
 import tss.t.tsiptv.feature.account.DeviceSessionManager
-import tss.t.tsiptv.feature.account.FakeRewardedAdGateway
+import tss.t.tsiptv.feature.account.UnavailableRewardedAdGateway
 import tss.t.tsiptv.feature.account.FirestoreAccountCloud
 import tss.t.tsiptv.feature.account.LocalDevice
 import tss.t.tsiptv.feature.account.QuotaService
@@ -39,8 +39,7 @@ val RECEIVER_PAIRINGS = named("lanReceiverPairings")
  * TV cast, send to TV, device limit and device sync (docs/prd-tv-cast-and-sync.md).
  *
  * The defaults here are the "not supported yet" ones; `androidLanModule` (androidMain), loaded after
- * this module, overrides the LAN pieces, the device name and the debug rewarded-ad stand-in. The ads
- * branch binds AdMob's rewarded ads to [RewardedAdGateway].
+ * this module, overrides the LAN pieces, the device name and binds AdMob's rewarded ads to [RewardedAdGateway].
  */
 @OptIn(ExperimentalTime::class)
 val castSyncModule = module {
@@ -51,7 +50,7 @@ val castSyncModule = module {
     single<LanDiscovery> { UnsupportedLanDiscovery }
     single<LanTransport> { UnsupportedLanTransport }
     single<LanServer> { UnsupportedLanServer }
-    single<RewardedAdGateway> { FakeRewardedAdGateway(grants = false) }
+    single<RewardedAdGateway> { UnavailableRewardedAdGateway }
     single<AccountCloud> { FirestoreAccountCloud(get()) }
 
     single { LocalDevice(get(), get()) }

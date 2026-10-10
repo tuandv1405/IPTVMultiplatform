@@ -39,7 +39,7 @@ class DeviceLimitTest {
         assertEquals(DeviceCheck.Registered(touch = false), DeviceLimitPolicy.check(listOf(device("me", now - 1)), "me", true, now))
     }
 
-    private class FakeAuth(uid: String?) : AuthRepository {
+    internal class FakeAuthForTests(uid: String?) : AuthRepository {
         val state = MutableStateFlow(AuthState(isAuthenticated = uid != null, user = uid?.let { FirebaseUser(uid = it, email = null, displayName = null, photoUrl = null, isEmailVerified = false) }, isLoading = false))
         var signOuts = 0
         override val authState: Flow<AuthState> = state
@@ -72,7 +72,7 @@ class DeviceLimitTest {
     fun fifthDeviceSeesTheLimitAndRemovingOneLetsItIn() = runBlocking<Unit> {
         val cloud = InMemoryAccountCloud()
         repeat(4) { cloud.registerDevice("u1", device("other$it", lastSeen = it.toLong())) }
-        val auth = FakeAuth("u1")
+        val auth = FakeAuthForTests("u1")
         val storage = InMemoryKeyValueStorage()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         val manager = DeviceSessionManager(auth, cloud, LocalDevice(storage), storage, scope) { 1_000L }
@@ -95,7 +95,7 @@ class DeviceLimitTest {
     @Test
     fun aDeviceRemovedElsewhereSignsItselfOut() = runBlocking<Unit> {
         val cloud = InMemoryAccountCloud()
-        val auth = FakeAuth("u1")
+        val auth = FakeAuthForTests("u1")
         val storage = InMemoryKeyValueStorage()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         val manager = DeviceSessionManager(auth, cloud, LocalDevice(storage), storage, scope) { 1_000L }

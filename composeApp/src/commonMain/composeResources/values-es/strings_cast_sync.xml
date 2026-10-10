@@ -64,6 +64,11 @@
     <string name="reward_granted">Conseguiste 1 más</string>
     <string name="reward_limit_reached">No hay más recompensas hoy</string>
 
+    <string name="reward_unavailable_first_day">Las tareas con anuncios se activan tras tus primeras 24 horas con la app.</string>
+    <string name="reward_unavailable_consent">Las tareas con anuncios necesitan tu consentimiento. Cámbialo en Perfil › Opciones de privacidad.</string>
+    <string name="reward_unavailable_tv">Las tareas con anuncios no están en el diseño de TV. Usa tu teléfono.</string>
+    <string name="reward_unavailable_platform">Las tareas con anuncios aún no están disponibles en este dispositivo.</string>
+
     <string name="devices_title">Dispositivos con sesión iniciada</string>
     <string name="devices_count">%1$d/%2$d dispositivos</string>
     <string name="devices_limit_title">Límite de %1$d dispositivos alcanzado</string>

@@ -65,6 +65,11 @@
     <string name="reward_granted">Bạn nhận thêm 1 lượt</string>
     <string name="reward_limit_reached">Hôm nay bạn đã nhận đủ lượt thưởng</string>
 
+    <string name="reward_unavailable_first_day">Nhiệm vụ xem quảng cáo sẽ mở sau 24 giờ đầu dùng ứng dụng.</string>
+    <string name="reward_unavailable_consent">Nhiệm vụ cần bạn đồng ý quảng cáo. Thay đổi ở Hồ sơ › Tùy chọn quyền riêng tư.</string>
+    <string name="reward_unavailable_tv">Giao diện TV không có nhiệm vụ quảng cáo. Hãy dùng điện thoại.</string>
+    <string name="reward_unavailable_platform">Thiết bị này chưa hỗ trợ nhiệm vụ quảng cáo.</string>
+
     <string name="devices_title">Thiết bị đã đăng nhập</string>
     <string name="devices_count">%1$d/%2$d thiết bị</string>
     <string name="devices_limit_title">Đã đạt giới hạn %1$d thiết bị</string>

@@ -17,7 +17,12 @@ import tss.t.tsiptv.feature.account.RewardResult
 data class TvTarget(val device: LanDevice, val paired: Boolean)
 
 /** Daily send quota, for the playlist sheet. */
-data class SendQuotaInfo(val signedIn: Boolean, val remaining: Long?, val canEarn: Boolean, val rewardsAvailable: Boolean)
+data class SendQuotaInfo(
+    val signedIn: Boolean,
+    val remaining: Long?,
+    val canEarn: Boolean,
+    val rewards: tss.t.tsiptv.feature.account.RewardAvailability,
+)
 
 sealed interface TvSendStep {
     data object Pick : TvSendStep
@@ -71,7 +76,10 @@ class TvSendViewModel(
         target = null
         _state.update { it.copy(step = TvSendStep.Pick, message = null, quota = null) }
         startDiscovery()
-        if (command is PlaylistCommand) refreshQuota()
+        if (command is PlaylistCommand) {
+            refreshQuota()
+            quotas.preloadReward(RewardPlacement.EXTRA_SEND)
+        }
     }
 
     fun close() {
@@ -109,7 +117,7 @@ class TvSendViewModel(
                         signedIn = signedIn,
                         remaining = q?.let(quotas.policy::remainingSends),
                         canEarn = q?.let(quotas.policy::canEarnSendReward) ?: false,
-                        rewardsAvailable = quotas.rewardsAvailable,
+                        rewards = quotas.rewardAvailability(),
                     ),
                 )
             }

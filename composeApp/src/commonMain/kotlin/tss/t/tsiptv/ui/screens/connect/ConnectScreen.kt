@@ -263,10 +263,11 @@ fun ConnectScreen(
                     )
                     if (state.skippedFileCount > 0) ConnectBody(stringResource(Res.string.sync_skipped_files, state.skippedFileCount))
                     // Rewarded ads only (PRD §3.3, §5.3).
-                    if (remaining == 0L && state.canEarnSync && state.rewardsAvailable) {
-                        TvMenuItem(
+                    if (remaining == 0L && state.canEarnSync) {
+                        RewardTask(
+                            availability = state.rewards,
                             title = stringResource(Res.string.sync_task_rewarded, (state.quota?.syncAds ?: 0).toInt()),
-                            icon = Icons.Rounded.OndemandVideo,
+                            busy = state.busy,
                             onClick = viewModel::watchAdForSync,
                         )
                     }

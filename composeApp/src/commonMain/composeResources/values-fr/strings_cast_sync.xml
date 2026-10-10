@@ -64,6 +64,11 @@
     <string name="reward_granted">Vous en avez 1 de plus</string>
     <string name="reward_limit_reached">Plus de récompenses aujourd’hui</string>
 
+    <string name="reward_unavailable_first_day">Les tâches publicitaires s’ouvrent après vos 24 premières heures avec l’app.</string>
+    <string name="reward_unavailable_consent">Les tâches publicitaires demandent votre consentement. Modifiez-le dans Profil › Options de confidentialité.</string>
+    <string name="reward_unavailable_tv">Pas de tâches publicitaires sur l’affichage TV. Utilisez votre téléphone.</string>
+    <string name="reward_unavailable_platform">Les tâches publicitaires ne sont pas encore disponibles sur cet appareil.</string>
+
     <string name="devices_title">Appareils connectés</string>
     <string name="devices_count">%1$d/%2$d appareils</string>
     <string name="devices_limit_title">Limite de %1$d appareils atteinte</string>

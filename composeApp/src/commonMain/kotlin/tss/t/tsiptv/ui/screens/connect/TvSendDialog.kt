@@ -60,6 +60,10 @@ import tsiptv.composeapp.generated.resources.lan_send_failed
 import tsiptv.composeapp.generated.resources.reward_ad_unavailable
 import tsiptv.composeapp.generated.resources.reward_granted
 import tsiptv.composeapp.generated.resources.reward_limit_reached
+import tsiptv.composeapp.generated.resources.reward_unavailable_consent
+import tsiptv.composeapp.generated.resources.reward_unavailable_first_day
+import tsiptv.composeapp.generated.resources.reward_unavailable_platform
+import tsiptv.composeapp.generated.resources.reward_unavailable_tv
 import tsiptv.composeapp.generated.resources.send_tv_quota_reached
 import tsiptv.composeapp.generated.resources.send_tv_remaining
 import tsiptv.composeapp.generated.resources.send_tv_sent
@@ -67,6 +71,7 @@ import tsiptv.composeapp.generated.resources.send_tv_sign_in
 import tsiptv.composeapp.generated.resources.send_tv_task_rewarded
 import tsiptv.composeapp.generated.resources.send_tv_tasks
 import tsiptv.composeapp.generated.resources.send_tv_title
+import tss.t.tsiptv.feature.account.RewardAvailability
 import tss.t.tsiptv.feature.lan.LanCommand
 import tss.t.tsiptv.feature.lan.PlaylistCommand
 import tss.t.tsiptv.feature.lan.TvSendMessage
@@ -148,12 +153,13 @@ private fun PickTv(
                         else stringResource(Res.string.send_tv_quota_reached),
                     )
                     // Rewarded ads only (PRD §3.3): never banner clicks or timed interstitials.
-                    if (q.canEarn && q.rewardsAvailable) {
+                    if (q.canEarn && q.remaining == 0L) {
                         ConnectSectionTitle(stringResource(Res.string.send_tv_tasks))
-                        TvMenuItem(
+                        RewardTask(
+                            availability = q.rewards,
                             title = stringResource(Res.string.send_tv_task_rewarded),
+                            busy = state.busyReward,
                             onClick = viewModel::watchAdForSend,
-                            trailing = { if (state.busyReward) CircularProgressIndicator(Modifier.size(20.dp), color = TSColors.AccentCyan) },
                         )
                     }
                 }
@@ -259,4 +265,30 @@ internal fun messageText(message: TvSendMessage): StringResource = when (message
     TvSendMessage.REWARD_GRANTED -> Res.string.reward_granted
     TvSendMessage.REWARD_UNAVAILABLE -> Res.string.reward_ad_unavailable
     TvSendMessage.REWARD_CAPPED -> Res.string.reward_limit_reached
+}
+
+/**
+ * A rewarded-ad task: the button when ads may show, otherwise one line saying why not (24 h ad-free
+ * start, no consent, TV layout, platform).
+ */
+@Composable
+fun RewardTask(availability: RewardAvailability, title: String, busy: Boolean, onClick: () -> Unit) {
+    if (availability == RewardAvailability.AVAILABLE) {
+        TvMenuItem(
+            title = title,
+            onClick = { if (!busy) onClick() },
+            trailing = { if (busy) CircularProgressIndicator(Modifier.size(20.dp), color = TSColors.AccentCyan) },
+        )
+    } else {
+        ConnectBody(
+            stringResource(
+                when (availability) {
+                    RewardAvailability.AD_FREE_PERIOD -> Res.string.reward_unavailable_first_day
+                    RewardAvailability.NO_CONSENT -> Res.string.reward_unavailable_consent
+                    RewardAvailability.TV_LAYOUT -> Res.string.reward_unavailable_tv
+                    else -> Res.string.reward_unavailable_platform
+                }
+            )
+        )
+    }
 }

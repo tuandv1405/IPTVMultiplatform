@@ -47,7 +47,7 @@ data class ConnectUiState(
     val quota: QuotaState? = null,
     val remainingSyncs: Long? = null,
     val canEarnSync: Boolean = false,
-    val rewardsAvailable: Boolean = false,
+    val rewards: tss.t.tsiptv.feature.account.RewardAvailability = tss.t.tsiptv.feature.account.RewardAvailability.UNSUPPORTED,
     val currentSync: SyncDocument? = null,
     val incoming: SyncDocument? = null,
     val pushableCount: Int = 0,
@@ -87,10 +87,11 @@ class ConnectViewModel(
                     myDeviceId = sessions.myDeviceId(),
                     pushableCount = build.payload.playlists.size,
                     skippedFileCount = build.skippedFiles.size,
-                    rewardsAvailable = quotas.rewardsAvailable,
+                    rewards = quotas.rewardAvailability(),
                 )
             }
             if (!signedIn) return@launch
+            quotas.preloadReward(RewardPlacement.EXTRA_SYNC)
             sessions.check()
             val devices = sessions.listDevices()
             val quota = runCatching { quotas.current() }.getOrNull()

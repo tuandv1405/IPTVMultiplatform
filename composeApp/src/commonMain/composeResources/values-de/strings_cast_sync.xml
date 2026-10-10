@@ -64,6 +64,11 @@
     <string name="reward_granted">Du hast 1 weitere erhalten</string>
     <string name="reward_limit_reached">Heute keine weiteren Prämien</string>
 
+    <string name="reward_unavailable_first_day">Die Werbeaufgaben gibt es nach den ersten 24 Stunden mit der App.</string>
+    <string name="reward_unavailable_consent">Für Werbeaufgaben ist deine Werbeeinwilligung nötig. Ändere sie unter Profil › Datenschutzoptionen.</string>
+    <string name="reward_unavailable_tv">Im TV-Layout gibt es keine Werbeaufgaben. Nutze dein Handy.</string>
+    <string name="reward_unavailable_platform">Werbeaufgaben sind auf diesem Gerät noch nicht verfügbar.</string>
+
     <string name="devices_title">Angemeldete Geräte</string>
     <string name="devices_count">%1$d/%2$d Geräte</string>
     <string name="devices_limit_title">Limit von %1$d Geräten erreicht</string>

@@ -29,7 +29,13 @@ class QuotaService(
 ) {
     fun today(): Long = QuotaPolicy.dayKey(clock(), zone())
 
-    val rewardsAvailable: Boolean get() = rewarded.isAvailable
+    /** Whether the rewarded-ad tasks can be offered now (else the UI explains why). */
+    fun rewardAvailability(): RewardAvailability = rewarded.availability()
+
+    /** Loads one rewarded ad ahead of the task button (quota screens call it when they open). */
+    fun preloadReward(placement: RewardPlacement) {
+        if (rewarded.availability() == RewardAvailability.AVAILABLE) rewarded.preload(placement)
+    }
 
     /** Today's quota (not written), or null when signed out. Throws on network failure. */
     suspend fun current(): QuotaState? {
@@ -67,6 +73,7 @@ class QuotaService(
             RewardPlacement.EXTRA_SYNC -> !policy.canEarnSyncReward(before)
         }
         if (capped) return RewardResult.Capped
+        if (rewarded.availability() != RewardAvailability.AVAILABLE) return RewardResult.Unavailable
         when (rewarded.show(placement)) {
             RewardedAdResult.Earned -> Unit
             RewardedAdResult.Dismissed -> return RewardResult.Dismissed

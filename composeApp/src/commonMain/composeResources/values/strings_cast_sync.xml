@@ -65,6 +65,11 @@
     <string name="reward_granted">You got 1 more</string>
     <string name="reward_limit_reached">No more rewards today</string>
 
+    <string name="reward_unavailable_first_day">The ad tasks open after your first 24 hours with the app.</string>
+    <string name="reward_unavailable_consent">Ad tasks need your ad consent. Change it in Profile › Privacy options.</string>
+    <string name="reward_unavailable_tv">Ad tasks aren’t available on the TV layout. Use your phone.</string>
+    <string name="reward_unavailable_platform">Ad tasks aren’t available on this device yet.</string>
+
     <string name="devices_title">Signed-in devices</string>
     <string name="devices_count">%1$d/%2$d devices</string>
     <string name="devices_limit_title">Limit of %1$d devices reached</string>

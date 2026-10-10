@@ -26,7 +26,7 @@ No Room schema change (still v6); local state is in `KeyValueStorage`.
 | `feature/account/DeviceLimit.kt`, `DeviceSessionManager.kt` | Pure 4-device decision; register / touch (6 h) / limit dialog / remote sign-out / "removed elsewhere" → sign out. Frees its own slot on sign-out via `SignOutHooks` (new, called by `AuthRepositoryImpl.signOut`). |
 | `feature/account/AccountCloud.kt` | Firestore (gitlive) implementation with transactions matching the rules, plus in-memory. |
 | `feature/account/QuotaService.kt`, `SyncService.kt` | Server-side quotas, rewarded ads, push / incoming / plan / apply (through `PlaylistImporter`, sources through `TsiptvSourceService`). |
-| `feature/account/RewardedAdGateway.kt` | Interface + `FakeRewardedAdGateway` (debug grants after 1.5 s, release: unavailable). |
+| `feature/account/RewardedAdGateway.kt` | Interface, `RewardAvailability`, `UnavailableRewardedAdGateway` (AdMob implementation: see "Rewarded ads" below). |
 | `feature/account/di/CastSyncModule.kt` | Koin; "not supported" defaults for iOS/desktop. |
 
 ### Android (`androidMain/feature/lan/`)
@@ -57,7 +57,7 @@ No Room schema change (still v6); local state is in `KeyValueStorage`.
 | A7 | TV: Home → press Home button; `adb shell ss -ltn` no longer lists the port. |
 | A8 | Done on emulators (connect by IP). |
 | A9 | New code has no logging; `LanValidationTest.toStringNeverShowsSecrets`. |
-| B1–B5 | Phone (signed in): playlist row TV icon → TV → code (first time) → TV dialog → Nhận. 4th send → "Bạn đã dùng hết lượt gửi hôm nay" + rewarded task (debug fake grants). Quota unit tests in `QuotaPolicyTest`; rules in `devices-sync.test.js`. |
+| B1–B5 | Phone (signed in): playlist row TV icon → TV → code (first time) → TV dialog → Nhận. 4th send → "Bạn đã dùng hết lượt gửi hôm nay" + rewarded task (AdMob test ad in debug). Quota unit tests in `QuotaPolicyTest`; rules in `devices-sync.test.js`. |
 | C1–C4 | Sign in on a 5th device → limit dialog; remote sign-out; the removed device signs out at next start. `DeviceLimitTest` + rules tests. |
 | D1–D6 | Connect screen → Đồng bộ… on device 1; device 2 shows the prompt; Gộp / Thay thế (removal list). `SyncPlannerTest` + rules tests. |
 | X1–X3 | `StringResourcesLocaleTest`; builds above; no schema change. |
@@ -83,14 +83,43 @@ console if unwanted (the new rules are not deployed, so the old owner-wildcard r
    write anything under `users/{uid}`).
 2. Existing users: nothing to migrate; devices register on next start.
 
-## Waiting on the ads branch: RewardedAdGateway wiring
-- Implement `RewardedAdGateway` with AdMob `RewardedAd` (load per placement `EXTRA_SEND` /
-  `EXTRA_SYNC`, show from the current Activity, return `Earned` only from `onUserEarnedReward`,
-  `Dismissed` on close without reward, `Unavailable` on load/show failure or no consent).
-- Bind it in Koin in a module loaded **after** `androidLanModule` (or replace the binding there):
-  `single<RewardedAdGateway> { AdMobRewardedAdGateway(...) }`. Remove the debug fake then.
-- Policy (PRD §3.3): only rewarded ads; never reward banner clicks or timed interstitials.
+## Merge of `main` (AdMob, 0ff2dc1) — 2026-10-10
+Merge commit `b5b97c4`. Git reported **no conflicts**: the strings are in `strings_cast_sync.xml`
+(ads added `ad_label` / `privacy_options_title` to `strings.xml`), the cast icon lives in
+`MediaPlayerView`'s top bar through `LocalCastAction`, and the new `PlayerScreen` layout (title out of
+the list, pinned banner) still hosts `MediaPlayerView`, so the icon shows there unchanged. `App.kt`,
+`AppModule.kt`, `AndroidModule.kt`, `build.gradle.kts`, `ProfileScreen`, `HomeFeedScreen` merged
+automatically; compile and tests checked afterwards.
+
+## Rewarded ads (AdMob), wired after the merge
+- `core/ads/AdMobRewardedAdGateway.kt` (androidMain), bound in `androidLanModule`:
+  - AdMob `RewardedAd`; unit `admob_rewarded_unit` = Google test unit
+    `ca-app-pub-3940256099942544/5224354917` in debug, `TSIPTV_ADMOB_REWARDED_UNIT` in release (read by
+    `adMobSetting` like the other units; falls back to the test unit with a warning).
+  - Reward only from `OnUserEarnedRewardListener`; dismissed early → no reward; load/show failure or
+    no fill (15 s timeout) → "Chưa có quảng cáo. Hãy thử lại sau."
+  - Gated by the ads layer: `RewardAvailability.of(...)` = unsupported / TV layout / 24 h ad-free
+    start / no UMP consent / available. `AdsGate` got two read-only properties for this
+    (`tvLayout`, `adFreePeriodOver`). When not available the task button is replaced by a one-line
+    reason (`reward_unavailable_*`, 7 locales).
+  - One ad preloaded when a quota screen opens (send sheet for a playlist; TV & thiết bị screen when
+    signed in); cached with the application context only, single use, dropped after 55 min; the
+    full-screen callback is cleared after show (no Activity kept).
+- `UnavailableRewardedAdGateway` is the common default (iOS / desktop). `FakeRewardedAdGateway` now
+  exists only in `commonTest` (`RewardTasksTest`).
+- Caps unchanged and still pending the user's decision: 1 rewarded ad = 1 send (≤ 5/day),
+  2 rewarded ads = 1 sync (≤ 2/day). To change them edit `QuotaPolicy` constants **and** the matching
+  numbers in `firestore.rules` (`validQuota`) and `devices-sync.test.js`.
+- Not verified on a device: every rewarded flow needs a signed-in account (quota in Firestore), and
+  no device flows may write to production. Covered by `RewardTasksTest` + `QuotaPolicyTest` + rules
+  tests.
 - Later: AdMob server-side verification to a Cloud Function that alone may raise `*Rewards`.
+
+Build after the wiring: `desktopTest` 545 tests, 0 failures (one run hit a 5 s timeout in the ads
+branch's `AdsPolicyTest.gateOnAFreshInstall…` under load; it passed on rerun and in the full rerun);
+`compileCommonMainKotlinMetadata`, `assembleDebug`, `assembleRelease` (R8, unsigned) green; Firestore
+tests: rules + devices/sync + web-backend 35/35; `web-http-backend.test.js` cannot run in this
+worktree (needs `telegram-bot/node_modules`, not installed; unrelated to these rules).
 
 ## Known limits / not done
 - Active MITM during the 2-minute pairing can brute-force the code offline (documented; fix: SPAKE2). LAN commands are signed, not encrypted.
