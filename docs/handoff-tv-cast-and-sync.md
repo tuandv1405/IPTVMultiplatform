@@ -173,3 +173,46 @@ writes were made. Screenshots are in the session scratchpad `cast/`.
 
 New strings (7 locales): `lan_pair_open_tv_screen`, `lan_tv_pairing_open`, `lan_tv_importing`.
 Protocol: new error code `PAIRING_CLOSED`. Older phones show it as the generic "The TV refused".
+
+## QC round 3 fixes (2026-10-10)
+
+| # | Fix | Where | Verified (TSIPTV_CAST_TV + `lan.mjs`) |
+|---|---|---|---|
+| N5 | **One phone import at a time.** While a phone import runs (`importFromLan && isLoading`), the next queued offer is not shown. It appears when the import has finished, so accepting it can no longer cancel the running import (`runImport` has one job). Empty rows: a playlist row is only written together with its channels, in one transaction. The "0 Channels" rows QC saw come from the channel-id collision below (another playlist took the rows), not from the cancel. | `LanReceiverHost` (`importRunning`), `App.kt` | 928 KB "R3 Big" then "R3 Alpha" queued: "Adding "R3 Big"…", and no second dialog until it finished (13,964 channels). Then the "R3 Alpha" offer → Receive → 6 channels. Both lists complete. |
+| N6 | **The import screen opened for a phone import closes again.** When nothing waits for the user any more (no single-stream, Source or error dialog, no import running), the route the LAN flow opened is popped, so later offers aren't refused as busy. An error now names the playlist: "“R3 Broken”: Network error: …". | `App.kt` (`lanOpenedImport`), `HomeViewModel.importName`, `ImportIPTVScreen` | Offer with an unreachable URL → import screen with "“R3 Broken”: Network error: network" → OK → back on Home. The next offer was accepted (`ok`), not "TV is busy". |
+| N7 | `setPairingOpen` no longer launches on two scopes. It sets a StateFlow that one worker of the controller applies in order, like `setForeground`. | `LanReceiverController`, `ConnectScreen` | code |
+| N8 | **Unpair on the TV asks first.** "Unpair “<name>”? It will need a new code …" with Cancel focused. After unpairing, focus moves to the next row (or the previous one; with none left, to Back). New string `lan_tv_unpair_confirm` (7 locales). | `ConnectScreen` | code |
+
+### Channel ids shared between playlists (QC info item): fixed without a schema change
+
+**Cause.** `channel.id` is the primary key **on its own** (schema v6). Ids come from the playlist
+content (`tvg-id`, or a slug of the name), and `insertChannels` uses `REPLACE`. Importing a second
+playlist with the same entries therefore *replaced* the first playlist's rows: same id, new
+`playlistId`. That moved them to the new playlist (QC: "R3 big 2" lost 9,310 channels; also the
+"0 Channels" rows). The carry-over (`matchPreviousChannels`) is not the cause: it only matches
+within one playlist. `categories.id` had the same problem (slugged group titles).
+
+**Fix (no Room change, still v6).** `ChannelIdNamespace`, applied in `replacePlaylistContentLocked`
+(Room) and in `InMemoryIPTVDatabase`:
+- An incoming channel id that another playlist already owns is stored as `<id>@<8-hex tag of the
+  playlist id>`.
+- Its guide id stays in `epgId`, so the EPG still matches.
+- Attributes and legacy ids follow the renamed ids.
+- Category ids get the same treatment.
+- New DAO queries `idsOwnedElsewhere` (in chunks of 900) are reads only; the schema is unchanged.
+
+The result is deterministic, so a refresh keeps the same ids (favourites, history, attributes
+continue). Tests: `ChannelIdNamespaceTest` (in-memory) and
+`RoomImportPipelineTest.twoPlaylistsWithTheSameEntriesKeepTheirChannels` (real Room, attributes and
+categories included).
+
+**Not repaired:** playlists already damaged on users' devices (rows taken earlier). A refresh of the
+damaged playlist restores its channels, now namespaced. The QC TV AVD still shows the old
+"R3 Alpha 0 Channels" / "R3 big 2" rows from before the fix.
+
+**Proper fix later (Room v7).** Make the keys `channel(playlistId, id)` and
+`categories(playlistId, id)` composite. The `channel_attributes` and `programs` lookups by
+`channelId` then need `playlistId`, and so do `getChannelById` callers (player routes use the
+channel id alone). The migration: create the new tables, copy the rows, and drop the namespacing
+suffix where it is no longer needed. That is a larger change across DAOs and navigation, so it was
+not done here.
