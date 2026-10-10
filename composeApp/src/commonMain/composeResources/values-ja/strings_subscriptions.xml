@@ -31,7 +31,7 @@
     <string name="plans_status_payment_issue">お支払いに問題があります。Google Play でお支払い方法を更新してください。</string>
     <string name="plans_status_paused">定期購入は一時停止中です。</string>
     <string name="plans_status_device_only">この端末（Google Play アカウント）で有効です。ログインすると他の端末でも使えます。</string>
-    <string name="plans_not_available">サブスクリプションは現在 Android アプリ（Google Play）でのみ購入できます。</string>
+    <string name="plans_not_available">サブスクリプションには Google Play が必要ですが、この端末では利用できません。</string>
     <string name="plans_loading_prices">価格を読み込んでいます…</string>
     <string name="plans_prices_unavailable">Google Play から価格を読み込めませんでした。後でもう一度お試しください。</string>
     <string name="plans_msg_purchased">ありがとうございます。プランが有効になりました。</string>

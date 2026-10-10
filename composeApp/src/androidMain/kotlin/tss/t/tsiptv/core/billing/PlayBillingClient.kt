@@ -21,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,9 +41,13 @@ import kotlin.coroutines.resume
 /**
  * Google Play Billing (Billing Library 8) for the two subscriptions (docs/prd-subscriptions.md §3, §5).
  *
- * - Connects lazily, with the library's automatic reconnection plus a retry on the next [refresh].
- * - `queryPurchasesAsync(SUBS)` when the app starts and on every activity resume (renewals,
- *   cancellations, purchases made elsewhere, pending → purchased), at most every [RESUME_REFRESH_MS].
+ * - Connects lazily. Reconnection follows [BillingConnectionPolicy]: exponential backoff (1 s up to
+ *   5 min, reset on success), no queries while disconnected, and no attempts at all after "billing
+ *   unavailable" (no Play Store or account) until the next start or Restore / a purchase.
+ * - `queryPurchasesAsync(SUBS)` when the app starts and on activity resume (renewals,
+ *   cancellations, purchases made elsewhere, pending → purchased), only while connected and at most
+ *   once a minute.
+ * - Debug-only logs, one line per connection state change.
  * - Acknowledges every PURCHASED purchase that is not yet acknowledged (Play refunds those after
  *   3 days); pending purchases are reported but never entitle.
  * - Product ids come from resources (`TSIPTV_BILLING_*_ID` at build time). Nothing is logged that
@@ -68,32 +73,43 @@ class PlayBillingClient(context: Context) : BillingGateway {
     private val _events = MutableSharedFlow<BillingEvent>(extraBufferCapacity = 4, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     override val events: Flow<BillingEvent> = _events.asSharedFlow()
 
-    /** False once Play said billing / subscriptions are not available on this device. */
-    @Volatile
-    private var available = true
-    override val isSupported: Boolean get() = available
+    /**
+     * Whether Google Play is installed and enabled. Only its absence makes billing "unsupported" (and
+     * purchases [PlayPurchases.Unavailable]); a runtime BILLING_UNAVAILABLE (no account in Play, Play
+     * updating) is usually temporary and is published as [playBillingUnavailable] with unsettled
+     * purchases, so a cached plan keeps bridging (no ads for a subscriber).
+     */
+    private val playInstalled: Boolean = runCatching {
+        app.packageManager.getApplicationInfo(PLAY_STORE_PACKAGE, 0).enabled
+    }.getOrDefault(false)
+    override val isSupported: Boolean get() = playInstalled
+
+    private val _playBillingUnavailable = MutableStateFlow(false)
+    override val playBillingUnavailable: StateFlow<Boolean> = _playBillingUnavailable.asStateFlow()
 
     private var details: Map<String, ProductDetails> = emptyMap()
     private var activityRef: WeakReference<Activity>? = null
-    private var lastResumeRefresh = 0L
+    private val policy = BillingConnectionPolicy()
+    private var loggedState: BillingConnectionPolicy.State? = null
 
     private val listener = PurchasesUpdatedListener { result, list -> scope.launch { onPurchasesUpdated(result, list) } }
 
-    private val client: BillingClient = BillingClient.newBuilder(app)
+    // No library auto-reconnection: it retries on every call; BillingConnectionPolicy backs off.
+    private fun newClient(): BillingClient = BillingClient.newBuilder(app)
         .setListener(listener)
         .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
-        .enableAutoServiceReconnection()
         .build()
+
+    /** Replaced after a call-level disconnect (a closed client cannot be reused). */
+    private var client: BillingClient = newClient()
 
     init {
         app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityResumed(activity: Activity) {
                 activityRef = WeakReference(activity)
-                val now = SystemClock.elapsedRealtime()
-                if (now - lastResumeRefresh >= RESUME_REFRESH_MS) {
-                    lastResumeRefresh = now
-                    refresh()
-                }
+                // Only while connected, at most once a minute (a disconnected client reconnects on
+                // its own schedule).
+                if (policy.shouldQueryOnResume(now())) refresh()
             }
 
             override fun onActivityPaused(activity: Activity) = Unit
@@ -108,17 +124,23 @@ class PlayBillingClient(context: Context) : BillingGateway {
     }
 
     override fun refresh() {
-        scope.launch {
-            if (!connect()) return@launch
-            queryPurchases()
-            if (details.isEmpty()) queryProducts()
-        }
+        scope.launch { if (connect()) queryAll() }
+    }
+
+    override fun retry() {
+        scope.launch { if (connect(userAction = true)) queryAll() }
+    }
+
+    /** Purchases, then the product details if still missing and the connection held (BB4). */
+    private suspend fun queryAll(): Boolean {
+        val ok = queryPurchases()
+        if (details.isEmpty() && policy.state == BillingConnectionPolicy.State.CONNECTED) queryProducts()
+        return ok
     }
 
     override suspend fun restore(): Boolean = withContext(Dispatchers.Main.immediate) {
-        if (!connect()) return@withContext false
-        val ok = queryPurchases()
-        if (details.isEmpty()) queryProducts()
+        if (!connect(userAction = true)) return@withContext false
+        val ok = queryAll()
         if (ok) {
             val owned = (purchases.value as? PlayPurchases.Loaded)?.purchases.orEmpty()
             _events.tryEmit(if (owned.any { it.state == OwnedPurchaseState.PURCHASED }) BillingEvent.RESTORED else BillingEvent.NOTHING_TO_RESTORE)
@@ -126,9 +148,19 @@ class PlayBillingClient(context: Context) : BillingGateway {
         ok
     }
 
-    /** Connects once; true when ready. Marks billing unavailable when Play says so. */
-    private suspend fun connect(): Boolean = mutex.withLock {
-        if (client.isReady) return@withLock true
+    private fun now() = SystemClock.elapsedRealtime()
+
+    /**
+     * Connects if the policy allows it now; true when ready. Marks billing unavailable when Play says
+     * so. [userAction] (Restore, a purchase) skips the backoff and an earlier "unavailable".
+     */
+    private suspend fun connect(userAction: Boolean = false): Boolean = mutex.withLock {
+        if (userAction) policy.onUserAction()
+        // Ready counts only for a connection the policy confirmed; otherwise go through mayConnect
+        // (a stale ready client must not skip the backoff, BB3).
+        if (client.isReady && policy.state == BillingConnectionPolicy.State.CONNECTED) return@withLock true
+        if (!policy.mayConnect(now())) return@withLock false
+        policy.onConnecting()
         val result = withTimeoutOrNull(CONNECT_TIMEOUT_MS) {
             suspendCancellableCoroutine { cont ->
                 client.startConnection(object : BillingClientStateListener {
@@ -137,7 +169,7 @@ class PlayBillingClient(context: Context) : BillingGateway {
                     }
 
                     override fun onBillingServiceDisconnected() {
-                        // Auto reconnection is on; a later refresh() connects again if needed.
+                        scope.launch { onServiceLost(BillingClient.BillingResponseCode.SERVICE_DISCONNECTED) }
                     }
                 })
             }
@@ -145,20 +177,82 @@ class PlayBillingClient(context: Context) : BillingGateway {
         when (result) {
             BillingClient.BillingResponseCode.OK -> {
                 val subs = client.isFeatureSupported(BillingClient.FeatureType.SUBSCRIPTIONS).responseCode
-                available = subs == BillingClient.BillingResponseCode.OK
-                if (!available) _purchases.value = PlayPurchases.Unavailable
-                available
+                if (subs == BillingClient.BillingResponseCode.OK) {
+                    _playBillingUnavailable.value = false
+                    policy.onConnected()
+                    logState()
+                    true
+                } else {
+                    markUnavailable(subs)
+                    false
+                }
             }
             BillingClient.BillingResponseCode.BILLING_UNAVAILABLE, BillingClient.BillingResponseCode.FEATURE_NOT_SUPPORTED -> {
-                available = false
-                _purchases.value = PlayPurchases.Unavailable
+                markUnavailable(result)
                 false
             }
             else -> {
                 if (_purchases.value !is PlayPurchases.Loaded) _purchases.value = PlayPurchases.Failed
+                scheduleReconnect(result ?: TIMEOUT_CODE)
                 false
             }
         }
+    }
+
+    private fun markUnavailable(code: Int) {
+        if (playInstalled) {
+            // Temporary as far as we know: unsettled, so the cached plan still applies (BB1).
+            _playBillingUnavailable.value = true
+            if (_purchases.value !is PlayPurchases.Loaded) _purchases.value = PlayPurchases.Failed
+        } else {
+            _purchases.value = PlayPurchases.Unavailable
+        }
+        policy.onUnavailable()
+        logState("code $code; no retry until restart or Restore")
+    }
+
+    /** Waits the backoff delay, then connects and refreshes (unless something else did meanwhile). */
+    private fun scheduleReconnect(code: Int) {
+        val delayMs = policy.onFailure(now())
+        logState("code $code; retry in ${delayMs / 1000} s")
+        scope.launch {
+            delay(delayMs)
+            if (policy.state != BillingConnectionPolicy.State.WAITING) return@launch
+            if (connect()) queryAll()
+        }
+    }
+
+    /**
+     * The service dropped, or a call answered "disconnected": back off from a connected state only.
+     * The client is closed and replaced, so the next attempt really reconnects instead of trusting a
+     * stale `isReady` (BB3).
+     */
+    private suspend fun onServiceLost(code: Int) = mutex.withLock {
+        if (policy.state != BillingConnectionPolicy.State.CONNECTED) return@withLock
+        runCatching { client.endConnection() }
+        client = newClient()
+        scheduleReconnect(code)
+    }
+
+    /** A call's response code that means the connection, not the request, failed. */
+    private suspend fun handleCallFailure(code: Int): Boolean = when (code) {
+        BillingClient.BillingResponseCode.SERVICE_DISCONNECTED, BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE -> {
+            onServiceLost(code)
+            true
+        }
+        BillingClient.BillingResponseCode.BILLING_UNAVAILABLE -> {
+            mutex.withLock { if (policy.state != BillingConnectionPolicy.State.UNAVAILABLE) markUnavailable(code) }
+            true
+        }
+        else -> false
+    }
+
+    /** One debug line per connection state change. */
+    private fun logState(detail: String? = null) {
+        val state = policy.state
+        if (state == loggedState) return
+        loggedState = state
+        log("connection: $state" + (detail?.let { " ($it)" } ?: ""))
     }
 
     /** Main thread. true when Play answered. */
@@ -168,10 +262,13 @@ class PlayBillingClient(context: Context) : BillingGateway {
             client.queryPurchasesAsync(params) { r, p -> if (cont.isActive) cont.resume(r to p) }
         }
         if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-            log("queryPurchases: ${result.responseCode}")
-            if (_purchases.value !is PlayPurchases.Loaded) _purchases.value = PlayPurchases.Failed
+            if (!handleCallFailure(result.responseCode)) log("queryPurchases: ${result.responseCode}")
+            if (_purchases.value !is PlayPurchases.Loaded && _purchases.value !is PlayPurchases.Unavailable) {
+                _purchases.value = PlayPurchases.Failed
+            }
             return false
         }
+        policy.onCallSucceeded()
         handlePurchases(list)
         return true
     }
@@ -219,7 +316,7 @@ class PlayBillingClient(context: Context) : BillingGateway {
             client.queryProductDetailsAsync(params) { r, details -> if (cont.isActive) cont.resume(r to details.productDetailsList) }
         }
         if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-            log("queryProductDetails: ${result.responseCode}")
+            if (!handleCallFailure(result.responseCode)) log("queryProductDetails: ${result.responseCode}")
             return
         }
         details = list.associateBy { it.productId }
@@ -246,7 +343,9 @@ class PlayBillingClient(context: Context) : BillingGateway {
 
     override suspend fun launchPurchase(offer: PlanOffer, accountHash: String?, replace: ReplaceFrom?): PurchaseLaunch =
         withContext(Dispatchers.Main.immediate) {
-            if (!connect()) return@withContext if (available) PurchaseLaunch.FAILED else PurchaseLaunch.UNAVAILABLE
+            if (!connect(userAction = true)) {
+                return@withContext if (playInstalled && !_playBillingUnavailable.value) PurchaseLaunch.FAILED else PurchaseLaunch.UNAVAILABLE
+            }
             if (details.isEmpty()) queryProducts()
             val pd = details[offer.productId] ?: return@withContext PurchaseLaunch.FAILED
             val activity = activityRef?.get()?.takeIf { !it.isFinishing } ?: return@withContext PurchaseLaunch.FAILED
@@ -326,6 +425,8 @@ class PlayBillingClient(context: Context) : BillingGateway {
     private companion object {
         const val TAG = "TSBilling"
         const val CONNECT_TIMEOUT_MS = 15_000L
-        const val RESUME_REFRESH_MS = 10_000L
+        /** Not a Play code: the connection attempt timed out. */
+        const val TIMEOUT_CODE = -100
+        const val PLAY_STORE_PACKAGE = "com.android.vending"
     }
 }

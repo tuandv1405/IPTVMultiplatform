@@ -93,6 +93,26 @@ class EntitlementRepositoryTest {
         assertEquals("", runBlocking { storage.getString(EntitlementRepository.KEY_PLAN, "") })
     }
 
+    /** QC BB1: a cached No ads plan + Play billing unavailable (code 3 → Failed): no ads, cache kept. */
+    @Test
+    fun cachedPlanSurvivesPlayBillingUnavailable() {
+        val storage = InMemoryKeyValueStorage()
+        runBlocking {
+            storage.putString(EntitlementRepository.KEY_PLAN, "no_ads")
+            storage.putLong(EntitlementRepository.KEY_CONFIRMED_AT, now - 1000)
+        }
+        withRepo(storage) { repo, billing, _, _ ->
+            assertEquals(Plan.NO_ADS, repo.await { true }.plan)
+            billing.purchases.value = PlayPurchases.Failed
+            kotlinx.coroutines.delay(200)
+            assertEquals(Plan.NO_ADS, repo.state.value?.plan)
+            billing.purchases.value = PlayPurchases.Unavailable
+            kotlinx.coroutines.delay(200)
+            assertEquals(Plan.NO_ADS, repo.state.value?.plan)
+        }
+        assertEquals("no_ads", runBlocking { storage.getString(EntitlementRepository.KEY_PLAN, "") })
+    }
+
     @Test
     fun serverEntitlementFollowsTheSignedInAccount() {
         val uid = MutableStateFlow<String?>("u1")

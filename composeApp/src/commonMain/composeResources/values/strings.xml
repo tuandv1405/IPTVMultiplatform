@@ -423,4 +423,5 @@
     <string name="addons_help_collapsed">Collapsed</string>
     <string name="addons_help_guide">Full guide</string>
     <string name="home_options_title">Sources and options</string>
+    <string name="plans_play_billing_unavailable">Google Play billing isn't available. Sign in to Google Play or update the Play Store, then try again.</string>
 </resources>

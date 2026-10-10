@@ -100,7 +100,22 @@ class EntitlementResolverTest {
         assertEquals(Plan.NO_ADS, resolve(ServerState.SignedOut, PlayPurchases.Failed, cache).plan)
         // Both answered: the cache no longer counts.
         assertEquals(Plan.FREE, resolve(ServerState.SignedOut, PlayPurchases.Loaded(emptyList()), cache).plan)
-        assertEquals(Plan.FREE, resolve(ServerState.Loaded(null), PlayPurchases.Unavailable, cache).plan)
+    }
+
+    /** QC BB1: Play briefly unable to bill (code 3 → Failed) or even missing must not show a subscriber ads. */
+    @Test
+    fun unavailableStoreKeepsAValidCache() {
+        val cache = CachedEntitlement(Plan.NO_ADS, catalog.noAdsId, now - day)
+        for (play in listOf(PlayPurchases.Failed, PlayPurchases.Unavailable)) {
+            assertEquals(Plan.NO_ADS, resolve(ServerState.SignedOut, play, cache).plan)
+            assertEquals(Plan.NO_ADS, resolve(ServerState.Loaded(null), play, cache).plan)
+            assertFalse(EntitlementResolver.settled(ServerState.Loaded(null), play, cache, now))
+        }
+        // Without a (valid) cache an unavailable store settles to Free.
+        assertTrue(EntitlementResolver.settled(ServerState.Loaded(null), PlayPurchases.Unavailable, null, now))
+        assertEquals(Plan.FREE, resolve(ServerState.Loaded(null), PlayPurchases.Unavailable, null).plan)
+        val old = CachedEntitlement(Plan.NO_ADS, catalog.noAdsId, now - EntitlementResolver.CACHE_MAX_AGE_MS - 1)
+        assertEquals(Plan.FREE, resolve(ServerState.Loaded(null), PlayPurchases.Unavailable, old).plan)
     }
 
     @Test

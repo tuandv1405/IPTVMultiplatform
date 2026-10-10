@@ -423,4 +423,5 @@
     <string name="addons_help_collapsed">Contraído</string>
     <string name="addons_help_guide">Guía completa</string>
     <string name="home_options_title">Fuentes y opciones</string>
+    <string name="plans_play_billing_unavailable">La facturación de Google Play no está disponible. Inicia sesión en Google Play o actualiza Play Store y vuelve a intentarlo.</string>
 </resources>

@@ -415,4 +415,5 @@
     <string name="addons_help_collapsed">折りたたみ</string>
     <string name="addons_help_guide">詳しいガイド</string>
     <string name="home_options_title">ソースとオプション</string>
+    <string name="plans_play_billing_unavailable">Google Play の課金を利用できません。Google Play にログインするか Play ストアを更新してから、もう一度お試しください。</string>
 </resources>

@@ -74,7 +74,7 @@ class EntitlementRepository(
                     while (true) {
                         val now = nowMs()
                         val resolved = EntitlementResolver.resolve(s, p, lastCache, billing.catalog, now)
-                        emit(Triple(resolved, EntitlementResolver.settled(s, p), now))
+                        emit(Triple(resolved, EntitlementResolver.settled(s, p, lastCache, now), now))
                         val until = nextChange(resolved, lastCache, now) ?: break
                         delay(until)
                     }

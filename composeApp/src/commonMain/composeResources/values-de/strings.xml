@@ -423,4 +423,5 @@
     <string name="addons_help_collapsed">Eingeklappt</string>
     <string name="addons_help_guide">Ausführliche Anleitung</string>
     <string name="home_options_title">Quellen und Optionen</string>
+    <string name="plans_play_billing_unavailable">Die Google Play-Abrechnung ist nicht verfügbar. Melde dich bei Google Play an oder aktualisiere den Play Store und versuche es dann erneut.</string>
 </resources>

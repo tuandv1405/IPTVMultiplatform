@@ -32,7 +32,7 @@
     <string name="plans_status_payment_issue">There is a problem with your payment. Update your payment method in Google Play.</string>
     <string name="plans_status_paused">Your subscription is paused.</string>
     <string name="plans_status_device_only">Active on this device (Google Play account). Sign in to use it on your other devices.</string>
-    <string name="plans_not_available">Subscriptions can currently be bought only in the Android app (Google Play).</string>
+    <string name="plans_not_available">Subscriptions need Google Play, which isn’t available on this device.</string>
     <string name="plans_loading_prices">Loading prices…</string>
     <string name="plans_prices_unavailable">Couldn't load prices from Google Play. Try again later.</string>
     <string name="plans_msg_purchased">Thank you! Your plan is active.</string>

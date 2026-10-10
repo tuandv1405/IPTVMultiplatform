@@ -30,6 +30,9 @@ val LocalOpenPlans = staticCompositionLocalOf<(() -> Unit)?> { null }
 enum class PlansMessage {
     PURCHASED, PENDING, FAILED, ALREADY_OWNED, RESTORED, NOTHING_TO_RESTORE, UNAVAILABLE, SIGN_IN_REQUIRED, DEFERRED,
 
+    /** Restore: Google Play is installed but its billing is unavailable (sign in / update Play). */
+    PLAY_UNAVAILABLE,
+
     /** Restore could not reach Google Play (QC B5). */
     RESTORE_FAILED,
 }
@@ -49,6 +52,8 @@ data class PlansUiState(
      */
     val unlimitedForSale: Boolean = false,
     val signedIn: Boolean = false,
+    /** Play is installed but its billing is unavailable right now (sign in to Play / update it). */
+    val playUnavailable: Boolean = false,
     val busy: Boolean = false,
     val message: PlansMessage? = null,
     /** Play subscription centre for the current product (or the list). */
@@ -75,8 +80,8 @@ class PlansViewModel(
 
     init {
         viewModelScope.launch {
-            combine(entitlements.entitlement, billing.offers, billing.purchases, entitlements.signedInUid) { e, offers, purchases, uid ->
-                Snapshot(e, offers, purchases, uid != null)
+            combine(entitlements.entitlement, billing.offers, billing.purchases, entitlements.signedInUid, billing.playBillingUnavailable) { e, offers, purchases, uid, unavailable ->
+                Snapshot(e, offers, purchases, uid != null, unavailable)
             }.collect { s -> _state.update { build(it, s) } }
         }
         viewModelScope.launch {
@@ -99,10 +104,17 @@ class PlansViewModel(
                 }
             }
         }
-        billing.refresh()
+        // Opening the screen is a user action: one fresh attempt even after "unavailable" or a backoff.
+        billing.retry()
     }
 
-    private data class Snapshot(val entitlement: Entitlement, val offers: List<PlanOffer>, val purchases: PlayPurchases, val signedIn: Boolean)
+    private data class Snapshot(
+        val entitlement: Entitlement,
+        val offers: List<PlanOffer>,
+        val purchases: PlayPurchases,
+        val signedIn: Boolean,
+        val playUnavailable: Boolean,
+    )
 
     private fun build(state: PlansUiState, s: Snapshot): PlansUiState {
         fun rows(plan: Plan) = s.offers.filter { it.plan == plan }.map { offer ->
@@ -123,6 +135,7 @@ class PlansViewModel(
             noAdsOffers = rows(Plan.NO_ADS),
             unlimitedOffers = if (unlimitedForSale) rows(Plan.UNLIMITED) else emptyList(),
             signedIn = s.signedIn,
+            playUnavailable = s.playUnavailable,
             manageUrl = ReplacementPolicy.manageUrl(ReplacementPolicy.PACKAGE_NAME, s.entitlement.productId),
         )
     }
@@ -175,7 +188,16 @@ class PlansViewModel(
         _state.update { it.copy(busy = true, message = null) }
         viewModelScope.launch {
             val ok = entitlements.restore()
-            _state.update { it.copy(busy = false, message = if (ok) it.message else PlansMessage.RESTORE_FAILED) }
+            _state.update {
+                it.copy(
+                    busy = false,
+                    message = when {
+                        ok -> it.message
+                        billing.playBillingUnavailable.value -> PlansMessage.PLAY_UNAVAILABLE
+                        else -> PlansMessage.RESTORE_FAILED
+                    },
+                )
+            }
         }
     }
 
