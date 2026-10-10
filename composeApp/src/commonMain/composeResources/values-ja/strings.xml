@@ -396,4 +396,6 @@
     <plurals name="source_items_were_skipped">
         <item quantity="other">%1$d 件をスキップしました</item>
     </plurals>
+    <string name="ad_label">広告</string>
+    <string name="privacy_options_title">プライバシー設定</string>
 </resources>

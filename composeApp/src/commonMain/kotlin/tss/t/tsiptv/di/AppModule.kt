@@ -124,6 +124,19 @@ val commonModule = module {
     // UI mode (phone / TV)
     single { UiModeRepository(get()) }
 
+    // Ads (docs/prd-admob.md): platform SDK (Android AdMob + UMP; no-op elsewhere) and the rules.
+    single<tss.t.tsiptv.core.ads.AdsPlatform> { tss.t.tsiptv.core.ads.platformAdsPlatform() }
+    single {
+        tss.t.tsiptv.core.ads.AdsGate(
+            storage = get(),
+            platform = get(),
+            uiModes = get(),
+            deviceIsTv = tss.t.tsiptv.utils.PlatformUtils.platform.isTv,
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            nowMs = tss.t.tsiptv.core.ads.AdsGate::systemNowMs,
+        )
+    }
+
     // Asking for a Play / App Store rating (docs/prd-rate-app.md)
     single { AppRatingRepository(get()) }
     single { AppRatingController(get(), getAppReviewPlatform()) }

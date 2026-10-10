@@ -126,11 +126,39 @@ Analytics.*
 | Field | Answer |
 | --- | --- |
 | Collected | Yes |
-| Shared | No |
+| Shared | **Yes** (advertising, through Google AdMob) |
+| Processed ephemerally | No |
 | Required or optional | Required |
-| Purposes | Analytics |
+| Purposes | Analytics; **Advertising or marketing** |
 
-*Firebase Analytics App Instance ID.*
+*Firebase Analytics App Instance ID (analytics, not shared). Since the AdMob
+release (`docs/prd-admob.md`): the **Android advertising ID** (`AD_ID`
+permission) is collected by the Google Mobile Ads SDK and shared with Google for
+advertising, including ad personalisation where the user consents through Google
+UMP. AdMob is Android phone/tablet only; no ads, and no AdMob SDK calls, on
+Android TV.*
+
+### App activity → Other actions (ads) / App info and performance (ads)
+
+| Field | Answer |
+| --- | --- |
+| Collected | Yes |
+| Shared | **Yes** (Google AdMob) |
+| Required or optional | Required |
+| Purposes | **Advertising or marketing**; Analytics; Fraud prevention, security and compliance |
+
+*The Google Mobile Ads SDK collects ad interactions (impressions, taps), device
+information (model, OS, screen, language, network type), app performance and
+diagnostics, and an approximate location derived from the IP address, and shares
+them with Google for serving, measuring and protecting ads. See Google's
+"Data disclosure" page for the Mobile Ads SDK and copy its current answers. The
+app itself adds **no** user data to ad requests (no keywords, no content URLs,
+no email or user ID).*
+
+### Location → Approximate location
+
+Declare **Collected and shared for Advertising** (derived from the IP address by
+the Mobile Ads SDK), unless Google's current SDK disclosure says otherwise.
 
 ---
 
@@ -138,7 +166,8 @@ Analytics.*
 
 Confirmed absent from the codebase:
 
-- Location (approximate or precise) — no location permission, no location API.
+- Precise location — no location permission, no location API. (Approximate
+  location: see AdMob above.)
 - Financial info — no payments, no in-app purchases.
 - Health and fitness, Messages, Contacts, Calendar — not touched.
 - Files and docs — the app reads a playlist file the user explicitly picks; it
@@ -152,14 +181,19 @@ Confirmed absent from the codebase:
 ## Ads declaration
 
 Play Console → App content → **Ads**: answer **Yes, my app contains ads**, and
-tick the "Contains ads" badge on the store listing.
+keep the "Contains ads" badge on the store listing.
 
-The app fetches and displays Shopee affiliate product offers
-(`core/model/ShopeeAffiliateAds.kt`, `ui/screens/ads/AdsViewModel.kt`). Even
-though there is no ad-network SDK and no behavioural targeting, Play counts
-monetised third-party promotional content as ads. The offers are not
-personalised to a user profile, so you do **not** need to declare advertising or
-marketing as a data-sharing purpose.
+Since the AdMob release the app shows Google AdMob ads (app open, banner and
+native; `docs/prd-admob.md`), with the Shopee affiliate offers
+(`core/model/ShopeeAffiliateAds.kt`, `ui/screens/ads/AdsViewModel.kt`) as the
+fallback when AdMob has no fill. Consent is collected with Google's User
+Messaging Platform (EEA, UK, Switzerland). Declare **Advertising or marketing**
+as a purpose for the data above, and set up the AdMob privacy & messaging
+(GDPR and US state regulations) messages in the AdMob console before release.
+
+**app-ads.txt**: host `app-ads.txt` at the root of the developer website listed
+on the Play Store page, with the line AdMob shows under *Apps › app-ads.txt*
+(`google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0`).
 
 ---
 

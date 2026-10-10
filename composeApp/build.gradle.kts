@@ -93,6 +93,10 @@ kotlin {
 
             // Play In-App Review for the rating prompt (docs/prd-rate-app.md)
             implementation(libs.play.review.ktx)
+
+            // AdMob + Google UMP consent (docs/prd-admob.md)
+            implementation(libs.play.services.ads)
+            implementation(libs.user.messaging.platform)
         }
 
         commonMain.dependencies {
@@ -238,6 +242,40 @@ val releaseStorePassword = keystoreSetting("storePassword", "TSIPTV_STORE_PASSWO
 val releaseKeyAlias = keystoreSetting("keyAlias", "TSIPTV_KEY_ALIAS")
 val releaseKeyPassword = keystoreSetting("keyPassword", "TSIPTV_KEY_PASSWORD")
 
+// AdMob (docs/prd-admob.md §6). Debug always uses Google's public test IDs. Release reads the real
+// IDs from a Gradle property, composeApp/local.properties / local.properties, or the environment,
+// in that order, and falls back to the test IDs with a warning. Never commit real IDs.
+object AdMobTestIds {
+    const val APP = "ca-app-pub-3940256099942544~3347511713"
+    const val APP_OPEN = "ca-app-pub-3940256099942544/9257395921"
+    const val BANNER = "ca-app-pub-3940256099942544/9214589741"
+    const val NATIVE = "ca-app-pub-3940256099942544/2247696110"
+}
+
+val adMobLocalProperties = Properties().apply {
+    listOf(rootProject.file("local.properties"), rootProject.file("composeApp/local.properties"))
+        .filter { it.exists() }
+        .forEach { file -> file.inputStream().use { load(it) } }
+}
+
+fun adMobSetting(name: String, testId: String): String {
+    val value = (project.findProperty(name) as String?)
+        ?: adMobLocalProperties.getProperty(name)
+        ?: System.getenv(name)
+    if (value.isNullOrBlank()) {
+        if (gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }) {
+            logger.warn("composeApp: $name is not set - the release build uses the AdMob TEST id. See docs/handoff-admob.md.")
+        }
+        return testId
+    }
+    return value.trim()
+}
+
+val releaseAdMobAppId = adMobSetting("TSIPTV_ADMOB_APP_ID", AdMobTestIds.APP)
+val releaseAdMobAppOpenUnit = adMobSetting("TSIPTV_ADMOB_APP_OPEN_UNIT", AdMobTestIds.APP_OPEN)
+val releaseAdMobBannerUnit = adMobSetting("TSIPTV_ADMOB_BANNER_UNIT", AdMobTestIds.BANNER)
+val releaseAdMobNativeUnit = adMobSetting("TSIPTV_ADMOB_NATIVE_UNIT", AdMobTestIds.NATIVE)
+
 val hasReleaseSigning = listOf(
     releaseStoreFile,
     releaseStorePassword,
@@ -282,8 +320,59 @@ android {
                 "debug_addon_blocklist_url",
                 (project.findProperty("tsiptv.debugAddonBlocklistUrl") as String?).orEmpty(),
             )
+            // AdMob: Google test IDs only.
+            manifestPlaceholders["admobAppId"] = AdMobTestIds.APP
+            resValue("string", "admob_app_open_unit", AdMobTestIds.APP_OPEN)
+            resValue("string", "admob_banner_unit", AdMobTestIds.BANNER)
+            resValue("string", "admob_native_unit", AdMobTestIds.NATIVE)
+            // QA: `-Ptsiptv.debugAdsNoFirstDay=true` skips the 24 h ad-free period (debug only).
+            resValue(
+                "bool",
+                "debug_ads_skip_first_day",
+                ((project.findProperty("tsiptv.debugAdsNoFirstDay") as String?) == "true").toString(),
+            )
+            // QA: `-Ptsiptv.debugAppOpenTimeoutMs=8000` lets slow emulators show the app open ad (debug only).
+            resValue(
+                "integer",
+                "debug_app_open_timeout_ms",
+                ((project.findProperty("tsiptv.debugAppOpenTimeoutMs") as String?)?.toLongOrNull() ?: 0L).toString(),
+            )
+            // QA: `-Ptsiptv.debugSkipLogin=true` opens Home signed out on a phone (debug only).
+            resValue(
+                "bool",
+                "debug_skip_login",
+                ((project.findProperty("tsiptv.debugSkipLogin") as String?) == "true").toString(),
+            )
+            // QA: UMP consent as if in a region (debug only), e.g.
+            //   -Ptsiptv.debugUmpGeography=EEA -Ptsiptv.debugUmpTestDevice=<hash from logcat> -Ptsiptv.debugUmpReset=true
+            // Values: EEA, REGULATED_US_STATE, OTHER (empty = real location). Emulators are test devices.
+            resValue(
+                "string",
+                "debug_ump_geography",
+                (project.findProperty("tsiptv.debugUmpGeography") as String?).orEmpty(),
+            )
+            resValue(
+                "string",
+                "debug_ump_test_device",
+                (project.findProperty("tsiptv.debugUmpTestDevice") as String?).orEmpty(),
+            )
+            resValue(
+                "bool",
+                "debug_ump_reset",
+                ((project.findProperty("tsiptv.debugUmpReset") as String?) == "true").toString(),
+            )
         }
         getByName("release") {
+            manifestPlaceholders["admobAppId"] = releaseAdMobAppId
+            resValue("string", "admob_app_open_unit", releaseAdMobAppOpenUnit)
+            resValue("string", "admob_banner_unit", releaseAdMobBannerUnit)
+            resValue("string", "admob_native_unit", releaseAdMobNativeUnit)
+            resValue("bool", "debug_ads_skip_first_day", "false")
+            resValue("bool", "debug_skip_login", "false")
+            resValue("integer", "debug_app_open_timeout_ms", "0")
+            resValue("string", "debug_ump_geography", "")
+            resValue("string", "debug_ump_test_device", "")
+            resValue("bool", "debug_ump_reset", "false")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

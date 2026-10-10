@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- AdMob (docs/prd-admob.md): the advertising ID, declared on Play as collected and shared for ads. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
     <!-- Android TV: the same APK serves phones and TVs. Neither feature may be
          required, or Play filters the app out of one of the two device types. -->
@@ -46,6 +48,11 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="true">
+        <!-- AdMob app ID: Google's test ID in debug, the real one injected for release
+             (TSIPTV_ADMOB_APP_ID, see docs/handoff-admob.md). Never commit a real ID. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}" />
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"

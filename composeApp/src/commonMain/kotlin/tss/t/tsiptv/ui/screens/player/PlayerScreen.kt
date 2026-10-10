@@ -46,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
@@ -82,7 +83,14 @@ import tss.t.tsiptv.ui.screens.programs.ProgramItem
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.themes.TSTextStyles
-import tss.t.tsiptv.ui.widgets.AdsItem
+import androidx.compose.foundation.lazy.LazyListScope
+import tss.t.tsiptv.core.ads.AdPlacement
+import tss.t.tsiptv.core.ads.AdsPolicy
+import tss.t.tsiptv.core.model.Channel
+import tss.t.tsiptv.ui.ads.BannerAdSlot
+import tss.t.tsiptv.ui.ads.NativeAdSlot
+import tss.t.tsiptv.ui.ads.rememberAdsState
+import tss.t.tsiptv.ui.screens.ads.rememberShopeeFallback
 import tss.t.tsiptv.ui.widgets.HorizontalDividersGradient
 import tss.t.tsiptv.utils.KeepScreenOnState
 import tss.t.tsiptv.utils.getScreenOrientationUtils
@@ -146,16 +154,9 @@ fun PlayerScreen(
         adsViewModel.loadAds()
     }
 
-    LaunchedEffect(Unit) {
-        snapshotFlow { scrollState.layoutInfo.visibleItemsInfo }
-            .collect { layoutInfo ->
-                showTitleUnderPlayer = layoutInfo.firstOrNull { itemInfo ->
-                    itemInfo.key == "ItemTitle"
-                }?.offset.let {
-                    it == null || it <= titleHeight
-                }
-            }
-    }
+    // PRD R4: the title block and the banner sit above the scrolling list, so the title never
+    // scrolls away and the sticky copy of it (showTitleUnderPlayer) is not needed any more.
+    val playerChannelRows = rememberPlayerChannelRows(homeUIState.relatedChannels)
     LaunchedEffect(playerControlState.isFullScreen) {
         if (playerControlState.isFullScreen) {
             getScreenOrientationUtils().hideSystemUI()
@@ -251,72 +252,61 @@ fun PlayerScreen(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = paddingValues,
-            state = scrollState,
-            userScrollEnabled = !showDetailsScreen
+        var showDetailsUnderStickyHeader by remember {
+            mutableStateOf(false)
+        }
+        Column(
+            modifier = Modifier.fillMaxSize()
+                .padding(top = paddingValues.calculateTopPadding())
         ) {
-            item("ItemTitle") {
-                HeaderUnderPlayerItem(
-                    mediaItem = mediaItem,
-                    mediaItemDescription = mediaItemDescription,
-                    showDetailsScreen = showDetailsScreen,
-                    onSizeChanged = {
-                        detailsScreenPaddingTop = it
-                    },
-                    onShowDetailsChanged = {
-                        showDetailsScreen = it
-                    }
-                )
+            HeaderUnderPlayerItem(
+                mediaItem = mediaItem,
+                mediaItemDescription = mediaItemDescription,
+                showDetailsScreen = showDetailsScreen,
+                onSizeChanged = {
+                    detailsScreenPaddingTop = it
+                },
+                onShowDetailsChanged = {
+                    showDetailsScreen = it
+                }
+            )
 
-                HorizontalDividersGradient(
-                    modifier = Modifier.fillMaxWidth()
+            HorizontalDividersGradient(
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // PRD R4: pinned under the title and description, outside the scrolling list. Not in
+            // fullscreen (that branch returns above), not during the first 24 h (the slot is empty),
+            // and not under the schedule/details overlay: removed from composition there, so the
+            // AdView is destroyed and stops refreshing while covered.
+            // A phone turned to landscape is about to switch to fullscreen: no banner (and no
+            // request) for the frames in between.
+            val window = LocalWindowInfo.current.containerSize
+            val compactLandscape = window.width > window.height &&
+                with(LocalDensity.current) { window.height.toDp() } < 480.dp
+            if (!showDetailsScreen && !showDetailsUnderStickyHeader && !compactLandscape) {
+                BannerAdSlot(
+                    placement = AdPlacement.PLAYER_BANNER,
+                    modifier = Modifier.padding(top = 8.dp),
+                    fallback = rememberShopeeFallback(adsViewModel),
                 )
             }
 
-            adsUIState?.let {
-                item("BannerAdSpace") {
-                    AdsItem(it)
-                }
-            } ?: item("SpacerAdsBanner") {
-                Spacer(Modifier.height(16.dp))
-            }
-
-            item("Interaction") {
-                InteractionsSpace()
-            }
-
-            items(
-                count = homeUIState.relatedChannels.size,
-                key = {
-                    homeUIState.relatedChannels[it].id
-                }
-            ) { index ->
-                val channel = homeUIState.relatedChannels[index]
-                HomeChannelItem(
-                    channel,
-                    modifier = Modifier.fillMaxWidth()
-                        .padding(top = 16.dp)
-                        .padding(horizontal = 16.dp),
-                    onItemClick = {
-                        onEvent(PlayerEvent.PlayIptv(it))
-                    }
-                )
-
-                val showAds = remember(index, channel) {
-                    if (index % 4 == 0) {
-                        channel
-                    } else {
-                        null
-                    }
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                contentPadding = PaddingValues(bottom = paddingValues.calculateBottomPadding()),
+                state = scrollState,
+                userScrollEnabled = !showDetailsScreen
+            ) {
+                item("SpacerAdsBanner") {
+                    Spacer(Modifier.height(16.dp))
                 }
 
-                if (showAds != null) {
-                    adsViewModel.RefreshAdsForKeyWithLifeCycle(showAds.id) {
-                        AdsItem(it)
-                    }
+                item("Interaction") {
+                    InteractionsSpace()
                 }
+
+                playerChannelList(playerChannelRows, adsViewModel, AdPlacement.PLAYER_NATIVE, onEvent)
             }
         }
 
@@ -338,10 +328,6 @@ fun PlayerScreen(
             },
             onEvent = onEvent
         )
-
-        var showDetailsUnderStickyHeader by remember {
-            mutableStateOf(false)
-        }
 
         DynamicStickyHeader(
             viewModel = adsViewModel,
@@ -514,6 +500,7 @@ private fun ProgramListVisibility(
     },
     onEvent: (PlayerEvent) -> Unit,
 ) {
+    val relatedRows = rememberPlayerChannelRows(homeUIState.relatedChannels)
     AnimatedVisibility(
         modifier = Modifier,
         visible = visible,
@@ -546,32 +533,8 @@ private fun ProgramListVisibility(
                 }
                 return@LazyColumn
             }
-            items(homeUIState.relatedChannels.size) { index ->
-                val channel = homeUIState.relatedChannels[index]
-
-                HomeChannelItem(
-                    channel,
-                    modifier = Modifier.fillMaxWidth()
-                        .padding(top = 16.dp)
-                        .padding(horizontal = 16.dp),
-                    onItemClick = { channel ->
-                        onEvent(PlayerEvent.PlayIptv(channel))
-                    }
-                )
-                val showAds = remember(index, channel) {
-                    if (index % 4 == 0) {
-                        channel
-                    } else {
-                        null
-                    }
-                }
-
-                if (showAds != null) {
-                    viewModel.RefreshAdsForKeyWithLifeCycle(showAds.id) {
-                        AdsItem(it)
-                    }
-                }
-            }
+            // Its own placement: the main list's native ads are never bound here a second time.
+            playerChannelList(relatedRows, viewModel, AdPlacement.PLAYER_DETAILS_NATIVE, onEvent)
         }
     }
 }
@@ -677,5 +640,49 @@ private fun RowScope.InteractionItem(
             style = TSTextStyles.normal13.copy(TSColors.White.copy(0.8f))
         )
         Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+/** The player's channel list with native ad slots (PRD R5); plain during the first 24 h or on TV. */
+@Composable
+private fun rememberPlayerChannelRows(channels: List<Channel>): List<AdsPolicy.Row<Channel>> {
+    val adsState = rememberAdsState()
+    return remember(channels, adsState.any) { AdsPolicy.interleave(channels, withAds = adsState.any) }
+}
+
+private fun LazyListScope.playerChannelList(
+    rows: List<AdsPolicy.Row<Channel>>,
+    adsViewModel: AdsViewModel,
+    nativePlacement: AdPlacement,
+    onEvent: (PlayerEvent) -> Unit,
+) {
+    items(
+        count = rows.size,
+        key = { index ->
+            when (val row = rows[index]) {
+                is AdsPolicy.Row.Item -> "ch:" + row.item.id
+                is AdsPolicy.Row.Ad -> "ad:" + row.slot
+            }
+        },
+        contentType = { index -> if (rows[index] is AdsPolicy.Row.Ad) "ad" else "channel" },
+    ) { index ->
+        when (val row = rows[index]) {
+            is AdsPolicy.Row.Item -> HomeChannelItem(
+                row.item,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(top = 16.dp)
+                    .padding(horizontal = 16.dp),
+                onItemClick = { channel ->
+                    onEvent(PlayerEvent.PlayIptv(channel))
+                }
+            )
+
+            is AdsPolicy.Row.Ad -> NativeAdSlot(
+                placement = nativePlacement,
+                slot = row.slot,
+                modifier = Modifier.padding(top = 16.dp).padding(horizontal = 16.dp),
+                fallback = rememberShopeeFallback(adsViewModel, row.slot),
+            )
+        }
     }
 }

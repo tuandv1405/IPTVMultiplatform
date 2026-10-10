@@ -61,6 +61,7 @@ import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
 import tss.t.tsiptv.ui.themes.TSTextStyles
 import tss.t.tsiptv.ui.widgets.AdsItem
+import tss.t.tsiptv.ui.ads.rememberAdsState
 import tss.t.tsiptv.ui.widgets.GradientButton1
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -168,8 +169,11 @@ fun HistoryScreen(
 
             item("Ads") {
                 val ads by adsViewModel.displayAd.collectAsStateWithLifecycle()
-                ads?.let {
-                    AdsItem(it)
+                // Shopee offer only (not an AdMob placement), and never in the first 24 h (PRD R1).
+                if (rememberAdsState().fallback) {
+                    ads?.let {
+                        AdsItem(it)
+                    }
                 }
             }
 

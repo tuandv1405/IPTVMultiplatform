@@ -11,7 +11,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.CompositionLocalProvider
 import org.koin.core.component.KoinComponent
+import tss.t.tsiptv.core.ads.AndroidAdsPlatform
+import tss.t.tsiptv.core.ads.AppOpenAdController
 import tss.t.tsiptv.core.language.LocalAppLocale
+import tss.t.tsiptv.utils.PlatformUtils
 import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
 import tss.t.tsiptv.core.permission.PermissionCheckerFactory
 import tss.t.tsiptv.ui.provider.LocalMultiPermissionProvider
@@ -47,6 +50,9 @@ class MainActivity : ComponentActivity(), KoinComponent {
 
         NetworkConnectivityCheckerFactory.initialize(applicationContext as Application)
 
+        // Google UMP consent (form where required), then the ads SDK if allowed. Not on TV.
+        if (!PlatformUtils.platform.isTv) AndroidAdsPlatform.gatherConsent(this)
+
         setContent {
             val language = LocalAppLocale.current
 
@@ -61,6 +67,17 @@ class MainActivity : ComponentActivity(), KoinComponent {
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(newBase)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // The cold-start app open ad shows here at most once per process (PRD R2).
+        AppOpenAdController.onActivityResumed(this)
+    }
+
+    override fun onPause() {
+        AppOpenAdController.onActivityPaused()
+        super.onPause()
     }
 
     override fun onDestroy() {
