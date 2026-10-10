@@ -92,6 +92,18 @@ import androidx.navigation.NavHostController
 import tss.t.tsiptv.utils.PlatformUtils
 import tss.t.tsiptv.utils.getScreenOrientationUtils
 import kotlin.reflect.typeOf
+import kotlinx.coroutines.flow.first
+import tss.t.tsiptv.core.database.IPTVDatabase
+import tss.t.tsiptv.feature.lan.CastCommand
+import tss.t.tsiptv.feature.lan.CastStream
+import tss.t.tsiptv.feature.lan.LanSender
+import tss.t.tsiptv.feature.lan.LanValidation
+import tss.t.tsiptv.platform.PickedPlaylistFile
+import tss.t.tsiptv.player.ui.LocalCastAction
+import tss.t.tsiptv.ui.screens.connect.AccountHost
+import tss.t.tsiptv.ui.screens.connect.ConnectScreen
+import tss.t.tsiptv.ui.screens.connect.LanReceiverHost
+import tss.t.tsiptv.ui.screens.connect.TvSendDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
 @Composable
@@ -360,6 +372,9 @@ fun App() {
                                     onDismissRequest = { homeViewModel.onEmitEvent(HomeEvent.OnDismissNotice) },
                                 )
                             }
+                            // Device limit, "signed out elsewhere" and a new sync (prd-tv-cast-and-sync).
+                            AccountHost(onOpenConnect = { navController.navigate(NavRoutes.Connect) })
+
                             homeUIState.importSummary
                                 ?.takeIf { it.fromRefresh && it.skippedTotal > 0 }
                                 ?.let { summary ->
@@ -480,13 +495,25 @@ fun App() {
                                     hasStreamChoice = playerViewModel.channelStreams.collectAsStateWithLifecycle().value != null,
                                 )
                             } else {
-                                PlayerScreen(
-                                    mediaItem = mediaItem,
-                                    homeUIState = homeUIState,
-                                    mediaPlayer = playerViewModel.player,
-                                    playerControlState = playerUIState,
-                                    onEvent = onPlayerEvent,
-                                )
+                                // Cast to a TS IPTV TV on the same Wi-Fi (prd-tv-cast-and-sync §2).
+                                var castCommand by remember { mutableStateOf<CastCommand?>(null) }
+                                val lanSender: LanSender = koinInject()
+                                CompositionLocalProvider(
+                                    LocalCastAction provides if (lanSender.isSupported && mediaItem.uri.isNotEmpty()) {
+                                        { castCommand = CastCommand(mediaItem.toCastStream(playerViewModel.player)) }
+                                    } else null,
+                                ) {
+                                    PlayerScreen(
+                                        mediaItem = mediaItem,
+                                        homeUIState = homeUIState,
+                                        mediaPlayer = playerViewModel.player,
+                                        playerControlState = playerUIState,
+                                        onEvent = onPlayerEvent,
+                                    )
+                                }
+                                castCommand?.let { command ->
+                                    TvSendDialog(command = command, onDismiss = { castCommand = null })
+                                }
                             }
                         }
 
@@ -603,6 +630,25 @@ fun App() {
                             )
                         }
 
+                        composable<NavRoutes.Connect> {
+                            val homeViewModel = koinViewModel<HomeViewModel>(viewModelStoreOwner = appViewModelStore)
+                            val database: IPTVDatabase = koinInject()
+                            ConnectScreen(
+                                isTvLayout = isTvMode,
+                                onBack = { navController.popBackStack() },
+                                onSyncApplied = {
+                                    // Replace may have removed the playlist on screen: pick another one.
+                                    appScope.launch {
+                                        val all = database.getAllPlaylists().first()
+                                        val current = homeViewModel.uiState.value.playListId
+                                        if (current == null || all.none { p -> p.id == current }) {
+                                            all.firstOrNull()?.let { homeViewModel.onEmitEvent(HomeEvent.OnRequestChangePlaylist(it)) }
+                                        }
+                                    }
+                                },
+                            )
+                        }
+
                         composable<NavRoutes.DiscoverSearch> { entry ->
                             val discoverViewModel = koinViewModel<DiscoverViewModel>(viewModelStoreOwner = appViewModelStore)
                             DiscoverSearchScreen(
@@ -639,9 +685,56 @@ fun App() {
                         }
                     }
                 )
+
+                // TV: receive casts and playlists from paired phones while the app is open.
+                if (isTvMode) {
+                    val homeViewModel = koinViewModel<HomeViewModel>(viewModelStoreOwner = appViewModelStore)
+                    val playerViewModel = koinViewModel<PlayerViewModel>(viewModelStoreOwner = appViewModelStore)
+                    LanReceiverHost(
+                        onCast = { stream ->
+                            val id = playerViewModel.playCast(stream)
+                            if (navController.currentBackStackEntry?.destination?.hasRoute<NavRoutes.Player>() != true) {
+                                navController.navigate(NavRoutes.Player(id))
+                            }
+                        },
+                        onAcceptPlaylist = { shared ->
+                            // The normal importer, with its progress / source preview / summary dialogs.
+                            if (navController.currentBackStackEntry?.destination?.hasRoute<NavRoutes.ImportIptv>() != true) {
+                                navController.navigate(NavRoutes.ImportIptv)
+                            }
+                            val content = shared.content
+                            if (content != null) {
+                                homeViewModel.importFile(
+                                    shared.name,
+                                    PickedPlaylistFile.Picked(shared.fileName ?: "playlist.m3u", content.encodeToByteArray()),
+                                    confirmedReplace = true,
+                                )
+                            } else {
+                                homeViewModel.parseIptvSource(shared.name, shared.url.orEmpty())
+                            }
+                        },
+                    )
+                }
             }
         }
     }
+}
+
+/** What a paired TV needs to play [this] where the phone is (prd-tv-cast-and-sync §2.2). */
+private fun tss.t.tsiptv.player.models.MediaItem.toCastStream(player: tss.t.tsiptv.player.MediaPlayer): CastStream {
+    val duration = player.duration.value
+    val isLive = duration <= 0
+    return CastStream(
+        url = uri,
+        title = title,
+        logo = artworkUri?.takeIf { LanValidation.isHttpUrl(it) },
+        mimeType = mimeType,
+        headers = headers,
+        drm = drm,
+        subtitles = subtitles.filter { LanValidation.isHttpUrl(it.url) },
+        isLive = isLive,
+        positionMs = if (isLive) null else player.currentPosition.value,
+    )
 }
 
 /** F3: plays a Source Home channel through the Home flow ([HomeEvent.OnPlaySourceChannel]). */

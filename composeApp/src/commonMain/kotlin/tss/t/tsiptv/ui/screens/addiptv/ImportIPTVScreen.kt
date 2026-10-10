@@ -79,6 +79,16 @@ import tss.t.tsiptv.ui.widgets.TSDialog
 import tss.t.tsiptv.ui.widgets.TSTextField
 import tss.t.tsiptv.ui.widgets.Tips
 import tss.t.tsiptv.utils.isValidUrl
+import tss.t.tsiptv.feature.lan.LanProtocol
+import tss.t.tsiptv.feature.lan.LanValidation
+import tss.t.tsiptv.feature.lan.PlaylistCommand
+import tss.t.tsiptv.feature.lan.SharedPlaylist
+import tss.t.tsiptv.platform.PickedPlaylistFile
+import tss.t.tsiptv.ui.screens.connect.MessageDialog
+import tss.t.tsiptv.ui.screens.connect.TvSendDialog
+import tsiptv.composeapp.generated.resources.send_tv_action
+import tsiptv.composeapp.generated.resources.send_tv_file_too_large
+import tsiptv.composeapp.generated.resources.send_tv_need_input
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,6 +115,33 @@ fun ImportIPTVScreen(
     val filePicker = rememberPlaylistFilePicker { picked ->
         onEvent(HomeEvent.OnImportFile(inputSourceName.trim(), picked))
     }
+
+    val isTvLayout = tss.t.tsiptv.core.uimode.LocalIsTvMode.current
+    var sendCommand by remember { mutableStateOf<PlaylistCommand?>(null) }
+    var sendNotice by remember { mutableStateOf<org.jetbrains.compose.resources.StringResource?>(null) }
+    val sendFilePicker = rememberPlaylistFilePicker { picked ->
+        when (picked) {
+            is PickedPlaylistFile.Picked -> {
+                // Sent as text (a .gz is unpacked first); the TV imports it like a picked file.
+                val text = runCatching { tss.t.tsiptv.core.parser.IPTVParserFactory.decode(picked.bytes) }.getOrNull()
+                when {
+                    text == null -> sendNotice = Res.string.send_tv_need_input
+                    text.encodeToByteArray().size > LanProtocol.MAX_FILE_CONTENT_BYTES -> sendNotice = Res.string.send_tv_file_too_large
+                    else -> sendCommand = PlaylistCommand(
+                        SharedPlaylist(
+                            name = inputSourceName.trim().ifBlank { picked.displayName.substringBeforeLast('.') }.ifBlank { "Playlist" }.take(LanValidation.MAX_NAME),
+                            fileName = picked.displayName.removeSuffix(".gz").replace('/', '_').replace('\\', '_').take(LanValidation.MAX_NAME),
+                            content = text,
+                        )
+                    )
+                }
+            }
+            is PickedPlaylistFile.TooLarge -> sendNotice = Res.string.send_tv_file_too_large
+            else -> Unit
+        }
+    }
+    sendCommand?.let { TvSendDialog(command = it, onDismiss = { sendCommand = null }) }
+    sendNotice?.let { MessageDialog(stringResource(Res.string.send_tv_action), stringResource(it)) { sendNotice = null } }
 
     homeUiState.pendingSingleStream?.let {
         SingleStreamDialog(
@@ -342,6 +379,29 @@ fun ImportIPTVScreen(
                             .padding(top = 12.dp)
                             .padding(horizontal = 24.dp)
                             .fillMaxWidth()
+                    )
+                }
+            }
+
+            // Phone: send the typed link, or a picked file, to a TS IPTV TV (prd-tv-cast-and-sync §3.1).
+            if (!isTvLayout) {
+                item("BtnSendToTv") {
+                    GrayButton(
+                        text = stringResource(Res.string.send_tv_action),
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .padding(horizontal = 24.dp)
+                            .fillMaxWidth(),
+                        onClick = {
+                            val url = inputSourceUrl.trim()
+                            when {
+                                LanValidation.isHttpUrl(url) -> sendCommand = PlaylistCommand(
+                                    SharedPlaylist(name = inputSourceName.trim().ifBlank { url.substringAfterLast('/').ifBlank { url } }.take(LanValidation.MAX_NAME), url = url)
+                                )
+                                sendFilePicker.isAvailable -> sendFilePicker.launch()
+                                else -> sendNotice = Res.string.send_tv_need_input
+                            }
+                        },
                     )
                 }
             }

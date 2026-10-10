@@ -269,6 +269,10 @@ fun TvHomeScreen(
                 restoreSettingsFocus = true
                 onOpenAddons()
             },
+            onOpenConnect = {
+                restoreSettingsFocus = true
+                onNavigate(NavRoutes.Connect)
+            },
         )
     }
 

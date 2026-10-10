@@ -44,6 +44,9 @@ class SyncService(
     /** A sync from another device that this one has not applied or dismissed yet. */
     val incoming: StateFlow<SyncDocument?> = _incoming
 
+    /** The incoming sync already offered on Home in this app session (not offered again). */
+    var promptedCreatedAt: Long = 0
+
     private fun seenKey(uid: String) = "sync_seen_created_at_$uid"
 
     suspend fun localPlaylists(): List<Playlist> = database.getAllPlaylists().first()

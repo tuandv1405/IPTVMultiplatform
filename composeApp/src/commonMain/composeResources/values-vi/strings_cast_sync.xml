@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TV cast, send to TV, device limit and device sync (docs/prd-tv-cast-and-sync.md §9). -->
+<resources>
+    <string name="connect_title">TV &amp; thiết bị</string>
+    <string name="connect_desc">Phát trên TV, gửi danh sách phát, đồng bộ</string>
+
+    <string name="lan_cast_title">Phát trên TV</string>
+    <string name="lan_cast_searching">Đang tìm TV trong cùng mạng Wi-Fi…</string>
+    <string name="lan_cast_none_found">Không tìm thấy TV nào</string>
+    <string name="lan_conditions_title">Điều kiện để tìm thấy TV</string>
+    <string name="lan_conditions_body">• Điện thoại và TV dùng cùng một mạng Wi-Fi (không dùng mạng khách, không dùng dữ liệu di động)\n• Bộ phát Wi-Fi cho phép các thiết bị thấy nhau (không bật cách ly thiết bị / AP isolation) và không chặn mDNS\n• TS IPTV đang mở trên TV, hoặc đang ở màn hình “Nhận từ điện thoại”\n• Cả hai ứng dụng đều là bản mới nhất\n• Tắt VPN trên cả hai thiết bị\nVẫn không thấy? Dùng “Kết nối bằng địa chỉ IP” với địa chỉ hiển thị trên TV.</string>
+    <string name="lan_connect_by_ip">Kết nối bằng địa chỉ IP</string>
+    <string name="lan_ip_hint">Ví dụ: 192.168.1.20:47123</string>
+    <string name="lan_ip_invalid">Địa chỉ không hợp lệ</string>
+    <string name="lan_connect">Kết nối</string>
+    <string name="lan_cancel">Huỷ</string>
+    <string name="lan_close">Đóng</string>
+    <string name="lan_forget">Quên TV này</string>
+    <string name="lan_paired_badge">Đã ghép nối</string>
+    <string name="lan_paired_tvs">TV đã ghép nối</string>
+    <string name="lan_no_paired_tvs">Chưa ghép nối TV nào</string>
+    <string name="lan_pair_title">Ghép nối với %1$s</string>
+    <string name="lan_pair_enter_code">Nhập mã 6 số đang hiển thị trên TV</string>
+    <string name="lan_pair_wrong_code">Mã không đúng. Kiểm tra lại mã trên TV.</string>
+    <string name="lan_pair_failed">Không ghép nối được. Hãy thử lại.</string>
+    <string name="lan_pair_busy">TV đang ghép nối với thiết bị khác</string>
+    <string name="lan_pair_locked">Thử ghép nối sai quá nhiều lần. Hãy đợi 10 phút.</string>
+    <string name="lan_cast_sent">Đang phát trên %1$s</string>
+    <string name="lan_send_failed">Không gửi được tới TV. Kiểm tra TV còn mở TS IPTV và cùng mạng Wi-Fi.</string>
+    <string name="lan_error_clock">Giờ trên điện thoại và TV lệch nhau. Hãy kiểm tra ngày giờ.</string>
+    <string name="lan_error_rejected">TV từ chối nội dung này</string>
+    <string name="lan_not_supported">Thiết bị này chưa hỗ trợ tính năng này</string>
+
+    <string name="lan_tv_pair_title">Ghép nối điện thoại</string>
+    <string name="lan_tv_pair_message">Nhập mã này trên %1$s để cho phép gửi nội dung tới TV này.</string>
+    <string name="lan_tv_paired">Đã ghép nối với %1$s</string>
+    <string name="lan_tv_cast_from">Đang phát từ %1$s</string>
+    <string name="lan_tv_offer_title">Nhận danh sách phát</string>
+    <string name="lan_tv_offer_message">Nhận danh sách phát “%1$s” từ %2$s?</string>
+    <string name="lan_tv_accept">Nhận</string>
+    <string name="lan_tv_decline">Từ chối</string>
+    <string name="lan_tv_receive_title">Nhận từ điện thoại</string>
+    <string name="lan_tv_receive_ready">TV đang sẵn sàng nhận với tên “%1$s”</string>
+    <string name="lan_tv_receive_address">Kết nối bằng IP: %1$s</string>
+    <string name="lan_tv_receive_off">Chế độ nhận chưa bật được trên TV này</string>
+    <string name="lan_tv_receive_hint">Giữ TS IPTV mở trên TV. Trên điện thoại, bấm biểu tượng TV trong trình phát, hoặc Gửi tới TV ở danh sách phát.</string>
+    <string name="lan_tv_paired_phones">Điện thoại đã ghép nối</string>
+    <string name="lan_tv_unpair">Bỏ ghép nối</string>
+    <string name="lan_tv_no_paired">Chưa có điện thoại nào</string>
+
+    <string name="send_tv_action">Gửi tới TV</string>
+    <string name="send_tv_title">Gửi danh sách phát tới TV</string>
+    <string name="send_tv_remaining">Còn %1$d lượt gửi hôm nay</string>
+    <string name="send_tv_quota_reached">Bạn đã dùng hết lượt gửi hôm nay</string>
+    <string name="send_tv_tasks">Làm nhiệm vụ để nhận thêm lượt gửi</string>
+    <string name="send_tv_task_rewarded">Xem 1 quảng cáo có thưởng để nhận thêm 1 lượt gửi</string>
+    <string name="send_tv_sent">Đã gửi. Hãy xác nhận trên TV.</string>
+    <string name="send_tv_sign_in">Đăng nhập để gửi danh sách phát tới TV</string>
+    <string name="send_tv_file_too_large">Tệp lớn hơn 1 MB, không gửi được. Hãy gửi đường dẫn.</string>
+    <string name="send_tv_file_unavailable">Danh sách nhập từ tệp không lưu nội dung. Hãy chọn lại tệp ở màn hình Thêm danh sách phát để gửi.</string>
+    <string name="send_tv_need_input">Nhập đường dẫn hoặc chọn tệp trước khi gửi</string>
+    <string name="send_tv_pick_file">Gửi tệp tới TV</string>
+
+    <string name="reward_ad_unavailable">Chưa có quảng cáo. Hãy thử lại sau.</string>
+    <string name="reward_granted">Bạn nhận thêm 1 lượt</string>
+    <string name="reward_limit_reached">Hôm nay bạn đã nhận đủ lượt thưởng</string>
+
+    <string name="devices_title">Thiết bị đã đăng nhập</string>
+    <string name="devices_count">%1$d/%2$d thiết bị</string>
+    <string name="devices_limit_title">Đã đạt giới hạn %1$d thiết bị</string>
+    <string name="devices_limit_message">Tài khoản đang đăng nhập trên %1$d thiết bị. Đăng xuất một thiết bị để tiếp tục trên thiết bị này.</string>
+    <string name="devices_sign_out_remote">Đăng xuất từ xa</string>
+    <string name="devices_cancel_sign_in">Huỷ đăng nhập</string>
+    <string name="devices_this_device">Thiết bị này</string>
+    <string name="devices_last_seen">Hoạt động: %1$s</string>
+    <string name="devices_removed_notice">Thiết bị này đã bị đăng xuất từ một thiết bị khác.</string>
+    <string name="devices_remove_confirm">Đăng xuất %1$s? Thiết bị đó sẽ bị đăng xuất khi mở ứng dụng lần sau.</string>
+    <string name="devices_error">Không tải được danh sách thiết bị</string>
+
+    <string name="sync_title">Đồng bộ thiết bị</string>
+    <string name="sync_push">Đồng bộ danh sách phát lên tài khoản</string>
+    <string name="sync_push_desc">Lưu %1$d danh sách phát của thiết bị này để thiết bị khác áp dụng</string>
+    <string name="sync_pushed">Đã đồng bộ %1$d danh sách phát</string>
+    <string name="sync_skipped_files">%1$d danh sách nhập từ tệp không được đồng bộ</string>
+    <string name="sync_remaining">Còn %1$d lượt đồng bộ hôm nay</string>
+    <string name="sync_quota_reached">Bạn đã dùng hết lượt đồng bộ hôm nay</string>
+    <string name="sync_task_rewarded">Xem 2 quảng cáo có thưởng để nhận thêm 1 lượt đồng bộ (%1$d/2)</string>
+    <string name="sync_new_available">Có bản đồng bộ mới từ %1$s</string>
+    <string name="sync_merge">Gộp</string>
+    <string name="sync_merge_desc">Thêm danh sách còn thiếu, giữ danh sách hiện có</string>
+    <string name="sync_replace">Thay thế</string>
+    <string name="sync_replace_desc">Dùng đúng bộ danh sách đã đồng bộ</string>
+    <string name="sync_later">Để sau</string>
+    <string name="sync_replace_confirm_title">Thay thế danh sách phát?</string>
+    <string name="sync_replace_confirm_message">Sẽ xoá %1$d danh sách: %2$s. Sẽ thêm %3$d danh sách.</string>
+    <string name="sync_applied">Đã áp dụng: thêm %1$d, cập nhật %2$d, xoá %3$d</string>
+    <string name="sync_apply_failed_some">%1$d danh sách không tải được</string>
+    <string name="sync_applying">Đang áp dụng %1$d/%2$d…</string>
+    <string name="sync_none">Chưa có bản đồng bộ nào</string>
+    <string name="sync_current_from">Bản đồng bộ hiện tại: %1$s, %2$s</string>
+    <string name="sync_too_large">Quá nhiều danh sách để đồng bộ (tối đa 100)</string>
+    <string name="sync_sign_in">Đăng nhập để dùng đồng bộ và giới hạn thiết bị</string>
+    <string name="sync_error">Không đồng bộ được. Hãy thử lại.</string>
+</resources>

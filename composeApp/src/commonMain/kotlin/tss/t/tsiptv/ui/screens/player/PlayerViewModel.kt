@@ -213,6 +213,36 @@ class PlayerViewModel(
         }
     }
 
+    /**
+     * TV: plays a stream cast from a paired phone (docs/prd-tv-cast-and-sync.md §2.6). Not a stored
+     * channel: no history row; VOD starts at the phone's position.
+     */
+    fun playCast(stream: tss.t.tsiptv.feature.lan.CastStream): String {
+        val prefix = if (stream.isLive) CAST_LIVE_MEDIA_ID_PREFIX else CAST_VOD_MEDIA_ID_PREFIX
+        val item = MediaItem(
+            id = prefix + stream.url.hashCode().toUInt().toString(16),
+            uri = stream.url,
+            title = stream.title,
+            artworkUri = stream.logo,
+            mimeType = stream.mimeType,
+            headers = stream.headers,
+            drm = stream.drm,
+            subtitles = stream.subtitles,
+        )
+        requestedChannelId = item.id
+        _channelStreams.value = null
+        viewModelScope.launch {
+            historyTracker.onPlaybackStopped()
+            progressTracker.save()
+            withContext(Dispatchers.Main) {
+                _mediaPlayer.prepare(item)
+                _mediaPlayer.play()
+                stream.positionMs?.takeIf { !stream.isLive && it > 0 }?.let { _mediaPlayer.seekTo(it) }
+            }
+        }
+        return item.id
+    }
+
     fun onHandleEvent(event: PlayerEvent) {
         viewModelScope.launch {
             when (event) {
@@ -446,7 +476,12 @@ const val SOURCE_VOD_MEDIA_ID_PREFIX = "tsvod:"
  * [PlayerViewModel.playStream], tracked in `media_history`, VOD controls (seek), no zapping.
  */
 fun isAddonItemId(id: String?): Boolean =
-    id != null && (id.startsWith(ADDON_MEDIA_ID_PREFIX) || id.startsWith(SOURCE_VOD_MEDIA_ID_PREFIX))
+    id != null && (id.startsWith(ADDON_MEDIA_ID_PREFIX) || id.startsWith(SOURCE_VOD_MEDIA_ID_PREFIX) ||
+        id.startsWith(CAST_VOD_MEDIA_ID_PREFIX))
+
+/** Streams cast from a phone (TV side): VOD items get VOD controls, live ones play like a channel. */
+const val CAST_VOD_MEDIA_ID_PREFIX = "castvod:"
+const val CAST_LIVE_MEDIA_ID_PREFIX = "cast:"
 
 data class PlayerUIState(
     val isFullScreen: Boolean = false,

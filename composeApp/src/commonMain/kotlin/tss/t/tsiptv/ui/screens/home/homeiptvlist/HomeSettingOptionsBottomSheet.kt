@@ -6,7 +6,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.ChangeCircle
+import tsiptv.composeapp.generated.resources.connect_desc
+import tsiptv.composeapp.generated.resources.connect_title
 import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Refresh
@@ -119,6 +122,20 @@ fun HomeSettingOptionsBottomSheet(
                 title = stringResource(Res.string.bottom_sheet_refresh_channel),
                 onClick = {
                     onHomeEvent(HomeEvent.RefreshIPTVSource)
+                    onDismissRequest()
+                }
+            )
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                color = TSColors.White.copy(alpha = 0.08f)
+            )
+            // Play on TV, send playlists, device sync, signed-in devices (prd-tv-cast-and-sync).
+            IconTitleActionItem(
+                imageVector = Icons.Rounded.Cast,
+                title = stringResource(Res.string.connect_title),
+                description = stringResource(Res.string.connect_desc),
+                onClick = {
+                    parentNavController.navigate(NavRoutes.Connect)
                     onDismissRequest()
                 }
             )

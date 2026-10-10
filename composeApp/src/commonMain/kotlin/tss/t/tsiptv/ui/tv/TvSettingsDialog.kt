@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.automirrored.rounded.Login
 import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.ChangeCircle
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.FileDownload
@@ -49,6 +50,8 @@ import tsiptv.composeapp.generated.resources.bottom_sheet_select_playlist
 import tsiptv.composeapp.generated.resources.btn_logout_cancel
 import tsiptv.composeapp.generated.resources.btn_logout_ok
 import tsiptv.composeapp.generated.resources.channel_count_format
+import tsiptv.composeapp.generated.resources.connect_title
+import tsiptv.composeapp.generated.resources.lan_tv_receive_title
 import tsiptv.composeapp.generated.resources.login
 import tsiptv.composeapp.generated.resources.logout_button_title
 import tsiptv.composeapp.generated.resources.logout_dialog_message
@@ -86,6 +89,7 @@ fun TvSettingsDialog(
     onDismissRequest: () -> Unit,
     onRateApp: (() -> Unit)? = null,
     onOpenAddons: (() -> Unit)? = null,
+    onOpenConnect: (() -> Unit)? = null,
 ) {
     var page by remember { mutableStateOf(TvSettingsPage.MENU) }
 
@@ -119,6 +123,12 @@ fun TvSettingsDialog(
                 }
             },
             onAddons = onOpenAddons?.let { open ->
+                {
+                    onDismissRequest()
+                    open()
+                }
+            },
+            onConnect = onOpenConnect?.let { open ->
                 {
                     onDismissRequest()
                     open()
@@ -194,6 +204,7 @@ private fun SettingsMenu(
     onRateApp: (() -> Unit)?,
     onDismissRequest: () -> Unit,
     onAddons: (() -> Unit)? = null,
+    onConnect: (() -> Unit)? = null,
 ) {
     val firstItem = remember { FocusRequester() }
     TvDialogPanel(
@@ -232,6 +243,15 @@ private fun SettingsMenu(
                     title = stringResource(Res.string.addons_title),
                     icon = Icons.Rounded.Extension,
                     onClick = onAddons
+                )
+            }
+            // Receive from phone, device sync, signed-in devices (prd-tv-cast-and-sync).
+            if (onConnect != null) {
+                TvMenuItem(
+                    title = stringResource(Res.string.connect_title),
+                    description = stringResource(Res.string.lan_tv_receive_title),
+                    icon = Icons.Rounded.Cast,
+                    onClick = onConnect
                 )
             }
             TvMenuItem(

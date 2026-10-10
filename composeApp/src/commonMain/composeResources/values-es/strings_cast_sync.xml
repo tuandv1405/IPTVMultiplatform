@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_title">TV y dispositivos</string>
+    <string name="connect_desc">Reproducir en la TV, enviar listas, sincronizar</string>
+
+    <string name="lan_cast_title">Reproducir en la TV</string>
+    <string name="lan_cast_searching">Buscando televisores en esta Wi-Fi…</string>
+    <string name="lan_cast_none_found">No se encontró ninguna TV</string>
+    <string name="lan_conditions_title">Para que aparezca tu TV</string>
+    <string name="lan_conditions_body">• Teléfono y TV en la misma red Wi-Fi (no una red de invitados ni datos móviles)\n• El router deja que los dispositivos se vean (sin aislamiento de clientes / AP) y no bloquea mDNS\n• TS IPTV está abierta en la TV, o en su pantalla “Recibir del teléfono”\n• Ambas apps están actualizadas\n• La VPN está desactivada en ambos dispositivos\n¿Sigue sin aparecer? Usa “Conectar por dirección IP” con la dirección que muestra la TV.</string>
+    <string name="lan_connect_by_ip">Conectar por dirección IP</string>
+    <string name="lan_ip_hint">p. ej. 192.168.1.20:47123</string>
+    <string name="lan_ip_invalid">Dirección no válida</string>
+    <string name="lan_connect">Conectar</string>
+    <string name="lan_cancel">Cancelar</string>
+    <string name="lan_close">Cerrar</string>
+    <string name="lan_forget">Olvidar esta TV</string>
+    <string name="lan_paired_badge">Vinculada</string>
+    <string name="lan_paired_tvs">Televisores vinculados</string>
+    <string name="lan_no_paired_tvs">Aún no hay TV vinculada</string>
+    <string name="lan_pair_title">Vincular con %1$s</string>
+    <string name="lan_pair_enter_code">Introduce el código de 6 dígitos que muestra la TV</string>
+    <string name="lan_pair_wrong_code">Código incorrecto. Revisa el código en la TV.</string>
+    <string name="lan_pair_failed">No se pudo vincular. Inténtalo de nuevo.</string>
+    <string name="lan_pair_busy">La TV se está vinculando con otro dispositivo</string>
+    <string name="lan_pair_locked">Demasiados intentos fallidos. Espera 10 minutos.</string>
+    <string name="lan_cast_sent">Reproduciendo en %1$s</string>
+    <string name="lan_send_failed">No se pudo conectar con la TV. Comprueba que TS IPTV esté abierta en ella y en la misma Wi-Fi.</string>
+    <string name="lan_error_clock">Los relojes del teléfono y la TV no coinciden. Revisa la fecha y la hora.</string>
+    <string name="lan_error_rejected">La TV rechazó este contenido</string>
+    <string name="lan_not_supported">Aún no disponible en este dispositivo</string>
+
+    <string name="lan_tv_pair_title">Vincular un teléfono</string>
+    <string name="lan_tv_pair_message">Introduce este código en %1$s para que pueda enviar a esta TV.</string>
+    <string name="lan_tv_paired">Vinculada con %1$s</string>
+    <string name="lan_tv_cast_from">Reproduciendo desde %1$s</string>
+    <string name="lan_tv_offer_title">Recibir una lista</string>
+    <string name="lan_tv_offer_message">¿Recibir la lista “%1$s” de %2$s?</string>
+    <string name="lan_tv_accept">Recibir</string>
+    <string name="lan_tv_decline">Rechazar</string>
+    <string name="lan_tv_receive_title">Recibir del teléfono</string>
+    <string name="lan_tv_receive_ready">Lista para recibir como “%1$s”</string>
+    <string name="lan_tv_receive_address">Conectar por IP: %1$s</string>
+    <string name="lan_tv_receive_off">No se pudo activar la recepción en esta TV</string>
+    <string name="lan_tv_receive_hint">Mantén TS IPTV abierta en la TV. En el teléfono, toca el icono de TV en el reproductor, o Enviar a la TV en una lista.</string>
+    <string name="lan_tv_paired_phones">Teléfonos vinculados</string>
+    <string name="lan_tv_unpair">Desvincular</string>
+    <string name="lan_tv_no_paired">Aún no hay teléfonos</string>
+
+    <string name="send_tv_action">Enviar a la TV</string>
+    <string name="send_tv_title">Enviar lista a la TV</string>
+    <string name="send_tv_remaining">Te quedan %1$d envíos hoy</string>
+    <string name="send_tv_quota_reached">No te quedan envíos hoy</string>
+    <string name="send_tv_tasks">Haz una tarea para conseguir más envíos</string>
+    <string name="send_tv_task_rewarded">Mira 1 anuncio con recompensa para 1 envío más</string>
+    <string name="send_tv_sent">Enviado. Confirma en la TV.</string>
+    <string name="send_tv_sign_in">Inicia sesión para enviar listas a una TV</string>
+    <string name="send_tv_file_too_large">Archivo de más de 1 MB. Envía un enlace.</string>
+    <string name="send_tv_file_unavailable">Las listas de archivo no se guardan tras importarlas. Vuelve a elegir el archivo en Añadir lista para enviarlo.</string>
+    <string name="send_tv_need_input">Primero escribe un enlace o elige un archivo</string>
+    <string name="send_tv_pick_file">Enviar un archivo a la TV</string>
+
+    <string name="reward_ad_unavailable">No hay anuncios disponibles. Inténtalo más tarde.</string>
+    <string name="reward_granted">Conseguiste 1 más</string>
+    <string name="reward_limit_reached">No hay más recompensas hoy</string>
+
+    <string name="devices_title">Dispositivos con sesión iniciada</string>
+    <string name="devices_count">%1$d/%2$d dispositivos</string>
+    <string name="devices_limit_title">Límite de %1$d dispositivos alcanzado</string>
+    <string name="devices_limit_message">Esta cuenta tiene sesión iniciada en %1$d dispositivos. Cierra la sesión en uno para continuar aquí.</string>
+    <string name="devices_sign_out_remote">Cerrar sesión a distancia</string>
+    <string name="devices_cancel_sign_in">Cancelar inicio de sesión</string>
+    <string name="devices_this_device">Este dispositivo</string>
+    <string name="devices_last_seen">Activo: %1$s</string>
+    <string name="devices_removed_notice">Se cerró la sesión de este dispositivo desde otro dispositivo.</string>
+    <string name="devices_remove_confirm">¿Cerrar la sesión de %1$s? Se cerrará la próxima vez que abra la app.</string>
+    <string name="devices_error">No se pudieron cargar los dispositivos</string>
+
+    <string name="sync_title">Sincronización de dispositivos</string>
+    <string name="sync_push">Sincronizar listas con mi cuenta</string>
+    <string name="sync_push_desc">Guardar las %1$d listas de este dispositivo para tus otros dispositivos</string>
+    <string name="sync_pushed">%1$d listas sincronizadas</string>
+    <string name="sync_skipped_files">%1$d listas de archivo no se sincronizaron</string>
+    <string name="sync_remaining">Te quedan %1$d sincronizaciones hoy</string>
+    <string name="sync_quota_reached">No te quedan sincronizaciones hoy</string>
+    <string name="sync_task_rewarded">Mira 2 anuncios con recompensa para 1 sincronización más (%1$d/2)</string>
+    <string name="sync_new_available">Nueva sincronización de %1$s</string>
+    <string name="sync_merge">Combinar</string>
+    <string name="sync_merge_desc">Añadir las listas que faltan y conservar las tuyas</string>
+    <string name="sync_replace">Reemplazar</string>
+    <string name="sync_replace_desc">Usar exactamente las listas sincronizadas</string>
+    <string name="sync_later">Más tarde</string>
+    <string name="sync_replace_confirm_title">¿Reemplazar las listas?</string>
+    <string name="sync_replace_confirm_message">Se eliminarán %1$d listas: %2$s. Se añadirán %3$d.</string>
+    <string name="sync_applied">Aplicado: %1$d añadidas, %2$d actualizadas, %3$d eliminadas</string>
+    <string name="sync_apply_failed_some">No se pudieron cargar %1$d listas</string>
+    <string name="sync_applying">Aplicando %1$d/%2$d…</string>
+    <string name="sync_none">Aún no hay sincronización</string>
+    <string name="sync_current_from">Sincronización actual: %1$s, %2$s</string>
+    <string name="sync_too_large">Demasiadas listas para sincronizar (máx. 100)</string>
+    <string name="sync_sign_in">Inicia sesión para usar la sincronización y los dispositivos</string>
+    <string name="sync_error">No se pudo sincronizar. Inténtalo de nuevo.</string>
+</resources>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_title">テレビとデバイス</string>
+    <string name="connect_desc">テレビで再生、プレイリスト送信、同期</string>
+
+    <string name="lan_cast_title">テレビで再生</string>
+    <string name="lan_cast_searching">この Wi-Fi のテレビを探しています…</string>
+    <string name="lan_cast_none_found">テレビが見つかりません</string>
+    <string name="lan_conditions_title">テレビが表示される条件</string>
+    <string name="lan_conditions_body">• スマホとテレビが同じ Wi-Fi に接続されている（ゲストネットワークやモバイルデータは不可）\n• ルーターで端末どうしの通信が許可されている（クライアント / AP 分離なし）、mDNS がブロックされていない\n• テレビで TS IPTV が開いている、または「スマホから受信」画面になっている\n• 両方のアプリが最新\n• 両方の端末で VPN がオフ\nそれでも表示されない場合は、テレビに表示されたアドレスで「IP アドレスで接続」を使ってください。</string>
+    <string name="lan_connect_by_ip">IP アドレスで接続</string>
+    <string name="lan_ip_hint">例: 192.168.1.20:47123</string>
+    <string name="lan_ip_invalid">無効なアドレスです</string>
+    <string name="lan_connect">接続</string>
+    <string name="lan_cancel">キャンセル</string>
+    <string name="lan_close">閉じる</string>
+    <string name="lan_forget">このテレビの登録を解除</string>
+    <string name="lan_paired_badge">ペア設定済み</string>
+    <string name="lan_paired_tvs">ペア設定済みのテレビ</string>
+    <string name="lan_no_paired_tvs">ペア設定済みのテレビはありません</string>
+    <string name="lan_pair_title">%1$s とペア設定</string>
+    <string name="lan_pair_enter_code">テレビに表示された 6 桁のコードを入力してください</string>
+    <string name="lan_pair_wrong_code">コードが違います。テレビのコードを確認してください。</string>
+    <string name="lan_pair_failed">ペア設定できませんでした。もう一度お試しください。</string>
+    <string name="lan_pair_busy">テレビは別の端末とペア設定中です</string>
+    <string name="lan_pair_locked">失敗が多すぎます。10 分待ってください。</string>
+    <string name="lan_cast_sent">%1$s で再生中</string>
+    <string name="lan_send_failed">テレビに接続できません。TS IPTV が開いていて同じ Wi-Fi にあるか確認してください。</string>
+    <string name="lan_error_clock">スマホとテレビの時刻がずれています。日付と時刻を確認してください。</string>
+    <string name="lan_error_rejected">テレビがこのコンテンツを拒否しました</string>
+    <string name="lan_not_supported">この端末ではまだ対応していません</string>
+
+    <string name="lan_tv_pair_title">スマホをペア設定</string>
+    <string name="lan_tv_pair_message">%1$s でこのコードを入力すると、このテレビに送信できるようになります。</string>
+    <string name="lan_tv_paired">%1$s とペア設定しました</string>
+    <string name="lan_tv_cast_from">%1$s から再生中</string>
+    <string name="lan_tv_offer_title">プレイリストを受信</string>
+    <string name="lan_tv_offer_message">%2$s からプレイリスト「%1$s」を受信しますか？</string>
+    <string name="lan_tv_accept">受信</string>
+    <string name="lan_tv_decline">拒否</string>
+    <string name="lan_tv_receive_title">スマホから受信</string>
+    <string name="lan_tv_receive_ready">「%1$s」として受信できます</string>
+    <string name="lan_tv_receive_address">IP で接続: %1$s</string>
+    <string name="lan_tv_receive_off">このテレビで受信を開始できませんでした</string>
+    <string name="lan_tv_receive_hint">テレビで TS IPTV を開いたままにしてください。スマホでは、プレーヤーのテレビアイコン、またはプレイリストの「テレビに送信」をタップします。</string>
+    <string name="lan_tv_paired_phones">ペア設定済みのスマホ</string>
+    <string name="lan_tv_unpair">ペア設定を解除</string>
+    <string name="lan_tv_no_paired">スマホはまだありません</string>
+
+    <string name="send_tv_action">テレビに送信</string>
+    <string name="send_tv_title">プレイリストをテレビに送信</string>
+    <string name="send_tv_remaining">今日はあと %1$d 回送信できます</string>
+    <string name="send_tv_quota_reached">今日の送信回数を使い切りました</string>
+    <string name="send_tv_tasks">タスクをこなして送信回数を増やす</string>
+    <string name="send_tv_task_rewarded">リワード広告を 1 本見て送信を 1 回追加</string>
+    <string name="send_tv_sent">送信しました。テレビで確認してください。</string>
+    <string name="send_tv_sign_in">プレイリストをテレビに送信するにはログインしてください</string>
+    <string name="send_tv_file_too_large">ファイルが 1 MB を超えています。リンクを送信してください。</string>
+    <string name="send_tv_file_unavailable">ファイルのプレイリストはインポート後に保存されません。送信するには「プレイリストを追加」でファイルを選び直してください。</string>
+    <string name="send_tv_need_input">先にリンクを入力するかファイルを選択してください</string>
+    <string name="send_tv_pick_file">ファイルをテレビに送信</string>
+
+    <string name="reward_ad_unavailable">広告がありません。後でもう一度お試しください。</string>
+    <string name="reward_granted">1 回追加されました</string>
+    <string name="reward_limit_reached">今日はこれ以上の特典はありません</string>
+
+    <string name="devices_title">ログイン中のデバイス</string>
+    <string name="devices_count">%1$d/%2$d 台</string>
+    <string name="devices_limit_title">%1$d 台の上限に達しました</string>
+    <string name="devices_limit_message">このアカウントは %1$d 台でログインしています。この端末で続けるには、1 台をログアウトしてください。</string>
+    <string name="devices_sign_out_remote">リモートでログアウト</string>
+    <string name="devices_cancel_sign_in">ログインをキャンセル</string>
+    <string name="devices_this_device">この端末</string>
+    <string name="devices_last_seen">最終利用: %1$s</string>
+    <string name="devices_removed_notice">この端末は別の端末からログアウトされました。</string>
+    <string name="devices_remove_confirm">%1$s をログアウトしますか？次にアプリを開いたときにログアウトされます。</string>
+    <string name="devices_error">デバイスを読み込めませんでした</string>
+
+    <string name="sync_title">デバイス同期</string>
+    <string name="sync_push">プレイリストをアカウントに同期</string>
+    <string name="sync_push_desc">この端末の %1$d 件のプレイリストを他の端末用に保存</string>
+    <string name="sync_pushed">%1$d 件のプレイリストを同期しました</string>
+    <string name="sync_skipped_files">ファイルのプレイリスト %1$d 件は同期されませんでした</string>
+    <string name="sync_remaining">今日はあと %1$d 回同期できます</string>
+    <string name="sync_quota_reached">今日の同期回数を使い切りました</string>
+    <string name="sync_task_rewarded">リワード広告を 2 本見て同期を 1 回追加（%1$d/2）</string>
+    <string name="sync_new_available">%1$s から新しい同期があります</string>
+    <string name="sync_merge">統合</string>
+    <string name="sync_merge_desc">足りないプレイリストを追加し、今のものは残す</string>
+    <string name="sync_replace">置き換え</string>
+    <string name="sync_replace_desc">同期されたプレイリストだけを使う</string>
+    <string name="sync_later">後で</string>
+    <string name="sync_replace_confirm_title">プレイリストを置き換えますか？</string>
+    <string name="sync_replace_confirm_message">%1$d 件を削除します: %2$s。%3$d 件を追加します。</string>
+    <string name="sync_applied">適用しました: 追加 %1$d、更新 %2$d、削除 %3$d</string>
+    <string name="sync_apply_failed_some">%1$d 件のプレイリストを読み込めませんでした</string>
+    <string name="sync_applying">適用中 %1$d/%2$d…</string>
+    <string name="sync_none">同期はまだありません</string>
+    <string name="sync_current_from">現在の同期: %1$s、%2$s</string>
+    <string name="sync_too_large">同期するプレイリストが多すぎます（最大 100）</string>
+    <string name="sync_sign_in">同期とデバイス管理を使うにはログインしてください</string>
+    <string name="sync_error">同期できませんでした。もう一度お試しください。</string>
+</resources>

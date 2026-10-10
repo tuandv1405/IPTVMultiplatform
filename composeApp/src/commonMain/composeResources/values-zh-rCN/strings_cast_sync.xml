@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_title">电视和设备</string>
+    <string name="connect_desc">在电视上播放、发送播放列表、同步</string>
+
+    <string name="lan_cast_title">在电视上播放</string>
+    <string name="lan_cast_searching">正在查找此 Wi-Fi 中的电视…</string>
+    <string name="lan_cast_none_found">未找到电视</string>
+    <string name="lan_conditions_title">让电视出现的条件</string>
+    <string name="lan_conditions_body">• 手机和电视连接同一个 Wi-Fi 网络（不是访客网络，也不是移动数据）\n• 路由器允许设备互相发现（未开启客户端 / AP 隔离），且不拦截 mDNS\n• 电视上已打开 TS IPTV，或停留在“从手机接收”页面\n• 两端应用都是最新版本\n• 两台设备都已关闭 VPN\n仍然找不到？请用电视上显示的地址，选择“通过 IP 地址连接”。</string>
+    <string name="lan_connect_by_ip">通过 IP 地址连接</string>
+    <string name="lan_ip_hint">例如 192.168.1.20:47123</string>
+    <string name="lan_ip_invalid">地址无效</string>
+    <string name="lan_connect">连接</string>
+    <string name="lan_cancel">取消</string>
+    <string name="lan_close">关闭</string>
+    <string name="lan_forget">忘记这台电视</string>
+    <string name="lan_paired_badge">已配对</string>
+    <string name="lan_paired_tvs">已配对的电视</string>
+    <string name="lan_no_paired_tvs">还没有配对的电视</string>
+    <string name="lan_pair_title">与 %1$s 配对</string>
+    <string name="lan_pair_enter_code">输入电视上显示的 6 位数字代码</string>
+    <string name="lan_pair_wrong_code">代码错误。请核对电视上的代码。</string>
+    <string name="lan_pair_failed">配对失败，请重试。</string>
+    <string name="lan_pair_busy">电视正在与其他设备配对</string>
+    <string name="lan_pair_locked">失败次数过多，请等待 10 分钟。</string>
+    <string name="lan_cast_sent">正在 %1$s 上播放</string>
+    <string name="lan_send_failed">无法连接电视。请确认电视上已打开 TS IPTV 且在同一 Wi-Fi。</string>
+    <string name="lan_error_clock">手机和电视的时间不一致，请检查日期和时间。</string>
+    <string name="lan_error_rejected">电视拒绝了此内容</string>
+    <string name="lan_not_supported">此设备暂不支持</string>
+
+    <string name="lan_tv_pair_title">配对手机</string>
+    <string name="lan_tv_pair_message">在 %1$s 上输入此代码，即可向这台电视发送内容。</string>
+    <string name="lan_tv_paired">已与 %1$s 配对</string>
+    <string name="lan_tv_cast_from">正在播放来自 %1$s 的内容</string>
+    <string name="lan_tv_offer_title">接收播放列表</string>
+    <string name="lan_tv_offer_message">接收来自 %2$s 的播放列表“%1$s”？</string>
+    <string name="lan_tv_accept">接收</string>
+    <string name="lan_tv_decline">拒绝</string>
+    <string name="lan_tv_receive_title">从手机接收</string>
+    <string name="lan_tv_receive_ready">已准备好接收，名称为“%1$s”</string>
+    <string name="lan_tv_receive_address">通过 IP 连接：%1$s</string>
+    <string name="lan_tv_receive_off">无法在这台电视上开启接收</string>
+    <string name="lan_tv_receive_hint">请保持电视上的 TS IPTV 处于打开状态。在手机上点按播放器中的电视图标，或在播放列表上点按“发送到电视”。</string>
+    <string name="lan_tv_paired_phones">已配对的手机</string>
+    <string name="lan_tv_unpair">取消配对</string>
+    <string name="lan_tv_no_paired">还没有手机</string>
+
+    <string name="send_tv_action">发送到电视</string>
+    <string name="send_tv_title">将播放列表发送到电视</string>
+    <string name="send_tv_remaining">今天还可发送 %1$d 次</string>
+    <string name="send_tv_quota_reached">今天的发送次数已用完</string>
+    <string name="send_tv_tasks">完成任务以获得更多发送次数</string>
+    <string name="send_tv_task_rewarded">观看 1 个激励广告，多发送 1 次</string>
+    <string name="send_tv_sent">已发送，请在电视上确认。</string>
+    <string name="send_tv_sign_in">登录后才能将播放列表发送到电视</string>
+    <string name="send_tv_file_too_large">文件超过 1 MB，请改为发送链接。</string>
+    <string name="send_tv_file_unavailable">文件播放列表在导入后不会保存。请在“添加播放列表”中重新选择文件后发送。</string>
+    <string name="send_tv_need_input">请先输入链接或选择文件</string>
+    <string name="send_tv_pick_file">将文件发送到电视</string>
+
+    <string name="reward_ad_unavailable">暂无广告，请稍后再试。</string>
+    <string name="reward_granted">已获得 1 次</string>
+    <string name="reward_limit_reached">今天的奖励已领完</string>
+
+    <string name="devices_title">已登录的设备</string>
+    <string name="devices_count">%1$d/%2$d 台设备</string>
+    <string name="devices_limit_title">已达到 %1$d 台设备上限</string>
+    <string name="devices_limit_message">此账户已在 %1$d 台设备上登录。请退出其中一台，才能在此设备上继续。</string>
+    <string name="devices_sign_out_remote">远程退出</string>
+    <string name="devices_cancel_sign_in">取消登录</string>
+    <string name="devices_this_device">此设备</string>
+    <string name="devices_last_seen">活跃于：%1$s</string>
+    <string name="devices_removed_notice">此设备已被另一台设备退出登录。</string>
+    <string name="devices_remove_confirm">退出 %1$s？它会在下次打开应用时退出登录。</string>
+    <string name="devices_error">无法加载设备</string>
+
+    <string name="sync_title">设备同步</string>
+    <string name="sync_push">将播放列表同步到我的账户</string>
+    <string name="sync_push_desc">保存此设备的 %1$d 个播放列表，供其他设备使用</string>
+    <string name="sync_pushed">已同步 %1$d 个播放列表</string>
+    <string name="sync_skipped_files">%1$d 个文件播放列表未同步</string>
+    <string name="sync_remaining">今天还可同步 %1$d 次</string>
+    <string name="sync_quota_reached">今天的同步次数已用完</string>
+    <string name="sync_task_rewarded">观看 2 个激励广告，多同步 1 次（%1$d/2）</string>
+    <string name="sync_new_available">有来自 %1$s 的新同步</string>
+    <string name="sync_merge">合并</string>
+    <string name="sync_merge_desc">添加缺少的播放列表，保留现有的</string>
+    <string name="sync_replace">替换</string>
+    <string name="sync_replace_desc">完全使用同步的播放列表</string>
+    <string name="sync_later">稍后</string>
+    <string name="sync_replace_confirm_title">替换播放列表？</string>
+    <string name="sync_replace_confirm_message">将删除 %1$d 个播放列表：%2$s。将添加 %3$d 个。</string>
+    <string name="sync_applied">已应用：新增 %1$d，更新 %2$d，删除 %3$d</string>
+    <string name="sync_apply_failed_some">%1$d 个播放列表无法加载</string>
+    <string name="sync_applying">正在应用 %1$d/%2$d…</string>
+    <string name="sync_none">暂无同步</string>
+    <string name="sync_current_from">当前同步：%1$s，%2$s</string>
+    <string name="sync_too_large">要同步的播放列表过多（最多 100 个）</string>
+    <string name="sync_sign_in">登录后才能使用同步和设备管理</string>
+    <string name="sync_error">同步失败，请重试。</string>
+</resources>

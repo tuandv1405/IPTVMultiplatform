@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -76,6 +77,7 @@ import tsiptv.composeapp.generated.resources.ic_full_screen_fill
 import tsiptv.composeapp.generated.resources.ic_full_screen_fit_width
 import tsiptv.composeapp.generated.resources.ic_settings
 import tsiptv.composeapp.generated.resources.ic_volume
+import tsiptv.composeapp.generated.resources.lan_cast_title
 import tss.t.tsiptv.core.parser.model.IPTVProgram
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
@@ -296,6 +298,19 @@ fun BoxScope.MediaPlayerControls(
                     }
                     .padding(16.dp)
             )
+            // Cast to a TS IPTV TV (docs/prd-tv-cast-and-sync.md §2.1); set by the phone player only.
+            LocalCastAction.current?.let { cast ->
+                Spacer(Modifier.weight(1f))
+                Image(
+                    imageVector = androidx.compose.material.icons.Icons.Rounded.Cast,
+                    contentDescription = org.jetbrains.compose.resources.stringResource(Res.string.lan_cast_title),
+                    colorFilter = ColorFilter.tint(Color.White),
+                    modifier = Modifier.size(48.dp)
+                        .clip(CircleShape)
+                        .clickable { cast() }
+                        .padding(12.dp)
+                )
+            }
         }
     }
 
@@ -719,3 +734,6 @@ private fun snapValueToTick(
         .minByOrNull { abs(lerp(minPx, maxPx, it) - current) }
         ?.run { lerp(minPx, maxPx, this) } ?: current
 }
+
+/** When set, the player's top bar shows a TV button that casts to a TS IPTV TV (phone layouts only). */
+val LocalCastAction = androidx.compose.runtime.staticCompositionLocalOf<(() -> Unit)?> { null }
