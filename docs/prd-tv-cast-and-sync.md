@@ -107,6 +107,14 @@ Pairing (first use per phone ↔ TV)
 Limits: code valid 2 minutes; 3 wrong codes end the session; one pairing session at a time
 (`BUSY`); 5 failed sessions in 10 minutes lock pairing for 10 minutes (`LOCKED`).
 
+**Pairing mode (QC round 2).** The TV accepts `pair_start` only while its *TV & devices*
+screen (*Nhận từ điện thoại* section) is shown and resumed; anywhere else the answer is
+`PAIRING_CLOSED` and the phone says "To pair, open TV & devices on the TV, then try again." So no
+LAN client can put the full-screen code over playback or Home. Leaving the screen drops an open
+code. Already paired phones cast and send playlists from anywhere (signed requests). After the TV
+user cancels a code there is a 30 s cooldown (`BUSY`); codes that run out unused escalate it
+(30 s, 60 s, 2 min … up to 10 min; reset by a successful pairing).
+
 After pairing every command is `signed`:
 `mac = HMAC-SHA256(K, "tsiptv-v1\n" + senderId + "\n" + ts + "\n" + nonce + "\n" + body)`.
 The TV rejects: unknown sender (`UNPAIRED`), `|now − ts| > 120 s` (`EXPIRED`), a nonce seen within
@@ -154,6 +162,10 @@ have no CR/LF and are ≤ 2048 chars. **Nothing logs URLs, headers, keys, codes 
   TS IPTV Sources get their usual preview / 18+ dialogs.
 - A file playlist **already imported** cannot be sent from the list: the app never keeps file
   content (F1). The row says so and points to *Thêm danh sách phát → chọn tệp → Gửi tới TV*.
+- QC round 2: the accepted playlist is imported **in the background** (the TV stays where it is,
+  a notice says "Adding "<name>"…"); the result shows as a dialog over any screen. Only an import
+  that needs the user (a single stream, a TS IPTV Source preview, an error) opens *Thêm danh sách
+  phát*. While an import from a phone runs, new offers get `NOT_ACCEPTING` ("TV is busy").
 
 ### 3.2 Quota
 - **3 sends per day per account**, reset at **local midnight** of the sending phone.
