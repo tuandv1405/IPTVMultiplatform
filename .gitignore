@@ -36,3 +36,6 @@ iosApp/Pods/
 
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# Firestore emulator logs
+firestore-debug.log
