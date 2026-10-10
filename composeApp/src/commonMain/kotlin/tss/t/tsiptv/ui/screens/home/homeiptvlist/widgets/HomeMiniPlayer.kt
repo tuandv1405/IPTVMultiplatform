@@ -123,7 +123,7 @@ fun BoxScope.HomeMiniPlayer(
                 Text(
                     // Addon items (F2) are not channels: the programme belongs to the last channel,
                     // and the raw id is internal. Show the episode label, if any.
-                    text = if (isAddonItemId(mediaItem.id)) mediaItem.artist else program?.title ?: mediaItem.id,
+                    text = if (isAddonItemId(mediaItem.id)) mediaItem.artist else program?.title ?: tss.t.tsiptv.core.database.ChannelIdNamespace.displayId(mediaItem.id),
                     color = TSColors.TextSecondaryLight,
                     fontWeight = FontWeight.Companion.Normal,
                     fontSize = 13.sp,

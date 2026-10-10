@@ -97,7 +97,8 @@ fun HomeChannelItem(
                 }
             }
             Text(
-                text = channel.id,
+                // The guide id: never the playlist tag of a namespaced id (QC r4 N11).
+                text = tss.t.tsiptv.core.database.ChannelIdNamespace.displayId(channel.guideId),
                 color = TSColors.TextSecondaryLight,
                 fontWeight = FontWeight.Normal,
                 fontSize = 13.sp,

@@ -16,6 +16,11 @@ import tss.t.tsiptv.core.model.Channel
 internal object ChannelIdNamespace {
     const val SEPARATOR = "@"
 
+    private val TAG_SUFFIX = Regex("@[0-9a-f]{8}$")
+
+    /** [id] as people should see it: without the playlist tag (QC r4 N11). */
+    fun displayId(id: String): String = id.replace(TAG_SUFFIX, "")
+
     /** A short, stable tag for [playlistId] (FNV-1a 32-bit, hex). */
     fun tag(playlistId: String): String {
         var h = 0x811C9DC5.toInt()
