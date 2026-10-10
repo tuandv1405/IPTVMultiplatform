@@ -24,6 +24,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ContentPaste
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Checkbox
@@ -70,6 +73,7 @@ import tss.t.tsiptv.core.stremio.AddonPreview
 import tss.t.tsiptv.core.stremio.AddonStatus
 import tss.t.tsiptv.core.stremio.InstalledAddon
 import tss.t.tsiptv.core.uimode.LocalIsTvMode
+import tss.t.tsiptv.core.language.LocalAppLocale
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.tv.TvDefaults
 import tss.t.tsiptv.ui.tv.TvFocusableSurface
@@ -124,6 +128,9 @@ import tsiptv.composeapp.generated.resources.addon_warn_adult
 import tsiptv.composeapp.generated.resources.addon_warn_http
 import tsiptv.composeapp.generated.resources.addon_warn_p2p
 import tsiptv.composeapp.generated.resources.addons_empty
+import tsiptv.composeapp.generated.resources.addons_help_body
+import tsiptv.composeapp.generated.resources.addons_help_guide
+import tsiptv.composeapp.generated.resources.addons_help_title
 import tsiptv.composeapp.generated.resources.addons_title
 import tsiptv.composeapp.generated.resources.cancel
 import tsiptv.composeapp.generated.resources.open_link_failed
@@ -177,6 +184,9 @@ fun AddonsScreen(onBack: () -> Unit) {
         }
     }
 
+    val guideUrl = addonsGuideUrl(LocalAppLocale.current)
+    fun openGuide() = openConfigure(guideUrl)
+
     Box(Modifier.fillMaxSize().background(TSColors.backgroundGradientMain)) {
         Column(
             Modifier.fillMaxSize().statusBarsPadding()
@@ -212,11 +222,13 @@ fun AddonsScreen(onBack: () -> Unit) {
             }
             if (addons.isEmpty()) {
                 Column(
-                    Modifier.fillMaxWidth().padding(32.dp),
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(stringResource(Res.string.addons_empty), color = TSColors.TextSecondaryLight, fontSize = 16.sp)
+                    // Empty state: the help is open from the start.
+                    AddonsHelpCard(initiallyExpanded = true, onOpenGuide = ::openGuide)
                 }
             } else {
                 LazyColumn(
@@ -224,6 +236,7 @@ fun AddonsScreen(onBack: () -> Unit) {
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    item(key = "help") { AddonsHelpCard(initiallyExpanded = false, onOpenGuide = ::openGuide) }
                     // F3: addons a TS IPTV Source brought in are listed apart, read-only (switch only).
                     val fromSources = addons.filter { it.isFromSource }
                     itemsIndexed(addons.filterNot { it.isFromSource }, key = { _, it -> it.id }) { index, addon ->
@@ -325,6 +338,57 @@ fun AddonsScreen(onBack: () -> Unit) {
             val focus = remember { FocusRequester() }
             PillButton(stringResource(Res.string.addon_continue), onClick = { externalUrl = null }, modifier = Modifier.focusRequester(focus))
             LaunchedEffect(Unit) { focus.requestFocusAfterLayout() }
+        }
+    }
+}
+
+/** The web guide; Vietnamese is its default language, every other UI language gets the English page. */
+internal fun addonsGuideUrl(appLocale: String?): String {
+    val base = "https://tsiptv-8bdd6.web.app/guides/stremio-addons/"
+    return if (appLocale.orEmpty().lowercase().startsWith("vi")) base else "$base?lang=en"
+}
+
+/**
+ * "What are addons?" (PRD §1, neutral wording: no addon is named or suggested). A focusable card
+ * that opens on OK / tap, with a link to the full web guide.
+ */
+@Composable
+private fun AddonsHelpCard(initiallyExpanded: Boolean, onOpenGuide: () -> Unit) {
+    var expanded by remember { mutableStateOf(initiallyExpanded) }
+    Column(
+        Modifier.fillMaxWidth().background(TSColors.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp)),
+    ) {
+        TvFocusableSurface(
+            onClick = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            focusedScale = 1.02f,
+            color = TSColors.Transparent,
+        ) {
+            Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Info, contentDescription = null, tint = TSColors.AccentCyan, modifier = Modifier.size(22.dp))
+                Text(
+                    stringResource(Res.string.addons_help_title),
+                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                    color = TSColors.TextPrimary,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Icon(
+                    if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                    contentDescription = null,
+                    tint = TSColors.TextSecondaryLight,
+                )
+            }
+        }
+        if (expanded) {
+            Column(
+                Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(stringResource(Res.string.addons_help_body), color = TSColors.TextSecondaryLight, fontSize = 14.sp)
+                PillButton(stringResource(Res.string.addons_help_guide), onClick = onOpenGuide, primary = false)
+            }
         }
     }
 }

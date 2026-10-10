@@ -406,4 +406,8 @@
     </plurals>
     <string name="ad_label">Annonce</string>
     <string name="privacy_options_title">Options de confidentialité</string>
+    <string name="addons_help_title">Qu’est-ce qu’un module ?</string>
+    <string name="addons_help_body">Un module est un petit service web au format des modules Stremio. Il peut ajouter des catalogues, des détails et des liens de lecture à TS IPTV.\n• Pour en ajouter un, copiez son lien de manifeste (il se termine par /manifest.json), touchez Ajouter un module et collez-le.\n• TS IPTV n’inclut ni ne recommande aucun module : n’ajoutez que des modules que vous gérez ou avez le droit d’utiliser.</string>
+    <string name="addons_help_guide">Guide complet</string>
+    <string name="home_options_title">Sources et options</string>
 </resources>

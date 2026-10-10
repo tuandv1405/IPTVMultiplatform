@@ -398,4 +398,8 @@
     </plurals>
     <string name="ad_label">広告</string>
     <string name="privacy_options_title">プライバシー設定</string>
+    <string name="addons_help_title">アドオンとは？</string>
+    <string name="addons_help_body">アドオンは、Stremio のアドオン形式に従う小さな Web サービスです。TS IPTV にカタログ、詳細情報、再生リンクを追加できます。\n• 追加するには、マニフェストのリンク（/manifest.json で終わる）をコピーし、「アドオンを追加」をタップして貼り付けます。\n• TS IPTV にはアドオンは含まれておらず、特定のアドオンを推奨することもありません。自分で運用している、または利用する権利のあるアドオンだけを追加してください。</string>
+    <string name="addons_help_guide">詳しいガイド</string>
+    <string name="home_options_title">ソースとオプション</string>
 </resources>
