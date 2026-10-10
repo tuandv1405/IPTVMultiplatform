@@ -10,6 +10,7 @@ import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.ChangeCircle
 import tsiptv.composeapp.generated.resources.connect_desc
 import tsiptv.composeapp.generated.resources.connect_title
+import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Refresh
@@ -32,6 +33,7 @@ import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.addons_title
 import tsiptv.composeapp.generated.resources.bottom_sheet_change_language
 import tsiptv.composeapp.generated.resources.bottom_sheet_import_playlist
 import tsiptv.composeapp.generated.resources.bottom_sheet_refresh_channel
@@ -122,6 +124,19 @@ fun HomeSettingOptionsBottomSheet(
                 title = stringResource(Res.string.bottom_sheet_refresh_channel),
                 onClick = {
                     onHomeEvent(HomeEvent.RefreshIPTVSource)
+                    onDismissRequest()
+                }
+            )
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                color = TSColors.White.copy(alpha = 0.08f)
+            )
+            // Stremio-compatible addons (same place as in the TV settings dialog).
+            IconTitleActionItem(
+                imageVector = Icons.Rounded.Extension,
+                title = stringResource(Res.string.addons_title),
+                onClick = {
+                    parentNavController.navigate(NavRoutes.Addons)
                     onDismissRequest()
                 }
             )

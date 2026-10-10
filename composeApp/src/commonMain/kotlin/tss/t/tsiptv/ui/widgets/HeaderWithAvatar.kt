@@ -1,5 +1,10 @@
 package tss.t.tsiptv.ui.widgets
 
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.ui.semantics.Role
+import tsiptv.composeapp.generated.resources.Res
+import tsiptv.composeapp.generated.resources.home_options_title
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -16,7 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -96,12 +101,15 @@ fun HeaderWithAvatar(
 //        )
         Spacer(Modifier.width(16.dp))
         Image(
-            imageVector = Icons.Rounded.Settings,
-            contentDescription = "Menu",
+            // Not a gear: Profile already has the app settings gear. This opens sources and options
+            // (playlists, import, refresh, addons, TV & devices, language, interface).
+            imageVector = Icons.Rounded.Tune,
+            contentDescription = stringResource(Res.string.home_options_title),
             modifier = Modifier
+                .minimumInteractiveComponentSize()
                 .clip(CircleShape)
-                .clickable(onClick = onSettingClick)
-                .padding(8.dp)
+                .clickable(role = Role.Button, onClick = onSettingClick)
+                .padding(12.dp)
                 .size(24.dp),
             colorFilter = ColorFilter.tint(TSColors.TextSecondary)
         )

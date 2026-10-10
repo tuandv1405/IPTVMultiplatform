@@ -417,4 +417,10 @@
     <string name="notif_unsupported">Las notificaciones no están disponibles en este dispositivo.</string>
     <string name="notif_tv_note">La mayoría de las pantallas de inicio de TV no muestran notificaciones.</string>
     <string name="notif_debug_token">Token FCM (compilación de depuración)</string>
+    <string name="addons_help_title">¿Qué son los complementos?</string>
+    <string name="addons_help_body">Un complemento es un pequeño servicio web con el formato de complementos de Stremio. Puede añadir catálogos, detalles y enlaces de reproducción a TS IPTV.\n• Para añadir uno, copia su enlace de manifiesto (termina en /manifest.json), elige Añadir complemento y pégalo.\n• TS IPTV no incluye ni recomienda complementos: añade solo los que gestionas tú o tienes derecho a usar.</string>
+    <string name="addons_help_expanded">Desplegado</string>
+    <string name="addons_help_collapsed">Contraído</string>
+    <string name="addons_help_guide">Guía completa</string>
+    <string name="home_options_title">Fuentes y opciones</string>
 </resources>
