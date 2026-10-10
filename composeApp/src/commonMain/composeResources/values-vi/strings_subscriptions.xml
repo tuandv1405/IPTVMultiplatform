@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Gói đăng ký (docs/prd-subscriptions.md). Giá không bao giờ nằm ở đây: lấy từ Google Play. -->
+<resources>
+    <string name="plans_title">Gói đăng ký</string>
+    <string name="plans_free_name">Miễn phí</string>
+    <string name="plans_noads_name">Không quảng cáo</string>
+    <string name="plans_unlimited_name">Unlimited</string>
+    <string name="plans_feature_no_ads">Không quảng cáo: không có quảng cáo AdMob và ưu đãi Shopee</string>
+    <string name="plans_feature_rewarded_kept">Vẫn có thể xem quảng cáo có thưởng để thêm lượt gửi hoặc đồng bộ</string>
+    <string name="plans_feature_unlimited_send">Gửi danh sách phát tới TV không giới hạn</string>
+    <string name="plans_feature_unlimited_sync">Đồng bộ thiết bị không giới hạn</string>
+    <string name="plans_feature_no_tasks">Không cần xem quảng cáo có thưởng</string>
+    <string name="plans_price_month">%1$s / tháng</string>
+    <string name="plans_price_year">%1$s / năm</string>
+    <string name="plans_price_other">%1$s / kỳ</string>
+    <string name="plans_trial">Dùng thử miễn phí %1$d ngày, sau đó %2$s</string>
+    <string name="plans_subscribe">Đăng ký</string>
+    <string name="plans_upgrade">Nâng cấp</string>
+    <string name="plans_switch">Chuyển sang gói này</string>
+    <string name="plans_current">Gói hiện tại</string>
+    <string name="plans_sign_in_to_subscribe">Đăng nhập để đăng ký</string>
+    <string name="plans_unlimited_needs_account">Unlimited cần tài khoản vì gửi tới TV và đồng bộ dùng tài khoản của bạn.</string>
+    <string name="plans_disclosure">Gói tự động gia hạn cho đến khi bạn huỷ. Bạn có thể huỷ bất cứ lúc nào trong Google Play (Thanh toán và gói thuê bao). Nếu có dùng thử miễn phí, bạn sẽ không bị tính phí nếu huỷ trước khi hết thời gian dùng thử.</string>
+    <string name="plans_terms">Điều khoản</string>
+    <string name="plans_privacy">Quyền riêng tư</string>
+    <string name="plans_manage">Quản lý gói trong Google Play</string>
+    <string name="plans_restore">Khôi phục giao dịch</string>
+    <string name="plans_status_current">Bạn đang dùng gói %1$s</string>
+    <string name="plans_status_renews">Gia hạn ngày %1$s</string>
+    <string name="plans_status_ends">Đã tắt gia hạn · hết hạn ngày %1$s</string>
+    <string name="plans_status_auto_renew_off">Đã tắt tự động gia hạn</string>
+    <string name="plans_status_payment_issue">Thanh toán đang gặp sự cố. Hãy cập nhật phương thức thanh toán trong Google Play.</string>
+    <string name="plans_status_paused">Gói của bạn đang tạm dừng.</string>
+    <string name="plans_status_device_only">Đang dùng trên thiết bị này (tài khoản Google Play). Đăng nhập để dùng trên các thiết bị khác.</string>
+    <string name="plans_not_available">Gói đăng ký hiện chỉ mua được trong ứng dụng Android (Google Play).</string>
+    <string name="plans_loading_prices">Đang tải giá…</string>
+    <string name="plans_prices_unavailable">Chưa tải được giá từ Google Play. Hãy thử lại sau.</string>
+    <string name="plans_msg_purchased">Cảm ơn bạn! Gói đã được kích hoạt.</string>
+    <string name="plans_msg_pending">Đang chờ thanh toán. Gói sẽ được kích hoạt khi thanh toán hoàn tất.</string>
+    <string name="plans_msg_failed">Không mua được. Hãy thử lại sau.</string>
+    <string name="plans_msg_already_owned">Bạn đã có gói này. Đã khôi phục.</string>
+    <string name="plans_msg_restored">Đã khôi phục giao dịch.</string>
+    <string name="plans_msg_nothing_to_restore">Không tìm thấy gói nào trên tài khoản Google Play này.</string>
+    <string name="plans_msg_deferred">Gói mới bắt đầu khi kỳ hiện tại kết thúc.</string>
+    <string name="remove_ads_link">Xoá quảng cáo</string>
+    <string name="quota_upgrade_unlimited">Nâng cấp Unlimited</string>
+    <string name="quota_upgrade_unlimited_desc">Gửi và đồng bộ không giới hạn, không quảng cáo</string>
+    <string name="send_tv_unlimited">Gửi không giới hạn (gói Unlimited)</string>
+    <string name="sync_unlimited">Đồng bộ không giới hạn (gói Unlimited)</string>
+</resources>

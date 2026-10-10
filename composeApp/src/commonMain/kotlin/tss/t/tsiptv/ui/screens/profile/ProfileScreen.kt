@@ -439,13 +439,6 @@ fun ProfileScreen(
         )
     }
 
-    // Subscription Popup
-    if (authState.showSubscriptionPopup) {
-        SubscriptionComingSoonDialog(
-            onDismiss = { onProfileEvent(LoginEvents.OnDismissSubscriptionPopup) }
-        )
-    }
-
     // Notification Permission Dialog
     if (authState.showNotificationDialog) {
         NotificationPermissionDialog { onProfileEvent(LoginEvents.OnDismissNotificationDialog) }
@@ -910,19 +903,6 @@ private fun ChangePasswordDialog(
             }
         }
     }
-}
-
-@Composable
-private fun SubscriptionComingSoonDialog(
-    onDismiss: () -> Unit,
-) {
-    TSDialog(
-        title = stringResource(Res.string.profile_subscription_title),
-        message = stringResource(Res.string.feature_coming_soon),
-        positiveButtonText = stringResource(Res.string.ok),
-        onPositiveClick = onDismiss,
-        onDismissRequest = onDismiss
-    )
 }
 
 @Composable

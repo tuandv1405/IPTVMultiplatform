@@ -274,6 +274,9 @@ fun HomeBottomNavigationNavHost(
 
                     ProfileScreenActions.Addons -> rootNavController.navigate(NavRoutes.Addons)
 
+                    // docs/prd-subscriptions.md §3.2: the plans screen replaces the "coming soon" dialog.
+                    ProfileScreenActions.Subscription -> rootNavController.navigate(NavRoutes.Plans)
+
                     ProfileScreenActions.PrivacyOptions -> adsPlatform.showPrivacyOptions()
 
                     ProfileScreenActions.BecomeContributor -> scope.launch {

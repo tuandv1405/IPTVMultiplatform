@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Subscriptions (docs/prd-subscriptions.md). Prices never appear here: they come from Google Play. -->
+<resources>
+    <string name="plans_title">Subscription plans</string>
+    <string name="plans_free_name">Free</string>
+    <string name="plans_noads_name">No ads</string>
+    <string name="plans_unlimited_name">Unlimited</string>
+    <string name="plans_feature_no_ads">No ads: no AdMob ads and no Shopee offers</string>
+    <string name="plans_feature_rewarded_kept">You can still watch a rewarded ad for an extra send or sync</string>
+    <string name="plans_feature_unlimited_send">Unlimited playlist sends to TV</string>
+    <string name="plans_feature_unlimited_sync">Unlimited device sync</string>
+    <string name="plans_feature_no_tasks">No rewarded ads needed</string>
+    <string name="plans_price_month">%1$s / month</string>
+    <string name="plans_price_year">%1$s / year</string>
+    <string name="plans_price_other">%1$s / period</string>
+    <string name="plans_trial">Free for %1$d days, then %2$s</string>
+    <string name="plans_subscribe">Subscribe</string>
+    <string name="plans_upgrade">Upgrade</string>
+    <string name="plans_switch">Switch to this plan</string>
+    <string name="plans_current">Current plan</string>
+    <string name="plans_sign_in_to_subscribe">Sign in to subscribe</string>
+    <string name="plans_unlimited_needs_account">Unlimited needs an account: sending to TV and sync use your account.</string>
+    <string name="plans_disclosure">Plans renew automatically until you cancel. You can cancel at any time in Google Play (Payments and subscriptions). If a free trial is offered, you are not charged if you cancel before it ends.</string>
+    <string name="plans_terms">Terms</string>
+    <string name="plans_privacy">Privacy</string>
+    <string name="plans_manage">Manage in Google Play</string>
+    <string name="plans_restore">Restore purchases</string>
+    <string name="plans_status_current">Your plan: %1$s</string>
+    <string name="plans_status_renews">Renews on %1$s</string>
+    <string name="plans_status_ends">Auto-renew off · ends on %1$s</string>
+    <string name="plans_status_auto_renew_off">Auto-renew is off</string>
+    <string name="plans_status_payment_issue">There is a problem with your payment. Update your payment method in Google Play.</string>
+    <string name="plans_status_paused">Your subscription is paused.</string>
+    <string name="plans_status_device_only">Active on this device (Google Play account). Sign in to use it on your other devices.</string>
+    <string name="plans_not_available">Subscriptions can currently be bought only in the Android app (Google Play).</string>
+    <string name="plans_loading_prices">Loading prices…</string>
+    <string name="plans_prices_unavailable">Couldn't load prices from Google Play. Try again later.</string>
+    <string name="plans_msg_purchased">Thank you! Your plan is active.</string>
+    <string name="plans_msg_pending">Payment pending. The plan starts when the payment completes.</string>
+    <string name="plans_msg_failed">The purchase didn't go through. Try again later.</string>
+    <string name="plans_msg_already_owned">You already have this plan. It has been restored.</string>
+    <string name="plans_msg_restored">Purchases restored.</string>
+    <string name="plans_msg_nothing_to_restore">No subscription found on this Google Play account.</string>
+    <string name="plans_msg_deferred">The new plan starts when the current period ends.</string>
+    <string name="remove_ads_link">Remove ads</string>
+    <string name="quota_upgrade_unlimited">Get Unlimited</string>
+    <string name="quota_upgrade_unlimited_desc">Unlimited sends and syncs, no ads</string>
+    <string name="send_tv_unlimited">Unlimited sends (Unlimited plan)</string>
+    <string name="sync_unlimited">Unlimited syncs (Unlimited plan)</string>
+</resources>

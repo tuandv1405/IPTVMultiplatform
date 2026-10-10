@@ -157,6 +157,20 @@ class StringResourcesLocaleTest {
         }
     }
 
+    /** AC-SUB16: subscriptions (docs/prd-subscriptions.md §3). */
+    @Test
+    fun subscriptionKeysArePresent() {
+        val required = setOf(
+            "plans_title", "plans_noads_name", "plans_unlimited_name", "plans_disclosure", "plans_terms", "plans_privacy",
+            "plans_manage", "plans_restore", "plans_trial", "plans_price_month", "plans_price_year",
+            "plans_status_payment_issue", "plans_not_available", "plans_msg_pending", "remove_ads_link",
+            "quota_upgrade_unlimited", "send_tv_unlimited", "sync_unlimited",
+        )
+        for (locale in locales) {
+            assertEquals(emptySet(), required - keys(locale), locale)
+        }
+    }
+
     private companion object {
         val STRING_NAME = Regex("<(?:string|plurals)\\s+name=\"([^\"]+)\"")
         val PLURALS = Regex("<plurals\\s+name=\"([^\"]+)\">(.*?)</plurals>", RegexOption.DOT_MATCHES_ALL)

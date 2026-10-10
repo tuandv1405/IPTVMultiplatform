@@ -195,6 +195,8 @@ fun App() {
             LocalUiMode provides uiMode,
             LocalIsTvMode provides isTvMode,
             tss.t.tsiptv.ui.screens.connect.LocalSignInAction provides { navController.navigate(NavRoutes.Login) },
+            // "Remove ads" link and "Get Unlimited" on quota screens (docs/prd-subscriptions.md §3.2).
+            tss.t.tsiptv.ui.screens.plans.LocalOpenPlans provides { navController.navigate(NavRoutes.Plans) { launchSingleTop = true } },
         ) {
             StreamVaultTheme {
                 NavHost(
@@ -634,6 +636,14 @@ fun App() {
                                         }
                                     }
                                 },
+                            )
+                        }
+
+                        composable<NavRoutes.Plans> {
+                            tss.t.tsiptv.ui.screens.plans.PlansScreen(
+                                isTvLayout = isTvMode,
+                                onBack = { navController.popBackStack() },
+                                onSignIn = { navController.navigate(NavRoutes.Login) },
                             )
                         }
 

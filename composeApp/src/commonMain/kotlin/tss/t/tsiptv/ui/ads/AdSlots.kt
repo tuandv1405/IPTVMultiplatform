@@ -31,6 +31,10 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.ad_label
+import tsiptv.composeapp.generated.resources.remove_ads_link
+import tss.t.tsiptv.ui.screens.plans.LocalOpenPlans
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
 import tss.t.tsiptv.core.ads.AdLoadResult
 import tss.t.tsiptv.core.ads.AdPlacement
 import tss.t.tsiptv.core.ads.AdsGate
@@ -75,11 +79,16 @@ fun BannerAdSlot(
     placement: AdPlacement,
     modifier: Modifier = Modifier,
     fallback: (@Composable () -> Unit)? = null,
+    /** A small "Remove ads" link below the slot while it shows something (docs/prd-subscriptions.md §3.2). */
+    removeAdsLink: Boolean = false,
 ) {
     val ads = rememberAdsState()
     if (!ads.any) return
     if (!ads.adMob) {
-        fallback?.invoke()
+        if (fallback != null) {
+            fallback()
+            if (removeAdsLink) RemoveAdsLink()
+        }
         return
     }
     var result by remember(placement) { mutableStateOf<AdLoadResult?>(null) }
@@ -89,15 +98,43 @@ fun BannerAdSlot(
         attempt++
     }
     if (result == AdLoadResult.FAILED) {
-        fallback?.invoke()
+        if (fallback != null) {
+            fallback()
+            if (removeAdsLink) RemoveAdsLink()
+        }
         return
     }
     val height = rememberBannerHeight()
-    Box(modifier.fillMaxWidth().height(height)) {
-        key(attempt) {
-            PlatformBannerAd(placement, Modifier.fillMaxWidth().height(height)) { result = it }
+    Column(modifier.fillMaxWidth()) {
+        Box(Modifier.fillMaxWidth().height(height)) {
+            key(attempt) {
+                PlatformBannerAd(placement, Modifier.fillMaxWidth().height(height)) { result = it }
+            }
+            if (result == null) AdSkeleton(Modifier.fillMaxWidth().height(height))
         }
-        if (result == null) AdSkeleton(Modifier.fillMaxWidth().height(height))
+        if (removeAdsLink && result == AdLoadResult.LOADED) RemoveAdsLink()
+    }
+}
+
+/**
+ * "Remove ads": a small text link in the app's own style, right-aligned **below** an ad slot, never
+ * over the ad or inside the ad view (AdMob policy), opening the plans screen.
+ */
+@Composable
+fun RemoveAdsLink(modifier: Modifier = Modifier) {
+    val open = LocalOpenPlans.current ?: return
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+        Text(
+            text = stringResource(Res.string.remove_ads_link),
+            color = TSColors.AccentCyan,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            modifier = Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .clickable(onClick = open)
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+        )
     }
 }
 

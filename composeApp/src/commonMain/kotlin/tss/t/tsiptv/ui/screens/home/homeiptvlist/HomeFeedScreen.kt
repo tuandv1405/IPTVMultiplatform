@@ -346,6 +346,7 @@ fun HomeIPTVPlaylistScreen(
                                     // swipe always scrolls the list.
                                     modifier = Modifier.padding(vertical = 8.dp),
                                     fallback = rememberShopeeFallback(adsViewModel),
+                                    removeAdsLink = true,
                                 )
                             }
                         }

@@ -99,6 +99,7 @@ import tsiptv.composeapp.generated.resources.sync_sign_in
 import tsiptv.composeapp.generated.resources.sync_skipped_files
 import tsiptv.composeapp.generated.resources.sync_task_rewarded
 import tsiptv.composeapp.generated.resources.sync_title
+import tsiptv.composeapp.generated.resources.sync_unlimited
 import tsiptv.composeapp.generated.resources.sync_too_large
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.model.Playlist
@@ -275,7 +276,12 @@ fun ConnectScreen(
                     TvMenuItem(
                         title = stringResource(Res.string.sync_push),
                         description = stringResource(Res.string.sync_push_desc, state.pushableCount) + (remaining?.let {
-                            "\n" + if (it > 0) stringResource(Res.string.sync_remaining, it.toInt()) else stringResource(Res.string.sync_quota_reached)
+                            "\n" + when {
+                                // Unlimited (docs/prd-subscriptions.md §2.2): no counter.
+                                state.unlimitedSyncs && it > 0 -> stringResource(Res.string.sync_unlimited)
+                                it > 0 -> stringResource(Res.string.sync_remaining, it.toInt())
+                                else -> stringResource(Res.string.sync_quota_reached)
+                            }
                         } ?: ""),
                         icon = Icons.Rounded.CloudUpload,
                         onClick = viewModel::push,
@@ -291,6 +297,7 @@ fun ConnectScreen(
                             onClick = viewModel::watchAdForSync,
                         )
                     }
+                    if (remaining == 0L && !state.unlimitedSyncs) UpgradeUnlimitedItem()
                     val current = state.currentSync
                     ConnectBody(
                         if (current == null) stringResource(Res.string.sync_none)

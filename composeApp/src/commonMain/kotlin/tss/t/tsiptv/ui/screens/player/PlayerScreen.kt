@@ -289,6 +289,7 @@ fun PlayerScreen(
                     placement = AdPlacement.PLAYER_BANNER,
                     modifier = Modifier.padding(top = 8.dp),
                     fallback = rememberShopeeFallback(adsViewModel),
+                    removeAdsLink = true,
                 )
             }
 
