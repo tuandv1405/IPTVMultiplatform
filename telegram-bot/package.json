@@ -10,6 +10,8 @@
   },
   "scripts": {
     "start": "node src/index.js",
+    "start:billing": "node src/billing/standalone.js",
+    "test:billing": "node --test test/billing.test.js",
     "dev": "node --watch src/index.js",
     "test": "node --test \"test/*.test.js\"",
     "gen-keys": "node scripts/gen-keys.js",

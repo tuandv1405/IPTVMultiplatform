@@ -1,6 +1,9 @@
 package tss.t.tsiptv.feature.account
 
 import kotlinx.datetime.TimeZone
+import tss.t.tsiptv.core.billing.Plan
+import tss.t.tsiptv.core.billing.Entitlement as Ent
+import tss.t.tsiptv.core.billing.EntitlementSource as Src
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -75,21 +78,79 @@ class QuotaPolicyTest {
     @Test
     fun networksAreDistinctAndBounded() {
         var s = QuotaState(day = today, sendRewards = 5)
-        val big = QuotaPolicy(Entitlement(extraSendsPerDay = 20))
+        val big = QuotaPolicy(QuotaPlan.UNLIMITED_VERIFIED)
         for (i in 0 until 15) s = big.afterSend(s, "n$i", 0)
         s = big.afterSend(s, "n14", 0)
         assertEquals(QuotaPolicy.MAX_NETWORKS, s.networks.size)
         assertEquals("n14", s.networks.last())
     }
 
+    // --- Subscriptions (docs/prd-subscriptions.md §2.2, §6) ---------------------------------------
+
     @Test
-    fun entitlementPlugsIn() {
-        val paid = QuotaPolicy(Entitlement(extraSendsPerDay = 7, extraSyncsPerDay = 4))
+    fun planFollowsTheEntitlement() {
+        assertEquals(QuotaPlan.FREE, QuotaPlan.of(Ent.FREE))
+        assertEquals(QuotaPlan.FREE, QuotaPlan.of(Ent(plan = Plan.NO_ADS, source = Src.SERVER)))
+        assertEquals(QuotaPlan.UNLIMITED_UNVERIFIED, QuotaPlan.of(Ent(plan = Plan.UNLIMITED, source = Src.PLAY)))
+        assertEquals(QuotaPlan.UNLIMITED_UNVERIFIED, QuotaPlan.of(Ent(plan = Plan.UNLIMITED, source = Src.CACHE)))
+        assertEquals(QuotaPlan.UNLIMITED_VERIFIED, QuotaPlan.of(Ent(plan = Plan.UNLIMITED, source = Src.SERVER)))
+    }
+
+    @Test
+    fun verifiedUnlimitedHasTheFairUseCapsAndNoTasks() {
+        val unlimited = QuotaPolicy(QuotaPlan.UNLIMITED_VERIFIED)
         val s = QuotaState(day = today)
-        assertEquals(10, paid.remainingSends(s))
-        assertEquals(5, paid.remainingSyncs(s))
-        val unlimited = QuotaPolicy(Entitlement(unlimited = true))
-        assertTrue(unlimited.canSend(QuotaState(day = today, sends = 1000)))
+        assertTrue(unlimited.unlimited)
+        assertEquals(QuotaPolicy.FAIR_USE_SENDS, unlimited.remainingSends(s))
+        assertEquals(QuotaPolicy.FAIR_USE_SYNCS, unlimited.remainingSyncs(s))
+        assertTrue(unlimited.canSend(s.copy(sends = 199)))
+        assertFalse(unlimited.canSend(s.copy(sends = 200)))
+        assertFalse(unlimited.canSync(s.copy(syncs = 50)))
+        // Rewarded tasks are hidden and never needed.
+        assertFalse(unlimited.canEarnSendReward(s))
+        assertFalse(unlimited.canEarnSyncReward(s))
+        // No reward counter is touched: the rules check sends <= 200 for verified Unlimited.
+        val after = unlimited.afterSend(s.copy(sends = 3), null, 1)
+        assertEquals(4, after.sends)
+        assertEquals(0, after.sendRewards)
+    }
+
+    @Test
+    fun unverifiedUnlimitedUsesWhatTheFreeRulesAllowWithoutAds() {
+        val p = QuotaPolicy(QuotaPlan.UNLIMITED_UNVERIFIED)
+        var s = QuotaState(day = today)
+        var sends = 0
+        while (p.canSend(s)) {
+            val next = p.afterSend(s, null, 0)
+            // Every write stays valid for the Free rules: +<=1 per counter, sends <= 3 + sendRewards.
+            assertTrue(next.sends - s.sends == 1L && next.sendRewards - s.sendRewards in 0L..1L)
+            assertTrue(next.sends <= QuotaPolicy.FREE_SENDS + next.sendRewards)
+            assertTrue(next.sendRewards <= QuotaPolicy.MAX_SEND_REWARDS)
+            s = next
+            sends++
+        }
+        assertEquals(8, sends)
+        var syncs = 0
+        while (p.canSync(s)) {
+            val next = p.afterSync(s, 0)
+            assertTrue(next.syncs <= QuotaPolicy.FREE_SYNCS + next.syncRewards)
+            assertTrue(next.syncRewards <= QuotaPolicy.MAX_SYNC_REWARDS)
+            s = next
+            syncs++
+        }
+        assertEquals(3, syncs)
+        assertFalse(p.canEarnSendReward(QuotaState(day = today)))
+    }
+
+    @Test
+    fun freeAndNoAdsKeepTheRewardRules() {
+        val free = QuotaPolicy(QuotaPlan.FREE)
+        assertFalse(free.unlimited)
+        val s = QuotaState(day = today, sends = 3)
+        assertEquals(0, free.remainingSends(s))
+        assertTrue(free.canEarnSendReward(s))
+        // A free send never raises the reward counter.
+        assertEquals(0, free.afterSend(QuotaState(day = today), null, 0).sendRewards)
     }
 
     @Test

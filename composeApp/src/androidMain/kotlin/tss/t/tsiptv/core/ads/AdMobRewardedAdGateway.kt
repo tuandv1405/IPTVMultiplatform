@@ -26,7 +26,8 @@ import kotlin.coroutines.resume
  * AdMob rewarded ads for the extra send / sync tasks (docs/prd-tv-cast-and-sync.md §3.3).
  *
  * - Follows the ads layer: nothing on the TV layout, during the 24 h ad-free start, or without UMP
- *   consent ([availability]); the SDK is started by [AdsGate] only once ads may show.
+ *   consent ([availability]); the SDK is started by [AdsGate] once ads may show, or here on demand
+ *   (without the app open ad) for a "No ads" subscriber. Unlimited subscribers never see the tasks.
  * - The reward is granted only from `OnUserEarnedRewardListener`.
  * - One ad is cached (application context only, no Activity kept); it is single-use and dropped
  *   after [MAX_AGE_MS] (Google: rewarded ads expire after one hour).
@@ -49,7 +50,7 @@ class AdMobRewardedAdGateway(
         supported = platform.isAdMobSupported,
         tvLayout = gate.tvLayout,
         firstDayOver = gate.adFreePeriodOver,
-        canRequestAds = platform.canRequestAds.value && gate.adMobAllowedNow,
+        canRequestAds = platform.canRequestAds.value && gate.rewardedAllowedNow,
     )
 
     override fun preload(placement: RewardPlacement) {
@@ -64,6 +65,8 @@ class AdMobRewardedAdGateway(
             cached = null
         }
         loading?.let { return it }
+        // A "No ads" subscriber's SDK was never started at launch (docs/prd-subscriptions.md §2.2).
+        platform.startAdMobForRewarded()
         val result = CompletableDeferred<RewardedAd?>()
         loading = result
         AdsLog.i { "Rewarded ad requested" }

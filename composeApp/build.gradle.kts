@@ -99,6 +99,9 @@ kotlin {
             // AdMob + Google UMP consent (docs/prd-admob.md)
             implementation(libs.play.services.ads)
             implementation(libs.user.messaging.platform)
+
+            // Google Play Billing: subscriptions (docs/prd-subscriptions.md)
+            implementation(libs.play.billing)
         }
 
         commonMain.dependencies {
@@ -281,6 +284,17 @@ val releaseAdMobNativeUnit = adMobSetting("TSIPTV_ADMOB_NATIVE_UNIT", AdMobTestI
 // Extra send / sync tasks (docs/prd-tv-cast-and-sync.md §3.3).
 val releaseAdMobRewardedUnit = adMobSetting("TSIPTV_ADMOB_REWARDED_UNIT", AdMobTestIds.REWARDED)
 
+// Subscriptions (docs/prd-subscriptions.md §5). Product ids default to the PRD's; the billing server
+// URL is empty until it is deployed (then the app trusts only local Play state, PRD §5.3).
+// Same lookup order as AdMob: Gradle property, local.properties, environment.
+fun billingSetting(name: String, default: String): String =
+    ((project.findProperty(name) as String?) ?: adMobLocalProperties.getProperty(name) ?: System.getenv(name))
+        ?.trim()?.takeIf { it.isNotEmpty() } ?: default
+
+val billingNoAdsId = billingSetting("TSIPTV_BILLING_NOADS_ID", "tsiptv_noads")
+val billingUnlimitedId = billingSetting("TSIPTV_BILLING_UNLIMITED_ID", "tsiptv_unlimited")
+val billingVerifyUrl = billingSetting("TSIPTV_BILLING_VERIFY_URL", "")
+
 val hasReleaseSigning = listOf(
     releaseStoreFile,
     releaseStorePassword,
@@ -298,6 +312,9 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = appVersionCode
         versionName = appVersionName
+        resValue("string", "billing_product_noads", billingNoAdsId)
+        resValue("string", "billing_product_unlimited", billingUnlimitedId)
+        resValue("string", "billing_verify_url", billingVerifyUrl)
     }
     packaging {
         resources {
@@ -337,6 +354,12 @@ android {
                 "debug_ads_skip_first_day",
                 ((project.findProperty("tsiptv.debugAdsNoFirstDay") as String?) == "true").toString(),
             )
+            // QA: `-Ptsiptv.debugDemoBilling=true` shows sample plan prices, nothing purchasable (debug only).
+            resValue(
+                "bool",
+                "debug_demo_billing",
+                ((project.findProperty("tsiptv.debugDemoBilling") as String?) == "true").toString(),
+            )
             // QA: `-Ptsiptv.debugAppOpenTimeoutMs=8000` lets slow emulators show the app open ad (debug only).
             resValue(
                 "integer",
@@ -375,6 +398,7 @@ android {
             resValue("string", "admob_native_unit", releaseAdMobNativeUnit)
             resValue("string", "admob_rewarded_unit", releaseAdMobRewardedUnit)
             resValue("bool", "debug_ads_skip_first_day", "false")
+            resValue("bool", "debug_demo_billing", "false")
             resValue("bool", "debug_skip_login", "false")
             resValue("integer", "debug_app_open_timeout_ms", "0")
             resValue("string", "debug_ump_geography", "")

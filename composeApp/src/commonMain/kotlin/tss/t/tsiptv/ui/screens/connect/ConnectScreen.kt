@@ -99,6 +99,10 @@ import tsiptv.composeapp.generated.resources.sync_sign_in
 import tsiptv.composeapp.generated.resources.sync_skipped_files
 import tsiptv.composeapp.generated.resources.sync_task_rewarded
 import tsiptv.composeapp.generated.resources.sync_title
+import tsiptv.composeapp.generated.resources.sync_unlimited
+import tsiptv.composeapp.generated.resources.quota_fair_use_reached
+import tsiptv.composeapp.generated.resources.quota_unlimited_pending
+import tss.t.tsiptv.feature.account.QuotaPlan
 import tsiptv.composeapp.generated.resources.sync_too_large
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.model.Playlist
@@ -275,7 +279,15 @@ fun ConnectScreen(
                     TvMenuItem(
                         title = stringResource(Res.string.sync_push),
                         description = stringResource(Res.string.sync_push_desc, state.pushableCount) + (remaining?.let {
-                            "\n" + if (it > 0) stringResource(Res.string.sync_remaining, it.toInt()) else stringResource(Res.string.sync_quota_reached)
+                            "\n" + when {
+                                // Verified Unlimited (docs/prd-subscriptions.md §2.2): fair use, no counter.
+                                state.syncPlan == QuotaPlan.UNLIMITED_VERIFIED && it > 0 -> stringResource(Res.string.sync_unlimited)
+                                it > 0 -> stringResource(Res.string.sync_remaining, it.toInt())
+                                // Unlimited used up: say why instead of offering an upgrade (QC B1).
+                                state.syncPlan == QuotaPlan.UNLIMITED_VERIFIED -> stringResource(Res.string.quota_fair_use_reached)
+                                state.syncPlan == QuotaPlan.UNLIMITED_UNVERIFIED -> stringResource(Res.string.quota_unlimited_pending)
+                                else -> stringResource(Res.string.sync_quota_reached)
+                            }
                         } ?: ""),
                         icon = Icons.Rounded.CloudUpload,
                         onClick = viewModel::push,
@@ -291,6 +303,7 @@ fun ConnectScreen(
                             onClick = viewModel::watchAdForSync,
                         )
                     }
+                    if (remaining == 0L && state.syncPlan == QuotaPlan.FREE) UpgradeUnlimitedItem()
                     val current = state.currentSync
                     ConnectBody(
                         if (current == null) stringResource(Res.string.sync_none)

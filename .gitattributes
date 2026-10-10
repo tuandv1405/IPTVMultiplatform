@@ -1,0 +1,16 @@
+# The website is built and checked byte for byte (web/scripts/build_guides.py, check_guides.py):
+# keep it LF on every checkout, including Windows with core.autocrlf=true.
+web/public/** text eol=lf
+web/guides-src/** text eol=lf
+
+# Binary assets under those folders must never be converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.gz binary
+*.woff binary
+*.woff2 binary
+*.pdf binary

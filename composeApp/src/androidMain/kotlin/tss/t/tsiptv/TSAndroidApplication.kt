@@ -64,6 +64,10 @@ class TSAndroidApplication : Application() {
             tss.t.tsiptv.utils.DebugFlags.skipLogin = resources.getBoolean(R.bool.debug_skip_login)
         }
 
+        // Subscriptions (docs/prd-subscriptions.md): the cached plan is read and Play is queried at
+        // once, on phones and TVs; the ads gate below waits for it.
+        GlobalContext.get().get<tss.t.tsiptv.core.billing.EntitlementRepository>()
+
         // Ads (docs/prd-admob.md). Not on Android TV (PRD §3). The platform was set up first
         // (above); AdsGate reads the install time and debug flags from it.
         if (!PlatformUtils.platform.isTv) {
