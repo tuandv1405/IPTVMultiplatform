@@ -129,7 +129,7 @@ Analytics.*
 | Shared | **Yes** (advertising, through Google AdMob) |
 | Processed ephemerally | No |
 | Required or optional | Required |
-| Purposes | Analytics; **Advertising or marketing** |
+| Purposes | Analytics; **Advertising or marketing**; **App functionality** (FCM token) |
 
 *Firebase Analytics App Instance ID (analytics, not shared). Since the AdMob
 release (`docs/prd-admob.md`): the **Android advertising ID** (`AD_ID`
@@ -137,6 +137,15 @@ permission) is collected by the Google Mobile Ads SDK and shared with Google for
 advertising, including ad personalisation where the user consents through Google
 UMP. AdMob is Android phone/tablet only; no ads, and no AdMob SDK calls, on
 Android TV.*
+
+*Push notifications (`docs/prd-push-notifications.md`): the **FCM registration
+token** is a device ID. Purpose: **App functionality** (delivering the
+notifications the user turned on in Profile › Notifications; opt-in, off by
+default). It is created by Firebase Cloud Messaging, kept on the device and, only
+when the user is signed in and the device is registered, stored with the account
+(`users/{uid}/devices/{installationId}.fcmToken`). It is not shared with third
+parties beyond Google as the processor, and it is deleted with the device entry
+(sign-out or remote sign-out). Add "App functionality" to the purposes above.*
 
 ### App activity → Other actions (ads) / App info and performance (ads)
 
