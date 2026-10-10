@@ -1,0 +1,149 @@
+/* /support/ page. Loaded after site.css; uses its palette. */
+
+.support-hero { text-align: center; padding: 1rem 0 0.5rem; }
+.support-hero .support-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-cyan));
+  color: var(--navy-900);
+}
+.support-hero .support-mark svg { width: 38px; height: 38px; }
+.support-hero h1 { margin-top: 1rem; }
+.support-hero .lead { color: var(--text-dim); max-width: 36rem; margin: 0 auto; }
+
+.pay-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  margin: 1.5rem 0;
+}
+.pay-grid > .pay-card[id^="method-crypto"] { grid-column: 1 / -1; }
+
+.pay-card { margin: 0; display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+.pay-card h3 { margin: 0; font-size: 1.08rem; }
+
+.pay-head { display: flex; align-items: center; gap: 0.75rem; }
+.pay-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--navy-700);
+  border: 1px solid var(--stroke);
+  color: var(--accent);
+}
+.pay-icon svg { width: 24px; height: 24px; }
+.pay-titles { min-width: 0; }
+.pay-badges { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.2rem; }
+.pay-scope { color: var(--accent-cyan); }
+
+.pay-desc, .pay-note { margin: 0; color: var(--text-dim); font-size: 0.93rem; }
+
+.pay-body { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
+.pay-qr {
+  margin: 0;
+  flex: none;
+  width: 168px;
+  max-width: 100%;
+  padding: 8px;
+  border-radius: 14px;
+  background: #fff;
+}
+.pay-qr img { display: block; width: 100%; height: auto; border-radius: 8px; }
+.pay-qr-small { width: 132px; }
+
+.pay-fields { flex: 1 1 12rem; min-width: 0; margin: 0; display: grid; gap: 0.6rem; }
+.pay-field dt { color: var(--text-dim); font-size: 0.82rem; font-weight: 600; }
+.pay-field dd {
+  margin: 0.15rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.pay-value {
+  flex: 1 1 8rem;
+  min-width: 0;
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+:not(pre) > code.pay-value { padding: 0.3rem 0.5rem; }
+.pay-value.pay-text { word-break: normal; }
+.pay-unset { color: #fca5a5; }
+
+.pay-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.35rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: var(--navy-700);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+.pay-copy:hover { border-color: var(--accent); color: var(--accent); }
+.pay-copy.is-done { border-color: var(--accent); color: var(--accent); }
+.pay-btn-icon { display: inline-flex; }
+.pay-btn-icon svg { width: 18px; height: 18px; }
+
+.pay-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: auto; }
+.pay-btn { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px; }
+.pay-btn-secondary { gap: 0.4rem; }
+
+.pay-coins { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.9rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); }
+.pay-coin {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+  background: var(--navy-900);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.pay-coin-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.pay-asset { font-size: 1.05rem; }
+.pay-network { color: #fcd34d; white-space: normal; }
+.pay-warn {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #fcd34d;
+  border-left: 3px solid #b45309;
+  padding-left: 0.6rem;
+}
+
+.pay-empty { text-align: center; color: var(--text-dim); }
+.pay-preview p { margin: 0; }
+
+.support-notes { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); }
+.support-notes .card { margin: 0; }
+.support-notes h2 { margin-top: 0; font-size: 1.05rem; }
+.support-notes ul { margin-bottom: 0; }
+
+.pay-offscreen {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
