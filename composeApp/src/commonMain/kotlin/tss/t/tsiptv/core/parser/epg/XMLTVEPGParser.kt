@@ -52,7 +52,7 @@ class XMLTVEPGParser(
         for (channel in xmltvDocument.channel) {
             for (name in channel.displayName) {
                 val key = name.value?.trim()?.takeIf { it.isNotEmpty() } ?: continue
-                names.putIfAbsent(key, channel.id)
+                if (key !in names) names[key] = channel.id
             }
         }
         return programs to names

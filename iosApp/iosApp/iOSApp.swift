@@ -3,11 +3,14 @@ import Firebase
 import GoogleSignIn
 import FirebaseCore
 import FirebaseAnalytics
+import ComposeApp
 
 @main
 struct iOSApp: App {
     init() {
         FirebaseApp.configure()
+        // Clear MPEG-DASH plays on VLCKit; AVPlayer keeps HLS and files (see VLCPlaybackEngine.swift).
+        IosPlaybackEngines.shared.dashFactory = VLCPlaybackEngineFactory()
     }
 
     var body: some Scene {

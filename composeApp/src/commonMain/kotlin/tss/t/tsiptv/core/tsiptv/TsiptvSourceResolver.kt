@@ -502,7 +502,7 @@ class TsiptvSourceResolver(
         }
 
         private fun addGuideNames(names: Map<String, String>) {
-            names.forEach { (name, id) -> guideNames.putIfAbsent(nameKey(name), id) }
+            names.forEach { (name, id) -> guideNames.getOrPut(nameKey(name)) { id } }
         }
 
         private fun parseGuide(bytes: ByteArray): Pair<List<IPTVProgram>, Map<String, String>>? = runCatchingParse {

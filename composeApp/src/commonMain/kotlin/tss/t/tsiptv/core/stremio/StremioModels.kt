@@ -326,6 +326,11 @@ data class StreamBehaviorHints(
     val videoHash: String? = null,
     val videoSize: Long? = null,
     val other: Map<String, JsonElement> = emptyMap(),
+    /**
+     * App-only, never read from or written to the wire: the stream has DRM (TS IPTV Source streams),
+     * so iOS refuses it whatever its format.
+     */
+    val hasDrm: Boolean = false,
 )
 
 // ---------------------------------------------------------------------------------------------

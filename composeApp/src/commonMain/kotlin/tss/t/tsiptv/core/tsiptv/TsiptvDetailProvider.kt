@@ -86,7 +86,7 @@ class TsiptvDetailProvider(private val database: IPTVDatabase) {
                     url = stream.url,
                     name = stream.name?.resolve(uiLanguage) ?: streamLabel(index + 1),
                     description = listOfNotNull(stream.quality, stream.language?.uppercase()).joinToString(" · ").ifBlank { null },
-                    behaviorHints = StreamBehaviorHints(requestHeaders = stream.headers),
+                    behaviorHints = StreamBehaviorHints(requestHeaders = stream.headers, hasDrm = stream.drm != null),
                 )
             }
         }

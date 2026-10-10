@@ -30,3 +30,6 @@ play-store/screenshots/demo-server/
 
 # Python bytecode from web/scripts
 __pycache__/
+
+# CocoaPods (VLCKit): Podfile and Podfile.lock are committed, the Pods are not.
+iosApp/Pods/

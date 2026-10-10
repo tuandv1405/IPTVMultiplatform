@@ -1,5 +1,7 @@
 package tss.t.tsiptv.core.stremio
 
+import tss.t.tsiptv.player.models.DashRouting
+import tss.t.tsiptv.player.models.PlaybackCapabilities
 import tss.t.tsiptv.core.parser.model.playback.StreamMimeTypes
 import tss.t.tsiptv.player.models.MediaItem
 
@@ -56,10 +58,15 @@ data class ClassifiedStream(
     val bingeGroup: String? get() = if (!isSelectable) null else stream.hints.bingeGroup
     /** Show `stream_badge_region`; never for unsupported rows. */
     val isRegionLimited: Boolean get() = isSelectable && stream.hints.countryWhitelist.isNotEmpty()
-    /** Show `stream_badge_may_not_play` on iOS: DASH or MKV. */
+    /**
+     * Show `stream_badge_may_not_play` on iOS: MKV (AVPlayer cannot play it), and DASH when no DASH
+     * engine is registered or the stream has DRM (see [DashRouting.dashMayNotPlayOnIos]).
+     */
     val mayNotPlayOnIos: Boolean
         get() = (kind as? StreamKind.Playable)?.let {
-            it.mimeType == StreamMimeTypes.DASH || StreamClassifier.extensionOf(stream.hints.filename ?: it.url) == "mkv"
+            (it.mimeType == StreamMimeTypes.DASH &&
+                DashRouting.dashMayNotPlayOnIos(PlaybackCapabilities.iosDashEngineAvailable, stream.hints.hasDrm)) ||
+                StreamClassifier.extensionOf(stream.hints.filename ?: it.url) == "mkv"
         } ?: false
 
     /** Never the stream itself (URLs with tokens, headers). */

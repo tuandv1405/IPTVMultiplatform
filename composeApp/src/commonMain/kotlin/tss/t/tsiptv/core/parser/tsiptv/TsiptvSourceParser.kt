@@ -12,6 +12,7 @@ import kotlinx.serialization.json.longOrNull
 import okio.Buffer
 import okio.GzipSource
 import okio.buffer
+import okio.use
 import tss.t.tsiptv.core.parser.model.playback.CatchupMode
 import tss.t.tsiptv.core.parser.model.playback.CatchupSpec
 import tss.t.tsiptv.core.parser.model.playback.ClearKey

@@ -12,6 +12,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import okio.Buffer
 import okio.GzipSource
 import okio.buffer
+import okio.use
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.model.Playlist
 import tss.t.tsiptv.core.model.PlaylistSourceType

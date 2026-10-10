@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -20,6 +21,7 @@ import platform.Foundation.NSNotificationCenter
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDidEnterBackgroundNotification
 import platform.UIKit.UIApplicationWillEnterForegroundNotification
+import platform.UIKit.UIColor
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAutoresizingFlexibleHeight
 import platform.UIKit.UIViewAutoresizingFlexibleWidth
@@ -45,6 +47,8 @@ actual fun MediaPlayerContent(
     // Get the current playback state
     val playbackState by iosPlayer.playbackState.collectAsState()
     val mediaItem by iosPlayer.currentMedia.collectAsState()
+    // Clear DASH plays on the registered engine (VLCKit): show its view instead of AVPlayer's.
+    val engineView by iosPlayer.engineView.collectAsState()
 
     // Track whether the app is in background
     var isInBackground by remember { mutableStateOf(false) }
@@ -94,6 +98,37 @@ actual fun MediaPlayerContent(
         }
     }
 
+    val dashView = engineView
+    if (!isInBackground && dashView != null) {
+        // A new engine view (first DASH item) gets a new interop view; the same engine reuses it.
+        key(dashView) {
+            UIKitView(
+                modifier = modifier.fillMaxSize(),
+                factory = {
+                    val containerView = UIView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0))
+                    containerView.setBackgroundColor(UIColor.blackColor)
+                    dashView.removeFromSuperview()
+                    containerView.addSubview(dashView)
+                    dashView.setFrame(containerView.bounds)
+                    dashView.setAutoresizingMask(UIViewAutoresizingFlexibleWidth or UIViewAutoresizingFlexibleHeight)
+                    containerView
+                },
+                update = { view -> dashView.setFrame(view.bounds) },
+                properties = remember {
+                    UIKitInteropProperties(
+                        isInteractive = true,
+                        isNativeAccessibilityEnabled = true
+                    )
+                },
+                onRelease = {
+                    // The engine keeps its view; only detach it from this container.
+                    dashView.removeFromSuperview()
+                }
+            )
+        }
+        return
+    }
+
     // Only show the player UI when the app is in foreground
     if (!isInBackground) {
         // Use UIKitView to embed the AVPlayerViewController's view in Compose
@@ -102,6 +137,10 @@ actual fun MediaPlayerContent(
             factory = {
                 // Create a container view
                 val containerView = UIView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0))
+
+                // onRelease cleared the player when the DASH engine's view replaced this one:
+                // attach it again whenever this surface is (re)created.
+                playerViewController.setPlayer(iosPlayer.getAVPlayer())
 
                 // Add the player view controller's view to the container
                 val playerView = playerViewController.view

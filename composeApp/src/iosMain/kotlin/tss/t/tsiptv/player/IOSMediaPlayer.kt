@@ -37,6 +37,8 @@ import platform.UIKit.UIApplicationDidEnterBackgroundNotification
 import platform.UIKit.UIApplicationWillEnterForegroundNotification
 import platform.UIKit.UIImage
 import platform.AVFoundation.AVURLAsset
+import platform.UIKit.UIView
+import tss.t.tsiptv.player.models.DashRouting
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackError
 import tss.t.tsiptv.player.models.PlaybackPreflight
@@ -45,6 +47,10 @@ import kotlin.math.roundToLong
 
 /**
  * iOS implementation of the MediaPlayer interface using AVPlayer.
+ *
+ * Clear MPEG-DASH (MIME hint or `.mpd`, no DRM) goes to the registered DASH engine instead
+ * ([IosPlaybackEngines.dashFactory], VLCKit in the app), because AVPlayer plays HLS only. Only one
+ * engine holds a stream at a time: switching releases the other one's item.
  */
 class IOSMediaPlayer(
     private val coroutineScope: CoroutineScope,
@@ -81,6 +87,64 @@ class IOSMediaPlayer(
 
     private val _playbackError = MutableStateFlow<PlaybackError?>(null)
     override val playbackError: StateFlow<PlaybackError?> = _playbackError.asStateFlow()
+
+    /** The DASH engine, created on first use and kept for the next DASH item. */
+    private var engine: IosPlaybackEngine? = null
+
+    /** True while the current item plays on [engine] (not AVPlayer). */
+    private var engineActive = false
+
+    private val _engineView = MutableStateFlow<UIView?>(null)
+
+    /** The engine's render surface while it plays the current item; null when AVPlayer does. */
+    val engineView: StateFlow<UIView?> = _engineView.asStateFlow()
+
+    private val engineListener = object : IosPlaybackEngineListener {
+        override fun onStateChanged(state: Int) {
+            if (!engineActive) return
+            when (state) {
+                IosEngineState.BUFFERING -> _isBuffering.value = true
+                IosEngineState.READY -> _isBuffering.value = false
+                IosEngineState.PLAYING -> {
+                    _isBuffering.value = false
+                    if (_playbackError.value == null) _playbackState.value = PlaybackState.PLAYING
+                }
+                IosEngineState.PAUSED -> {
+                    _isBuffering.value = false
+                    if (_playbackError.value == null && _playbackState.value == PlaybackState.PLAYING) {
+                        _playbackState.value = PlaybackState.PAUSED
+                    }
+                }
+                IosEngineState.ENDED -> {
+                    _isBuffering.value = false
+                    _playbackState.value = PlaybackState.ENDED
+                }
+                IosEngineState.IDLE -> _isBuffering.value = false
+            }
+        }
+
+        override fun onProgress(positionMs: Long, durationMs: Long) {
+            if (!engineActive) return
+            _currentPosition.value = positionMs.coerceAtLeast(0L)
+            // Live (or unknown length) stays 0, as with AVPlayer: the UI shows LIVE.
+            val duration = if (durationMs > 0) durationMs else 0L
+            if (_duration.value != duration) _duration.value = duration
+        }
+
+        override fun onError(code: Int, message: String?) {
+            if (!engineActive) return
+            _isBuffering.value = false
+            val hasOwnHeaders = _currentMedia.value?.headers?.isNotEmpty() == true
+            _playbackError.value = when (code) {
+                IosEngineError.FORBIDDEN -> if (hasOwnHeaders) PlaybackError.FORBIDDEN_HEADERS else PlaybackError.STREAM_FAILED
+                IosEngineError.DRM_UNSUPPORTED -> PlaybackError.DRM_NOT_SUPPORTED_DEVICE
+                else -> PlaybackError.STREAM_FAILED
+            }
+            _playbackState.value = PlaybackState.ERROR
+            // The engine never puts the URL in the message.
+            message?.let { println("DASH engine error $code: $it") }
+        }
+    }
 
     private var avPlayer: AVPlayer? = AVPlayer()
     override val isPlaying: StateFlow<Boolean>
@@ -169,8 +233,8 @@ class IOSMediaPlayer(
     private fun handleAppBackgrounded() {
         // Continue audio playback in background
         if (_playbackState.value == PlaybackState.PLAYING) {
-            // Make sure audio continues to play
-            avPlayer?.play()
+            // Make sure audio continues to play (the DASH engine keeps playing on its own).
+            if (!engineActive) avPlayer?.play()
 
             // Show notification for background playback
             showPlaybackNotification()
@@ -223,6 +287,7 @@ class IOSMediaPlayer(
 
     @OptIn(ExperimentalForeignApi::class)
     private fun updateCurrentPosition() {
+        if (engineActive) return // the engine reports its own position
         avPlayer?.let { player ->
             val time = player.currentTime()
             val seconds = CMTimeGetSeconds(time)
@@ -244,11 +309,23 @@ class IOSMediaPlayer(
         if (_playbackError.value != null) {
             avPlayer?.pause()
             avPlayer?.replaceCurrentItemWithPlayerItem(null)
+            deactivateEngine()
             _isBuffering.value = false
             _playbackState.value = PlaybackState.ERROR
             return
         }
         _isBuffering.value = true
+
+        // Clear MPEG-DASH: the registered engine (AVPlayer cannot play DASH).
+        val dashFactory = IosPlaybackEngines.dashFactory
+        if (dashFactory != null &&
+            DashRouting.shouldUseDashEngine(mediaItem.uri, mediaItem.mimeType, mediaItem.drm, engineAvailable = true)
+        ) {
+            prepareOnEngine(mediaItem, dashFactory)
+            return
+        }
+        // AVPlayer item: the engine must not keep playing underneath.
+        deactivateEngine()
 
         // Create URL from the media item URI
         val url = NSURL.URLWithString(mediaItem.uri)
@@ -289,8 +366,48 @@ class IOSMediaPlayer(
         _playbackState.value = PlaybackState.READY
     }
 
+    /** Stops AVPlayer's item and plays [mediaItem] on the DASH engine. */
+    private fun prepareOnEngine(mediaItem: MediaItem, factory: IosPlaybackEngineFactory) {
+        removeAvObservers()
+        avPlayer?.pause()
+        avPlayer?.replaceCurrentItemWithPlayerItem(null)
+
+        val dash = engine ?: factory.create().also { engine = it }
+        engineActive = true
+        dash.attachListener(engineListener)
+        dash.changeVolume(if (_isMuted.value) 0f else _volume.value)
+        dash.changeRate(_playbackSpeed.value)
+        dash.load(mediaItem.uri, mediaItem.headers, 0L)
+        dash.updateNowPlaying(mediaItem.title, mediaItem.artist.takeIf { it.isNotBlank() }, mediaItem.artworkUri)
+        _engineView.value = dash.view
+        _playbackState.value = PlaybackState.READY
+    }
+
+    /** Back to AVPlayer: the engine stops its stream (it is kept for the next DASH item). */
+    private fun deactivateEngine() {
+        if (!engineActive) return
+        engineActive = false
+        engine?.attachListener(null)
+        engine?.stop()
+        _engineView.value = null
+    }
+
+    /** The periodic time observer and the end observer of the previous AVPlayer item. */
+    private fun removeAvObservers() {
+        timeObserverToken?.let { token ->
+            avPlayer?.removeTimeObserver(token)
+            timeObserverToken = null
+        }
+        itemObserver?.let { observer ->
+            NSNotificationCenter.defaultCenter.removeObserver(observer)
+            itemObserver = null
+        }
+    }
+
     @OptIn(ExperimentalForeignApi::class)
     private fun setupObservers() {
+        // One periodic observer at a time (each prepare used to add another).
+        removeAvObservers()
         avPlayer?.let { player ->
             // Add time observer for position updates
             val interval = CMTimeMake(1, 2) // 0.5 seconds
@@ -349,6 +466,13 @@ class IOSMediaPlayer(
     override suspend fun play() {
         // A refused channel has no item loaded; nothing to play.
         if (_playbackError.value != null) return
+        if (engineActive) {
+            engine?.changeVolume(if (_isMuted.value) 0f else _volume.value)
+            engine?.play()
+            _playbackState.value = PlaybackState.PLAYING
+            showPlaybackNotification()
+            return
+        }
         avPlayer?.let { player ->
             // Ensure volume is set correctly before playing
             val currentVolume = if (_isMuted.value) 0f else _volume.value
@@ -441,20 +565,31 @@ class IOSMediaPlayer(
     }
 
     override suspend fun pause() {
-        avPlayer?.pause()
+        if (engineActive) engine?.pause() else avPlayer?.pause()
         if (_playbackError.value == null) _playbackState.value = PlaybackState.PAUSED
     }
 
     @OptIn(ExperimentalForeignApi::class)
     override suspend fun stop() {
-        avPlayer?.pause()
-        avPlayer?.seekToTime(CMTimeMake(0, 1))
+        if (engineActive) {
+            // As with AVPlayer: paused at the start, the item stays loaded (play() resumes it).
+            engine?.pause()
+            engine?.seekTo(0L)
+        } else {
+            avPlayer?.pause()
+            avPlayer?.seekToTime(CMTimeMake(0, 1))
+        }
         _currentPosition.value = 0
         _playbackState.value = PlaybackState.IDLE
     }
 
     @OptIn(ExperimentalForeignApi::class)
     override suspend fun seekTo(positionMs: Long) {
+        if (engineActive) {
+            engine?.seekTo(positionMs)
+            _currentPosition.value = positionMs
+            return
+        }
         val seconds = positionMs / 1000.0
         val time = CMTimeMake((seconds * 1000).toLong(), 1000)
         avPlayer?.seekToTime(time)
@@ -462,7 +597,7 @@ class IOSMediaPlayer(
     }
 
     override suspend fun setPlaybackSpeed(speed: Float) {
-        avPlayer?.rate = speed
+        if (engineActive) engine?.changeRate(speed) else avPlayer?.rate = speed
         _playbackSpeed.value = speed
     }
 
@@ -498,17 +633,24 @@ class IOSMediaPlayer(
         avPlayer?.pause()
         avPlayer = null
 
+        // And the DASH engine.
+        deactivateEngine()
+        engine?.dispose()
+        engine = null
+
         _playbackState.value = PlaybackState.IDLE
     }
 
     override suspend fun setVolume(volume: Float) {
         val clampedVolume = volume.coerceIn(0f, 1f)
         avPlayer?.setVolume(clampedVolume)
+        engine?.changeVolume(clampedVolume)
         _volume.value = clampedVolume
         _isMuted.value = clampedVolume == 0f
     }
 
     override suspend fun setMuted(muted: Boolean) {
+        engine?.changeVolume(if (muted) 0f else (_volume.value.takeIf { it > 0f } ?: 1f))
         avPlayer?.let { player ->
             if (muted) {
                 player.setVolume(0f)

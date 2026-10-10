@@ -1,0 +1,12 @@
+# CocoaPods: only for VLCKit (clear MPEG-DASH playback, see docs/handoff-ios-dash.md).
+# Firebase and GoogleSignIn stay on Swift Package Manager.
+#
+#   cd iosApp && pod install        # CocoaPods >= 1.16.2 (Xcode 16 project format 77)
+#   open iosApp.xcworkspace         # from now on: the workspace, not iosApp.xcodeproj
+#
+# MobileVLCKit is VideoLAN's official binary pod (LGPL-2.1-or-later).
+platform :ios, '15.6'
+
+target 'iosApp' do
+  pod 'MobileVLCKit', '~> 3.7.4'
+end

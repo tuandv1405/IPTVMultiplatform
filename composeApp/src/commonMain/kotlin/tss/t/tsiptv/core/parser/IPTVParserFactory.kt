@@ -6,6 +6,7 @@ import kotlinx.serialization.json.JsonObject
 import okio.Buffer
 import okio.GzipSource
 import okio.buffer
+import okio.use
 import tss.t.tsiptv.core.parser.iptv.iptvorg.IptvOrgParser
 import tss.t.tsiptv.core.parser.iptv.m3u.M3UParser
 import tss.t.tsiptv.core.parser.iptv.m3u.PlainUrlListParser
