@@ -155,6 +155,65 @@ test("a new day resets the counters; an implausible day is refused", async () =>
   await assertFails(setDoc(quotaRef(user("u3"), "u3"), quota({ day: 20991231 }))); // far future
 });
 
+const dayAt = (ms) => { const t = new Date(ms); return t.getUTCFullYear() * 10000 + (t.getUTCMonth() + 1) * 100 + t.getUTCDate(); };
+const H = 3600 * 1000;
+
+test("the day window allows at most one extra day (UTC-11 .. UTC+13)", async () => {
+  const now = Date.now();
+  const older = dayAt(now - 11 * H);
+  const newer = dayAt(now + 13 * H);
+  const db = user("u1");
+  // Two days ahead / two days back are never acceptable.
+  await assertFails(setDoc(quotaRef(db, "u1"), quota({ day: dayAt(now + 37 * H) })));
+  await assertFails(setDoc(quotaRef(db, "u1"), quota({ day: dayAt(now - 35 * H) })));
+  // Start on the older acceptable day, then jump once to the newer one: the one extra day.
+  await assertSucceeds(setDoc(quotaRef(db, "u1"), quota({ day: older, sends: 1 })));
+  if (newer !== older) {
+    await assertSucceeds(setDoc(quotaRef(db, "u1"), quota({ day: newer, sends: 1 })));
+  }
+  // Nothing further ahead, and never back.
+  await assertFails(setDoc(quotaRef(db, "u1"), quota({ day: dayAt(now + 37 * H) })));
+  if (newer !== older) await assertFails(setDoc(quotaRef(db, "u1"), quota({ day: older })));
+});
+
+test("quota networks are short strings, at most 10", async () => {
+  const db = user("u1");
+  const ids = (n) => Array.from({ length: n }, (_, i) => `a1b2c3d4e5f${i % 10}`);
+  await assertSucceeds(setDoc(quotaRef(db, "u1"), quota({ sends: 1, networks: ids(1) })));
+  await assertFails(setDoc(quotaRef(db, "u1"), quota({ sends: 1, networks: ["x".repeat(17)] })));
+  await assertFails(setDoc(quotaRef(db, "u1"), quota({ sends: 1, networks: [42] })));
+  await assertFails(setDoc(quotaRef(db, "u1"), quota({ sends: 1, networks: [""] })));
+  await assertFails(setDoc(quotaRef(db, "u1"), quota({ sends: 1, networks: [{ a: 1 }] })));
+  await assertFails(setDoc(quotaRef(db, "u1"), quota({ sends: 1, networks: ids(11) })));
+  await assertSucceeds(setDoc(quotaRef(db, "u1"), quota({ sends: 1, networks: ids(10) })));
+  // The 10th entry is checked too.
+  await assertFails(setDoc(quotaRef(db, "u1"), quota({ sends: 1, networks: [...ids(9), "y".repeat(40)] })));
+});
+
+test("known limit: syncRewards can rise without syncAds (no server verification yet)", async () => {
+  // Documented in firestore.rules; the caps still bound it.
+  const db = user("u1");
+  await assertSucceeds(setDoc(quotaRef(db, "u1"), quota({ syncRewards: 1 })));
+  await assertSucceeds(setDoc(quotaRef(db, "u1"), quota({ syncRewards: 2 })));
+  await assertFails(setDoc(quotaRef(db, "u1"), quota({ syncRewards: 3 })));
+});
+
+test("a ghost id (listed, document missing) can be removed", async () => {
+  await seed(async (s) => {
+    await setDoc(deviceRef(s, "u1", "d1"), device("d1"));
+    await setDoc(metaRef(s, "u1"), { ids: ["d1", "ghost"], updatedAt: 1 });
+  });
+  const db = user("u1");
+  await assertSucceeds(runTransaction(db, async (tx) => {
+    tx.set(metaRef(db, "u1"), { ids: ["d1"], updatedAt: 2 });
+    tx.delete(deviceRef(db, "u1", "ghost"));
+  }));
+  // A leftover document whose id is not listed can be deleted on its own, then registered.
+  await seed((s) => setDoc(deviceRef(s, "u1", "old"), device("old")));
+  await assertSucceeds(deleteDoc(deviceRef(db, "u1", "old")));
+  await assertSucceeds(addDevice(db, "u1", "old", ["d1"]));
+});
+
 // ---- sync -----------------------------------------------------------------------
 
 const syncRef = (db, uid) => doc(db, "users", uid, "sync", "current");

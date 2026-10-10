@@ -145,14 +145,42 @@ service cloud.firestore {
     // Daily quotas (PRD §6). Without a backend these rules are the only guard:
     // counters only grow (by at most 1 per write) within a day, stay under the
     // caps, and the document can never be deleted to reset them.
+    //
+    // Known limit (accepted for v1, needs server verification later): the rules
+    // cannot know whether a rewarded ad was really watched. A client can raise
+    // syncRewards (or sendRewards) without watching anything, e.g. syncRewards
+    // without syncAds ever reaching 1. The caps still bound it: at most 2 extra
+    // syncs and 5 extra sends a day. Only AdMob server-side verification to a
+    // Cloud Function that alone may raise *Rewards closes this (PRD §6, §8).
     function dayOf(t) {
       return t.year() * 10000 + t.month() * 100 + t.day();
     }
 
+    // The client counts by its local date (QuotaPolicy.dayKey). Accepted: the calendar
+    // day (UTC) at request.time - 11 h or at request.time + 13 h, i.e. local time zones
+    // UTC-11 .. UTC+13 (every inhabited zone except UTC+13:45 / +14; writes from those
+    // fail and the app then reports the send as not counted). Window math: the two
+    // ends are exactly 24 h apart, so at any instant at most TWO days are acceptable
+    // (dayOf(t) is always one of them), and the newest acceptable day only moves on
+    // once per 24 h. Days only go forward (update rule below). So by jumping from the
+    // older to the newer acceptable day a client can open at most ONE extra day's
+    // quota, once; it can never open a day further ahead (the old ±14 h window, 28 h
+    // wide, allowed three days at once: two extra).
     function plausibleDay(d) {
-      return d is int && (d == dayOf(request.time) ||
-        d == dayOf(request.time - duration.value(14, 'h')) ||
-        d == dayOf(request.time + duration.value(14, 'h')));
+      return d is int && (d == dayOf(request.time - duration.value(11, 'h')) ||
+        d == dayOf(request.time + duration.value(13, 'h')));
+    }
+
+    // networks: at most 10 network ids (12 hex characters, see LanValidation.networkId).
+    // Rules cannot loop, so every possible index is checked.
+    function netOk(l, i) {
+      return l.size() <= i || (l[i] is string && l[i].size() >= 1 && l[i].size() <= 16);
+    }
+
+    function validNetworks(l) {
+      return l is list && l.size() <= 10 &&
+        netOk(l, 0) && netOk(l, 1) && netOk(l, 2) && netOk(l, 3) && netOk(l, 4) &&
+        netOk(l, 5) && netOk(l, 6) && netOk(l, 7) && netOk(l, 8) && netOk(l, 9);
     }
 
     function step(n, old) {
@@ -168,7 +196,7 @@ service cloud.firestore {
       return q.keys().hasOnly(['day', 'sends', 'sendRewards', 'syncs', 'syncRewards', 'syncAds', 'networks', 'updatedAt']) &&
         q.keys().hasAll(['day', 'sends', 'sendRewards', 'syncs', 'syncRewards', 'syncAds', 'networks', 'updatedAt']) &&
         plausibleDay(q.day) && q.updatedAt is int &&
-        q.networks is list && q.networks.size() <= 10 &&
+        validNetworks(q.networks) &&
         q.sendRewards <= 5 && q.sends <= 3 + q.sendRewards &&
         q.syncRewards <= 2 && q.syncs <= 1 + q.syncRewards &&
         q.syncAds is int && q.syncAds >= 0 && q.syncAds <= 1;
