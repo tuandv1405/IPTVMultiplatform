@@ -1,5 +1,7 @@
 package tss.t.tsiptv.ui.widgets
 
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.ui.semantics.Role
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.home_options_title
 import org.jetbrains.compose.resources.stringResource
@@ -104,9 +106,10 @@ fun HeaderWithAvatar(
             imageVector = Icons.Rounded.Tune,
             contentDescription = stringResource(Res.string.home_options_title),
             modifier = Modifier
+                .minimumInteractiveComponentSize()
                 .clip(CircleShape)
-                .clickable(onClick = onSettingClick)
-                .padding(8.dp)
+                .clickable(role = Role.Button, onClick = onSettingClick)
+                .padding(12.dp)
                 .size(24.dp),
             colorFilter = ColorFilter.tint(TSColors.TextSecondary)
         )

@@ -1,5 +1,12 @@
 package tss.t.tsiptv.ui.screens.addons
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import tsiptv.composeapp.generated.resources.addons_help_expanded
+import tsiptv.composeapp.generated.resources.addons_help_collapsed
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -222,7 +229,8 @@ fun AddonsScreen(onBack: () -> Unit) {
             }
             if (addons.isEmpty()) {
                 Column(
-                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp),
+                    Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
@@ -354,13 +362,14 @@ internal fun addonsGuideUrl(appLocale: String?): String {
  */
 @Composable
 private fun AddonsHelpCard(initiallyExpanded: Boolean, onOpenGuide: () -> Unit) {
-    var expanded by remember { mutableStateOf(initiallyExpanded) }
+    var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
+    val stateText = stringResource(if (expanded) Res.string.addons_help_expanded else Res.string.addons_help_collapsed)
     Column(
         Modifier.fillMaxWidth().background(TSColors.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp)),
     ) {
         TvFocusableSurface(
             onClick = { expanded = !expanded },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().semantics { stateDescription = stateText },
             shape = RoundedCornerShape(12.dp),
             focusedScale = 1.02f,
             color = TSColors.Transparent,

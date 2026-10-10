@@ -399,7 +399,9 @@
     <string name="ad_label">广告</string>
     <string name="privacy_options_title">隐私选项</string>
     <string name="addons_help_title">什么是插件？</string>
-    <string name="addons_help_body">插件是遵循 Stremio 插件格式的小型 Web 服务，可以为 TS IPTV 添加目录、详情和播放链接。\n• 添加方法：复制插件的 manifest 链接（以 /manifest.json 结尾），点按“添加插件”并粘贴。\n• TS IPTV 不附带也不推荐任何插件：只添加你自己运行或有权使用的插件。</string>
+    <string name="addons_help_body">插件是遵循 Stremio 插件格式的小型 Web 服务，可以为 TS IPTV 添加目录、详情和播放链接。\n• 添加方法：复制插件的 manifest 链接（以 /manifest.json 结尾），选择“添加插件”并粘贴。\n• TS IPTV 不附带也不推荐任何插件：只添加你自己运行或有权使用的插件。</string>
+    <string name="addons_help_expanded">已展开</string>
+    <string name="addons_help_collapsed">已收起</string>
     <string name="addons_help_guide">完整指南</string>
     <string name="home_options_title">来源与选项</string>
 </resources>

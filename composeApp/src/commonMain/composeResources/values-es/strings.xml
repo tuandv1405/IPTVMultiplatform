@@ -407,7 +407,9 @@
     <string name="ad_label">Anuncio</string>
     <string name="privacy_options_title">Opciones de privacidad</string>
     <string name="addons_help_title">¿Qué son los complementos?</string>
-    <string name="addons_help_body">Un complemento es un pequeño servicio web con el formato de complementos de Stremio. Puede añadir catálogos, detalles y enlaces de reproducción a TS IPTV.\n• Para añadir uno, copia su enlace de manifiesto (termina en /manifest.json), toca Añadir complemento y pégalo.\n• TS IPTV no incluye ni recomienda complementos: añade solo los que gestionas tú o tienes derecho a usar.</string>
+    <string name="addons_help_body">Un complemento es un pequeño servicio web con el formato de complementos de Stremio. Puede añadir catálogos, detalles y enlaces de reproducción a TS IPTV.\n• Para añadir uno, copia su enlace de manifiesto (termina en /manifest.json), elige Añadir complemento y pégalo.\n• TS IPTV no incluye ni recomienda complementos: añade solo los que gestionas tú o tienes derecho a usar.</string>
+    <string name="addons_help_expanded">Desplegado</string>
+    <string name="addons_help_collapsed">Contraído</string>
     <string name="addons_help_guide">Guía completa</string>
     <string name="home_options_title">Fuentes y opciones</string>
 </resources>

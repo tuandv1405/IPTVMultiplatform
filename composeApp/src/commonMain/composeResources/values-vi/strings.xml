@@ -398,7 +398,9 @@
     <string name="ad_label">Quảng cáo</string>
     <string name="privacy_options_title">Tùy chọn quyền riêng tư</string>
     <string name="addons_help_title">Addon là gì?</string>
-    <string name="addons_help_body">Addon là một dịch vụ web nhỏ theo định dạng addon của Stremio. Addon có thể thêm danh mục, thông tin chi tiết và đường dẫn phát vào TS IPTV.\n• Để thêm, sao chép đường dẫn manifest của addon (kết thúc bằng /manifest.json), bấm Thêm addon rồi dán vào.\n• TS IPTV không kèm sẵn và không giới thiệu addon nào: chỉ thêm addon bạn tự chạy hoặc có quyền sử dụng.</string>
+    <string name="addons_help_body">Addon là một dịch vụ web nhỏ theo định dạng addon của Stremio. Addon có thể thêm danh mục, thông tin chi tiết và đường dẫn phát vào TS IPTV.\n• Để thêm, sao chép đường dẫn manifest của addon (kết thúc bằng /manifest.json), chọn Thêm addon rồi dán vào.\n• TS IPTV không kèm sẵn và không giới thiệu addon nào: chỉ thêm addon bạn tự chạy hoặc có quyền sử dụng.</string>
+    <string name="addons_help_expanded">Đã mở</string>
+    <string name="addons_help_collapsed">Đã thu gọn</string>
     <string name="addons_help_guide">Hướng dẫn chi tiết</string>
     <string name="home_options_title">Nguồn &amp; tuỳ chọn</string>
 </resources>

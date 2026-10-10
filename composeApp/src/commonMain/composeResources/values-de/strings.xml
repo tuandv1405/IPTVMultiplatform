@@ -407,7 +407,9 @@
     <string name="ad_label">Anzeige</string>
     <string name="privacy_options_title">Datenschutzoptionen</string>
     <string name="addons_help_title">Was sind Add-ons?</string>
-    <string name="addons_help_body">Ein Add-on ist ein kleiner Webdienst im Stremio-Add-on-Format. Es kann TS IPTV Kataloge, Details und Stream-Links hinzufügen.\n• Zum Hinzufügen den Manifest-Link kopieren (endet auf /manifest.json), auf „Add-on hinzufügen“ tippen und einfügen.\n• TS IPTV enthält keine Add-ons und empfiehlt keine: füge nur Add-ons hinzu, die du selbst betreibst oder nutzen darfst.</string>
+    <string name="addons_help_body">Ein Add-on ist ein kleiner Webdienst im Stremio-Add-on-Format. Es kann TS IPTV Kataloge, Details und Stream-Links hinzufügen.\n• Zum Hinzufügen den Manifest-Link kopieren (endet auf /manifest.json), „Add-on hinzufügen“ wählen und einfügen.\n• TS IPTV enthält keine Add-ons und empfiehlt keine: füge nur Add-ons hinzu, die du selbst betreibst oder nutzen darfst.</string>
+    <string name="addons_help_expanded">Ausgeklappt</string>
+    <string name="addons_help_collapsed">Eingeklappt</string>
     <string name="addons_help_guide">Ausführliche Anleitung</string>
     <string name="home_options_title">Quellen und Optionen</string>
 </resources>
