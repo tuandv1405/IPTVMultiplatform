@@ -137,3 +137,41 @@ deployed**. Deploy it with the web hosting before this ships.
 - The signed-in Firestore removal on a device: no sign-in was allowed. It is covered by the unit
   and rules tests.
 - A real FCM send.
+
+## QC round 2 fixes
+
+`main` (with `feature/subscriptions`) was merged in first. In the privacy policy, Subscriptions
+stays §1.7 and Notifications is now §1.8, in vi and en. The Profile actions keep both branches
+(Notifications and Subscription). `data-safety.md` was re-read: the FCM token is already in the
+Device IDs purposes row, and Messages stays **No**, with a note that push notifications are not
+user messages.
+
+| # | Fix |
+|---|---|
+| B9 | `PushPlatform.deleteToken()` returns whether the delete succeeded. `KEY_TOKEN_ISSUED`, `KEY_TOKEN` and the stored topics are cleared only after a successful delete. A failed (offline) opt-out stays pending and is retried:<br>• when `PushPlatform.online` reports a validated network (Android: default-network callback; spaced retries 15 s, 30 s, 60 s, 120 s);<br>• at every start.<br>A token that appears while the switch is off (for example from a topic operation FCM had queued) is deleted as well. |
+| B10 | No per-topic unsubscribes on opt-out: deleting the token drops its subscriptions. The offline opt-out now settles in about 2 s, down from about 60 s. |
+| B11 | A `tsiptv://notifications` link opens Home on TV, so push really stays off there. `syncTopics` writes the topic set only when it changed, so a cold start no longer writes an empty set. |
+| Release | The Crashlytics R8 mapping upload is opt-in: `mappingFileUploadEnabled` is true only with `-Ptsiptv.uploadMapping=true` or `CI=true`. A plain `assembleRelease` has no `uploadCrashlyticsMappingFileRelease` task (checked with `-m`; the task appears only with the property). This is also documented in `play-store/RELEASE-CHECKLIST.md`. |
+| iOS doc | • APNs key: create it with Sandbox & Production, team-scoped, and upload it once; otherwise upload each key to its matching slot.<br>• Confirmed FID APIs: `messaging(_:didReceiveRegistration:)` with `installationId`, and `FirebaseMessaging.getInstance().register()` with `onRegistered`.<br>• Still open: minimum versions, an unregister API, and the HTTP v1 FID target field.<br>• The bridge's `deleteToken` reports success.<br>• Simulator: Apple silicon or T2 Macs. |
+
+### Verified (round 2)
+
+**Builds and tests:**
+- `desktopTest`: all pass (82 result files). `PushTest` has 8 tests, including:
+  - an offline opt-out that keeps the token and is retried on reconnect;
+  - the retry at the next start;
+  - a late token while off, which is deleted;
+  - no per-topic unsubscribes on opt-out.
+- `compileCommonMainKotlinMetadata` and `assembleDebug` pass.
+- `assembleRelease`: R8 passes, with no mapping upload task. Packaging still fails only on the local keystore alias.
+- `firestore-tests`: 53/53 plus 1/1.
+- `check_guides.py`: OK.
+
+**Emulator TSIPTV_ADS_QA (headless, AVD name checked):**
+- I opted in (token present), then turned airplane mode on and opted out.
+  - The switch went off at once, and the delete failed in about 2 s (B10).
+  - The token was still present and pending.
+- **B9, cold start:** force-stop, airplane mode off, then a cold start logged "FCM token deleted". The `|T|` entry is gone and `auto_init` is false.
+- **B9, reconnect while running:** I repeated the offline opt-out with the app running, then turned airplane mode off.
+  - The first retry raced the network, and a spaced retry deleted the token about 20 s after reconnecting.
+- **Not run on the TV AVD:** the B11 TV link (simple `isTvMode` branch in `App.kt`).

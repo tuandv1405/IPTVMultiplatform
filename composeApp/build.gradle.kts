@@ -392,6 +392,14 @@ android {
             )
         }
         getByName("release") {
+            // The R8 mapping goes to (production) Crashlytics only when asked for: a local
+            // `assembleRelease` must not upload. Enable with -Ptsiptv.uploadMapping=true, or in CI
+            // (environment CI=true). See play-store/RELEASE-CHECKLIST.md.
+            configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
+                mappingFileUploadEnabled =
+                    (project.findProperty("tsiptv.uploadMapping") as String?) == "true" ||
+                    System.getenv("CI") == "true"
+            }
             manifestPlaceholders["admobAppId"] = releaseAdMobAppId
             resValue("string", "admob_app_open_unit", releaseAdMobAppOpenUnit)
             resValue("string", "admob_banner_unit", releaseAdMobBannerUnit)

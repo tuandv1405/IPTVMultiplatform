@@ -12,12 +12,17 @@ Same privacy rule as Android: **no FCM token before the user opts in**, and opt-
    the `.p8` file. Note the **Key ID** and the **Team ID**.
 2. Firebase console › Project settings › **Cloud Messaging** › Apple app configuration › **APNs
    Authentication Key** › upload the `.p8` with its Key ID and Team ID.
-   - **Dev or prod key:** an APNs *authentication key* (`.p8`) is not tied to an environment. The
-     same key signs sandbox and production pushes, so upload it once (Firebase shows both slots;
-     the one key is enough). Which APNs server is used depends on the device token. Debug builds
-     signed with a development profile (`aps-environment = development`) get sandbox tokens.
-     TestFlight and App Store builds get production tokens. FCM reads the type from the
-     provisioning profile when you set `apnsToken` (below).
+   - **Dev or prod key:**
+     - When you create the key, choose the environment **Sandbox & Production** and the
+       **team-scoped** key restriction. That one key signs both sandbox and production pushes, so
+       upload it once.
+     - If the key was created for a single environment (Sandbox only or Production only), upload
+       each key to the matching slot (development or production) in the Firebase console.
+     - Which APNs server is used depends on the device token:
+       - Debug builds signed with a development profile (`aps-environment = development`) get
+         sandbox tokens.
+       - TestFlight and App Store builds get production tokens.
+     - FCM reads the token type from the provisioning profile when you set `apnsToken` (below).
    - Only if you use the older *certificates* (`.p12`) instead of a key, upload **two**: the
      development certificate for debug builds and the production certificate for TestFlight and
      the App Store. A development-only certificate is the usual reason "TestFlight gets nothing".
@@ -74,9 +79,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 Messaging.messaging().token { token, _ in done(token) }
             },
             // Opt-out: no new token, and the current one is deleted at FCM.
+            // done(false) offline: PushManager keeps the opt-out pending and retries later.
             deleteToken: { done in
                 Messaging.messaging().isAutoInitEnabled = false
-                Messaging.messaging().deleteToken { _ in done() }
+                Messaging.messaging().deleteToken { error in done(KotlinBoolean(value: error == nil)) }
             },
             openSettings: { UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!) }
         )
@@ -177,7 +183,7 @@ object IosPushBridge {
     private var sub: ((String, (Boolean) -> Unit) -> Unit)? = null
     private var unsub: ((String, (Boolean) -> Unit) -> Unit)? = null
     private var fetch: (((String?) -> Unit) -> Unit)? = null
-    private var delete: ((() -> Unit) -> Unit)? = null
+    private var delete: (((Boolean) -> Unit) -> Unit)? = null
     private var settings: (() -> Unit)? = null
     internal val token = MutableStateFlow<String?>(null)
     internal var granted: Boolean? = null
@@ -187,7 +193,7 @@ object IosPushBridge {
         subscribe: (String, (Boolean) -> Unit) -> Unit,
         unsubscribe: (String, (Boolean) -> Unit) -> Unit,
         fetchToken: ((String?) -> Unit) -> Unit,
-        deleteToken: (() -> Unit) -> Unit,
+        deleteToken: ((Boolean) -> Unit) -> Unit,
         openSettings: () -> Unit,
     ) {
         request = requestPermission; sub = subscribe; unsub = unsubscribe
@@ -231,12 +237,11 @@ object IosPushBridge {
         f { d.complete(it) }
         d.await()?.let { token.value = it }
     }
-    internal suspend fun deleteToken() {
-        val f = delete ?: return
-        val d = CompletableDeferred<Unit>()
-        f { d.complete(Unit) }
-        d.await()
-        token.value = null
+    internal suspend fun deleteToken(): Boolean {
+        val f = delete ?: return false
+        val d = CompletableDeferred<Boolean>()
+        f { d.complete(it) }
+        return d.await().also { ok -> if (ok) token.value = null }
     }
     internal fun openSettings() = settings?.invoke()
     internal val subscribeFn get() = sub
@@ -258,7 +263,7 @@ class IosPushPlatform : PushPlatform {
     override suspend fun subscribe(topic: String) = IosPushBridge.call(IosPushBridge.subscribeFn, topic)
     override suspend fun unsubscribe(topic: String) = IosPushBridge.call(IosPushBridge.unsubscribeFn, topic)
     override suspend fun refreshToken() = IosPushBridge.fetchToken()   // only called while opted in
-    override suspend fun deleteToken() = IosPushBridge.deleteToken()   // opt-out
+    override suspend fun deleteToken() = IosPushBridge.deleteToken()   // opt-out; false = retry later
     override fun systemLanguage(): String = NSLocale.currentLocale.languageCode
 }
 ```
@@ -268,8 +273,12 @@ Bind it in the iOS Koin module, which loads after `castSyncModule`:
 `GlobalContext.get().get<PushManager>().start()`, e.g. from `MainViewController`.
 
 What the common `PushManager` already does for iOS (nothing extra to write):
-- it calls `refreshToken()` only while notifications are on, and on opt-out it unsubscribes every
-  topic **first**, then calls `deleteToken()`, then removes `fcmToken` from the device document;
+- it calls `refreshToken()` only while notifications are on. On opt-out it calls `deleteToken()`
+  directly (deleting the token drops its topic subscriptions, so there are no per-topic calls) and
+  removes `fcmToken` from the device document;
+- a failed delete (offline) keeps the opt-out pending. It is retried when `PushPlatform.online`
+  reports the network and at the next start. Optionally back `online` with `NWPathMonitor`; the
+  default (always online) still retries at every start;
 - when a new token arrives it subscribes the topics again. On iOS this is what makes the first
   opt-in work, because `subscribe(toTopic:)` fails until the APNs token has reached FCM. Android
   does the same, for a token that FCM rotated;
@@ -280,8 +289,8 @@ There are no notification channels on iOS. `refreshChannelNames` stays the defau
 
 ## 5. Test
 
-- Run on a **real device**: the simulator receives remote pushes only on recent Xcode with an
-  Apple silicon Mac.
+- Run on a **real device**: the simulator receives remote pushes only on recent Xcode
+  (14 and later) with an Apple silicon or T2 Mac.
 - Before opting in: no token in the log, and `Messaging.messaging().isAutoInitEnabled == false`.
 - Profile › Notifications › turn on › allow → a token arrives and the topics are subscribed.
 - Firebase console › Messaging › **Send test message** to the token (a debug log or temporary
@@ -294,33 +303,40 @@ There are no notification channels on iOS. `refreshChannelNames` stays the defau
 
 ## 6. FCM registration tokens → Firebase Installation IDs (migration note)
 
-Firebase has announced that the registration-token API is deprecated in favour of a registration
-keyed by the **Firebase Installation ID (FID)**. The deprecated parts are
-`messaging(_:didReceiveRegistrationToken:)`/`token` on iOS, and `onNewToken`/`getToken` on
-Android. The new parts are a registration callback (`didReceiveRegistration` on iOS, `onRegistered`
-on Android) and sending addressed by FID. The exact names and the first SDK versions that have
-them were not checked from this machine. Read the Firebase release notes for the BoM or SPM
-version you adopt before wiring them.
+Firebase deprecates the registration-token API in favour of registration keyed by the **Firebase
+Installation ID (FID)**:
+
+| | Deprecated | Replacement (confirmed) |
+|---|---|---|
+| iOS | `messaging(_:didReceiveRegistrationToken:)`, `Messaging.messaging().token` | `messaging(_:didReceiveRegistration:)` on `MessagingDelegate`, which delivers the `installationId` |
+| Android | `onNewToken`, `FirebaseMessaging.getInstance().token` | `FirebaseMessaging.getInstance().register()`, with the result delivered to `FirebaseMessagingService.onRegistered` |
+
+**Still open:**
+- the minimum SDK versions (Firebase iOS SDK and Android BoM) that ship these APIs;
+- whether there is an explicit unregister API, or whether opt-out stays `deleteToken`/deleting the
+  installation;
+- the HTTP v1 send field that targets an FID instead of `token`.
+
+Check these against the Firebase release notes before wiring them.
 
 **Plan (both platforms):**
 1. Nothing changes for topics. Our sends go to topics (`all`, `updates`, `lang_*`), so they are
    unaffected. Per-device sends are not used yet: `fcmToken` is stored only for a later "notify my
    devices" feature.
 2. `PushPlatform.token` stays an opaque "push address" string. On the new API:
-   - iOS: the bridge fills it from `didReceiveRegistration` instead of
-     `didReceiveRegistrationToken`;
-   - Android: `AndroidPushPlatform` fills it from `onRegistered` instead of
-     `onNewToken`/`getToken`.
+   - iOS: the bridge fills it from `didReceiveRegistration` (the `installationId`);
+   - Android: `AndroidPushPlatform` calls `register()` in `refreshToken()` and fills it from
+     `onRegistered`.
 
    `PushManager`, the rules (`fcmToken` is a string of 1–4,096 characters) and the opt-in and
    opt-out flow stay as they are.
-3. If the server-side address becomes the FID plus project, write it under a **new** field (for
-   example `fcmInstallation`) next to `fcmToken`:
+3. If the server-side address becomes the FID, write it under a **new** field (for example
+   `fcmInstallation`) next to `fcmToken`:
    - add it to `validDevice` in `firestore.rules`, with the same string limits;
    - keep both fields during the overlap;
    - drop `fcmToken` once no supported app version writes it.
-4. Opt-out must still delete the registration (the new API's unregister call, or deleting the
-   Firebase installation for messaging), so the "no address before opt-in, none after opt-out"
+4. Opt-out must still remove the registration (an unregister API if there is one, otherwise
+   deleting the token or the installation), so the "no address before opt-in, none after opt-out"
    rule and `play-store/data-safety.md` stay true.
 5. Android: do it in the same release as iOS, when the Firebase BoM in `gradle/libs.versions.toml`
    ships the new API. Until then the token API keeps working, and no app change is needed.

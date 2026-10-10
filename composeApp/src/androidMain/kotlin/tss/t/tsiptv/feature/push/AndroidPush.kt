@@ -21,6 +21,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -96,13 +97,32 @@ class AndroidPushPlatform(private val context: Context) : PushPlatform {
         if (isDebuggable(context)) Log.d(TAG, "FCM token: ${token ?: "(none)"}")
     }
 
-    override suspend fun deleteToken() {
-        if (!isSupported) return
+    override suspend fun deleteToken(): Boolean {
+        if (!isSupported) return true
         val messaging = FirebaseMessaging.getInstance()
         messaging.isAutoInitEnabled = false
-        task { messaging.deleteToken() }
-        _token.value = null
-        if (isDebuggable(context)) Log.d(TAG, "FCM token deleted")
+        val ok = task { messaging.deleteToken() }
+        if (ok) _token.value = null
+        if (isDebuggable(context)) Log.d(TAG, if (ok) "FCM token deleted" else "FCM token delete failed (retried later)")
+        return ok
+    }
+
+    override val online: kotlinx.coroutines.flow.Flow<Boolean> = kotlinx.coroutines.flow.callbackFlow {
+        val cm = context.getSystemService(android.net.ConnectivityManager::class.java)
+        if (cm == null) {
+            trySend(true); awaitClose { }; return@callbackFlow
+        }
+        val validated = android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED
+        // Default-network callback: "online" means the internet was validated, not just a link.
+        val callback = object : android.net.ConnectivityManager.NetworkCallback() {
+            override fun onCapabilitiesChanged(network: android.net.Network, caps: android.net.NetworkCapabilities) {
+                trySend(caps.hasCapability(validated))
+            }
+            override fun onLost(network: android.net.Network) { trySend(false) }
+        }
+        trySend(cm.getNetworkCapabilities(cm.activeNetwork)?.hasCapability(validated) == true)
+        runCatching { cm.registerDefaultNetworkCallback(callback) }
+        awaitClose { runCatching { cm.unregisterNetworkCallback(callback) } }
     }
 
     override fun refreshChannelNames(languageCode: String?) {

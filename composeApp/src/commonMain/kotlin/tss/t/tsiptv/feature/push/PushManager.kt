@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -70,6 +71,20 @@ class PushManager(
                 languages.observeLanguageSettings().map { it.languageCode }.distinctUntilChanged()
                     .collect { runCatching { platform.refreshChannelNames(it) } }
             }
+            // Opt-out that failed offline: retried when the network is back (and at every start).
+            launch {
+                combine(_settings.map { it.enabled }.distinctUntilChanged(), platform.online.distinctUntilChanged()) { on, online -> on to online }
+                    .collectLatest { (on, online) ->
+                        // A few spaced retries while online (the first try can race the network).
+                        var wait = 15_000L
+                        while (!on && online && storage.getBoolean(KEY_TOKEN_ISSUED, false) && wait <= 120_000L) {
+                            deleteTokenIfIssued()
+                            if (!storage.getBoolean(KEY_TOKEN_ISSUED, false)) break
+                            kotlinx.coroutines.delay(wait)
+                            wait *= 2
+                        }
+                    }
+            }
             combine(_settings, languages.observeLanguageSettings(), tokenEpoch) { s, lang, epoch ->
                 Triple(s, lang.languageCode ?: platform.systemLanguage(), epoch)
             }.distinctUntilChanged().collect { (s, lang) -> apply(s, lang) }
@@ -82,13 +97,24 @@ class PushManager(
             safe { platform.refreshToken(); true }
             syncTopics(PushTopics.wanted(settings, language))
         } else {
-            // Unsubscribe first: a topic call after deleteToken would create a new token.
-            syncTopics(emptySet())
-            if (storage.getBoolean(KEY_TOKEN_ISSUED, false)) {
-                safe { platform.deleteToken(); true }
-                storage.remove(KEY_TOKEN_ISSUED)
-                storage.remove(KEY_TOKEN)
-            }
+            // No per-topic unsubscribes: deleting the token drops its subscriptions at FCM, and a
+            // topic call would create a token again (and waits a long time offline).
+            deleteTokenIfIssued()
+        }
+    }
+
+    private val deleteMutex = Mutex()
+
+    /**
+     * Opt-out: deletes the token if one was issued. The flags are cleared only when the delete
+     * succeeded, so a failure (offline) is retried on reconnect and at the next start.
+     */
+    private suspend fun deleteTokenIfIssued() = deleteMutex.withLock {
+        if (_settings.value.enabled || !storage.getBoolean(KEY_TOKEN_ISSUED, false)) return@withLock
+        if (safe { platform.deleteToken() }) {
+            storage.remove(KEY_TOKEN_ISSUED)
+            storage.remove(KEY_TOKEN)
+            storage.remove(KEY_TOPICS) // the deleted token had all the subscriptions
         }
     }
 
@@ -115,7 +141,14 @@ class PushManager(
                         safe { sessions.storePushToken(reg, token) }
                     ) storage.putString(DeviceSessionManager.KEY_PUSH_TOKEN_STORED, mark)
                 }
-            } else if (!on && reg != null) {
+            } else if (!on && token != null && token != storage.getString(KEY_TOKEN)) {
+                // A token appeared while switched off (e.g. a topic operation FCM had queued before
+                // the opt-out ran later and created one): delete it as well.
+                storage.putString(KEY_TOKEN, token)
+                storage.putBoolean(KEY_TOKEN_ISSUED, true)
+                deleteTokenIfIssued()
+            }
+            if (!on && reg != null) {
                 val stored = storage.getString(DeviceSessionManager.KEY_PUSH_TOKEN_STORED)
                 if (stored.startsWith("${reg.uid}|") && safe { sessions.storePushToken(reg, null) }) {
                     storage.remove(DeviceSessionManager.KEY_PUSH_TOKEN_STORED)
@@ -206,7 +239,7 @@ class PushManager(
         val done = current.toMutableSet()
         for (topic in current - wanted) if (safe { platform.unsubscribe(topic) }) done -= topic
         for (topic in wanted - current) if (safe { platform.subscribe(topic) }) done += topic
-        storage.putString(KEY_TOPICS, done.sorted().joinToString(","))
+        if (done != current) storage.putString(KEY_TOPICS, done.sorted().joinToString(","))
     }
 
     private suspend fun safe(block: suspend () -> Boolean): Boolean = try {

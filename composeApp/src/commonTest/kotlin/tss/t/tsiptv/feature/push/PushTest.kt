@@ -84,14 +84,19 @@ class PushTest {
         }
         override fun openSystemSettings() = Unit
         override suspend fun subscribe(topic: String) = topics.add(topic).let { true }
-        override suspend fun unsubscribe(topic: String) = topics.remove(topic).let { true }
+        var unsubscribes = 0
+        override suspend fun unsubscribe(topic: String) = topics.remove(topic).let { unsubscribes++; true }
         override suspend fun refreshToken() {
             refreshes++
             if (tokenFlow.value == null) tokenFlow.value = nextToken
         }
-        override suspend fun deleteToken() {
+        var offline = false
+        override val online = MutableStateFlow(true)
+        override suspend fun deleteToken(): Boolean {
             deletes++
+            if (offline) return false
             tokenFlow.value = null
+            return true
         }
         override fun systemLanguage() = "vi"
     }
@@ -151,9 +156,12 @@ class PushTest {
             push.setGeneral(false)
             until { platform.topics == setOf("updates", "lang_vi") }
 
-            // Opt-out: topics left first, token deleted on the device and removed from the document.
+            // Opt-out: the token is deleted (which drops its subscriptions at FCM, so no per-topic
+            // calls) and removed from the document.
+            val unsubscribedBefore = platform.unsubscribes
             push.setEnabled(false)
-            until { platform.topics.isEmpty() && platform.deletes == 1 }
+            until { platform.deletes >= 1 && storage.getString(PushManager.KEY_TOPICS).isEmpty() }
+            assertEquals(unsubscribedBefore, platform.unsubscribes)
             until { cloud.fcmTokens.isEmpty() }
             assertNull(platform.tokenFlow.value)
             assertEquals("", storage.getString(PushManager.KEY_TOKEN))
@@ -233,6 +241,72 @@ class PushTest {
             until { storage.getString(PushManager.KEY_TOKEN) == "tok-2" }
             delay(100)
             assertTrue(cloud.fcmTokens.isEmpty())
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun anOfflineOptOutIsRetriedUntilTheTokenIsDeleted() = runBlocking<Unit> {
+        val storage = InMemoryKeyValueStorage()
+        val cloud = InMemoryAccountCloud()
+        val auth = DeviceLimitTest.FakeAuthForTests(null)
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val sessions = DeviceSessionManager(auth, cloud, LocalDevice(storage), storage, scope) { 1_000L }
+            sessions.start()
+            val platform = FakePlatform(granted = true)
+            val push = PushManager(platform, storage, LanguageRepository(storage), sessions, scope)
+            push.start()
+            push.setEnabled(true)
+            until { storage.getString(PushManager.KEY_TOKEN) == "tok-1" && platform.topics.size == 3 }
+
+            // Offline: the delete fails, so the token and its flags stay for a retry.
+            platform.offline = true
+            platform.online.value = false
+            push.setEnabled(false)
+            until { platform.deletes >= 1 }
+            delay(100)
+            assertEquals("tok-1", platform.tokenFlow.value)
+            assertTrue(storage.getBoolean(PushManager.KEY_TOKEN_ISSUED, false))
+            assertEquals("tok-1", storage.getString(PushManager.KEY_TOKEN))
+
+            // Back online: retried, then everything is cleared.
+            platform.offline = false
+            platform.online.value = true
+            until { platform.tokenFlow.value == null && !storage.getBoolean(PushManager.KEY_TOKEN_ISSUED, false) }
+            assertEquals("", storage.getString(PushManager.KEY_TOKEN))
+            assertEquals("", storage.getString(PushManager.KEY_TOPICS))
+
+            // A token that shows up while switched off (a queued topic operation) is deleted too.
+            val before = platform.deletes
+            platform.tokenFlow.value = "tok-late"
+            until { platform.deletes > before && platform.tokenFlow.value == null }
+            assertTrue(!storage.getBoolean(PushManager.KEY_TOKEN_ISSUED, false))
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun anOfflineOptOutIsRetriedAtTheNextStart() = runBlocking<Unit> {
+        val storage = InMemoryKeyValueStorage()
+        storage.putBoolean(PushManager.KEY_TOKEN_ISSUED, true) // left by a failed opt-out
+        storage.putString(PushManager.KEY_TOKEN, "tok-old")
+        storage.putString(PushManager.KEY_TOPICS, "all,lang_vi")
+        val cloud = InMemoryAccountCloud()
+        val auth = DeviceLimitTest.FakeAuthForTests(null)
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val sessions = DeviceSessionManager(auth, cloud, LocalDevice(storage), storage, scope) { 1_000L }
+            sessions.start()
+            val platform = FakePlatform(granted = true)
+            val push = PushManager(platform, storage, LanguageRepository(storage), sessions, scope)
+            push.start()
+            until { platform.deletes >= 1 && !storage.getBoolean(PushManager.KEY_TOKEN_ISSUED, false) }
+            assertEquals("", storage.getString(PushManager.KEY_TOPICS))
+            assertEquals(0, platform.refreshes)
+            assertEquals(0, platform.unsubscribes)
         } finally {
             scope.cancel()
         }

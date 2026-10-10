@@ -266,7 +266,10 @@ position where none is rendered. See `play-store/screenshots/README.md`.
 ## Submission-day sequence
 
 1. Fix the blockers above.
-2. `./gradlew :composeApp:bundleRelease` → confirm the AAB is signed.
+2. `./gradlew :composeApp:bundleRelease -Ptsiptv.uploadMapping=true` → confirm the AAB is
+   signed. The R8 mapping goes to Crashlytics **only** with that property (or in CI, `CI=true`).
+   A plain local `assembleRelease`/`bundleRelease` does not upload, so test builds never put
+   mappings into the production Crashlytics project. Upload only for the build you ship.
 3. `firebase deploy --only hosting` → confirm all four URLs load.
 4. Play Console → **Internal testing** first, never straight to production.
 5. Install from the internal track on a real device and walk every screen.

@@ -134,8 +134,14 @@ interface PushPlatform {
      */
     suspend fun refreshToken()
 
-    /** Opt-out: stops automatic token creation and deletes the token on the device and at FCM. */
-    suspend fun deleteToken()
+    /**
+     * Opt-out: stops automatic token creation and deletes the token on the device and at FCM.
+     * @return whether the delete succeeded (false offline: the caller retries later).
+     */
+    suspend fun deleteToken(): Boolean
+
+    /** Network availability, for retrying a failed opt-out. */
+    val online: kotlinx.coroutines.flow.Flow<Boolean> get() = kotlinx.coroutines.flow.flowOf(true)
 
     /** The device language, for the language topic when the app follows the system. */
     fun systemLanguage(): String
@@ -158,6 +164,6 @@ object NoPushPlatform : PushPlatform {
     override suspend fun subscribe(topic: String) = false
     override suspend fun unsubscribe(topic: String) = false
     override suspend fun refreshToken() = Unit
-    override suspend fun deleteToken() = Unit
+    override suspend fun deleteToken() = true
     override fun systemLanguage() = "en"
 }
