@@ -31,7 +31,7 @@
     <string name="plans_status_payment_issue">Un problème est survenu avec votre paiement. Mettez à jour votre moyen de paiement dans Google Play.</string>
     <string name="plans_status_paused">Votre abonnement est en pause.</string>
     <string name="plans_status_device_only">Actif sur cet appareil (compte Google Play). Connectez-vous pour l’utiliser sur vos autres appareils.</string>
-    <string name="plans_not_available">Les abonnements ne peuvent pour l’instant être achetés que dans l’app Android (Google Play).</string>
+    <string name="plans_not_available">Les abonnements nécessitent Google Play, qui n’est pas disponible sur cet appareil.</string>
     <string name="plans_loading_prices">Chargement des prix…</string>
     <string name="plans_prices_unavailable">Impossible de charger les prix depuis Google Play. Réessayez plus tard.</string>
     <string name="plans_msg_purchased">Merci ! Votre forfait est actif.</string>

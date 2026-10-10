@@ -32,7 +32,7 @@
     <string name="plans_status_payment_issue">Thanh toán đang gặp sự cố. Hãy cập nhật phương thức thanh toán trong Google Play.</string>
     <string name="plans_status_paused">Gói của bạn đang tạm dừng.</string>
     <string name="plans_status_device_only">Đang dùng trên thiết bị này (tài khoản Google Play). Đăng nhập để dùng trên các thiết bị khác.</string>
-    <string name="plans_not_available">Gói đăng ký hiện chỉ mua được trong ứng dụng Android (Google Play).</string>
+    <string name="plans_not_available">Gói đăng ký cần Google Play, nhưng thiết bị này không có Google Play.</string>
     <string name="plans_loading_prices">Đang tải giá…</string>
     <string name="plans_prices_unavailable">Chưa tải được giá từ Google Play. Hãy thử lại sau.</string>
     <string name="plans_msg_purchased">Cảm ơn bạn! Gói đã được kích hoạt.</string>

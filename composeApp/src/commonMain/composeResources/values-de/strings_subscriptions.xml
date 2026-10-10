@@ -31,7 +31,7 @@
     <string name="plans_status_payment_issue">Es gibt ein Problem mit deiner Zahlung. Aktualisiere deine Zahlungsmethode in Google Play.</string>
     <string name="plans_status_paused">Dein Abo ist pausiert.</string>
     <string name="plans_status_device_only">Auf diesem Gerät aktiv (Google-Play-Konto). Melde dich an, um es auf deinen anderen Geräten zu nutzen.</string>
-    <string name="plans_not_available">Abos können derzeit nur in der Android-App (Google Play) gekauft werden.</string>
+    <string name="plans_not_available">Abos benötigen Google Play, das auf diesem Gerät nicht verfügbar ist.</string>
     <string name="plans_loading_prices">Preise werden geladen…</string>
     <string name="plans_prices_unavailable">Preise konnten nicht von Google Play geladen werden. Versuche es später erneut.</string>
     <string name="plans_msg_purchased">Danke! Dein Abo ist aktiv.</string>
