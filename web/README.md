@@ -28,6 +28,7 @@ Hosting on the existing project `tsiptv-8bdd6`.
 | MonPlayer note | `https://tsiptv-8bdd6.web.app/guides/monplayer/` | `noindex`, linked from the hub only, not in the sitemap |
 | Example files | `https://tsiptv-8bdd6.web.app/examples/…` | Guide examples and QA fixtures (incl. `stremio-sampler/`); never suggested in the app |
 | Addon blocklist | `https://tsiptv-8bdd6.web.app/policy/addon-blocklist.json` | F2 kill switch, `{"ids":[],"hosts":[]}` |
+| Support / donate | `https://tsiptv-8bdd6.web.app/support/` | Ways to support the developer; linked from the home footer and the guides hub. **Never link it from the Play build of the app** (see below) |
 | Sitemap / robots | `/sitemap.xml`, `/robots.txt` | Indexable pages only |
 
 ### Format guides: editing and checks
@@ -108,6 +109,60 @@ Hosting → Custom domains and update the URLs in the Play Console listing.
 - Images in `public/assets/` are produced by `brand/generate_assets.py`.
 - When you change the substance of a policy, bump the `<time>` element and the
   visible date in **both** language panes.
+
+## Support page (`/support/`)
+
+Files: `public/support/index.html` (text, hand-written, nav from `site_nav.py`),
+`public/assets/support.js` (draws the cards), `public/assets/support.css`, and **the only file
+you edit for payment details: `public/assets/support-config.js`**. QR images go in
+`public/assets/support/`.
+
+How it behaves
+- Every value that is still `CHANGE_ME` (or empty) counts as not filled in. A method appears
+  only when `enabled: true` **and** its required fields are filled in. Each crypto address
+  appears only when its own `address` is filled in. With nothing filled in, visitors see
+  "Ways to support will be listed here soon".
+- Preview: open `/support/?preview=1` (or any `localhost` URL, e.g. the hosting emulator) to see
+  every method, with a red "Not configured" badge and a "QR coming soon" placeholder for what is
+  missing. Visitors never see that state.
+- Links must be `https://`; "Open app" only accepts `momo://` and `zalopay://` and falls back to
+  the web link after 1.5 s. QR paths must be files under `/assets/support/`. No third-party
+  scripts or images; nothing is generated in the browser.
+
+### Fill in your details
+
+Edit `public/assets/support-config.js`, replace each `CHANGE_ME`, then preview with
+`?preview=1` and scan every QR with a phone before deploying. Never commit made-up values.
+
+| Method | Fields | Where to get them |
+|---|---|---|
+| VietQR / Napas 247 | `bankName`, `accountNumber`, `accountName` (capitals without accents, exactly as the bank shows), optional `branch`; `qr: "/assets/support/vietqr.png"` | Generate the QR image in your banking app ("Mã QR nhận tiền"), or on vietqr.io (choose the bank, enter the account number and name, leave the amount empty, download the PNG). Save it as `public/assets/support/vietqr.png`. |
+| MoMo | `phone` and/or `link` (your MoMo receive link, `https://…`), optional `accountName`; `qr: "/assets/support/momo.png"` | MoMo app › "Nhận tiền" / "Mã QR của tôi": save the QR image; copy the share link if offered. |
+| Zypage | `url` (`https://…` of your creator page) | Your Zypage profile. |
+| Crypto | for each entry: `address`, optional `memo`, optional `qr` image | Your wallet or exchange "Deposit/Receive" screen. **Check the network**: USDT TRC20 addresses start with `T`, BEP20 and ERC20 with `0x`, BTC with `bc1`, `1` or `3`. Delete entries you do not use. Send a small test amount first. |
+| `transferNote` | Optional note shown with bank and wallet methods | ASCII only (e.g. `TSIPTV ung ho`). |
+
+Suggested extra methods are in the same file with `enabled: false`; set `enabled: true` after
+filling them in:
+
+| Method | Reach | Typical cost to you (check current rates) | Notes |
+|---|---|---|---|
+| VietQR / Napas 247 | VN, every bank app | Free for personal accounts | Best default in Vietnam. |
+| MoMo, ZaloPay, ShopeePay | VN wallets | Free person-to-person; merchant QR has fees | Personal QR is enough for donations. |
+| VNPAY-QR | VN, most bank apps | Merchant fee (~1 %) | Needs a VNPay merchant QR; only if you already have one. |
+| Zypage | VN creators | Platform fee on payouts | Vietnamese "buy me a coffee" style page. |
+| PayPal.me | International | ~3–5 % + fixed fee, plus FX; VN accounts can receive but withdrawing to a VN bank costs extra | Widest international reach. |
+| Ko-fi | International | 0 % platform fee on one-off donations (PayPal/Stripe fees apply) | Payouts via PayPal or Stripe. |
+| Buy Me a Coffee | International | 5 % + processor fees | Payouts via Stripe/Payoneer; check VN support. |
+| GitHub Sponsors | Developers worldwide | 0 % for personal sponsorships | Needs a supported payout country (Stripe Connect); check VN eligibility. |
+| Stripe Payment Link | International cards, Apple/Google Pay | ~3–4 % + fixed fee | Stripe is not available to VN businesses directly; needs an entity in a supported country. |
+| Binance Pay ID | Crypto users | Free between Binance accounts | Simpler than on-chain addresses for Binance users. |
+| Crypto addresses | Global | Network fee paid by the sender | Irreversible; wrong network = lost funds (the page warns). |
+
+**Google Play policy.** Do not show this page, a donate QR, a bank account or any "donate"
+button or link inside the Play build of the app (phone or TV): Play's Payments policy forbids
+leading users to non-Play payment for the developer. Inside the Play app use a Play Billing
+"Support the developer" product instead. Details: `docs/prd-tv-ads.md` §6.1.
 
 ## Contributor pages
 
