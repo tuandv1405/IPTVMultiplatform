@@ -113,4 +113,5 @@
     <string name="lan_pair_open_tv_screen">ペア設定するには、テレビで「テレビとデバイス」を開いてから、もう一度お試しください。</string>
     <string name="lan_tv_pairing_open">この画面を表示している間はペア設定できます。新しいスマホのコードはここに表示されます。</string>
     <string name="lan_tv_importing">「%1$s」を追加しています…</string>
+    <string name="lan_tv_unpair_confirm">「%1$s」のペア設定を解除しますか？このテレビに送信するには新しいコードが必要になります。</string>
 </resources>

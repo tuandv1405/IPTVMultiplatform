@@ -113,4 +113,5 @@
     <string name="lan_pair_open_tv_screen">Öffne zum Koppeln auf dem TV „TV &amp; Geräte“ und versuche es erneut.</string>
     <string name="lan_tv_pairing_open">Koppeln ist möglich, solange dieser Bildschirm offen ist: Ein neues Handy erhält hier seinen Code.</string>
     <string name="lan_tv_importing">„%1$s“ wird hinzugefügt …</string>
+    <string name="lan_tv_unpair_confirm">„%1$s“ entkoppeln? Zum Senden an diesen TV ist dann ein neuer Code nötig.</string>
 </resources>

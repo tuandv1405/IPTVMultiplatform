@@ -113,4 +113,5 @@
     <string name="lan_pair_open_tv_screen">Para vincular, abre TV y dispositivos en la TV y vuelve a intentarlo.</string>
     <string name="lan_tv_pairing_open">La vinculación está abierta mientras se muestra esta pantalla: un teléfono nuevo recibe aquí su código.</string>
     <string name="lan_tv_importing">Añadiendo «%1$s»…</string>
+    <string name="lan_tv_unpair_confirm">¿Desvincular «%1$s»? Necesitará un código nuevo para enviar a esta TV.</string>
 </resources>

@@ -66,6 +66,8 @@ fun LanReceiverHost(
     onAcceptPlaylist: (SharedPlaylist) -> Unit,
     /** False while the TV cannot take a playlist now (e.g. an import is running). */
     canTakePlaylists: Boolean = true,
+    /** A playlist from a phone is being imported: the next queued offer waits for it to finish. */
+    importRunning: Boolean = false,
 ) {
     val controller: LanReceiverController = koinInject()
     val scope = rememberCoroutineScope()
@@ -133,7 +135,8 @@ fun LanReceiverHost(
         LaunchedEffect(p) { cancel.requestFocusAfterLayout() }
     }
 
-    if (prompt == null && offer != null) {
+    // Accepting another offer now would cancel the running import (one import job), so it waits.
+    if (prompt == null && offer != null && !importRunning) {
         val accept = remember(offer) { FocusRequester() }
         ConnectDialog(
             title = stringResource(Res.string.lan_tv_offer_title),

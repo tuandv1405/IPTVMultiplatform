@@ -200,7 +200,12 @@ fun ImportIPTVScreen(
     if (showError) {
         TSDialog(
             title = stringResource(Res.string.error_dialog_title),
-            message = homeUiState.error?.let { importErrorMessage(it) } ?: "",
+            message = homeUiState.error?.let { error ->
+                val text = importErrorMessage(error)
+                // A playlist sent from a phone: say which one failed (QC r3 N6).
+                val name = homeUiState.importName?.takeIf { homeUiState.importFromLan && it.isNotBlank() }
+                if (name != null) "\u201C$name\u201D: $text" else text
+            } ?: "",
             positiveButtonText = stringResource(Res.string.ok),
             // Both clear the error in the view model, or it reappears on Home.
             onPositiveClick = {

@@ -69,6 +69,7 @@ import tsiptv.composeapp.generated.resources.lan_tv_receive_off
 import tsiptv.composeapp.generated.resources.lan_tv_receive_ready
 import tsiptv.composeapp.generated.resources.lan_tv_receive_title
 import tsiptv.composeapp.generated.resources.lan_tv_unpair
+import tsiptv.composeapp.generated.resources.lan_tv_unpair_confirm
 import tsiptv.composeapp.generated.resources.ok
 import tsiptv.composeapp.generated.resources.reward_ad_unavailable
 import tsiptv.composeapp.generated.resources.reward_granted
@@ -138,15 +139,17 @@ fun ConnectScreen(
     var fileNotice by remember { mutableStateOf(false) }
     var confirmRemove by remember { mutableStateOf<RegisteredDevice?>(null) }
     val firstItem = remember { FocusRequester() }
+    val phoneFocus = remember { mutableMapOf<String, FocusRequester>() }
+    var confirmUnpair by remember { mutableStateOf<tss.t.tsiptv.feature.lan.PairedPeer?>(null) }
+    var focusAfterUnpair by remember { mutableStateOf<String?>(null) }
+    var unpaired by remember { mutableStateOf(0) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     // TV: pairing mode only while this screen is shown and resumed (QC r2 N2).
     if (isTvLayout) {
         androidx.lifecycle.compose.LifecycleResumeEffect(receiver) {
-            scope.launch { receiver.setPairingOpen(true) }
-            onPauseOrDispose {
-                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch { receiver.setPairingOpen(false) }
-            }
+            receiver.setPairingOpen(true)
+            onPauseOrDispose { receiver.setPairingOpen(false) }
         }
     }
 
@@ -194,13 +197,18 @@ fun ConnectScreen(
                 }
                 item("phones_title") { ConnectSectionTitle(stringResource(Res.string.lan_tv_paired_phones)) }
                 if (pairedPhones.isEmpty()) item("phones_none") { ConnectBody(stringResource(Res.string.lan_tv_no_paired)) }
-                pairedPhones.forEach { peer ->
+                pairedPhones.forEachIndexed { index, peer ->
                     item("phone_${peer.id}") {
                         TvMenuItem(
                             title = peer.name,
                             description = stringResource(Res.string.lan_tv_unpair),
                             icon = Icons.Rounded.PhoneAndroid,
-                            onClick = { scope.launch { receiver.unpair(peer.id) } },
+                            modifier = Modifier.focusRequester(phoneFocus.getOrPut(peer.id) { FocusRequester() }),
+                            // QC r3 N8: confirm first; focus then moves to the next row.
+                            onClick = {
+                                focusAfterUnpair = (pairedPhones.getOrNull(index + 1) ?: pairedPhones.getOrNull(index - 1))?.id
+                                confirmUnpair = peer
+                            },
                             trailing = { androidx.compose.material3.Icon(Icons.Rounded.LinkOff, null, tint = TSColors.TextSecondary) },
                         )
                     }
@@ -320,6 +328,35 @@ fun ConnectScreen(
     if (fileNotice) {
         MessageDialog(stringResource(Res.string.send_tv_title), stringResource(Res.string.send_tv_file_unavailable)) { fileNotice = false }
     }
+    confirmUnpair?.let { peer ->
+        ConnectDialog(title = stringResource(Res.string.lan_tv_unpair), onDismissRequest = { confirmUnpair = null }) {
+            ConnectBody(stringResource(Res.string.lan_tv_unpair_confirm, peer.name), color = TSColors.TextPrimary)
+            val cancel = remember { FocusRequester() }
+            ConnectButtonRow {
+                // Cancel is focused: an accidental OK on the remote keeps the phone paired.
+                ConnectButton(stringResource(Res.string.lan_cancel), { confirmUnpair = null }, Modifier.focusRequester(cancel))
+                ConnectButton(
+                    stringResource(Res.string.lan_tv_unpair),
+                    {
+                        confirmUnpair = null
+                        scope.launch {
+                            receiver.unpair(peer.id)
+                            phoneFocus.remove(peer.id)
+                            unpaired++
+                        }
+                    },
+                    primary = true,
+                )
+            }
+            LaunchedEffect(Unit) { cancel.requestFocusAfterLayout() }
+        }
+    }
+    LaunchedEffect(unpaired) {
+        if (unpaired == 0) return@LaunchedEffect
+        val target = focusAfterUnpair?.let(phoneFocus::get) ?: firstItem
+        target.requestFocusAfterLayout()
+    }
+
     confirmRemove?.let { device ->
         ConnectDialog(title = stringResource(Res.string.devices_sign_out_remote), onDismissRequest = { confirmRemove = null }) {
             ConnectBody(stringResource(Res.string.devices_remove_confirm, device.displayName()), color = TSColors.TextPrimary)

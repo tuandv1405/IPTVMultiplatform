@@ -113,4 +113,5 @@
     <string name="lan_pair_open_tv_screen">Pour associer, ouvrez TV et appareils sur la TV, puis réessayez.</string>
     <string name="lan_tv_pairing_open">L’association est ouverte tant que cet écran est affiché : un nouveau téléphone reçoit son code ici.</string>
     <string name="lan_tv_importing">Ajout de « %1$s »…</string>
+    <string name="lan_tv_unpair_confirm">Dissocier « %1$s » ? Il faudra un nouveau code pour envoyer à cette TV.</string>
 </resources>

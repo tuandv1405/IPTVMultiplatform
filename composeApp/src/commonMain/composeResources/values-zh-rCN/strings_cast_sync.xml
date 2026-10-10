@@ -113,4 +113,5 @@
     <string name="lan_pair_open_tv_screen">要配对，请在电视上打开“电视和设备”，然后重试。</string>
     <string name="lan_tv_pairing_open">显示此屏幕时可以配对：新手机的配对码会显示在这里。</string>
     <string name="lan_tv_importing">正在添加“%1$s”…</string>
+    <string name="lan_tv_unpair_confirm">要取消与“%1$s”的配对吗？之后需要新的配对码才能发送到这台电视。</string>
 </resources>

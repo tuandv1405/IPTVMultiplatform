@@ -114,4 +114,5 @@
     <string name="lan_pair_open_tv_screen">To pair, open TV &amp; devices on the TV, then try again.</string>
     <string name="lan_tv_pairing_open">Pairing is open while this screen is shown: a new phone gets its code here.</string>
     <string name="lan_tv_importing">Adding “%1$s”…</string>
+    <string name="lan_tv_unpair_confirm">Unpair “%1$s”? It will need a new code to send to this TV.</string>
 </resources>

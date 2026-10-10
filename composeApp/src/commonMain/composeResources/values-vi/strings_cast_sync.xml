@@ -114,4 +114,5 @@
     <string name="lan_pair_open_tv_screen">Để ghép nối, hãy mở TV &amp; thiết bị trên TV rồi thử lại.</string>
     <string name="lan_tv_pairing_open">Có thể ghép nối khi màn hình này đang mở: điện thoại mới sẽ nhận mã tại đây.</string>
     <string name="lan_tv_importing">Đang thêm “%1$s”…</string>
+    <string name="lan_tv_unpair_confirm">Huỷ ghép nối “%1$s”? Thiết bị sẽ cần mã mới để gửi tới TV này.</string>
 </resources>

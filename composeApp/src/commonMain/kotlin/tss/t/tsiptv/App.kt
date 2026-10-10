@@ -693,13 +693,27 @@ fun App() {
                             onDismiss = { homeViewModel.onEmitEvent(HomeEvent.OnDismissImportSummary) },
                         )
                     }
-                    val needsUser = lanState.importFromLan && !lanState.isLoading &&
+                    val needsUser = lanState.importFromLan &&
                         (lanState.pendingSingleStream != null || lanState.sourceImport != null || lanState.error != null)
-                    LaunchedEffect(needsUser) {
-                        if (needsUser && !onImportScreen) navController.navigate(NavRoutes.ImportIptv)
+                    // The import screen this flow opened is closed again once nothing waits for the
+                    // user there any more (QC r3 N6), so later offers are not refused as "busy".
+                    var lanOpenedImport by remember { mutableStateOf(false) }
+                    LaunchedEffect(needsUser, lanState.isLoading, onImportScreen) {
+                        when {
+                            needsUser && !lanState.isLoading && !onImportScreen -> {
+                                lanOpenedImport = true
+                                navController.navigate(NavRoutes.ImportIptv)
+                            }
+                            lanOpenedImport && !needsUser && !lanState.isLoading -> {
+                                lanOpenedImport = false
+                                if (onImportScreen) navController.popBackStack()
+                            }
+                        }
                     }
                     LanReceiverHost(
                         canTakePlaylists = !onImportScreen && !lanImporting,
+                        // One phone import at a time: the next offer waits (QC r3 N5).
+                        importRunning = lanImporting,
                         onCast = { stream ->
                             val id = playerViewModel.playCast(stream)
                             if (navController.currentBackStackEntry?.destination?.hasRoute<NavRoutes.Player>() != true) {

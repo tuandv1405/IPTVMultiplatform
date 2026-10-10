@@ -138,6 +138,7 @@ class HomeViewModel(
      */
     fun parseIptvSource(name: String, url: String, fromLan: Boolean = false) {
         importFromLan = fromLan
+        importName = name
         runImport {
             when (val outcome = playlistImporter.importFromUrl(name, url)) {
                 is ImportOutcome.SingleStream -> _uiState.update {
@@ -159,6 +160,7 @@ class HomeViewModel(
      */
     fun importFile(name: String, file: PickedPlaylistFile, confirmedReplace: Boolean = false, fromLan: Boolean = false) {
         importFromLan = fromLan
+        importName = name
         when (file) {
             PickedPlaylistFile.Cancelled -> Unit
             is PickedPlaylistFile.TooLarge -> _uiState.update {
@@ -189,11 +191,12 @@ class HomeViewModel(
 
     /** The running (or last) import came from a phone (TV: imported in the background from Home). */
     private var importFromLan = false
+    private var importName: String? = null
 
     private fun runImport(block: suspend () -> Unit) {
         importJob?.cancel()
         val fromLan = importFromLan
-        _uiState.update { it.copy(isLoading = true, importFromLan = fromLan) }
+        _uiState.update { it.copy(isLoading = true, importFromLan = fromLan, importName = importName) }
         importJob = viewModelScope.launch {
             try {
                 block()
@@ -897,6 +900,8 @@ data class HomeUiState(
     val importSummary: ImportSummary? = null,
     /** The running (or last) import is a playlist accepted from a phone (TV). */
     val importFromLan: Boolean = false,
+    /** Name of the running (or last) import, shown in an error about a playlist from a phone. */
+    val importName: String? = null,
     val pendingSingleStream: PendingSingleStream? = null,
     /** Display name of a picked file that would replace an earlier import. */
     val pendingFileReplace: String? = null,

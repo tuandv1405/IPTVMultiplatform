@@ -50,6 +50,7 @@ class LanReceiverController(
 
     private val mutex = Mutex()
     private val foreground = MutableStateFlow(false)
+    private val pairingWish = MutableStateFlow(false)
 
     init {
         if (server.isSupported) {
@@ -58,6 +59,7 @@ class LanReceiverController(
                 // keeps only the latest wish.
                 foreground.collect { on -> if (on) start() else stop() }
             }
+            scope.launch { pairingWish.collect { applyPairing(it) } }
         }
     }
 
@@ -98,8 +100,15 @@ class LanReceiverController(
 
     suspend fun unpair(id: String) = store.remove(id)
 
-    /** The TV's "TV & devices" screen is shown (pairing mode) or left; leaving drops an open code. */
-    suspend fun setPairingOpen(open: Boolean) {
+    /**
+     * The TV's "TV & devices" screen is shown (pairing mode) or left; leaving drops an open code.
+     * Never blocks: one worker applies the latest wish in order (QC r3 N7), like [setForeground].
+     */
+    fun setPairingOpen(open: Boolean) {
+        pairingWish.value = open
+    }
+
+    private suspend fun applyPairing(open: Boolean) {
         engine.pairingOpen = open
         if (!open) engine.abortPairing()
     }
