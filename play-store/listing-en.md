@@ -103,7 +103,19 @@ add a "What's new in this version" style paragraph later.*
 | Website | `https://tsiptv-8bdd6.web.app/` |
 | Privacy policy | `https://tsiptv-8bdd6.web.app/privacy/?lang=en` |
 | Contains ads | **Yes** — see `data-safety.md` |
-| In-app purchases | No |
+| In-app purchases | **Yes** (from the subscriptions release, `docs/prd-subscriptions.md`): auto-renewing subscriptions "No ads" and "Unlimited". Play shows "In-app purchases" on the listing by itself once the products are active. |
+
+**Description paragraph to use once subscriptions ship** (replaces "FREE, WITH ADS"):
+
+```
+FREE, WITH ADS, OR AD-FREE
+
+TS IPTV is free and shows ads on Android phones and tablets. There are no ads
+during your first 24 hours, and no AdMob ads on Android TV. Prefer no ads? The
+optional "No ads" subscription removes them all, and "Unlimited" also removes
+the daily limits on sending playlists to your TV and syncing your devices.
+Subscriptions renew automatically; cancel any time in Google Play.
+```
 
 ---
 

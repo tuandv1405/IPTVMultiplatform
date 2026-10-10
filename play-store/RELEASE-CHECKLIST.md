@@ -251,6 +251,7 @@ position where none is rendered. See `play-store/screenshots/README.md`.
 | --- | --- |
 | App access | **Phone: login required. TV: no login needed** (see Android TV above) — say so in the access instructions, or a TV reviewer may look for credentials they do not need. For the phone: emulator testing confirmed there is no guest path: logging out lands on the login screen with only Login / Sign Up. You must tick "All or some functionality is restricted" and supply working test credentials, or Play cannot review the app. |
 | Ads | **Yes, contains ads** — see `data-safety.md` |
+| In-app purchases | **Yes** once the subscriptions release ships: create `tsiptv_noads` and `tsiptv_unlimited` first (`docs/handoff-subscriptions.md`). Data safety: Financial info › Purchase history. |
 | Content rating | See `content-rating.md` |
 | Target audience | 13+ (do **not** opt into the Families programme) |
 | News app | No |

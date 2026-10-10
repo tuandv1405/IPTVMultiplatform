@@ -116,13 +116,15 @@ Route `NavRoutes.Plans(entry)`; phone and TV layouts.
   focused, Back closes. Play Billing's purchase sheet works on Android TV.
 
 ### 3.2 Entry points
-1. **Profile › Thông tin đăng ký** (replaces the "coming soon" dialog). TV: Settings › "Gói đăng ký".
+1. **Profile › Thông tin đăng ký** (replaces the "coming soon" dialog). TV: Settings › "Gói đăng ký"
+   (the TV layout's Settings dialog; the phone layout reaches it through Profile).
 2. **"Xoá quảng cáo" link** under the Home banner and the Player banner: a small text button,
    right-aligned **below** the slot (never over the ad, never styled like the ad, never inside the
    ad view), shown only while that slot shows an ad or the Shopee fallback. Not on native rows (the
    lists stay clean), not on TV (no ads).
-3. **Quota screens:** the send-to-TV sheet and *TV & thiết bị › Đồng bộ*: "Nâng cấp Unlimited" when
-   today's quota is used up, plus a quiet "Không giới hạn với Unlimited" line under the counter.
+3. **Quota screens:** the send-to-TV sheet and *TV & thiết bị › Đồng bộ*: a "Nâng cấp Unlimited" row
+   ("Gửi và đồng bộ không giới hạn, không quảng cáo") when today's quota is used up, after the
+   rewarded task. Nothing is shown while uses remain (no nagging).
 
 ### 3.3 Purchase flow
 1. User taps a base plan → if signed in, `obfuscatedAccountId = SHA-256(uid)`.
@@ -166,10 +168,12 @@ server entitlement of the signed-in account applies. The button re-runs both and
 ---
 
 ## 4. Platforms
-- **Android phone / tablet / TV (Play builds):** Play Billing Library **8.3.0** (`billing-ktx`).
+- **Android phone / tablet / TV (Play builds):** Play Billing Library **8.0.0** (`billing-ktx`).
   Billing 8 needs `enablePendingPurchases(PendingPurchasesParams…enableOneTimeProducts())`
-  and offers `enableAutoServiceReconnection()`. Plan to move to 9.x before Play's deadline for 8.x
-  (about two years after its release).
+  and offers `enableAutoServiceReconnection()`. 8.3.0 and 9.x exist, but they pull
+  `kotlin-stdlib` 2.2.10, newer than the project's Kotlin 2.2.0 compiler, which broke the Android
+  compile (Room's generated `actual` constructor). Move to 9.x together with a Kotlin upgrade, before
+  Play's deadline for 8.x (about two years after its release).
 - **iOS:** later (StoreKit 2, same product ids, App Store Server Notifications v2 to the same
   server, which writes the same entitlement document). Now: `UnavailableBillingGateway`.
 - **Desktop:** no store; `UnavailableBillingGateway`; a server entitlement still applies.
