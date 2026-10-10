@@ -129,7 +129,7 @@ Analytics.*
 | Shared | **Yes** (advertising, through Google AdMob) |
 | Processed ephemerally | No |
 | Required or optional | Required |
-| Purposes | Analytics; **Advertising or marketing** |
+| Purposes | Analytics; **Advertising or marketing**; **App functionality** (FCM token) |
 
 *Firebase Analytics App Instance ID (analytics, not shared). Since the AdMob
 release (`docs/prd-admob.md`): the **Android advertising ID** (`AD_ID`
@@ -137,6 +137,19 @@ permission) is collected by the Google Mobile Ads SDK and shared with Google for
 advertising, including ad personalisation where the user consents through Google
 UMP. AdMob is Android phone/tablet only; no ads, and no AdMob SDK calls, on
 Android TV.*
+
+*Push notifications (`docs/prd-push-notifications.md`): the **FCM registration
+token** is a device ID. Purpose: **App functionality** (delivering the
+notifications the user turned on in Profile › Notifications; opt-in, off by
+default). It is created by Firebase Cloud Messaging **only after the user turns
+notifications on** (FCM auto-init is off until then), kept on the device and, only
+when the user is signed in and the device is registered, stored with the account
+(`users/{uid}/devices/{installationId}.fcmToken`). It is not shared with third
+parties beyond Google as the processor. Turning notifications off deletes it on the
+device and at FCM and removes it from the account; it is also deleted with the
+device entry (sign-out or remote sign-out). "App functionality" is already in the
+purposes row above. The purchase data of subscriptions is declared under Financial
+info, not here: billing stores no device ID.*
 
 ### App activity → Other actions (ads) / App info and performance (ads)
 
@@ -195,7 +208,9 @@ Confirmed absent from the codebase:
 - Financial info › Payment info, Credit score, Other financial info — Google
   Play handles payments. (Purchase history: **Yes** since the subscriptions
   release, see above.)
-- Health and fitness, Messages, Contacts, Calendar — not touched.
+- Health and fitness, Messages, Contacts, Calendar — not touched. (Push
+  notifications are messages from the app to the user, not user messages: declare
+  **No** for Messages.)
 - Files and docs — the app reads a playlist file the user explicitly picks; it
   does not enumerate storage. Declare **No**.
 - Audio (voice or sound recordings) — the app plays audio, it never records it.

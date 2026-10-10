@@ -274,6 +274,8 @@ fun HomeBottomNavigationNavHost(
 
                     ProfileScreenActions.Addons -> rootNavController.navigate(NavRoutes.Addons)
 
+                    ProfileScreenActions.Notification -> rootNavController.navigate(NavRoutes.NotificationSettings)
+
                     // docs/prd-subscriptions.md §3.2: the plans screen replaces the "coming soon" dialog.
                     ProfileScreenActions.Subscription -> rootNavController.navigate(NavRoutes.Plans)
 

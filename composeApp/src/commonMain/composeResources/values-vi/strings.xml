@@ -397,6 +397,17 @@
     </plurals>
     <string name="ad_label">Quảng cáo</string>
     <string name="privacy_options_title">Tùy chọn quyền riêng tư</string>
+    <string name="notif_enable">Nhận thông báo</string>
+    <string name="notif_rationale">Nhận tin về các bản cập nhật TS IPTV và hướng dẫn mới. Không quảng cáo, không gợi ý nội dung.</string>
+    <string name="notif_general">Tin chung</string>
+    <string name="notif_general_desc">Thông báo và hướng dẫn mới</string>
+    <string name="notif_updates">Cập nhật ứng dụng</string>
+    <string name="notif_updates_desc">Khi có phiên bản mới</string>
+    <string name="notif_blocked">Thông báo đang bị chặn trong cài đặt hệ thống.</string>
+    <string name="notif_open_settings">Mở cài đặt</string>
+    <string name="notif_unsupported">Thiết bị này không hỗ trợ thông báo.</string>
+    <string name="notif_tv_note">Phần lớn màn hình chính của TV không hiển thị thông báo.</string>
+    <string name="notif_debug_token">Mã FCM (bản debug)</string>
     <string name="addons_help_title">Addon là gì?</string>
     <string name="addons_help_body">Addon là một dịch vụ web nhỏ theo định dạng addon của Stremio. Addon có thể thêm danh mục, thông tin chi tiết và đường dẫn phát vào TS IPTV.\n• Để thêm, sao chép đường dẫn manifest của addon (kết thúc bằng /manifest.json), chọn Thêm addon rồi dán vào.\n• TS IPTV không kèm sẵn và không giới thiệu addon nào: chỉ thêm addon bạn tự chạy hoặc có quyền sử dụng.</string>
     <string name="addons_help_expanded">Đã mở</string>

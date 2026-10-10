@@ -22,6 +22,12 @@ interface AccountCloud {
     suspend fun touchDevice(uid: String, device: RegisteredDevice)
     suspend fun removeDevice(uid: String, deviceId: String)
 
+    /** Push notifications: this device's FCM token on its own (registered) device document. */
+    suspend fun updateFcmToken(uid: String, deviceId: String, token: String)
+
+    /** Push opt-out: removes `fcmToken` from this device's document. */
+    suspend fun clearFcmToken(uid: String, deviceId: String)
+
     suspend fun loadQuota(uid: String): QuotaState?
 
     /** Reads the quota, applies [transform] and writes the result (null = no write), atomically. */
@@ -99,6 +105,14 @@ class FirestoreAccountCloud(private val firestore: FirebaseFirestore) : AccountC
         )
     }
 
+    override suspend fun updateFcmToken(uid: String, deviceId: String, token: String) {
+        devices(uid).document(deviceId).update("fcmToken" to token)
+    }
+
+    override suspend fun clearFcmToken(uid: String, deviceId: String) {
+        devices(uid).document(deviceId).update("fcmToken" to dev.gitlive.firebase.firestore.FieldValue.delete)
+    }
+
     override suspend fun removeDevice(uid: String, deviceId: String) {
         firestore.runTransaction {
             val metaSnap = get(meta(uid))
@@ -150,6 +164,7 @@ class InMemoryAccountCloud : AccountCloud {
         val map = devices.getOrPut(uid) { mutableMapOf() }
         if (device.id !in map && map.size >= max) return@withLock RegisterResult.LimitReached
         map[device.id] = device
+        fcmTokens.remove(uid to device.id) // a full document write, like Firestore's set()
         RegisterResult.Registered
     }
 
@@ -159,6 +174,17 @@ class InMemoryAccountCloud : AccountCloud {
     }
 
     override suspend fun removeDevice(uid: String, deviceId: String) = mutex.withLock { devices[uid]?.remove(deviceId); Unit }
+
+    val fcmTokens = mutableMapOf<Pair<String, String>, String>()
+    override suspend fun updateFcmToken(uid: String, deviceId: String, token: String) = mutex.withLock {
+        if (devices[uid]?.containsKey(deviceId) == true) fcmTokens[uid to deviceId] = token
+        Unit
+    }
+
+    override suspend fun clearFcmToken(uid: String, deviceId: String) = mutex.withLock {
+        fcmTokens.remove(uid to deviceId)
+        Unit
+    }
 
     override suspend fun loadQuota(uid: String) = mutex.withLock { quotas[uid] }
 

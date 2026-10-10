@@ -176,6 +176,37 @@ fun App() {
     LaunchedEffect(Unit) { addonRepository.dailyMaintenance() }
     val appScope = rememberCoroutineScope()
     var showOpenLinkFailed by remember { mutableStateOf(false) }
+    // A tapped notification's link (already checked against the allowlist), applied once the app is
+    // past Splash / Login (docs/prd-push-notifications.md R3).
+    val pushManager: tss.t.tsiptv.feature.push.PushManager = koinInject()
+    val isTvModeForLinks by androidx.compose.runtime.rememberUpdatedState(isTvMode)
+    LaunchedEffect(navController) {
+        pushManager.links.collect { target ->
+            navController.currentBackStackEntryFlow.first { entry ->
+                val d = entry.destination
+                !d.hasRoute<NavRoutes.Splash>() && !d.hasRoute<NavRoutes.Login>()
+            }
+            pushManager.consumeLink()
+            // One bad target must never stop later links from being handled.
+            try { when (target) {
+                tss.t.tsiptv.feature.push.PushTarget.Home -> {
+                    navController.popBackStack<NavRoutes.Home>(inclusive = false)
+                    pushManager.requestHomeTab()
+                }
+                tss.t.tsiptv.feature.push.PushTarget.Addons -> navController.navigate(NavRoutes.Addons)
+                // TV has no Notifications entry and push stays off there (PRD R5): such a link opens Home.
+                tss.t.tsiptv.feature.push.PushTarget.NotificationSettings ->
+                    if (isTvModeForLinks) navController.popBackStack<NavRoutes.Home>(inclusive = false)
+                    else navController.navigate(NavRoutes.NotificationSettings)
+                tss.t.tsiptv.feature.push.PushTarget.Store -> if (!appRating.openStoreListing()) showOpenLinkFailed = true
+                is tss.t.tsiptv.feature.push.PushTarget.Web -> if (!tss.t.tsiptv.utils.getUrlOpener().openUrl(target.url)) showOpenLinkFailed = true
+            } } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                println("TSPush: link not applied: ${e::class.simpleName}: ${e.message}")
+            }
+        }
+    }
     LaunchedEffect(navController) {
         appRating.onAppStarted()
         var wasOnPlayer = false
@@ -563,6 +594,10 @@ fun App() {
                                     }
                                 },
                             )
+                        }
+
+                        composable<NavRoutes.NotificationSettings> {
+                            tss.t.tsiptv.ui.screens.settings.NotificationSettingsScreen(onBack = { navController.popBackStack() })
                         }
 
                         // F2: Stremio-compatible addons.

@@ -1,0 +1,4 @@
+<resources>
+    <string name="push_channel_general">一般</string>
+    <string name="push_channel_updates">アプリのアップデート</string>
+</resources>

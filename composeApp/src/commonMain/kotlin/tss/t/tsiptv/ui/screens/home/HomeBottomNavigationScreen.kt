@@ -149,6 +149,21 @@ fun HomeBottomNavigationScreen(
         }
     }
 
+    // A tapped notification that links to Home also selects the Home tab.
+    val pushManager: tss.t.tsiptv.feature.push.PushManager = org.koin.compose.koinInject()
+    val homeTabRequested by pushManager.homeTabRequested.collectAsState()
+    LaunchedEffect(homeTabRequested) {
+        if (!homeTabRequested) return@LaunchedEffect
+        pushManager.homeTabShown()
+        if (navController.currentDestination?.route != NavRoutes.HomeScreens.HOME_FEED) {
+            navController.navigate(NavRoutes.HomeScreens.HOME_FEED) {
+                popUpTo(NavRoutes.HomeScreens.HOME_FEED) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
+
     LifecycleResumeEffect(Unit) {
         onHomeEvent(HomeEvent.RefreshEpgIfNeed)
         onPauseOrDispose {

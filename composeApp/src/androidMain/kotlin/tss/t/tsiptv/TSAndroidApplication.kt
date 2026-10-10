@@ -73,6 +73,11 @@ class TSAndroidApplication : Application() {
         if (!PlatformUtils.platform.isTv) {
             GlobalContext.get().get<AdsGate>() // starts the 24 h clock
         }
+
+        // Push notifications (docs/prd-push-notifications.md): channels first, then the manager
+        // (settings, topics, token). Also on TV: messages are handled there without being shown.
+        tss.t.tsiptv.feature.push.AndroidPushPlatform.createChannels(this)
+        GlobalContext.get().get<tss.t.tsiptv.feature.push.PushManager>().start()
     }
 
     companion object {

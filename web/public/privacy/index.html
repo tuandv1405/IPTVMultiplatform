@@ -64,6 +64,9 @@
     <h3>1.7. Gói đăng ký</h3>
     <p>Khi bạn mua gói "Không quảng cáo" hoặc "Unlimited" trên Android, <strong>Google Play xử lý thanh toán</strong>; chúng tôi không bao giờ nhận thông tin thẻ hay tài khoản ngân hàng. Để mở khoá tính năng trên các thiết bị của bạn, chúng tôi lưu: mã giao dịch (purchase token) của Google Play, gói và kỳ thanh toán, trạng thái, ngày hết hạn và việc tự động gia hạn, gắn với tài khoản của bạn nếu bạn đã đăng nhập. Chúng tôi gửi cho Google Play một <strong>mã băm (SHA-256) của mã tài khoản</strong>, không bao giờ gửi email. Dữ liệu này bị xoá khi bạn xoá tài khoản.</p>
 
+    <h3>1.8. Thông báo</h3>
+    <p>Thông báo <strong>tắt theo mặc định</strong>. Chỉ khi bạn bật thông báo trong Hồ sơ › Thông báo, Firebase Cloud Messaging (Google) mới tạo cho thiết bị một mã đăng ký (token); trước đó không có mã nào được tạo. Chúng tôi chỉ dùng mã này để gửi những thông báo bạn đã chọn (tin tức và bản cập nhật của ứng dụng), theo chủ đề và ngôn ngữ của ứng dụng. Nếu bạn đã đăng nhập, mã được lưu cùng mục thiết bị trong tài khoản của bạn. Khi bạn tắt thông báo, mã bị xoá trên thiết bị và khỏi tài khoản; khi thiết bị đăng xuất, mục thiết bị cùng mã cũng bị xoá. Bạn có thể tắt thông báo bất cứ lúc nào trong ứng dụng hoặc trong cài đặt của thiết bị.</p>
+
     <h2>2. Dữ liệu chúng tôi KHÔNG thu thập</h2>
     <ul>
       <li>Chúng tôi không thu thập danh bạ, tin nhắn, ảnh hay tệp của bạn.</li>
@@ -97,12 +100,13 @@
         <tbody>
           <tr><td>Internet / Trạng thái mạng</td><td>Tải danh sách phát, EPG và phát nội dung trực tuyến.</td></tr>
           <tr><td>Dịch vụ nền (phát media)</td><td>Tiếp tục phát và hiển thị điều khiển khi ứng dụng chạy nền.</td></tr>
+          <tr><td>Thông báo (Android 13 trở lên)</td><td>Hiển thị thông báo bạn đã bật. Chỉ được hỏi khi bạn bật thông báo trong ứng dụng.</td></tr>
         </tbody>
       </table>
     </div>
 
     <h2>5. Bên xử lý dữ liệu</h2>
-    <p>Chúng tôi dùng Google Firebase (Authentication, Analytics, Crashlytics, Firestore, Storage, App Check) làm hạ tầng. Dữ liệu được xử lý trên hạ tầng của Google. Xem <a href="https://firebase.google.com/support/privacy" rel="noopener">chính sách quyền riêng tư của Firebase</a>.</p>
+    <p>Chúng tôi dùng Google Firebase (Authentication, Analytics, Crashlytics, Firestore, Storage, App Check, Cloud Messaging) làm hạ tầng. Dữ liệu được xử lý trên hạ tầng của Google. Xem <a href="https://firebase.google.com/support/privacy" rel="noopener">chính sách quyền riêng tư của Firebase</a>.</p>
 
     <h2>6. Thời gian lưu trữ</h2>
     <ul>
@@ -159,6 +163,9 @@
     <h3>1.7. Subscriptions</h3>
     <p>When you buy the "No ads" or "Unlimited" subscription on Android, <strong>Google Play processes the payment</strong>; we never receive your card or bank details. To unlock the features on your devices we store the Google Play purchase token, the plan and billing period, its state, expiry date and whether it auto-renews, linked to your account if you are signed in. We send Google Play a <strong>SHA-256 hash of your account ID</strong>, never your email. This data is deleted when you delete your account.</p>
 
+    <h3>1.8. Notifications</h3>
+    <p>Notifications are <strong>off by default</strong>. Only when you turn them on in Profile › Notifications does Firebase Cloud Messaging (Google) create a registration token for your device; no token exists before that. We use the token only to send the notifications you chose (app news and updates), by topic and app language. If you are signed in, the token is stored with your device entry in your account. When you turn notifications off, the token is deleted on the device and removed from your account; when the device is signed out, its device entry and the token are deleted too. You can turn notifications off at any time in the app or in your device settings.</p>
+
     <h2>2. What we do NOT collect</h2>
     <ul>
       <li>We do not collect your contacts, messages, photos or files.</li>
@@ -192,12 +199,13 @@
         <tbody>
           <tr><td>Internet / network state</td><td>Fetch playlists and EPG data, and play streams.</td></tr>
           <tr><td>Foreground service (media playback)</td><td>Keep playback running with media controls while the app is in the background.</td></tr>
+          <tr><td>Notifications (Android 13 and later)</td><td>Show the notifications you turned on. Asked only when you turn notifications on in the app.</td></tr>
         </tbody>
       </table>
     </div>
 
     <h2>5. Processors</h2>
-    <p>We use Google Firebase (Authentication, Analytics, Crashlytics, Firestore, Storage, App Check) as our infrastructure. Data is processed on Google's infrastructure. See the <a href="https://firebase.google.com/support/privacy" rel="noopener">Firebase privacy policy</a>.</p>
+    <p>We use Google Firebase (Authentication, Analytics, Crashlytics, Firestore, Storage, App Check, Cloud Messaging) as our infrastructure. Data is processed on Google's infrastructure. See the <a href="https://firebase.google.com/support/privacy" rel="noopener">Firebase privacy policy</a>.</p>
 
     <h2>6. Retention</h2>
     <ul>

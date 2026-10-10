@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <!-- AdMob (docs/prd-admob.md): the advertising ID, declared on Play as collected and shared for ads. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+    <!-- Push notifications (docs/prd-push-notifications.md): asked only from Profile › Notifications. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Android TV: the same APK serves phones and TVs. Neither feature may be
          required, or Play filters the app out of one of the two device types. -->
@@ -55,6 +57,7 @@
             android:value="${admobAppId}" />
         <activity
             android:name=".MainActivity"
+            android:launchMode="singleTop"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
             android:exported="true">
             <intent-filter>
@@ -64,6 +67,25 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Push notifications: background "notification" messages use this channel and icon. -->
+        <!-- Push: no FCM token before the user switches notifications on (docs/prd-push-notifications.md). -->
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="general" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notification" />
+        <service
+            android:name=".feature.push.TsFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
         <!-- Media Player Service -->
         <service

@@ -406,6 +406,17 @@
     </plurals>
     <string name="ad_label">Anzeige</string>
     <string name="privacy_options_title">Datenschutzoptionen</string>
+    <string name="notif_enable">Benachrichtigungen erhalten</string>
+    <string name="notif_rationale">Neuigkeiten zu TS IPTV-Updates und neuen Anleitungen. Keine Werbung, keine Inhaltsvorschläge.</string>
+    <string name="notif_general">Allgemeine Neuigkeiten</string>
+    <string name="notif_general_desc">Ankündigungen und neue Anleitungen</string>
+    <string name="notif_updates">App-Updates</string>
+    <string name="notif_updates_desc">Wenn eine neue Version verfügbar ist</string>
+    <string name="notif_blocked">Benachrichtigungen sind in den Systemeinstellungen blockiert.</string>
+    <string name="notif_open_settings">Einstellungen öffnen</string>
+    <string name="notif_unsupported">Benachrichtigungen sind auf diesem Gerät nicht verfügbar.</string>
+    <string name="notif_tv_note">Die meisten TV-Startbildschirme zeigen keine Benachrichtigungen an.</string>
+    <string name="notif_debug_token">FCM-Token (Debug-Build)</string>
     <string name="addons_help_title">Was sind Add-ons?</string>
     <string name="addons_help_body">Ein Add-on ist ein kleiner Webdienst im Stremio-Add-on-Format. Es kann TS IPTV Kataloge, Details und Stream-Links hinzufügen.\n• Zum Hinzufügen den Manifest-Link kopieren (endet auf /manifest.json), „Add-on hinzufügen“ wählen und einfügen.\n• TS IPTV enthält keine Add-ons und empfiehlt keine: füge nur Add-ons hinzu, die du selbst betreibst oder nutzen darfst.</string>
     <string name="addons_help_expanded">Ausgeklappt</string>

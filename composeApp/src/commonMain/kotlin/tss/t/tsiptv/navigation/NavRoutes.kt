@@ -103,6 +103,10 @@ object NavRoutes {
     @Serializable
     data class SourceAbout(val playlistId: String) : RootRoutes
 
+    /** Profile › Notifications (docs/prd-push-notifications.md). */
+    @Serializable
+    data object NotificationSettings : RootRoutes
+
     /** "TV & thiết bị": receive / send to TV, device sync, signed-in devices (prd-tv-cast-and-sync). */
     @Serializable
     data object Connect : RootRoutes

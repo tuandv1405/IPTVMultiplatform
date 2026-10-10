@@ -398,6 +398,17 @@
     </plurals>
     <string name="ad_label">広告</string>
     <string name="privacy_options_title">プライバシー設定</string>
+    <string name="notif_enable">通知を受け取る</string>
+    <string name="notif_rationale">TS IPTV のアップデートや新しいガイドのお知らせを受け取ります。広告やコンテンツのおすすめはありません。</string>
+    <string name="notif_general">一般のお知らせ</string>
+    <string name="notif_general_desc">お知らせと新しいガイド</string>
+    <string name="notif_updates">アプリのアップデート</string>
+    <string name="notif_updates_desc">新しいバージョンが公開されたとき</string>
+    <string name="notif_blocked">通知はシステム設定でブロックされています。</string>
+    <string name="notif_open_settings">設定を開く</string>
+    <string name="notif_unsupported">このデバイスでは通知を利用できません。</string>
+    <string name="notif_tv_note">ほとんどのテレビのホーム画面では通知は表示されません。</string>
+    <string name="notif_debug_token">FCM トークン（デバッグビルド）</string>
     <string name="addons_help_title">アドオンとは？</string>
     <string name="addons_help_body">アドオンは、Stremio のアドオン形式に従う小さな Web サービスです。TS IPTV にカタログ、詳細情報、再生リンクを追加できます。\n• 追加するには、マニフェストのリンク（/manifest.json で終わる）をコピーし、「アドオンを追加」を選んで貼り付けます。\n• TS IPTV にはアドオンは含まれておらず、特定のアドオンを推奨することもありません。自分で運用している、または利用する権利のあるアドオンだけを追加してください。</string>
     <string name="addons_help_expanded">展開</string>

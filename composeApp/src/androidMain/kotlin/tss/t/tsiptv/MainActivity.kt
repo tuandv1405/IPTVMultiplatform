@@ -33,6 +33,32 @@ class MainActivity : ComponentActivity(), KoinComponent {
         PermissionCheckerFactory.onMultiplePermissionsResult(it)
     }
 
+    // POST_NOTIFICATIONS, asked only from Profile › Notifications (docs/prd-push-notifications.md R1).
+    private val notificationPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> tss.t.tsiptv.feature.push.PushPermissionRequests.onResult(granted) }
+
+    /** A tapped notification: its `link` extra (from our notification or FCM's data) goes through the allowlist. */
+    private fun handlePushIntent(intent: android.content.Intent?) {
+        val extras = intent?.extras ?: return
+        // Reopened from Recents: Android re-delivers the original (notification) intent with its extras.
+        if (intent.flags and android.content.Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return
+        val fromFcm = extras.containsKey("google.message_id")
+        val link = extras.getString(tss.t.tsiptv.feature.push.AndroidPushPlatform.EXTRA_LINK)
+        if (!fromFcm && link == null) return
+        intent.removeExtra(tss.t.tsiptv.feature.push.AndroidPushPlatform.EXTRA_LINK)
+        intent.removeExtra("google.message_id")
+        runCatching { getKoin().get<tss.t.tsiptv.feature.push.PushManager>().onNotificationOpened(link) }
+            .onFailure { android.util.Log.w("TSPush", "open failed: ${it::class.simpleName}") }
+        if (tss.t.tsiptv.feature.push.AndroidPushPlatform.isDebuggable(this)) android.util.Log.d("TSPush", "notification opened (fcm=$fromFcm, link=${link != null})")
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handlePushIntent(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
@@ -49,6 +75,10 @@ class MainActivity : ComponentActivity(), KoinComponent {
         )
 
         NetworkConnectivityCheckerFactory.initialize(applicationContext as Application)
+
+        tss.t.tsiptv.feature.push.PushPermissionRequests.launcher = notificationPermission
+        // Not on a configuration change: the link was handled already.
+        if (savedInstanceState == null) handlePushIntent(intent)
 
         // Google UMP consent (form where required), then the ads SDK if allowed. Not on TV.
         if (!PlatformUtils.platform.isTv) AndroidAdsPlatform.gatherConsent(this)
@@ -81,6 +111,9 @@ class MainActivity : ComponentActivity(), KoinComponent {
     }
 
     override fun onDestroy() {
+        if (tss.t.tsiptv.feature.push.PushPermissionRequests.launcher === notificationPermission) {
+            tss.t.tsiptv.feature.push.PushPermissionRequests.launcher = null
+        }
         super.onDestroy()
         LocalPermissionProvider.provides(null)
     }
