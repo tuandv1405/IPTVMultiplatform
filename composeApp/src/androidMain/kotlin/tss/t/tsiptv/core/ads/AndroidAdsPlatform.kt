@@ -173,18 +173,24 @@ object AndroidAdsPlatform : AdsPlatform {
     /** [AdsGate]: AdMob may show now. Starts the SDK once (only with consent). */
     override fun startAdMob() {
         if (!::app.isInitialized || consent?.canRequestAds() != true) return
-        startSdk()
+        startSdk(appOpen = true)
+    }
+
+    /** A rewarded ad the user asked for (e.g. a "No ads" subscriber): the SDK without the app open ad. */
+    override fun startAdMobForRewarded() {
+        if (!::app.isInitialized || consent?.canRequestAds() != true) return
+        startSdk(appOpen = false)
     }
 
     /** `MobileAds.initialize` once per process, on a background thread (Google's recommendation). */
-    private fun startSdk() {
+    private fun startSdk(appOpen: Boolean) {
         if (!sdkStarted.compareAndSet(false, true)) return
-        AdsLog.i { "SDK start at +${AppOpenAdController.sinceProcessStart()} ms" }
+        AdsLog.i { "SDK start at +${AppOpenAdController.sinceProcessStart()} ms (app open: $appOpen)" }
         Thread {
             MobileAds.initialize(app) {}
         }.apply { name = "ads-init" }.start()
         // Ads may be requested right away; the SDK queues them until it is ready.
-        AppOpenAdController.onSdkReady(app)
+        if (appOpen) AppOpenAdController.onSdkReady(app)
     }
 
     override fun installTimeMs(): Long? = try {

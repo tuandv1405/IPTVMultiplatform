@@ -53,6 +53,13 @@ interface AdsPlatform {
      * only when AdMob may show: after the 24 h period, with consent, not on TV. Idempotent.
      */
     fun startAdMob()
+
+    /**
+     * Starts the SDK for a rewarded ad the user asked for, **without** the app open ad
+     * (docs/prd-subscriptions.md §2.2: a "No ads" subscriber may still watch rewarded ads for extra
+     * sends / syncs, but their SDK was never started at launch). Idempotent.
+     */
+    fun startAdMobForRewarded() = startAdMob()
 }
 
 /** Desktop and iOS: no AdMob; the Shopee fallback still follows the 24 h rule. */
