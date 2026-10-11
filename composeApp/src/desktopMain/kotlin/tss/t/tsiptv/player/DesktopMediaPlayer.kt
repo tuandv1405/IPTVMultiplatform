@@ -148,27 +148,25 @@ class DesktopMediaPlayer(
         }
     }
 
+    // vlcj 4 (libVLC 3) lists subtitle tracks as descriptions; id -1 is VLC's "Disable" entry.
     override fun textTracks(): List<tss.t.tsiptv.player.TextTrackOption> = runCatching {
-        val list = vlcjMediaPlayer.tracks().textTracks()
-        try {
-            list.tracks().mapIndexed { i, track ->
+        val current = vlcjMediaPlayer.subpictures().track()
+        vlcjMediaPlayer.subpictures().trackDescriptions()
+            .filter { it.id() >= 0 }
+            .mapIndexed { i, track ->
                 tss.t.tsiptv.player.TextTrackOption(
-                    id = track.trackId(),
-                    label = track.name()?.takeIf { it.isNotBlank() } ?: track.description()?.takeIf { it.isNotBlank() }
-                        ?: track.language() ?: "${i + 1}",
-                    language = track.language(),
-                    selected = track.selected(),
+                    id = track.id().toString(),
+                    label = track.description()?.takeIf { it.isNotBlank() } ?: "${i + 1}",
+                    language = null,
+                    selected = track.id() == current,
                 )
             }
-        } finally {
-            list.release()
-        }
     }.getOrDefault(emptyList())
 
     override fun selectTextTrack(id: String?) {
         runCatching {
-            if (id == null) vlcjMediaPlayer.tracks().deselect(uk.co.caprica.vlcj.media.TrackType.TEXT)
-            else vlcjMediaPlayer.tracks().select(uk.co.caprica.vlcj.media.TrackType.TEXT, id)
+            if (id == null) vlcjMediaPlayer.subpictures().setTrack(-1)
+            else id.toIntOrNull()?.let { vlcjMediaPlayer.subpictures().setTrack(it) }
         }
     }
 

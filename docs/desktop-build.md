@@ -1,0 +1,181 @@
+# TS IPTV desktop: build, cài đặt, quảng bá "ủng hộ" thay AdMob
+
+Cập nhật 2026-10-11. Tài liệu cho bản desktop (Compose Multiplatform, JVM). Bản Windows (MSI) đã được
+build và kiểm thử trên máy dev; macOS/Linux chưa kiểm thử.
+
+## 1. Tóm tắt
+
+- **Desktop phát được video.** Bộ cài Windows đóng gói sẵn libVLC 3.0.24 (bản chính thức của
+  VideoLAN), nên máy người dùng không cần cài VLC.
+- **Không có quảng cáo bên thứ ba trên desktop.** Mọi chỗ quảng cáo (banner Home, banner Player, các ô
+  native trong danh sách) hiện thẻ **ủng hộ nhà phát triển** hoặc thẻ **bản Android trên Google Play**.
+- **"App open" của desktop là màn hình ủng hộ** (VietQR + link ủng hộ online), hiện khi mở app. Nó tuân
+  theo đúng luật của quảng cáo: không hiện trong 24 giờ đầu, không hiện ở giao diện TV, không hiện cho
+  người đã mua gói bỏ quảng cáo.
+- **Desktop chạy không cần đăng nhập**, giống giao diện TV: playlist và phát video đều là dữ liệu cục bộ.
+
+## 2. Build và cài
+
+### Windows (MSI)
+
+```bash
+./gradlew :composeApp:packageReleaseMsi
+```
+
+File cài: `composeApp/build/compose/binaries/main-release/msi/TS IPTV-<version>.msi` (~200 MB, trong
+đó VLC chiếm ~110 MB).
+
+- Lần build đầu, task `downloadVlcWin64` tải `vlc-3.0.24-win64.zip` từ download.videolan.org và kiểm
+  tra SHA-256. Nếu checksum sai, build dừng. Các lần sau dùng lại file trong `composeApp/build/vlc/`.
+- `prepareDesktopVlc` chỉ lấy `libvlc.dll`, `libvlccore.dll`, `plugins/` và `COPYING.txt`. Các plugin
+  GUI, streaming output và visualization bị bỏ (~35 MB). Chỉ máy build Windows mới đóng gói VLC.
+- Chạy thử không cần cài: `./gradlew :composeApp:run`, hoặc
+  `./gradlew :composeApp:createReleaseDistributable` rồi mở
+  `composeApp/build/compose/binaries/main-release/app/TS IPTV/TS IPTV.exe`.
+- MSI **chưa ký số**, nên Windows SmartScreen sẽ cảnh báo "Unknown publisher" khi cài. Muốn hết cảnh báo
+  cần chứng chỉ code signing (OV/EV), hoặc phát hành qua Microsoft Store (mục 6).
+- `packageVersion` lấy từ `versionMajor.versionMinor.versionPatch` trong `composeApp/build.gradle.kts`.
+  `upgradeUuid` cố định, nên MSI mới sẽ thay bản cũ. Không được đổi UUID này.
+
+### Cập nhật VLC
+
+Trong `composeApp/build.gradle.kts`, đổi `vlcVersion` và `vlcWin64Sha256`. Lấy SHA-256 từ file
+`vlc-<version>-win64.zip.sha256` cạnh file zip trên https://download.videolan.org/pub/videolan/vlc/.
+
+**Phải giữ libVLC 3.x.** App dùng vlcj **4.12.1**, là dòng vlcj dành cho libVLC 3. vlcj 5 (bản cũ
+5.0.0-M4) cần libVLC 4, mà VLC 4 chưa có bản phát hành. Với vlcj 5, player lỗi ngay khi tạo
+(`libvlc_media_get_meta_extra` not found), nên trước đây desktop chưa từng phát được video.
+
+### macOS / Linux
+
+Hai nền tảng này **chưa đóng gói VLC**: người dùng phải tự cài VLC 3.x. Nếu thiếu VLC, app sẽ lỗi khi
+tạo player (vấn đề đã biết, mục 7). Muốn đóng gói thì làm tương tự Windows, với file
+`.dmg` (macOS) hoặc phụ thuộc gói `vlc` trong `.deb` (Linux).
+
+## 3. Cấu hình kênh ủng hộ
+
+Có 4 giá trị, tất cả đều tuỳ chọn. Thứ tự đọc: Gradle `-P`, rồi `local.properties` (gốc repo hoặc
+`composeApp/`), rồi biến môi trường. Không commit giá trị thật vào git.
+
+| Khoá | Ví dụ | Ý nghĩa |
+|---|---|---|
+| `TSIPTV_SUPPORT_URL` | `https://ko-fi.com/tenban` | Link ủng hộ quốc tế (Ko-fi, PayPal.me, GitHub Sponsors…). Bắt buộc `https://`. |
+| `TSIPTV_SUPPORT_BANK_ID` | `MB`, `VCB`, `TCB`, `970422` | Mã ngân hàng theo VietQR (tên viết tắt hoặc BIN). |
+| `TSIPTV_SUPPORT_ACCOUNT_NO` | `0123456789` | Số tài khoản. |
+| `TSIPTV_SUPPORT_ACCOUNT_NAME` | `NGUYEN VAN A` | Tên chủ tài khoản, viết không dấu. |
+
+Ví dụ `local.properties`:
+
+```properties
+TSIPTV_SUPPORT_URL=https://ko-fi.com/tenban
+TSIPTV_SUPPORT_BANK_ID=MB
+TSIPTV_SUPPORT_ACCOUNT_NO=0123456789
+TSIPTV_SUPPORT_ACCOUNT_NAME=NGUYEN VAN A
+```
+
+Sau khi đổi giá trị thì build lại MSI. Task `generateDesktopSupportConfig` sinh ra
+`DesktopSupportConfig.kt` trong `build/`.
+
+- **Ảnh QR** lấy từ dịch vụ công khai VietQR quick link:
+  `https://img.vietqr.io/image/<BANK_ID>-<ACCOUNT_NO>-compact2.png?addInfo=Ung%20ho%20TS%20IPTV&accountName=…`.
+  App ngân hàng nào quét cũng tự điền tài khoản. QR không có số tiền, để người ủng hộ tự chọn.
+- **Thiếu cả link lẫn tài khoản:** thẻ ủng hộ và màn hình khởi động không hiện. Mọi ô chỉ hiện thẻ
+  "TS IPTV cho Android" (mở Google Play). Bản MSI build hôm nay đang ở trạng thái này, vì chưa có giá
+  trị thật.
+
+## 4. Hành vi trên desktop
+
+| Vị trí | Mobile (Android) | Desktop |
+|---|---|---|
+| App open | AdMob app open | Màn hình "Ủng hộ nhà phát triển": QR VietQR, nút "Ủng hộ online", "Google Play", "Để sau" |
+| Banner Home / Player | AdMob banner → fallback Shopee | Thẻ "Ủng hộ TS IPTV" (bấm để mở màn hình ủng hộ) |
+| Native trong danh sách (Home, Player, Programs) | AdMob native → fallback Shopee | Xen kẽ: ô chẵn là thẻ ủng hộ, ô lẻ là thẻ "TS IPTV cho Android" |
+| Link "Xoá quảng cáo" | Có | Không (desktop không có quảng cáo để xoá) |
+| Tab History (thẻ Shopee riêng) | Như cũ | Như cũ: thẻ Shopee vẫn hiện, không đổi |
+
+Luật hiển thị màn hình khởi động (`SupportHost` trong `desktopMain/.../support/SupportPromos.kt`):
+
+- Chỉ khi đã cấu hình ít nhất một kênh ủng hộ.
+- Chỉ khi `AdsGate` cho phép fallback: đã qua 24 giờ đầu, không phải giao diện TV, không có gói "No ads".
+- Phải sẵn sàng trong 4 giây sau khi mở app. Cách nhau tối thiểu **6 giờ**
+  (`START_SCREEN_MIN_INTERVAL_MS`). Bấm ra ngoài hoặc "Để sau" để đóng.
+- Đổi tần suất: sửa `START_SCREEN_MIN_INTERVAL_MS`. Đặt `0` thì hiện mỗi lần mở app.
+
+**Kiểm thử nhanh:** đặt biến môi trường `TSIPTV_DEBUG_ADS_NO_FIRST_DAY=true` trước khi chạy app để bỏ
+qua 24 giờ đầu. Biến này chỉ khiến thẻ ủng hộ hiện sớm hơn, không ảnh hưởng gì khác.
+
+Mã nguồn liên quan:
+
+- `commonMain/.../ui/ads/HouseAds.kt`: hook `expect` `rememberHouseAd(slot)` và `houseAdsReplaceAds`.
+  Bản Android/iOS trả `null`/`false`, nên mobile **không đổi**.
+- `commonMain/.../ui/screens/ads/ShopeeFallback.kt`: house promo được ưu tiên trước Shopee.
+- `desktopMain/.../ui/ads/HouseAds.desktop.kt`: chọn thẻ cho từng ô.
+- `desktopMain/.../support/`: `SupportLinks`, các thẻ, dialog, `SupportHost`.
+- Chuỗi giao diện: `composeResources/values*/strings_support.xml` (7 ngôn ngữ).
+
+## 5. Phương án thay AdMob trên desktop (khảo sát 2026-10-11)
+
+AdMob chỉ có SDK cho Android/iOS. Bảng dưới xếp theo mức phù hợp với TS IPTV (dev cá nhân ở Việt Nam,
+app phát playlist của người dùng).
+
+| # | Phương án | Đánh giá |
+|---|---|---|
+| 1 | **VietQR / chuyển khoản + link ủng hộ (Ko-fi qua PayPal, PayPal.me, GitHub Sponsors)** | **Đã làm.** Không phí, không cần ai duyệt. GitHub Sponsors hỗ trợ Việt Nam từ 10/2023. Ko-fi dùng PayPal khi không có Stripe; khả năng nhận tiền ở VN chưa xác minh. |
+| 2 | **Affiliate Shopee/Lazada, chỉ khi người dùng bấm** | Đã có sẵn (tab History). Điều khoản Shopee Affiliate (01/12/2025) cấm pop-up, auto-redirect, iframe: **không được** dùng làm màn hình khởi động. Phải đăng ký app desktop là một kênh. |
+| 3 | **Microsoft Store + gói trả phí "Supporter"** | Store Policy 10.8.1 cho phép app PC dùng IAP của Store (phí 15%) hoặc cổng thanh toán riêng (giữ 100%). Đăng ký dev cá nhân miễn phí từ 9/2025. Gọi `Windows.Services.Store` từ JVM cần cầu nối native và đóng gói MSIX: làm được nhưng tốn công. Store cũng giúp bỏ cảnh báo SmartScreen. |
+| 4 | **Liftoff/Vungle Windows SDK** | SDK quảng cáo desktop duy nhất còn được bảo trì (Win32 7.x, 2026). Chỉ có trên Windows, là SDK native nên cần cầu nối JNA, và chưa rõ có nhận app IPTV không. Chỉ nên thử sau 1–3. |
+| ✗ | AdSense/AdMob trong WebView desktop | **Cấm.** Chính sách AdSense cấm quảng cáo Google gắn vào phần mềm (trừ qua AdMob SDK). Vi phạm có thể khoá cả tài khoản Google, tức mất luôn AdMob trên Android. |
+| ✗ | Paddle, Lemon Squeezy | Cả hai **cấm IPTV** trong danh mục sản phẩm. |
+| ✗ | Buy Me a Coffee | Chỉ trả tiền qua Stripe, mà Stripe không hỗ trợ VN. |
+| ✗ | Amazon Associates | Cấm link trong ứng dụng client. |
+| ✗ | EthicalAds, Carbon Ads | Dành cho website cho lập trình viên, app IPTV không đủ điều kiện. |
+| ✗ | Microsoft Advertising SDK, AdsJumbo | Đã khai tử (2020) hoặc ngừng phát triển. |
+
+Lưu ý chính sách: hãy mô tả app là **trình phát playlist của chính người dùng**, không kèm hay gợi ý
+nguồn kênh. Nhiều cổng thanh toán và chợ ứng dụng lọc từ khoá "IPTV".
+
+Nguồn chính:
+
+- AdSense program policies: https://support.google.com/adsense/answer/48182
+- Shopee Affiliate terms (01/12/2025): https://shopee.vn/affiliate/kol-dieu-khoan-tham-gia-update-01-12-2025/
+- Microsoft Store policies: https://learn.microsoft.com/en-us/windows/apps/publish/store-policies
+- Paddle (cấm IPTV): https://paddle.com/help/start/intro-to-paddle/what-am-i-not-allowed-to-sell-on-paddle
+- Lemon Squeezy (cấm IPTV): https://docs.lemonsqueezy.com/help/getting-started/prohibited-products
+- GitHub Sponsors (thêm VN): https://github.blog/changelog/2023-10-03-github-sponsors-is-now-available-in-35-new-regions
+- Stripe (không có VN): https://stripe.com/global
+- Vungle Windows SDK: https://www.nuget.org/packages/VungleSDKForWindowsDesktopNative
+
+## 6. Gợi ý bước tiếp theo
+
+1. Điền 4 giá trị ở mục 3, build lại MSI, rồi kiểm tra màn hình ủng hộ bằng
+   `TSIPTV_DEBUG_ADS_NO_FIRST_DAY=true`.
+2. Nếu muốn có thu nhập định kỳ: đăng ký GitHub Sponsors (phù hợp nhất nếu có phần mã nguồn mở) hoặc
+   Ko-fi + PayPal, rồi đặt link vào `TSIPTV_SUPPORT_URL`.
+3. Cân nhắc phát hành trên Microsoft Store (miễn phí đăng ký). Bản Store không bị SmartScreen chặn, và
+   sau này có thể thêm gói "Supporter".
+
+## 7. Giới hạn đã biết
+
+- **Không có đăng nhập trên desktop.** Firebase Auth chỉ chạy trong bộ nhớ. Đăng nhập Google/Apple là
+  `TODO()` của thư viện gitlive và sẽ crash nếu ai đó mở màn hình Login từ Profile rồi bấm. App mặc
+  định bỏ qua Login (`AppFlags.worksSignedOut`), nhưng màn hình vẫn truy cập được từ Profile.
+- **Không có analytics trên desktop.** `Firebase.analytics` trên JVM là `TODO()` và đã từng làm app
+  crash khi thêm playlist. Mọi lệnh gọi giờ đi qua `AppAnalytics` và bị bỏ qua trên desktop.
+- **macOS/Linux:** thiếu VLC thì app lỗi khi tạo player. Chưa có màn hình báo lỗi thân thiện.
+- **VLC chỉ gửi được 2 header:** `User-Agent` và `Referer`; header khác bị bỏ. Không có DRM
+  (Widevine/PlayReady); kênh DRM bị từ chối trước khi phát.
+- **Giấy phép:** libVLC theo LGPL-2.1+, kèm `COPYING.txt` trong thư mục `vlc/`. Phát hành rộng nên ghi
+  công VideoLAN trong trang About/giấy phép.
+
+## 8. Đã kiểm thử (2026-10-11, Windows 11)
+
+- `./gradlew :composeApp:desktopTest`: 607 test đều pass. `compileDebugKotlinAndroid` pass.
+- Smoke test tạm (không commit): `DesktopMediaPlayer` + libVLC đóng gói + vlcj 4.12.1 phát luồng HLS
+  công khai của Apple (bipbop). Trạng thái PLAYING, thời gian chạy tới 5.5 giây, snapshot khung hình
+  1920×1080 giải mã đúng.
+- `run` với cấu hình ủng hộ thử: màn hình khởi động hiện đúng, QR VietQR hiển thị. Render offscreen thẻ
+  banner, thẻ Android và dialog đều đúng bố cục.
+- Bản đóng gói (`createReleaseDistributable`): mở thẳng vào Home không cần đăng nhập, thư mục
+  `app/resources/vlc` có đủ libVLC.
+- Chưa kiểm thử: luồng thêm playlist rồi bấm phát qua giao diện của bản MSI đã cài (đã kiểm từng phần
+  riêng: import playlist trả HTTP 200, phát video qua smoke test), macOS, Linux.

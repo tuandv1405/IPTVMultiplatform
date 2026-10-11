@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="support_title">TS IPTV を応援</string>
+    <string name="support_banner_body">デスクトップ版は無料で広告もありません。コーヒー1杯の応援がその継続を支えます。</string>
+    <string name="support_button">応援する</string>
+    <string name="support_android_title">Android 版 TS IPTV</string>
+    <string name="support_android_body">Android 版は Google Play で配信中です。評価をいただけると大きな励みになります。</string>
+    <string name="support_android_button">Google Play</string>
+    <string name="support_dialog_title">開発者を応援する</string>
+    <string name="support_dialog_body">TS IPTV は個人で開発しています。役に立っていれば、金額を問わず応援がデスクトップ版を無料・広告なしで続ける助けになります。</string>
+    <string name="support_bank_title">銀行振込 (VietQR)</string>
+    <string name="support_bank_hint">銀行アプリでスキャン</string>
+    <string name="support_online_button">オンラインで応援</string>
+    <string name="support_later">後で</string>
+</resources>

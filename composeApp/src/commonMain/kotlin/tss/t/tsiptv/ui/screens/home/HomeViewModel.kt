@@ -4,8 +4,6 @@ package tss.t.tsiptv.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.analytics.analytics
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -34,6 +32,7 @@ import tss.t.tsiptv.core.parser.model.IPTVProgram
 import tss.t.tsiptv.core.parser.model.SkipReason
 import tss.t.tsiptv.core.repository.IHistoryRepository
 import tss.t.tsiptv.core.storage.KeyValueStorage
+import tss.t.tsiptv.core.tracking.AppAnalytics
 import tss.t.tsiptv.platform.PickedPlaylistFile
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.usecase.playlist.GetCurrentPlaylistUseCase
@@ -275,7 +274,7 @@ class HomeViewModel(
         rememberPrevious(playlist.id)
         // Format, size and the sanitized link (AnalyticsLinks); never names or the raw link.
         if (!fromRefresh) {
-            Firebase.analytics.logEvent(
+            AppAnalytics.logEvent(
                 AnalyticsConstants.EVENT_ADD_IPTV,
                 mapOf(
                     AnalyticsConstants.PARAMS_IPTV_FORMAT to tss.t.tsiptv.core.parser.model.IPTVFormat.TSIPTV_SOURCE.name,
@@ -356,7 +355,7 @@ class HomeViewModel(
         rememberPrevious(playlist.id)
         // Format, size and the sanitized link: raw links carry tokens and |Authorization=
         // suffixes (AnalyticsLinks strips them), and the name the user typed is never sent.
-        Firebase.analytics.logEvent(
+        AppAnalytics.logEvent(
             AnalyticsConstants.EVENT_ADD_IPTV,
             mapOf(
                 AnalyticsConstants.PARAMS_IPTV_FORMAT to result.format.name,

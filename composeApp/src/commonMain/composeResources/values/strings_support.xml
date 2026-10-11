@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Desktop "support the developer" promos that replace ads there (docs/desktop-build.md). -->
+<resources>
+    <string name="support_title">Support TS IPTV</string>
+    <string name="support_banner_body">The desktop app is free and has no ads. A coffee helps keep it that way.</string>
+    <string name="support_button">Support</string>
+    <string name="support_android_title">TS IPTV for Android</string>
+    <string name="support_android_body">The Android app is on Google Play. A rating there helps a lot.</string>
+    <string name="support_android_button">Google Play</string>
+    <string name="support_dialog_title">Support the developer</string>
+    <string name="support_dialog_body">TS IPTV is made by one person. If it is useful to you, any amount helps keep the desktop app free and ad-free.</string>
+    <string name="support_bank_title">Bank transfer (VietQR)</string>
+    <string name="support_bank_hint">Scan with your banking app</string>
+    <string name="support_online_button">Support online</string>
+    <string name="support_later">Later</string>
+</resources>

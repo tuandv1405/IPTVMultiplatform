@@ -1,7 +1,5 @@
 package tss.t.tsiptv.core.tracking
 
-import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.analytics.analytics
 import kotlinx.coroutines.flow.first
 import tss.t.tsiptv.core.firebase.models.FirebaseUser
 import tss.t.tsiptv.core.permission.Permission
@@ -50,20 +48,20 @@ class DefaultUserTrackingService(
                 PermissionResult.GRANTED -> {
                     // Permission granted - set user email as Firebase Analytics user ID
                     user?.email?.let { email ->
-                        Firebase.analytics.setUserId(email)
+                        AppAnalytics.setUserId(email)
                         println("[UserTrackingService] ATT permission granted - set user ID")
                     }
                 }
                 PermissionResult.DENIED, PermissionResult.PERMANENTLY_DENIED -> {
                     // Permission denied - clear any existing user ID
-                    Firebase.analytics.setUserId(null)
+                    AppAnalytics.setUserId(null)
                     println("[UserTrackingService] ATT permission denied - cleared user ID")
                 }
             }
         } catch (e: Exception) {
             println("[UserTrackingService] Error requesting tracking permission: ${e::class.simpleName}")
             // On error, don't set user ID to be safe
-            Firebase.analytics.setUserId(null)
+            AppAnalytics.setUserId(null)
         }
     }
     
@@ -71,12 +69,12 @@ class DefaultUserTrackingService(
         if (isTrackingAllowed()) {
             // Only set user ID if tracking is allowed
             user?.email?.let { email ->
-                Firebase.analytics.setUserId(email)
+                AppAnalytics.setUserId(email)
                 println("[UserTrackingService] Tracking allowed - updated user ID")
             }
         } else {
             // Clear user ID if tracking is not allowed
-            Firebase.analytics.setUserId(null)
+            AppAnalytics.setUserId(null)
             println("[UserTrackingService] Tracking not allowed - cleared user ID")
         }
     }

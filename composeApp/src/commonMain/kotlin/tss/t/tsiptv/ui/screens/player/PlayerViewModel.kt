@@ -3,8 +3,6 @@ package tss.t.tsiptv.ui.screens.player
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.analytics.analytics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +23,7 @@ import tss.t.tsiptv.core.rating.AppRatingController
 import tss.t.tsiptv.core.stremio.MediaPlaybackContext
 import tss.t.tsiptv.core.stremio.MediaProgressTracker
 import tss.t.tsiptv.core.stremio.StremioType
+import tss.t.tsiptv.core.tracking.AppAnalytics
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackState
@@ -164,7 +163,7 @@ class PlayerViewModel(
             if (_mediaPlayer.playbackError.value != null) return@launch
 
             // Hour only: channel names and stream links can identify a private source.
-            Firebase.analytics.logEvent(
+            AppAnalytics.logEvent(
                 AnalyticsConstants.EVENT_PLAY_IPTV_CHANNEL,
                 mapOf(
                     AnalyticsConstants.PARAMS_IPTV_CHANNEL_PLAY_HOUR to Clock.System.now()
@@ -200,7 +199,7 @@ class PlayerViewModel(
             if (_mediaPlayer.playbackError.value != null) return@launch
             progressTracker.start(item.id, playback)
             // Hour and a known content type only: titles and links can identify a private addon.
-            Firebase.analytics.logEvent(
+            AppAnalytics.logEvent(
                 AnalyticsConstants.EVENT_PLAY_ADDON_STREAM,
                 mapOf(
                     AnalyticsConstants.PARAMS_IPTV_CHANNEL_PLAY_HOUR to Clock.System.now()
