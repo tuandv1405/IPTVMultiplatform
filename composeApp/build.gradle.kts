@@ -678,7 +678,8 @@ abstract class Sha256Sums : DefaultTask() {
             }
             md.digest().joinToString("") { "%02x".format(it) } + " *" + file.name
         }
-        sums.get().asFile.writeText(lines.joinToString("\r\n", postfix = "\r\n"))
+        // LF: `sha256sum -c` reads CR as part of the file name; Notepad shows LF fine.
+        sums.get().asFile.writeText(lines.joinToString("\n", postfix = "\n"))
     }
 }
 
