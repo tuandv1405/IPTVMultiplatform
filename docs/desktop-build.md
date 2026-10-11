@@ -1,7 +1,7 @@
 # TS IPTV desktop: build, cài đặt, quảng bá "ủng hộ" thay AdMob
 
-Cập nhật 2026-10-11. Tài liệu cho bản desktop (Compose Multiplatform, JVM). Bản Windows (MSI) đã được
-build và kiểm thử trên máy dev; macOS/Linux chưa kiểm thử.
+Cập nhật 2026-10-11 (lần 2: sửa player desktop, gói phát hành Windows). Tài liệu cho bản desktop (Compose
+Multiplatform, JVM). Bản Windows đã được build và kiểm thử trên máy dev; macOS/Linux chưa build, chưa kiểm thử.
 
 ## 1. Tóm tắt
 
@@ -16,26 +16,58 @@ build và kiểm thử trên máy dev; macOS/Linux chưa kiểm thử.
 
 ## 2. Build và cài
 
-### Windows (MSI)
+### Phát hành Windows (một lệnh)
 
 ```bash
-./gradlew :composeApp:packageReleaseMsi
+./gradlew :composeApp:packageDesktopRelease
 ```
 
-File cài: `composeApp/build/compose/binaries/main-release/msi/TS IPTV-<version>.msi` (~200 MB, trong
-đó VLC chiếm ~110 MB).
+Kết quả nằm trong `composeApp/build/release/desktop/` (mỗi file khoảng 200 MB, trong đó VLC chiếm khoảng 110 MB):
 
+| File | Dành cho | Cách dùng |
+|---|---|---|
+| `TS-IPTV-<v>-Setup.exe` | **Cài 1 chạm** | Nhấp đúp: app tự cài (chỉ hiện thanh tiến trình, không hỏi gì), tạo lối tắt ở Start Menu và Desktop, rồi tự mở. |
+| `TS-IPTV-<v>-Windows-x64.msi` | Cài bằng Windows Installer | Nhấp đúp rồi làm theo hướng dẫn. Cài im lặng: `msiexec /i <file>.msi /passive`. |
+| `TS-IPTV-<v>-Windows-x64-portable.zip` | **Cài thủ công, chạy ngay** | Giải nén vào đâu cũng được, mở thư mục `TS IPTV`, chạy `TS IPTV.exe`. Muốn gỡ thì xoá thư mục. |
+| `README.txt` | Người dùng | Hướng dẫn 3 cách cài, cảnh báo SmartScreen, phím tắt (tiếng Anh và tiếng Việt). |
+| `SHA256SUMS.txt` | Kiểm tra file tải về | Định dạng `sha256sum`. |
+
+- **Cài cho người dùng hiện tại** (`perUserInstall`): cài vào `%LOCALAPPDATA%\TS IPTV`, **không cần quyền
+  admin**, không hiện hộp thoại UAC. Nhờ vậy `Setup.exe` cài được chỉ với một chạm. Gỡ ở Settings > Apps.
+- `Setup.exe` là gói tự giải nén tạo bằng **IExpress** (có sẵn trong Windows, không cần cài thêm). Nó giải
+  nén MSI và `composeApp/packaging/windows/install.cmd` vào thư mục tạm, chạy `msiexec /i … /passive`, rồi
+  mở app. Nếu phiên bản này đã được cài rồi (mã 1638) thì nó chỉ mở app.
+- Dữ liệu người dùng (playlist, lịch sử) nằm ở `%USERPROFILE%\.tsiptv`, còn cài đặt nằm trong Java Preferences
+  (registry `HKCU\Software\JavaSoft\Prefs`). Cài bản mới hay gỡ app đều không xoá dữ liệu này. Bản zip dùng
+  chung dữ liệu với bản cài.
+- **Chưa ký số**: SmartScreen sẽ báo "Windows protected your PC", người dùng phải bấm "More info" rồi
+  "Run anyway". Muốn hết cảnh báo thì cần chứng chỉ code signing (OV/EV), hoặc phát hành qua Microsoft Store
+  (mục 5).
+- Phiên bản lấy từ `versionMajor.versionMinor.versionPatch` trong `composeApp/build.gradle.kts` (dùng chung
+  với Android). **MSI chỉ thay được bản đã cài khi phiên bản mới cao hơn**, nên phải tăng `versionPatch`
+  trước mỗi lần phát hành desktop. `upgradeUuid` cố định, không được đổi.
+- Các task con: `packageDesktopSetupExe`, `packageDesktopMsi`, `packageDesktopPortableZip`,
+  `desktopReleaseSums`. Chỉ chạy được trên Windows (MSI cần WiX do plugin Compose tự tải, Setup.exe cần
+  IExpress).
+
+### Build lẻ, chạy thử
+
+- `./gradlew :composeApp:packageReleaseMsi`: chỉ build MSI, ra file trong `composeApp/build/compose/binaries/main-release/msi/`.
 - Lần build đầu, task `downloadVlcWin64` tải `vlc-3.0.24-win64.zip` từ download.videolan.org và kiểm
   tra SHA-256. Nếu checksum sai, build dừng. Các lần sau dùng lại file trong `composeApp/build/vlc/`.
 - `prepareDesktopVlc` chỉ lấy `libvlc.dll`, `libvlccore.dll`, `plugins/` và `COPYING.txt`. Các plugin
-  GUI, streaming output và visualization bị bỏ (~35 MB). Chỉ máy build Windows mới đóng gói VLC.
+  GUI, streaming output, visualization và hai file `.jar` của Blu-ray bị bỏ (trước đây trình đóng gói đưa hai
+  file jar này vào classpath của app). Chỉ máy build Windows mới đóng gói VLC. Nếu file zip VLC không đổi,
+  Gradle không nhận ra khi bộ lọc thay đổi: sửa danh sách lọc xong thì xoá `composeApp/build/desktop-resources`.
 - Chạy thử không cần cài: `./gradlew :composeApp:run`, hoặc
   `./gradlew :composeApp:createReleaseDistributable` rồi mở
   `composeApp/build/compose/binaries/main-release/app/TS IPTV/TS IPTV.exe`.
-- MSI **chưa ký số**, nên Windows SmartScreen sẽ cảnh báo "Unknown publisher" khi cài. Muốn hết cảnh báo
-  cần chứng chỉ code signing (OV/EV), hoặc phát hành qua Microsoft Store (mục 6).
-- `packageVersion` lấy từ `versionMajor.versionMinor.versionPatch` trong `composeApp/build.gradle.kts`.
-  `upgradeUuid` cố định, nên MSI mới sẽ thay bản cũ. Không được đổi UUID này.
+
+### macOS
+
+**Không build được trên Windows**: `jpackage` chỉ tạo `.dmg` trên máy macOS. Muốn có bản macOS thì cần một
+máy Mac (hoặc runner macOS trên CI) chạy `./gradlew :composeApp:packageReleaseDmg`, và phải đóng gói libVLC
+cho macOS (xem mục "macOS / Linux" bên dưới). Đợt phát hành này chỉ có bản Windows.
 
 ### Cập nhật VLC
 
@@ -48,8 +80,8 @@ Trong `composeApp/build.gradle.kts`, đổi `vlcVersion` và `vlcWin64Sha256`. L
 
 ### macOS / Linux
 
-Hai nền tảng này **chưa đóng gói VLC**: người dùng phải tự cài VLC 3.x. Nếu thiếu VLC, app sẽ lỗi khi
-tạo player (vấn đề đã biết, mục 7). Muốn đóng gói thì làm tương tự Windows, với file
+Hai nền tảng này **chưa đóng gói VLC**: người dùng phải tự cài VLC 3.x. Nếu thiếu VLC, app vẫn mở được nhưng
+kênh nào cũng báo lỗi phát (trước đây app lỗi ngay khi tạo player). Muốn đóng gói thì làm tương tự Windows, với file
 `.dmg` (macOS) hoặc phụ thuộc gói `vlc` trong `.deb` (Linux).
 
 ## 3. Cấu hình kênh ủng hộ
@@ -113,6 +145,30 @@ Mã nguồn liên quan:
 - `desktopMain/.../support/`: `SupportLinks`, các thẻ, dialog, `SupportHost`.
 - Chuỗi giao diện: `composeResources/values*/strings_support.xml` (7 ngôn ngữ).
 
+## 4b. Player trên desktop
+
+- **Hình được vẽ bằng Compose**, không còn dùng cửa sổ AWT riêng. libVLC giải mã vào bộ nhớ (callback
+  `RV32`), `VideoFrameSink` chép từng khung hình sang Skia bitmap, rồi `MediaPlayerContent` vẽ khung hình
+  vừa khít khung (letterbox, đúng tỉ lệ hiển thị). Trước đây `EmbeddedMediaPlayerComponent` (một `Canvas`
+  AWT loại heavyweight) đè lên mọi thứ: che hết nút điều khiển và nuốt mọi cú click, nên không tạm dừng
+  hay thoát player được.
+- **Rê chuột lên video thì nút điều khiển hiện ra** (như mọi player desktop), sau 7 giây tự ẩn. Màn hình cảm
+  ứng không đổi gì: ngón tay chưa chạm thì không tạo sự kiện di chuyển.
+- **Toàn màn hình thật**: nút toàn màn hình giờ phủ kín cả màn hình. Trên Windows, `DesktopFullScreen` bỏ viền
+  và thanh tiêu đề, rồi đặt cửa sổ phủ kín màn hình. Không dùng `WindowPlacement.Fullscreen` của Compose: trên
+  Windows nó đưa tỉ lệ hiển thị về 100 % (ở mức 125 % trở lên, nút bấm bị nhỏ đi, còn thoát ra thì nội dung
+  bị cắt). Thoát toàn màn hình thì cửa sổ về đúng vị trí và kích thước cũ.
+- **Phím tắt** khi player đang mở: Space phát/tạm dừng, F bật/tắt toàn màn hình, Esc thoát toàn màn hình,
+  M tắt tiếng, Trái/Phải tua 10 giây (chỉ với video có thời lượng).
+- Ở cửa sổ ngang, player thu nhỏ cao tối đa 60 % cửa sổ, để vẫn nhìn thấy danh sách kênh bên dưới.
+- Các lỗi đã sửa:
+  - `isPlaying` không bao giờ đổi trên desktop: nút phát/tạm dừng hiện sai, bấm tạm dừng không có tác dụng,
+    lịch sử không tính thời gian xem.
+  - Bấm âm lượng hoặc tắt tiếng thì app crash (`TODO()`).
+  - Bấm tạm dừng hai lần thì video phát tiếp.
+  - Mở kênh mới vẫn thấy khung hình cuối của kênh cũ.
+  - Thanh tiêu đề và taskbar hiện icon Java thay vì icon của app.
+
 ## 5. Phương án thay AdMob trên desktop (khảo sát 2026-10-11)
 
 AdMob chỉ có SDK cho Android/iOS. Bảng dưới xếp theo mức phù hợp với TS IPTV (dev cá nhân ở Việt Nam,
@@ -161,13 +217,36 @@ Nguồn chính:
   định bỏ qua Login (`AppFlags.worksSignedOut`), nhưng màn hình vẫn truy cập được từ Profile.
 - **Không có analytics trên desktop.** `Firebase.analytics` trên JVM là `TODO()` và đã từng làm app
   crash khi thêm playlist. Mọi lệnh gọi giờ đi qua `AppAnalytics` và bị bỏ qua trên desktop.
-- **macOS/Linux:** thiếu VLC thì app lỗi khi tạo player. Chưa có màn hình báo lỗi thân thiện.
+- **macOS/Linux:** chưa build, chưa kiểm thử. Thiếu VLC thì kênh nào cũng báo lỗi phát chung chung, chưa có
+  thông báo riêng kiểu "cần cài VLC".
+- **Hình đi qua bộ nhớ:** mỗi khung hình được chép từ libVLC sang Compose (khoảng 8 MB/khung với 1080p). Máy yếu
+  phát 4K có thể bị rớt khung. Khi đó khung hình bị bỏ qua chứ không dồn lại.
 - **VLC chỉ gửi được 2 header:** `User-Agent` và `Referer`; header khác bị bỏ. Không có DRM
   (Widevine/PlayReady); kênh DRM bị từ chối trước khi phát.
 - **Giấy phép:** libVLC theo LGPL-2.1+, kèm `COPYING.txt` trong thư mục `vlc/`. Phát hành rộng nên ghi
   công VideoLAN trong trang About/giấy phép.
 
-## 8. Đã kiểm thử (2026-10-11, Windows 11)
+## 8. Đã kiểm thử
+
+### Lần 2 (2026-10-11, Windows 11, màn hình 2560×1440 ở mức 125 %, có màn hình phụ)
+
+- Điều khiển giao diện thật của app (chụp màn hình, click chuột, gõ phím):
+  - Thêm playlist `qa/kodi/qc-playback.m3u` qua URL: 9 kênh, 3 mục bị bỏ đúng như mong đợi.
+  - Mở kênh có User-Agent và kênh không có header.
+  - Tạm dừng/phát bằng nút và bằng phím Space, tắt tiếng, tua bằng thanh tua và phím Phải.
+  - Vào/ra toàn màn hình bằng nút, phím F và Esc. Đổi kênh từ danh sách.
+  - Mở lại app thì playlist và lịch sử vẫn còn nguyên.
+- Smoke test tạm (không commit) với libVLC đóng gói, chạy 3 lần đều pass: phát HLS, khung hình tới được
+  Compose, tạm dừng 2 lần vẫn dừng, phát tiếp được, tua tới 2:00, đổi kênh thì khung hình cũ bị xoá, link 404
+  trả về `STREAM_FAILED`, sau lỗi vẫn phát lại được, dừng thì về `IDLE`.
+- `./gradlew :composeApp:desktopTest`: 607 test đều pass. `compileDebugKotlinAndroid` pass.
+- Gói phát hành: mở `Setup.exe` bằng Explorer (giống nhấp đúp) thì cài xong trong khoảng 5 giây, không hỏi gì,
+  có lối tắt ở Start Menu (thư mục "TS IPTV") và Desktop, rồi tự mở app. Gỡ bằng MSI sạch hoàn toàn. Bản zip
+  giải nén ra là chạy được ngay.
+- Chưa kiểm thử: kênh DRM (logic chặn trước không thay đổi), kênh radio, macOS, Linux, máy chưa từng cài
+  Java/VLC (bản đóng gói đã kèm cả hai).
+
+### Lần 1
 
 - `./gradlew :composeApp:desktopTest`: 607 test đều pass. `compileDebugKotlinAndroid` pass.
 - Smoke test tạm (không commit): `DesktopMediaPlayer` + libVLC đóng gói + vlcj 4.12.1 phát luồng HLS

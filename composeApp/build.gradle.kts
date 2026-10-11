@@ -537,6 +537,8 @@ val prepareDesktopVlc by tasks.registering(Sync::class) {
         include("${root}libvlc.dll", "${root}libvlccore.dll", "${root}COPYING.txt", "${root}plugins/**")
         exclude("${root}plugins/gui/**", "${root}plugins/access_output/**", "${root}plugins/stream_out/**")
         exclude("${root}plugins/visualization/**")
+        // Blu-ray menus (BD-J) are Java: the packager put these jars on the app's classpath.
+        exclude("${root}plugins/access/*.jar")
         eachFile { path = path.removePrefix(root) }
     }
     includeEmptyDirs = false
@@ -590,7 +592,12 @@ compose.desktop {
             windows {
                 iconFile.set(rootProject.file("brand/app-icon.ico"))
                 menu = true
+                // Without it the Start Menu folder is called "Unknown".
+                menuGroup = "TS IPTV"
                 shortcut = true
+                // Installs for the current user, under %LOCALAPPDATA%: no administrator prompt, so
+                // TS-IPTV-<version>-Setup.exe installs in one click (packageDesktopRelease below).
+                perUserInstall = true
                 // A stable upgrade code lets a new MSI replace an installed copy
                 // instead of sitting beside it. Never change this for this app.
                 upgradeUuid = "8f3c1d6e-2b4a-4d5f-9a71-6c0e5b2d84f7"
@@ -606,6 +613,129 @@ compose.desktop {
 // A Windows installer is built on Windows, so only a Windows host bundles the Windows libVLC.
 if (System.getProperty("os.name").startsWith("Windows")) {
     tasks.matching { it.name == "prepareAppResources" }.configureEach { dependsOn(prepareDesktopVlc) }
+}
+
+// Windows release: ./gradlew :composeApp:packageDesktopRelease (docs/desktop-build.md §2) writes to
+// build/release/desktop/ a one-click TS-IPTV-<v>-Setup.exe, the MSI, a portable zip, README.txt and
+// SHA256SUMS.txt. Windows hosts only: the MSI needs WiX and the Setup.exe IExpress (part of Windows).
+val desktopVersion = "$versionMajor.$versionMinor.$versionPatch"
+val desktopReleaseDir = layout.buildDirectory.dir("release/desktop")
+val desktopPackaging = layout.projectDirectory.dir("packaging/windows")
+
+/** Wraps [msi] and [installScript] in a self-extracting [setupExe] that runs the script (Windows IExpress). */
+abstract class OneClickSetupExe : DefaultTask() {
+    @get:InputFile abstract val msi: RegularFileProperty
+    @get:InputFile abstract val installScript: RegularFileProperty
+    @get:OutputFile abstract val setupExe: RegularFileProperty
+    @get:javax.inject.Inject abstract val execOperations: ExecOperations
+
+    @TaskAction
+    fun build() {
+        val stage = File(temporaryDir, "files").apply { deleteRecursively(); mkdirs() }
+        // install.cmd refers to these names.
+        msi.get().asFile.copyTo(File(stage, "TS-IPTV.msi"))
+        installScript.get().asFile.copyTo(File(stage, "install.cmd"))
+        val target = setupExe.get().asFile.apply { parentFile.mkdirs(); delete() }
+        // ShowInstallProgramWindow=1 hides the console; msiexec /passive shows its own progress bar.
+        // .\install.cmd, not install.cmd: with NoDefaultCurrentDirectoryInExePath set, cmd does not
+        // look in the current folder.
+        val sed = File(temporaryDir, "setup.sed")
+        sed.writeText(
+            listOf(
+                "[Version]", "Class=IEXPRESS", "SEDVersion=3",
+                "[Options]", "PackagePurpose=InstallApp", "ShowInstallProgramWindow=1",
+                "HideExtractAnimation=0", "UseLongFileName=1", "InsideCompressed=0", "CAB_FixedSize=0",
+                "CAB_ResvCodeSigning=0", "RebootMode=N", "InstallPrompt=", "DisplayLicense=",
+                "FinishMessage=", "TargetName=${target.absolutePath}", "FriendlyName=TS IPTV Setup",
+                "AppLaunched=cmd /c .\\install.cmd", "PostInstallCmd=<None>", "AdminQuietInstCmd=",
+                "UserQuietInstCmd=", "SourceFiles=SourceFiles",
+                "[Strings]", "FILE0=\"TS-IPTV.msi\"", "FILE1=\"install.cmd\"",
+                "[SourceFiles]", "SourceFiles0=${stage.absolutePath}\\",
+                "[SourceFiles0]", "%FILE0%=", "%FILE1%=",
+            ).joinToString("\r\n", postfix = "\r\n")
+        )
+        execOperations.exec { commandLine("iexpress.exe", "/N", "/Q", sed.absolutePath) }
+        if (!target.isFile) throw GradleException("IExpress did not write $target")
+    }
+}
+
+/** Writes [sums] in sha256sum format for [files]. */
+abstract class Sha256Sums : DefaultTask() {
+    @get:InputFiles abstract val files: ConfigurableFileCollection
+    @get:OutputFile abstract val sums: RegularFileProperty
+
+    @TaskAction
+    fun write() {
+        val lines = files.files.filter { it.isFile }.sortedBy { it.name }.map { file ->
+            val md = MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { input ->
+                val buffer = ByteArray(1 shl 16)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    md.update(buffer, 0, read)
+                }
+            }
+            md.digest().joinToString("") { "%02x".format(it) } + " *" + file.name
+        }
+        sums.get().asFile.writeText(lines.joinToString("\r\n", postfix = "\r\n"))
+    }
+}
+
+// Each download is built in its own folder under release/stage, then packageDesktopRelease puts
+// them together in release/desktop.
+val desktopReleaseStage = layout.buildDirectory.dir("release/stage")
+
+val desktopReleaseReadme by tasks.registering(Copy::class) {
+    val version = desktopVersion
+    from(desktopPackaging.file("README.txt"))
+    filter { line: String -> line.replace("{VERSION}", version) }
+    // Notepad users: CRLF whatever git checked out.
+    filter(
+        mapOf("eol" to org.apache.tools.ant.filters.FixCrLfFilter.CrLf.newInstance("crlf")),
+        org.apache.tools.ant.filters.FixCrLfFilter::class.java,
+    )
+    into(desktopReleaseStage.map { it.dir("readme") })
+}
+
+val packageDesktopPortableZip by tasks.registering(Zip::class) {
+    // The app folder "TS IPTV" (TS IPTV.exe, app/, runtime/) at the root of the zip, and README.txt.
+    from(tasks.named("createReleaseDistributable"))
+    from(desktopReleaseReadme)
+    archiveFileName.set("TS-IPTV-$desktopVersion-Windows-x64-portable.zip")
+    destinationDirectory.set(desktopReleaseStage.map { it.dir("zip") })
+    isZip64 = true
+}
+
+// Lambdas below take the version from a local: a script-level val would drag the build script
+// into the configuration cache, which cannot store it.
+val packageDesktopMsi by tasks.registering(Copy::class) {
+    val msiName = "TS-IPTV-$desktopVersion-Windows-x64.msi"
+    from(tasks.named("packageReleaseMsi"))
+    include("*.msi")
+    rename { msiName }
+    into(desktopReleaseStage.map { it.dir("msi") })
+}
+
+val packageDesktopSetupExe by tasks.registering(OneClickSetupExe::class) {
+    val version = desktopVersion
+    msi.set(desktopReleaseStage.map { it.file("msi/TS-IPTV-$version-Windows-x64.msi") })
+    dependsOn(packageDesktopMsi)
+    installScript.set(desktopPackaging.file("install.cmd"))
+    setupExe.set(desktopReleaseStage.map { it.file("setup/TS-IPTV-$version-Setup.exe") })
+}
+
+val desktopReleaseSums by tasks.registering(Sha256Sums::class) {
+    files.from(packageDesktopSetupExe.flatMap { it.setupExe }, packageDesktopPortableZip.flatMap { it.archiveFile })
+    files.from(packageDesktopSetupExe.flatMap { it.msi })
+    sums.set(desktopReleaseStage.map { it.file("sums/SHA256SUMS.txt") })
+}
+
+val packageDesktopRelease by tasks.registering(Sync::class) {
+    group = "compose desktop"
+    description = "Windows release: one-click Setup.exe, MSI, portable zip, README, SHA256SUMS."
+    from(packageDesktopSetupExe, packageDesktopPortableZip, packageDesktopMsi, desktopReleaseReadme, desktopReleaseSums)
+    into(desktopReleaseDir)
 }
 
 room {

@@ -1,67 +1,43 @@
 package tss.t.tsiptv.utils
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
 /**
- * Desktop implementation of ScreenOrientationUtils.
+ * Desktop implementation of ScreenOrientationUtils. The player's full screen is the window's: main.kt
+ * follows [fullScreen] and switches the window placement.
  */
 class DesktopScreenOrientationUtils : ScreenOrientationUtils {
-    private var isFullScreen = false
+    private val _fullScreen = MutableStateFlow(false)
+
+    /** Whether the player asked for full screen; the window follows it. */
+    val fullScreen: StateFlow<Boolean> = _fullScreen.asStateFlow()
+
     override fun setPlayerViewController(viewController: Any?) {
 
     }
 
-    /**
-     * Enter full-screen mode.
-     */
     override fun enterFullScreen() {
-        // Desktop implementation would use JFrame or similar to go full-screen
-        // For now, just update the state
-        isFullScreen = true
+        _fullScreen.value = true
     }
-    
-    /**
-     * Exit full-screen mode.
-     */
+
     override fun exitFullScreen() {
-        // Desktop implementation would use JFrame or similar to exit full-screen
-        // For now, just update the state
-        isFullScreen = false
+        _fullScreen.value = false
     }
-    
-    /**
-     * Toggle full-screen mode.
-     */
+
     override fun toggleFullScreen() {
-        if (isFullScreen()) {
-            exitFullScreen()
-        } else {
-            enterFullScreen()
-        }
+        _fullScreen.value = !_fullScreen.value
     }
-    
+
     /**
-     * Check if the device is in landscape orientation.
-     * Desktop doesn't have orientation in the same way as mobile devices,
-     * but we can consider full-screen mode as "landscape".
+     * Desktop has no orientation; full screen counts as landscape.
      */
-    override fun isLandscape(): Boolean {
-        return isFullScreen
-    }
-    
-    /**
-     * Check if the device is in portrait orientation.
-     * Desktop doesn't have orientation in the same way as mobile devices,
-     * but we can consider non-full-screen mode as "portrait".
-     */
-    override fun isPortrait(): Boolean {
-        return !isFullScreen
-    }
-    
-    /**
-     * Check if the device is in full-screen mode.
-     */
-    override fun isFullScreen(): Boolean {
-        return isFullScreen
-    }
+    override fun isLandscape(): Boolean = _fullScreen.value
+
+    override fun isPortrait(): Boolean = !_fullScreen.value
+
+    override fun isFullScreen(): Boolean = _fullScreen.value
 
     override fun hideSystemUI() {
         // No-op for desktop
@@ -70,11 +46,11 @@ class DesktopScreenOrientationUtils : ScreenOrientationUtils {
     override fun showSystemUI() {
         // No-op for desktop
     }
-    
+
     companion object {
         // Singleton instance
         private val INSTANCE = DesktopScreenOrientationUtils()
-        
+
         fun getInstance(): DesktopScreenOrientationUtils {
             return INSTANCE
         }

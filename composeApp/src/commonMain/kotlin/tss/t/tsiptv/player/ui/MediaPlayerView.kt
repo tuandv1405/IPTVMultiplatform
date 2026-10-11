@@ -57,7 +57,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpSize
@@ -142,9 +144,35 @@ fun MediaPlayerView(
     }
     val screenWidth = LocalWindowInfo.current.containerSize.width
     val screenHeight = LocalWindowInfo.current.containerSize.height
+    val density = LocalDensity.current
+
+    PlayerKeyboardShortcuts(
+        isPlaying = isPlaying,
+        isFullScreen = playerUIState.isFullScreen,
+        isLive = duration <= 0L,
+        onPlayerControl = {
+            autoShowControls = true
+            resetAutoHideTimer++
+            onPlayerControl(it)
+        },
+    )
 
     Box(
         modifier.fillMaxWidth()
+            .pointerInput(PointerEventType.Move) {
+                // A mouse moving over the video shows the controls, as in any desktop player:
+                // otherwise the first click on a hidden button only brings the controls back.
+                // A finger never moves without being pressed, so touch screens are unaffected.
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        if (event.type == PointerEventType.Move && event.changes.none { it.pressed }) {
+                            autoShowControls = true
+                            resetAutoHideTimer++
+                        }
+                    }
+                }
+            }
             .pointerInput(Unit) {
                 detectTapGestures {
                     autoShowControls = !autoShowControls
@@ -191,8 +219,15 @@ fun MediaPlayerView(
         } else {
             MediaPlayerContent(
                 player = player,
-                modifier = Modifier.fillMaxWidth()
-                    .aspectRatio(16 / 9f)
+                modifier = if (screenWidth > screenHeight) {
+                    // A landscape window (desktop, tablet) would give a full-width 16:9 player
+                    // nearly all of its height and push the channels below off screen.
+                    Modifier.fillMaxWidth()
+                        .height(with(density) { min(screenWidth * 9f / 16f, screenHeight * 0.6f).toDp() })
+                } else {
+                    Modifier.fillMaxWidth()
+                        .aspectRatio(16 / 9f)
+                }
             )
         }
         // Under the controls, so play / pause and volume stay reachable.
