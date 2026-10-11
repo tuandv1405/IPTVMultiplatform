@@ -10,6 +10,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.FileDialog
 import java.awt.Frame
+import java.awt.KeyboardFocusManager
+import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
+import javax.swing.SwingUtilities
 
 @Composable
 actual fun rememberPlaylistFilePicker(onResult: (PickedPlaylistFile) -> Unit): PlaylistFilePicker {
@@ -17,20 +21,32 @@ actual fun rememberPlaylistFilePicker(onResult: (PickedPlaylistFile) -> Unit): P
     val latestOnResult by rememberUpdatedState(onResult)
     return remember {
         object : PlaylistFilePicker {
+            private val open = AtomicBoolean(false)
             override val isAvailable: Boolean = true
             override fun launch() {
-                scope.launch { latestOnResult(pickFile()) }
+                if (!open.compareAndSet(false, true)) return
+                // The dialog is modal: it runs its own event loop until it closes, and Compose keeps
+                // rendering inside that loop. Opened from a coroutine of the composition, Compose
+                // re-entered the dispatcher running that coroutine and broke it (ClassCastException,
+                // "Error" window). A plain Swing event of its own keeps the loop outside coroutines.
+                SwingUtilities.invokeLater {
+                    val file = try {
+                        chooseFile()
+                    } finally {
+                        open.set(false)
+                    }
+                    scope.launch { latestOnResult(read(file)) }
+                }
             }
         }
     }
 }
 
-/**
- * The native dialog rather than Swing's JFileChooser, so it looks like the platform's own.
- * It is modal and pumps events itself, so opening it from the UI thread is fine.
- */
-private suspend fun pickFile(): PickedPlaylistFile {
-    val dialog = FileDialog(null as Frame?, "", FileDialog.LOAD).apply {
+/** The native dialog rather than Swing's JFileChooser, so it looks like the platform's own. */
+private fun chooseFile(): File? {
+    // Owned by the app window: centred on it and kept in front of it.
+    val owner = KeyboardFocusManager.getCurrentKeyboardFocusManager().activeWindow as? Frame
+    val dialog = FileDialog(owner, "", FileDialog.LOAD).apply {
         // macOS and Linux filter with this; Windows ignores it and uses the pattern in `file`.
         setFilenameFilter { _, name ->
             PLAYLIST_FILE_EXTENSIONS.any { name.endsWith(".$it", ignoreCase = true) }
@@ -39,9 +55,13 @@ private suspend fun pickFile(): PickedPlaylistFile {
         isMultipleMode = false
     }
     dialog.isVisible = true
-    val file = dialog.files.firstOrNull() ?: return PickedPlaylistFile.Cancelled
-    if (file.length() > MAX_PLAYLIST_FILE_BYTES) return PickedPlaylistFile.TooLarge(file.name)
+    return dialog.files.firstOrNull().also { dialog.dispose() }
+}
+
+private suspend fun read(file: File?): PickedPlaylistFile {
+    if (file == null) return PickedPlaylistFile.Cancelled
     return withContext(Dispatchers.IO) {
+        if (file.length() > MAX_PLAYLIST_FILE_BYTES) return@withContext PickedPlaylistFile.TooLarge(file.name)
         runCatching { PickedPlaylistFile.Picked(file.name, file.readBytes()) }
             .getOrDefault(PickedPlaylistFile.ReadFailed)
     }

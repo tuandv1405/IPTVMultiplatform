@@ -1,6 +1,7 @@
-# TS IPTV Desktop 1.1.1 — Windows (laptop/PC)
+# TS IPTV Desktop 1.1.2 — Windows (laptop/PC)
 
-First desktop release. Windows 10/11, 64-bit only. Java and libVLC 3.0.24 are bundled, so nothing else
+First desktop release (1.1.1 was an internal test build; 1.1.2 replaces it when installed over it).
+Windows 10/11, 64-bit only. Java and libVLC 3.0.24 are bundled, so nothing else
 has to be installed. No macOS build: `jpackage` can only make a `.dmg` on a Mac (see
 `docs/desktop-build.md`, section 2).
 
@@ -8,9 +9,9 @@ Build: `./gradlew :composeApp:packageDesktopRelease` (on Windows) → `composeAp
 
 | File | Use |
 |---|---|
-| `TS-IPTV-1.1.1-Setup.exe` | One-click install: no questions, no administrator prompt, Start Menu and desktop shortcuts, opens the app when done. |
-| `TS-IPTV-1.1.1-Windows-x64.msi` | Windows Installer (silent: `msiexec /i TS-IPTV-1.1.1-Windows-x64.msi /passive`). |
-| `TS-IPTV-1.1.1-Windows-x64-portable.zip` | Manual install: unzip anywhere, run `TS IPTV\TS IPTV.exe`. |
+| `TS-IPTV-1.1.2-Setup.exe` | One-click install: no questions, no administrator prompt, Start Menu and desktop shortcuts, opens the app when done. |
+| `TS-IPTV-1.1.2-Windows-x64.msi` | Windows Installer (silent: `msiexec /i TS-IPTV-1.1.2-Windows-x64.msi /passive`). |
+| `TS-IPTV-1.1.2-Windows-x64-portable.zip` | Manual install: unzip anywhere, run `TS IPTV\TS IPTV.exe`. |
 | `README.txt` | Install guide for users (English and Vietnamese). |
 | `SHA256SUMS.txt` | Checksums of the three packages. |
 
@@ -22,8 +23,12 @@ Build: `./gradlew :composeApp:packageDesktopRelease` (on Windows) → `composeAp
 - **Phím tắt trong player:** Space phát/tạm dừng, F bật/tắt toàn màn hình, Esc thoát toàn màn hình, M tắt tiếng,
   Trái/Phải tua 10 giây (video có thời lượng).
 - **Rê chuột lên video** là hiện nút điều khiển, sau 7 giây tự ẩn.
+- **Player cho màn hình lớn:** khi cửa sổ đủ rộng, video nằm bên trái cùng tên kênh và lịch phát sóng, danh
+  sách kênh nằm ở cột bên phải. Kênh đang phát được tô viền; đổi kênh không che video.
 
 ### Sửa lỗi
+- Nhập playlist từ file không còn báo lỗi: hộp thoại chọn file mở bình thường và file được nhập.
+- Các danh sách ngang (nhóm kênh ở Home, các hàng phim, addon…) cuộn được bằng con lăn chuột và bằng cách kéo.
 - Video không còn đè lên nút điều khiển: trước đây không bấm được tạm dừng, không thoát được player.
 - Nút phát/tạm dừng hiện đúng trạng thái, và lịch sử xem tính đúng thời gian xem.
 - Chỉnh âm lượng hoặc tắt tiếng không còn làm app crash.
@@ -46,8 +51,13 @@ Build: `./gradlew :composeApp:packageDesktopRelease` (on Windows) → `composeAp
 - **Player shortcuts:** Space play/pause, F full screen, Esc leave full screen, M mute, Left/Right seek 10 s
   (videos with a duration).
 - **Moving the mouse over the video** shows the controls; they hide again after 7 s.
+- **Player for large screens:** in a wide window the video sits on the left with the title and the guide,
+  and the channels are in a column on the right. The playing channel is outlined; switching channel never
+  covers the video.
 
 ### Fixed
+- Importing a playlist from a file no longer fails with an error: the file dialog opens and the file is imported.
+- Horizontal lists (channel groups on Home, movie rows, addons…) scroll with the mouse wheel and by dragging.
 - The video no longer covers the player controls. Before, playback could not be paused or left.
 - The play/pause button shows the right state, and watch history counts the time watched.
 - Changing the volume or muting no longer crashes the app.
@@ -68,10 +78,16 @@ Build: `./gradlew :composeApp:packageDesktopRelease` (on Windows) → `composeAp
   (`VideoFrameSink`, `MediaPlayerContent`), replacing the heavyweight AWT canvas.
 - **Full screen on Windows:** borderless window over the monitor through JNA (`DesktopFullScreen`), because
   Compose's `WindowPlacement.Fullscreen` resets the DPI scale on Windows. macOS/Linux keep the Compose one.
+- **Mouse:** `TSLazyRow` (`ui/widgets/TSLazyRow.kt`) maps the vertical wheel and mouse drags to horizontal
+  scrolling on desktop; every horizontal list uses it.
+- **File picker:** the modal `FileDialog` is opened from its own Swing event, not from a Compose coroutine;
+  its nested event loop re-entered Compose's dispatcher and broke the coroutine (`ClassCastException`).
+- **Wide player:** `WidePlayerLayout` in `PlayerScreen.kt`, desktop windows from 960 dp.
 - **Packaging:** `perUserInstall`, Start Menu group "TS IPTV", `Setup.exe` made with IExpress
   (`composeApp/packaging/windows/install.cmd`). The two Blu-ray `.jar` files of VLC are no longer bundled.
 - **Version:** shares `versionMajor.versionMinor.versionPatch` with Android. An MSI only replaces an installed
   version when the new one is higher: bump `versionPatch` before the next desktop release.
-- **Tests:** `desktopTest` 607 passing; Android compiles. Played through the real UI on Windows 11 (125 %
+- **Tests:** `desktopTest` 609 passing (`TSLazyRowMouseTest` added); Android compiles. Played through the real UI on Windows 11 (125 %
   scaling, two monitors) and a headless libVLC smoke test (play, pause, seek, channel switch, 404 error and
-  recovery, stop). Each package was installed, run and uninstalled.
+  recovery, stop). Each package was installed, run and uninstalled. The file picker, wheel scrolling and
+  the wide player were checked in the running app.

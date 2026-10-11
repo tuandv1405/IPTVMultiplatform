@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,6 +69,7 @@ import tss.t.tsiptv.ui.screens.addons.addonTypeLabel
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.tv.TvDefaults
 import tss.t.tsiptv.ui.tv.requestFocusAfterLayout
+import tss.t.tsiptv.ui.widgets.TSLazyRow
 import tss.t.tsiptv.ui.widgets.TSTextField
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.addon_partial_failure
@@ -228,7 +228,7 @@ fun DiscoverContent(
             item(key = "cw") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     AddonSectionTitle(stringResource(Res.string.continue_watching_media), Modifier.padding(horizontal = horizontal))
-                    LazyRow(
+                    TSLazyRow(
                         contentPadding = PaddingValues(horizontal = horizontal, vertical = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(if (isTv) 20.dp else 12.dp),
                     ) {
@@ -258,7 +258,7 @@ fun DiscoverContent(
         }
         if (state.types.size > 1) {
             item(key = "types") {
-                LazyRow(
+                TSLazyRow(
                     contentPadding = PaddingValues(horizontal = horizontal),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
@@ -329,7 +329,7 @@ private fun BoardRowView(
             is RowState.Loaded -> if (state.items.isEmpty()) {
                 Text(stringResource(Res.string.discover_empty_catalog), Modifier.padding(horizontal = horizontal), color = TSColors.TextSecondary, fontSize = 14.sp)
             } else {
-                LazyRow(
+                TSLazyRow(
                     contentPadding = PaddingValues(horizontal = horizontal, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(if (isTv) 20.dp else 12.dp),
                 ) {
@@ -379,7 +379,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchResults(
             val isTv = LocalIsTvMode.current
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 AddonSectionTitle(catalogTitle(group.catalog, group.addon), Modifier.padding(horizontal = horizontal))
-                LazyRow(
+                TSLazyRow(
                     contentPadding = PaddingValues(horizontal = horizontal, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(if (isTv) 20.dp else 12.dp),
                 ) {

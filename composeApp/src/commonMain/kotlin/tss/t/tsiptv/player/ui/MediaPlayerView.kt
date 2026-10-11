@@ -62,6 +62,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -98,6 +99,7 @@ import kotlin.math.min
  *
  * @param mediaItem The media item to play.
  * @param modifier The modifier to apply to this layout.
+ * @param inlineHeight Height of the video when not full screen; null sizes it from the window.
  */
 @Composable
 fun MediaPlayerView(
@@ -107,6 +109,7 @@ fun MediaPlayerView(
     modifier: Modifier = Modifier,
     playerUIState: PlayerUIState,
     onPlayerControl: (PlayerEvent) -> Unit = {},
+    inlineHeight: Dp? = null,
 ) {
     val playbackState by player.playbackState.collectAsState()
     val currentPosition by player.currentPosition.collectAsState()
@@ -219,7 +222,9 @@ fun MediaPlayerView(
         } else {
             MediaPlayerContent(
                 player = player,
-                modifier = if (screenWidth > screenHeight) {
+                modifier = if (inlineHeight != null) {
+                    Modifier.fillMaxWidth().height(inlineHeight)
+                } else if (screenWidth > screenHeight) {
                     // A landscape window (desktop, tablet) would give a full-width 16:9 player
                     // nearly all of its height and push the channels below off screen.
                     Modifier.fillMaxWidth()

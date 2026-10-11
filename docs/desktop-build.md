@@ -160,7 +160,11 @@ Mã nguồn liên quan:
   bị cắt). Thoát toàn màn hình thì cửa sổ về đúng vị trí và kích thước cũ.
 - **Phím tắt** khi player đang mở: Space phát/tạm dừng, F bật/tắt toàn màn hình, Esc thoát toàn màn hình,
   M tắt tiếng, Trái/Phải tua 10 giây (chỉ với video có thời lượng).
-- Ở cửa sổ ngang, player thu nhỏ cao tối đa 60 % cửa sổ, để vẫn nhìn thấy danh sách kênh bên dưới.
+- **Cửa sổ rộng (từ 960 dp, chỉ desktop):** player chia hai cột. Bên trái là video to nhất có thể (16:9),
+  tên kênh và lịch phát sóng; bên phải là cột kênh rộng 380 dp, kênh đang phát có viền xanh và được cuộn tới
+  khi đổi kênh. Đổi kênh không che video. Cửa sổ hẹp hơn vẫn dùng bố cục điện thoại (`WidePlayerLayout`
+  trong `PlayerScreen.kt`).
+- Ở bố cục điện thoại trên cửa sổ ngang, player thu nhỏ cao tối đa 60 % cửa sổ, để vẫn thấy danh sách kênh.
 - Các lỗi đã sửa:
   - `isPlaying` không bao giờ đổi trên desktop: nút phát/tạm dừng hiện sai, bấm tạm dừng không có tác dụng,
     lịch sử không tính thời gian xem.
@@ -168,6 +172,19 @@ Mã nguồn liên quan:
   - Bấm tạm dừng hai lần thì video phát tiếp.
   - Mở kênh mới vẫn thấy khung hình cuối của kênh cũ.
   - Thanh tiêu đề và taskbar hiện icon Java thay vì icon của app.
+
+## 4c. Chuột và hộp thoại trên desktop
+
+- **Danh sách ngang cuộn được bằng chuột** (hàng nhóm kênh ở Home, các hàng của TS IPTV Source, addon,
+  mùa phim…): lăn chuột khi con trỏ nằm trên hàng thì hàng chạy ngang; tới cuối hàng thì lăn tiếp sẽ cuộn
+  trang như cũ. Kéo bằng chuột trái cũng cuộn được, và kéo không bị tính là bấm. Compose chỉ cuộn ngang bằng
+  Shift + lăn chuột hoặc touchpad, nên trước đây chuột thường không cuộn được. Mọi danh sách ngang mới phải
+  dùng `TSLazyRow` (`ui/widgets/TSLazyRow.kt`) thay cho `LazyRow`. Test: `TSLazyRowMouseTest`.
+- **Nhập playlist từ file:** trước đây bấm "Import from file" là hiện cửa sổ "Error" (`ClassCastException`).
+  Hộp thoại chọn file của Windows chạy vòng lặp sự kiện riêng; mở nó từ một coroutine của Compose làm Compose
+  chạy lồng vào dispatcher của chính coroutine đó. Giờ hộp thoại được mở bằng một sự kiện Swing riêng
+  (`PlaylistFilePicker.desktop.kt`), kết quả mới đưa lại cho Compose. Đừng mở hộp thoại modal (FileDialog,
+  JOptionPane…) bên trong `scope.launch` của Compose.
 
 ## 5. Phương án thay AdMob trên desktop (khảo sát 2026-10-11)
 
@@ -227,6 +244,17 @@ Nguồn chính:
   công VideoLAN trong trang About/giấy phép.
 
 ## 8. Đã kiểm thử
+
+### Lần 3 (2026-10-12, cùng máy)
+
+- Chạy app thật, chỉ điều khiển cửa sổ của bản dev (tìm theo process id):
+  - Bấm "Import from file" trước khi sửa: hiện cửa sổ "Error", log có `ClassCastException`. Sau khi sửa:
+    hộp thoại mở, chọn `qa/kodi/qc-addon.strm` thì app báo đúng lỗi addon Kodi; bấm Esc thì đóng, log không
+    có exception.
+  - Lăn chuột trên hàng nhóm kênh ở Home: hàng chạy ngang, danh sách kênh không cuộn.
+  - Player ở cửa sổ 1280 dp: bố cục hai cột, đổi kênh từ cột phải, viền xanh đi theo kênh đang phát.
+- `./gradlew :composeApp:desktopTest`: 609 test đều pass (thêm `TSLazyRowMouseTest`, test này fail với
+  `LazyRow` thường). `compileDebugKotlinAndroid` pass.
 
 ### Lần 2 (2026-10-11, Windows 11, màn hình 2560×1440 ở mức 125 %, có màn hình phụ)
 
