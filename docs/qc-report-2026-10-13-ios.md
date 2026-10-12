@@ -77,6 +77,45 @@ Simulator (S) and device (D). ✅ pass, — not applicable.
 | Subscription info (I16), Notifications screen | ✅ | — | "not available" by design |
 | Become a contributor opens the browser | ✅ | — | |
 
+## Round 4 — app icon, addons, crashes (iPhone 7, iPhone 16e simulator)
+
+Devices: iPhone 7 Plus "iPhone của Tuấn" (iOS 15.8.8, driven through WebDriverAgent) and the
+iPhone 16e simulator (iOS 26.3). Sample addons: `https://hh3dkp.k-20.xyz/manifest.json` (catalog,
+meta, streams) and the Streaming Catalogs addon (`…baby-beamup.club/manifest.json`, catalogs only).
+
+| # | Sev. | Defect | Fix |
+| --- | --- | --- | --- |
+| I23 | Blocker | Device crash (4 reports on "Tun", 01:25–01:43): opening a title from Discover. `MediaDetail` carried the catalogue item as URL-encoded JSON; Navigation matches routes with Kotlin/Native's regex, which recurses per character, and a Vietnamese title + description overflowed the 1 MB main-thread stack (`EXC_BAD_ACCESS`, `KERN_PROTECTION_FAILURE`). The simulator (8 MB) and Android do not show it | The preview moves to `MediaPreviewStore` (in memory, keyed by type and id); the route carries ids only |
+| I24 | Blocker | iOS 15: the app did not start (`dyld: Symbol not found: _OBJC_CLASS_$_UIWindowSceneGeometryPreferencesIOS`). Kotlin/Native binds iOS 16 classes as hard imports even behind version checks | `-weak_framework UIKit` in `Config.xcconfig` |
+| I25 | Major | Adding the Streaming Catalogs addon failed when the link was typed: iOS autocorrect turned `baby-beamup.club` into `baby-beam up.club` ("Enter the addon's manifest link") | Autocorrect and capitalisation off on the addon, playlist and Send-to-TV link fields; the normaliser drops whitespace in the scheme and host and line breaks anywhere |
+| I26 | Minor | Detail screen without poster or background for hh3d titles: its meta sends `"poster": ""`, which won over the catalogue item's image | `fillMissingFrom` treats a blank string as missing |
+| I27 | Minor | iOS app icon was a different, older logo | Generated from `brand/generate_assets.py` (`python brand/generate_assets.py ios`): same mark as the Android launcher; default, dark and tinted variants, opaque 1024 px |
+| — | — | Simulator crash at 01:02 (`gpr_now` abort in gRPC) | Already fixed by I3 (VLCKit link stub); the build that crashed predates it |
+
+| Check | iPhone 7 (iOS 15) | iPhone 16e sim |
+| --- | --- | --- |
+| Launch, log in (Firestore) | ✅ (after I24) | ✅ |
+| Add hh3d addon | ✅ | ✅ |
+| Add Streaming Catalogs addon by typing the link | ✅ (after I25) | ✅ (after I25) |
+| Discover rows, WebP posters | ✅ | ✅ |
+| Open a title from Discover (I23) | ✅ no crash | ✅ |
+| Detail poster and background (I26) | ✅ | ✅ |
+| Play an hh3d episode (HLS 1080p) | ✅ | ✅ |
+| Full screen and back to portrait (iOS 15 rotation path) | ✅ | — |
+| Continue watching after playing | ✅ | — |
+| Catalog-only title (Chernobyl): detail from the catalogue item; Play says "No playable stream was found" | — | ✅ expected: the addon provides no streams |
+| App icon on the home screen | ✅ | — |
+
+Notes:
+- hh3d answers `403 Forbidden: Automated scraping tools are not permitted` to curl's User-Agent;
+  the app sends `TSIPTV/… (Stremio-addon-client)` and is served.
+- hh3d's "HH3D • Phim Lẻ" catalogue is empty on the server (`{"metas":[]}`), so Discover shows
+  "Nothing to show here" for that row.
+- The iPhone 7 has AssistiveTouch on: its floating button sits over the exit-full-screen button
+  in landscape. Back also leaves full screen.
+- `ProgramDetail` still carries its channel row in the route (Base64 JSON: id, name, logo URL);
+  it is much shorter than the Discover preview and did not crash, but follows the same pattern.
+
 ## Not done / known gaps (by design or needs accounts)
 
 - **Push notifications:** iOS binds `NoPushPlatform`; needs an APNs key and FirebaseMessaging (`setup-push-ios.md`).

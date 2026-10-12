@@ -229,8 +229,24 @@ sealed interface ManifestUrlResult {
 object ManifestUrlNormalizer {
     private const val LOCAL_SERVER_PORT = 11470
 
+    /**
+     * Line breaks from a wrapped paste, and spaces in the scheme and host, where a URL never has
+     * them (iOS autocorrect turned `baby-beamup.club` into `baby-beam up.club`). Spaces in the path
+     * are kept: they are escaped like any other character.
+     */
+    internal fun withoutStrayWhitespace(input: String): String {
+        val text = input.trim().filterNot { it == '\n' || it == '\r' || it == '\t' }
+        val schemeEnd = text.indexOf("://")
+        if (schemeEnd < 0) return text
+        val hostStart = schemeEnd + 3
+        val hostEnd = text.indexOf('/', hostStart).let { if (it < 0) text.length else it }
+        return text.substring(0, hostStart).filterNot { it.isWhitespace() } +
+            text.substring(hostStart, hostEnd).filterNot { it.isWhitespace() } +
+            text.substring(hostEnd)
+    }
+
     fun normalize(input: String): ManifestUrlResult {
-        var url = StremioUrlEncoding.escapeIllegal(input.trim())
+        var url = StremioUrlEncoding.escapeIllegal(withoutStrayWhitespace(input))
         if (url.isEmpty()) return ManifestUrlResult.Error(ManifestUrlError.NOT_MANIFEST)
         val schemeEnd = url.indexOf("://")
         if (schemeEnd <= 0) return ManifestUrlResult.Error(ManifestUrlError.NOT_MANIFEST)

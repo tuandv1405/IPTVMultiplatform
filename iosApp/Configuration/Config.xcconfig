@@ -13,6 +13,11 @@
 // ComposeApp (otherwise auto-linked last) and libSystem come first.
 OTHER_LDFLAGS = -lSystem -framework ComposeApp $(SRCROOT)/VLCKitLinkStub/MobileVLCKit.tbd -ObjC -l"bz2" -l"c++" -l"iconv" -l"xml2" -l"z" -framework "AVFoundation" -framework "AudioToolbox" -framework "CFNetwork" -framework "CoreGraphics" -framework "CoreMedia" -framework "CoreText" -framework "OpenGLES" -framework "QuartzCore" -framework "Security" -framework "VideoToolbox"
 
+// The app supports iOS 15.6, but Kotlin/Native binds the iOS 16 classes it uses (behind
+// version checks, e.g. UIWindowSceneGeometryPreferencesIOS) as hard imports: dyld refused to
+// load the app on iOS 15. Weak-linking UIKit makes such a missing class nil instead.
+OTHER_LDFLAGS = $(OTHER_LDFLAGS) -weak_framework UIKit
+
 // `import MobileVLCKit` in Swift would auto-link the real framework again.
 OTHER_SWIFT_FLAGS = $(inherited) -Xfrontend -disable-autolink-framework -Xfrontend MobileVLCKit
 

@@ -134,7 +134,7 @@ fun MediaDetailScreen(
             }
             viewModel.openSource(sourcePlaylistId, route.id, route.videoId, route.openStreams, uiLanguage, labels)
         } else {
-            viewModel.open(route.type, route.id, route.addonId, route.videoId, route.openStreams, route.previewJson)
+            viewModel.open(route.type, route.id, route.addonId, route.videoId, route.openStreams)
         }
     }
     val state by viewModel.state.collectAsState()

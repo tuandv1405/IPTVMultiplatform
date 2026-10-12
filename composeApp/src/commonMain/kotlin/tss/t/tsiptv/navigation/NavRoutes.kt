@@ -70,9 +70,9 @@ object NavRoutes {
     ) : RootRoutes
 
     /**
-     * F2: movie / series / tv detail. [previewJson] is the catalogue item (a `StremioMeta` as JSON)
-     * used when no addon provides meta. [openStreams] opens the stream picker for [videoId]
-     * (Continue watching), resuming from the saved position.
+     * F2: movie / series / tv detail. The catalogue item, used when no addon provides meta, is in
+     * `MediaPreviewStore` (not here: long routes crash Navigation on iOS). [openStreams] opens the
+     * stream picker for [videoId] (Continue watching), resuming from the saved position.
      */
     @Serializable
     data class MediaDetail(
@@ -81,7 +81,6 @@ object NavRoutes {
         val addonId: String? = null,
         val videoId: String? = null,
         val openStreams: Boolean = false,
-        val previewJson: String = "",
         /**
          * F3: set for a TS IPTV Source movie or series: [id] is its pool id in that source (playlist)
          * and the detail is built from the stored source, not from addons.
