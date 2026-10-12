@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -35,6 +36,7 @@ import tss.t.tsiptv.core.storage.KeyValueStorage
 import tss.t.tsiptv.core.tracking.AppAnalytics
 import tss.t.tsiptv.platform.PickedPlaylistFile
 import tss.t.tsiptv.player.models.MediaItem
+import tss.t.tsiptv.ui.screens.player.WidePlayerChannels
 import tss.t.tsiptv.usecase.playlist.GetCurrentPlaylistUseCase
 import tss.t.tsiptv.usecase.playlist.ImportError
 import tss.t.tsiptv.usecase.playlist.ImportOutcome
@@ -81,6 +83,9 @@ class HomeViewModel(
 
     private var importJob: Job? = null
     private var channelsJob: Job? = null
+    private var relatedChannelsJob: Job? = null
+    /** Playlist of the channel [getRelatedChannels] last ran for. */
+    private var relatedPlaylistId: String? = null
 
     /** The picked file waiting for "Replace?"; up to 20 MiB, so kept out of the UI state. */
     private var pendingFile: Pair<String, PickedPlaylistFile.Picked>? = null
@@ -422,7 +427,7 @@ class HomeViewModel(
                         it.copy(
                             isLoading = false,
                             listChannels = searchWithFilter(it.searchText, it.selectedCategory)
-                        )
+                        ).withWidePlayerChannels()
                     }
                 }
         }
@@ -761,28 +766,43 @@ class HomeViewModel(
                     channel.groups.any { it.equals(category.name, ignoreCase = true) }
         }
 
+    /**
+     * The playing channel's group, or every channel of its playlist when it has no group or the
+     * group is empty. One collector at a time: an earlier channel's group must not overwrite it.
+     */
     fun getRelatedChannels(channel: Channel) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val categoryId = channel.categoryId ?: return@launch
+        relatedChannelsJob?.cancel()
+        relatedPlaylistId = channel.playlistId
+        relatedChannelsJob = viewModelScope.launch(Dispatchers.IO) {
+            val playlistChannels = { _currentListChannel.filter { it.playlistId == channel.playlistId } }
+            val categoryId = channel.categoryId
             // Related channels come from the same playlist only (QC r4 N10).
-            iptvDatabase.getChannelsByCategory(categoryId, channel.playlistId)
-                .catch {
-                    emit(_uiState.value.listChannels)
-                }
-                .map {
-                    it.ifEmpty {
-                        _uiState.value.listChannels
-                    }
-                }
+            val group = if (categoryId == null) {
+                flowOf(emptyList())
+            } else {
+                iptvDatabase.getChannelsByCategory(categoryId, channel.playlistId)
+                    .catch { emit(emptyList()) }
+            }
+            group
+                .map { it.ifEmpty { playlistChannels() } }
                 .collect { channels ->
                     _uiState.update {
                         it.copy(
                             relatedChannels = channels
-                        )
+                        ).withWidePlayerChannels()
                     }
                 }
         }
     }
+
+    private fun HomeUiState.withWidePlayerChannels(): HomeUiState = copy(
+        widePlayerChannels = WidePlayerChannels.build(
+            group = relatedChannels,
+            recent = allPlayedChannels,
+            all = _currentListChannel,
+            playlistId = relatedPlaylistId,
+        )
+    )
 
     /**
      * Loads history data for the specified playlist and updates UI state.
@@ -807,7 +827,7 @@ class HomeViewModel(
                                 toIndex = histories.size.coerceAtMost(3)
                             ),
                             allPlayedChannels = histories
-                        )
+                        ).withWidePlayerChannels()
                     }
                 }
         }
@@ -902,6 +922,8 @@ data class HomeUiState(
     val selectedCategory: Category? = null,
     val listChannels: List<Channel> = emptyList(),
     val relatedChannels: List<Channel> = emptyList(),
+    /** The channel column of the desktop wide player: [relatedChannels] topped up (WidePlayerChannels). */
+    val widePlayerChannels: List<Channel> = emptyList(),
     val currentProgram: IPTVProgram? = null,
     val currentProgramList: List<IPTVProgram>? = null,
     val error: Throwable? = null,

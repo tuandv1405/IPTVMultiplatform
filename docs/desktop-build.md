@@ -1,12 +1,13 @@
 # TS IPTV desktop: build, cài đặt, quảng bá "ủng hộ" thay AdMob
 
 Cập nhật 2026-10-11 (lần 2: sửa player desktop, gói phát hành Windows). Tài liệu cho bản desktop (Compose
-Multiplatform, JVM). Bản Windows đã được build và kiểm thử trên máy dev; macOS/Linux chưa build, chưa kiểm thử.
+Multiplatform, JVM). Bản Windows và macOS (Apple Silicon) đã được build và kiểm thử trên máy dev; Linux chưa build,
+chưa kiểm thử.
 
 ## 1. Tóm tắt
 
-- **Desktop phát được video.** Bộ cài Windows đóng gói sẵn libVLC 3.0.24 (bản chính thức của
-  VideoLAN), nên máy người dùng không cần cài VLC.
+- **Desktop phát được video.** Bộ cài Windows và file `.dmg` macOS đóng gói sẵn libVLC 3.0.24 (bản chính
+  thức của VideoLAN), nên máy người dùng không cần cài VLC.
 - **Không có quảng cáo bên thứ ba trên desktop.** Mọi chỗ quảng cáo (banner Home, banner Player, các ô
   native trong danh sách) hiện thẻ **ủng hộ nhà phát triển** hoặc thẻ **bản Android trên Google Play**.
 - **"App open" của desktop là màn hình ủng hộ** (VietQR + link ủng hộ online), hiện khi mở app. Nó tuân
@@ -65,24 +66,61 @@ Kết quả nằm trong `composeApp/build/release/desktop/` (mỗi file khoảng
 
 ### macOS
 
-**Không build được trên Windows**: `jpackage` chỉ tạo `.dmg` trên máy macOS. Muốn có bản macOS thì cần một
-máy Mac (hoặc runner macOS trên CI) chạy `./gradlew :composeApp:packageReleaseDmg`, và phải đóng gói libVLC
-cho macOS (xem mục "macOS / Linux" bên dưới). Đợt phát hành này chỉ có bản Windows.
+Chỉ build được trên máy Mac (`jpackage` chỉ tạo `.dmg` trên macOS).
+
+| Việc | Lệnh | Cấu hình IDE (`.run/`) |
+|---|---|---|
+| Chạy thử (dev) | `./gradlew :composeApp:run` | `desktopApp` |
+| Build file cài | `./gradlew :composeApp:packageReleaseDmg` | `desktopApp (package DMG)` |
+| Chỉ build `.app`, không đóng `.dmg` | `./gradlew :composeApp:createReleaseDistributable` | |
+
+- Kết quả: `composeApp/build/compose/binaries/main-release/dmg/TS IPTV-<v>.dmg` (khoảng 200 MB). Mở file,
+  kéo `TS IPTV` vào `Applications`. Bản `.app` chưa đóng gói nằm ở `…/main-release/app/TS IPTV.app`.
+- **JDK:** Gradle daemon chạy bằng JDK 21 (`gradle/gradle-daemon-jvm.properties`): Gradle tự tìm JDK 21 đã
+  cài, nếu không có thì tự tải về. JBR 25 đi kèm Android Studio làm Kotlin 2.2 lỗi ngay khi cấu hình
+  (`What went wrong: 25.0.3`). Trong Android Studio: Settings > Build Tools > Gradle > Gradle JDK nên để
+  mặc định (theo daemon JVM criteria).
+- **VLC:** task `downloadVlcMac` tải `vlc-3.0.24-<arm64|intel64>.dmg` (đúng kiến trúc của JDK đang build)
+  và kiểm tra SHA-256. `prepareDesktopVlcMac` mount file dmg bằng `hdiutil`, chép `lib/libvlc.dylib`,
+  `lib/libvlccore.dylib` và `plugins/` (bỏ plugin GUI, Growl, streaming output, visualization) vào
+  `build/desktop-resources/macos/vlc`, kèm `COPYING.txt` (LGPL, lấy từ tag 3.0.24 trên code.videolan.org vì
+  file dmg không có). App thấy nó ở `<resources>/vlc/lib`, vlcj tự đặt plugin path là `lib/../plugins`
+  (`DesktopVlc.kt`). `:composeApp:run` cũng dùng bản VLC này, nên máy dev không cần cài VLC.
+- Build trên Mac Apple Silicon ra bản **arm64**; muốn có bản Intel thì build trên Mac Intel (hoặc bằng JDK x64).
+- **Chưa ký số (mặc định):** Compose ký ad-hoc. App chạy bình thường trên máy build. Trên máy khác, file tải
+  từ Internet bị Gatekeeper chặn: lần đầu mở, macOS báo không kiểm tra được app; vào System Settings >
+  Privacy & Security, bấm "Open Anyway" (macOS 15+), hoặc chạy
+  `xattr -dr com.apple.quarantine "/Applications/TS IPTV.app"`.
+- **Ký và notarize** (cần Apple Developer Program): đặt trong `local.properties` (hoặc `-P`, biến môi trường)
+  rồi chạy `./gradlew :composeApp:packageReleaseDmg` và `:composeApp:notarizeReleaseDmg`.
+
+  ```properties
+  TSIPTV_MAC_SIGN_IDENTITY=Developer ID Application: Ten Ban (TEAMID)
+  TSIPTV_MAC_NOTARY_APPLE_ID=ban@example.com
+  TSIPTV_MAC_NOTARY_PASSWORD=xxxx-xxxx-xxxx-xxxx
+  TSIPTV_MAC_NOTARY_TEAM_ID=TEAMID
+  ```
+
+  `TSIPTV_MAC_NOTARY_PASSWORD` là app-specific password tạo ở appleid.apple.com. Chưa thử ký thật.
+- Bundle ID `tss.t.tsiptv.desktop`, icon `brand/app-icon.icns` (ảnh `app-icon-1024.png` thu còn 80 % trên nền
+  trong suốt, đúng lề icon macOS). Dữ liệu người dùng nằm ở `~/.tsiptv`, cài đặt trong
+  `~/Library/Preferences/com.apple.java.util.prefs.plist`.
 
 ### Cập nhật VLC
 
-Trong `composeApp/build.gradle.kts`, đổi `vlcVersion` và `vlcWin64Sha256`. Lấy SHA-256 từ file
-`vlc-<version>-win64.zip.sha256` cạnh file zip trên https://download.videolan.org/pub/videolan/vlc/.
+Trong `composeApp/build.gradle.kts`, đổi `vlcVersion`, `vlcWin64Sha256`, hai giá trị trong `vlcMacSha256`
+và `vlcLicenseSha256`. Lấy SHA-256 từ file `.sha256` cạnh file zip/dmg trên
+https://download.videolan.org/pub/videolan/vlc/ (`win64/`, `macosx/`); `vlcLicenseSha256` là SHA-256 của
+`COPYING.LIB` ở tag mới trên code.videolan.org.
 
 **Phải giữ libVLC 3.x.** App dùng vlcj **4.12.1**, là dòng vlcj dành cho libVLC 3. vlcj 5 (bản cũ
 5.0.0-M4) cần libVLC 4, mà VLC 4 chưa có bản phát hành. Với vlcj 5, player lỗi ngay khi tạo
 (`libvlc_media_get_meta_extra` not found), nên trước đây desktop chưa từng phát được video.
 
-### macOS / Linux
+### Linux
 
-Hai nền tảng này **chưa đóng gói VLC**: người dùng phải tự cài VLC 3.x. Nếu thiếu VLC, app vẫn mở được nhưng
-kênh nào cũng báo lỗi phát (trước đây app lỗi ngay khi tạo player). Muốn đóng gói thì làm tương tự Windows, với file
-`.dmg` (macOS) hoặc phụ thuộc gói `vlc` trong `.deb` (Linux).
+Linux **chưa đóng gói VLC**: người dùng phải tự cài VLC 3.x. Nếu thiếu VLC, app vẫn mở được nhưng kênh nào
+cũng báo lỗi phát. Muốn đóng gói thì thêm phụ thuộc gói `vlc` vào `.deb`.
 
 ## 3. Cấu hình kênh ủng hộ
 
@@ -164,6 +202,9 @@ Mã nguồn liên quan:
   tên kênh và lịch phát sóng; bên phải là cột kênh rộng 380 dp, kênh đang phát có viền xanh và được cuộn tới
   khi đổi kênh. Đổi kênh không che video. Cửa sổ hẹp hơn vẫn dùng bố cục điện thoại (`WidePlayerLayout`
   trong `PlayerScreen.kt`).
+- **Cột kênh bên phải** (`WidePlayerChannels.kt`): các kênh cùng nhóm với kênh đang phát; kênh không có
+  nhóm (hoặc nhóm rỗng) thì hiện mọi kênh của playlist. Nhóm có dưới 10 kênh thì nối thêm các kênh xem gần
+  đây (mới nhất trước), rồi mọi kênh còn lại của playlist. Mỗi kênh chỉ xuất hiện một lần.
 - Ở bố cục điện thoại trên cửa sổ ngang, player thu nhỏ cao tối đa 60 % cửa sổ, để vẫn thấy danh sách kênh.
 - Các lỗi đã sửa:
   - `isPlaying` không bao giờ đổi trên desktop: nút phát/tạm dừng hiện sai, bấm tạm dừng không có tác dụng,
@@ -234,8 +275,9 @@ Nguồn chính:
   định bỏ qua Login (`AppFlags.worksSignedOut`), nhưng màn hình vẫn truy cập được từ Profile.
 - **Không có analytics trên desktop.** `Firebase.analytics` trên JVM là `TODO()` và đã từng làm app
   crash khi thêm playlist. Mọi lệnh gọi giờ đi qua `AppAnalytics` và bị bỏ qua trên desktop.
-- **macOS/Linux:** chưa build, chưa kiểm thử. Thiếu VLC thì kênh nào cũng báo lỗi phát chung chung, chưa có
-  thông báo riêng kiểu "cần cài VLC".
+- **macOS:** chưa ký số, chưa notarize (xem mục 2, macOS). Mới kiểm thử bản arm64.
+- **Linux:** chưa build, chưa kiểm thử. Thiếu VLC thì kênh nào cũng báo lỗi phát chung chung, chưa có thông
+  báo riêng kiểu "cần cài VLC".
 - **Hình đi qua bộ nhớ:** mỗi khung hình được chép từ libVLC sang Compose (khoảng 8 MB/khung với 1080p). Máy yếu
   phát 4K có thể bị rớt khung. Khi đó khung hình bị bỏ qua chứ không dồn lại.
 - **VLC chỉ gửi được 2 header:** `User-Agent` và `Referer`; header khác bị bỏ. Không có DRM
@@ -244,6 +286,17 @@ Nguồn chính:
   công VideoLAN trong trang About/giấy phép.
 
 ## 8. Đã kiểm thử
+
+### macOS (2026-10-12, MacBook Apple Silicon, macOS 26)
+
+- `./gradlew :composeApp:run` mở app; `packageReleaseDmg` ra `TS IPTV-1.1.3.dmg` (200 MB, app 313 MB), phát hành trên GitHub là `desktop-1.1.3`;
+  `codesign --verify --deep --strict` pass; mở `TS IPTV.app` thì app chạy.
+- Smoke test tạm (không commit) chạy bằng chính launcher của app đã đóng gói (cùng chữ ký ad-hoc, hardened
+  runtime, `disable-library-validation`): `DesktopVlc` thấy `resources/vlc/lib`, vlcj nạp libVLC 3.0.24, phát
+  HLS bipbop của Apple tới trạng thái PLAYING. Tạo player lần đầu mất khoảng 5 giây.
+- Lưu ý: lần đầu nạp các file VLC gốc (chữ ký VideoLAN, chưa ký lại) mất khoảng 3 phút, vì macOS kiểm tra chữ
+  ký của từng plugin. Bản trong app đã được Compose ký lại nên không gặp.
+- Chưa kiểm thử: bấm phát kênh qua giao diện của bản `.dmg`, máy Mac khác (Gatekeeper), bản Intel.
 
 ### Lần 3 (2026-10-12, cùng máy)
 

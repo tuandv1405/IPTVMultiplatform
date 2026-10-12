@@ -204,7 +204,7 @@ kotlin {
 // versionCode ceiling of 2,100,000,000 is a concern.
 val versionMajor = 1
 val versionMinor = 1
-val versionPatch = 2
+val versionPatch = 3
 
 // 1.0.1 -> 1_000_001. Strictly increasing as long as the three parts only go up,
 // and already above the 26301 this replaced.
@@ -484,13 +484,22 @@ dependencies {
     // Room is used for all platforms
 }
 
-// Desktop playback needs libVLC (vlcj is only the Java binding). The Windows installer bundles the
-// official VLC build so the app plays on a machine without VLC; macOS and Linux use the system VLC.
-// See docs/desktop-build.md. To update: change the version and the SHA-256 published next to the zip
-// on download.videolan.org.
+// Desktop playback needs libVLC (vlcj is only the Java binding). The Windows and macOS packages bundle
+// the official VLC build so the app plays on a machine without VLC; Linux uses the system VLC.
+// See docs/desktop-build.md. To update: change the version and the SHA-256s published next to the
+// zip/dmg files on download.videolan.org.
 val vlcVersion = "3.0.24"
 val vlcWin64Sha256 = "fcf30850371ad10c9373cc4f0f4501e7dee49e3e9ae9f20c72fb2661a1ca6323"
 val vlcWin64Zip = layout.buildDirectory.file("vlc/vlc-$vlcVersion-win64.zip")
+// jpackage builds for the architecture of the JDK running it, so the Mac build bundles that libVLC.
+val vlcMacArch = if (System.getProperty("os.arch") == "aarch64") "arm64" else "intel64"
+val vlcMacSha256 = mapOf(
+    "arm64" to "64a89d93cdd30b0e97131743e246373db82d6826ea882d265d46d74b136da2b7",
+    "intel64" to "1ef6c903e2dc026d4e58ddf7b2a9ed0eb6f8caf80a9a9f46f96490340b962707",
+).getValue(vlcMacArch)
+val vlcMacDmg = layout.buildDirectory.file("vlc/vlc-$vlcVersion-$vlcMacArch.dmg")
+// The Mac dmg has no licence file (the Windows zip has COPYING.txt): take it from the same VLC tag.
+val vlcLicenseSha256 = "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551"
 
 /** Downloads [url] to [destination] unless it is already there, and fails if the SHA-256 differs. */
 abstract class DownloadVerifiedFile : DefaultTask() {
@@ -543,6 +552,65 @@ val prepareDesktopVlc by tasks.registering(Sync::class) {
     }
     includeEmptyDirs = false
     into(layout.buildDirectory.dir("desktop-resources/windows/vlc"))
+}
+
+val downloadVlcMac by tasks.registering(DownloadVerifiedFile::class) {
+    url.set("https://download.videolan.org/pub/videolan/vlc/$vlcVersion/macosx/vlc-$vlcVersion-$vlcMacArch.dmg")
+    sha256.set(vlcMacSha256)
+    destination.set(vlcMacDmg)
+}
+
+val downloadVlcLicense by tasks.registering(DownloadVerifiedFile::class) {
+    url.set("https://code.videolan.org/videolan/vlc/-/raw/$vlcVersion/COPYING.LIB")
+    sha256.set(vlcLicenseSha256)
+    destination.set(layout.buildDirectory.file("vlc/COPYING-$vlcVersion.txt"))
+}
+
+/**
+ * Copies libVLC out of VLC.app in the official dmg, in VLC.app's own layout (`lib/` next to `plugins/`):
+ * vlcj finds `lib/libvlc.dylib` on `jna.library.path` and sets the plugin path to `lib/../plugins`
+ * (DesktopVlc.kt). macOS hosts only: the dmg is mounted with hdiutil.
+ */
+abstract class ExtractMacVlc : DefaultTask() {
+    @get:InputFile abstract val dmg: RegularFileProperty
+    @get:InputFile abstract val license: RegularFileProperty
+    @get:OutputDirectory abstract val destination: DirectoryProperty
+    @get:javax.inject.Inject abstract val execOperations: ExecOperations
+    @get:javax.inject.Inject abstract val fileSystemOperations: FileSystemOperations
+
+    @TaskAction
+    fun extract() {
+        val mount = File(temporaryDir, "mnt")
+        mount.mkdirs()
+        execOperations.exec {
+            commandLine("hdiutil", "attach", "-quiet", "-nobrowse", "-readonly", "-noautoopen", "-noverify",
+                "-mountpoint", mount.absolutePath, dmg.get().asFile.absolutePath)
+        }
+        try {
+            fileSystemOperations.sync {
+                // The unversioned names are symlinks: the copy follows them, and libvlc.dylib asks
+                // for @rpath/libvlccore.dylib by exactly that name.
+                from(File(mount, "VLC.app/Contents/MacOS")) {
+                    include("lib/libvlc.dylib", "lib/libvlccore.dylib", "plugins/*.dylib")
+                    // VLC's own GUI and Growl notifications link frameworks that are not copied.
+                    exclude("plugins/libmacosx_plugin.dylib", "plugins/libosx_notifications_plugin.dylib")
+                    // Same cuts as Windows: streaming output and visualisations.
+                    exclude("plugins/libaccess_output_*", "plugins/libstream_out_*")
+                    exclude("plugins/libgoom_plugin.dylib", "plugins/libvisual_plugin.dylib")
+                }
+                from(license) { rename { "COPYING.txt" } }
+                into(destination)
+            }
+        } finally {
+            execOperations.exec { commandLine("hdiutil", "detach", "-quiet", mount.absolutePath) }
+        }
+    }
+}
+
+val prepareDesktopVlcMac by tasks.registering(ExtractMacVlc::class) {
+    dmg.set(downloadVlcMac.flatMap { it.destination })
+    license.set(downloadVlcLicense.flatMap { it.destination })
+    destination.set(layout.buildDirectory.dir("desktop-resources/macos/vlc"))
 }
 
 compose.desktop {
@@ -603,6 +671,29 @@ compose.desktop {
                 upgradeUuid = "8f3c1d6e-2b4a-4d5f-9a71-6c0e5b2d84f7"
             }
 
+            macOS {
+                // brand/app-icon-1024.png at 80 % on a transparent canvas, the margin macOS icons have.
+                iconFile.set(rootProject.file("brand/app-icon.icns"))
+                bundleID = "tss.t.tsiptv.desktop"
+                dockName = "TS IPTV"
+                appCategory = "public.app-category.video"
+                // Unsigned unless TSIPTV_MAC_SIGN_IDENTITY is set (docs/desktop-build.md, macOS).
+                billingSetting("TSIPTV_MAC_SIGN_IDENTITY", "").takeIf { it.isNotEmpty() }?.let { identity ->
+                    signing {
+                        sign.set(true)
+                        this.identity.set(identity)
+                    }
+                    // Apple ID, an app-specific password (appleid.apple.com) and the team ID.
+                    billingSetting("TSIPTV_MAC_NOTARY_APPLE_ID", "").takeIf { it.isNotEmpty() }?.let { id ->
+                        notarization {
+                            appleID.set(id)
+                            password.set(billingSetting("TSIPTV_MAC_NOTARY_PASSWORD", ""))
+                            teamID.set(billingSetting("TSIPTV_MAC_NOTARY_TEAM_ID", ""))
+                        }
+                    }
+                }
+            }
+
             linux {
                 iconFile.set(rootProject.file("brand/app-icon-512.png"))
             }
@@ -610,9 +701,14 @@ compose.desktop {
     }
 }
 
-// A Windows installer is built on Windows, so only a Windows host bundles the Windows libVLC.
-if (System.getProperty("os.name").startsWith("Windows")) {
-    tasks.matching { it.name == "prepareAppResources" }.configureEach { dependsOn(prepareDesktopVlc) }
+// An installer is built on its own OS, so each host bundles only its own libVLC (macOS: also for
+// ./gradlew :composeApp:run, which reads the same app resources).
+val hostOs: String = System.getProperty("os.name")
+when {
+    hostOs.startsWith("Windows") ->
+        tasks.matching { it.name == "prepareAppResources" }.configureEach { dependsOn(prepareDesktopVlc) }
+    hostOs.startsWith("Mac") ->
+        tasks.matching { it.name == "prepareAppResources" }.configureEach { dependsOn(prepareDesktopVlcMac) }
 }
 
 // Windows release: ./gradlew :composeApp:packageDesktopRelease (docs/desktop-build.md §2) writes to
