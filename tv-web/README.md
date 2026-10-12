@@ -37,6 +37,8 @@ tv-web/
   platforms/tizen/     config.xml, icon 512x423
   scripts/build.js     ghép src + platforms vào dist/webos, dist/tizen; ghi version từ package.json
   scripts/serve.js     server thử trên máy tính
+  scripts/package-tizen.js  ký dist/tizen thành dist/TSIPTV.wgt
+  scripts/sim-check.js kiểm tra tự động trong trình giả lập TV (xem dưới)
   scripts/make_icons.py  tạo icon từ brand/ (Pillow)
   test/                node --test
 ```
@@ -86,21 +88,65 @@ Samsung Certificate Manager (author + distributor, có DUID của TV thử). Đ�
 `package:tizen` trong `package.json`).
 
 ```bash
-npm run package:tizen     # -> dist/tizen/TS IPTV.wgt
-tizen install -n "TS IPTV.wgt" -t <tên TV trong sdb devices> -- dist/tizen
-tizen run -p TSIPTVtv01.TSIPTV -t <tên TV>
+npm run package:tizen     # -> dist/TSIPTV.wgt  (TIZEN_PROFILE=<profile> nếu không dùng TSIPTV)
+tizen install -n TSIPTV.wgt -s <serial trong sdb devices> -- dist
+tizen run -p TSIPTVtv01.TSIPTV -s <serial>
 ```
+
+Nếu `tizen` không có trong PATH, đặt `TIZEN_STUDIO=<thư mục Tizen Studio>`. Tizen CLI tự đặt tên gói theo
+`<name>` ("TS IPTV.wgt"); dấu cách làm `tizen install -n` lỗi trên Windows nên script đổi thành `TSIPTV.wgt`.
+
+**TV Samsung và cả Samsung TV Emulator (Tizen 10) chỉ nhận gói ký bằng chứng chỉ Samsung.** Gói ký bằng
+chứng chỉ Tizen thường bị từ chối: `install failed[118, -12] ... Invalid certificate chain`. Tạo chứng chỉ
+Samsung bằng Certificate Manager (`tools/certificate-manager/certificate-manager.exe`), đăng nhập tài khoản
+Samsung, chọn TV, thêm DUID của TV/emulator vào distributor certificate.
 
 Package ID `TSIPTVtv01` (10 ký tự) và application ID `TSIPTVtv01.TSIPTV` cũng cố định sau khi lên store.
 **Sao lưu author certificate**: mất nó thì không cập nhật được app.
 
+## Thử trên trình giả lập (máy tính, không cần TV)
+
+`scripts/sim-check.js` điều khiển app trong trình giả lập qua DevTools (gửi phím remote vào trang, không
+đụng chuột/bàn phím thật) và kiểm tra: thông báo lần đầu, thêm playlist từ máy chủ không có CORS, nhóm,
+điều hướng lưới, phát HLS, kênh hỏng báo lỗi, Back, hỏi thoát. Ảnh chụp ở `dist/sim-check/`.
+
+**LG webOS TV Simulator** (tải ở webostv.developer.lge.com → Tools → Simulator, bản zip, giải nén là chạy;
+bản 6.0 là Chromium 79, gần TV cũ nhất):
+
+```bash
+npm run build
+"<Simulator>/webOS_TV_6.0_Simulator_1.4.1.exe" "<đường dẫn tuyệt đối>/dist/webos" "{}" \
+  --remote-debugging-port=9334 --disable-backgrounding-occluded-windows
+node scripts/sim-check.js --port 9334 --page dist/webos/index.html --back 461
+```
+
+**Samsung TV Web Simulator** (có sẵn trong Tizen Studio sau khi cài TV Extension: `tools/sec-tv-simulator`;
+Chromium 55; app chạy trong iframe; nó chép app lúc khởi động nên build lại thì phải mở lại):
+
+```bash
+simulator.exe --file=file:///<đường dẫn tuyệt đối>/dist/tizen/index.html --platform=tizentv \
+  --tizentvversion=10.0 --resolution=1920x1080 --remote-debugging-port=9335 --disableInspector
+node scripts/sim-check.js --port 9335 --page ripple.html --frame appLauncher --back 10009
+```
+
+AVPlay của Web Simulator chỉ là bản giả: không phát được H.264 (thiếu codec), nên bước phát HLS báo SKIP.
+Phát thật bằng AVPlay cần Samsung TV Emulator hoặc TV, cả hai cần chứng chỉ Samsung (xem trên).
+
+Cài Tizen Studio trên Windows không có quyền admin: chạy bộ cài với `__COMPAT_LAYER=RunAsInvoker`, cài vào
+thư mục không có dấu cách. Package Manager cần Java 8 (JDK đi kèm trong `tizen-studio/jdk`, chép ra chỗ
+khác trước khi update vì nó tự thay JDK đó). Nếu biến môi trường `NoDefaultCurrentDirectoryInExePath` đang
+bật, script `Install.bat` của các gói sẽ lỗi "is not recognized": bỏ biến đó khi chạy Package Manager.
+Emulator TV cần WHPX (Windows Hypervisor Platform) hoặc HAXM.
+
 ## Đã kiểm tra / chưa kiểm tra
 
-- Đã chạy tự động trên Edge (Chromium) 1920x1080 không giao diện: thông báo lần đầu, thêm danh sách (bàn
-  phím), nhóm, lưới cuộn, chọn nhóm, phát HLS thật (Mux test stream), yêu thích, đổi kênh sang kênh hỏng
-  (báo lỗi sau ~1 giây), Back về đúng kênh, hộp thoại thoát. Đã tạo `.ipk` bằng `ares-package`.
-- **Chưa chạy trên TV thật.** Cần thử trên TV LG và Samsung trước khi nộp store, đặc biệt:
-  - tải playlist từ máy chủ khác (CORS khi app chạy từ `file://`);
-  - AVPlay trên Samsung (chưa chạy được ngoài TV);
-  - stream `.ts` thô (không phải HLS) trên LG;
+- Edge (Chromium mới) 1920x1080 không giao diện: toàn bộ luồng, phát HLS thật.
+- LG webOS TV 6.0 Simulator (Chromium 79): `sim-check` đạt 13/13, gồm tải playlist từ `file://` không cần
+  CORS và phát HLS bằng hls.js (Simulator không có HLS gốc; TV LG thật có).
+- Samsung TV Web Simulator (Chromium 55, `webapis`/`tizen` giả lập): đạt hết trừ bước phát (SKIP như trên);
+  `webapis.js`, `tvinputdevice.registerKey`, phím Back 10009, AVPlay `open/stop/close` chạy không lỗi.
+- Samsung TV Emulator (Tizen 10): đã chạy được (WHPX), nhưng chưa cài được app vì cần chứng chỉ Samsung.
+- **Chưa chạy trên TV thật.** Cần thử trước khi nộp store:
+  - AVPlay phát HLS / MPEG-TS trên Samsung (emulator hoặc TV, cần chứng chỉ Samsung);
+  - stream `.ts` thô (không phải HLS) và HLS gốc trên LG;
   - phím Back/CH/màu trên remote thật, bàn phím ảo khi nhập đường dẫn.

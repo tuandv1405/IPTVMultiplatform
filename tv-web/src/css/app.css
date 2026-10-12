@@ -127,7 +127,8 @@ body.playing #player-layer { display: block; background: transparent; }
 .card .num { position: absolute; left: 0.8rem; top: 0.5rem; font-size: 1.05rem; color: var(--text-dim); }
 .card .star { position: absolute; right: 0.8rem; top: 0.4rem; color: var(--accent); font-size: 1.3rem; }
 .card.drm { opacity: 0.5; }
-.card.focused { border-color: var(--accent); background: var(--navy-700); }
+/* A ring inside the card: an outline is square on older TV browsers and the grid clips it on the first row. */
+.card.focused { outline: none; border-color: var(--accent); box-shadow: inset 0 0 0 0.2rem var(--accent); background: var(--navy-700); }
 
 .grid-message {
   position: absolute;
