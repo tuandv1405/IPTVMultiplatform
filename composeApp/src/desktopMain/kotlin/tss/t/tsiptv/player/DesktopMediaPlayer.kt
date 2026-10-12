@@ -10,6 +10,11 @@ import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackError
 import tss.t.tsiptv.player.models.PlaybackPreflight
 import tss.t.tsiptv.player.models.PlaybackState
+import uk.co.caprica.vlcj.factory.DialogHandlerAdapter
+import uk.co.caprica.vlcj.factory.DialogId
+import uk.co.caprica.vlcj.factory.DialogQuestionType
+import uk.co.caprica.vlcj.factory.DialogType
+import uk.co.caprica.vlcj.factory.Dialogs
 import uk.co.caprica.vlcj.player.base.MediaPlayer
 import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter
 import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer
@@ -65,6 +70,9 @@ class DesktopMediaPlayer(
     private val vlcFactory: VlcFactory? = runCatching { VlcFactory("--quiet") }
         .onFailure { println("libVLC unavailable, desktop playback is off: $it") }
         .getOrNull()
+
+    // Held so the native callbacks stay reachable for the factory's lifetime.
+    private val vlcDialogs: Dialogs? = vlcFactory?.let(::acceptInsecureSites)
 
     private val vlcjMediaPlayer: EmbeddedMediaPlayer? = vlcFactory?.let { factory ->
         factory.mediaPlayers().newEmbeddedMediaPlayer().apply {
@@ -131,6 +139,34 @@ class DesktopMediaPlayer(
             }
         }
     }
+
+    /**
+     * Stream hosts often present a certificate for another name (CDN wildcards, e.g. a Stremio
+     * addon's `pull1.example.com` served with `*.liveplay.myqcloud.com`). Android's player trusts
+     * every certificate (PlayerHttpDataSource); libVLC instead asks "Insecure site" twice ("View
+     * certificate", then "Accept 24 hours") and, with nobody to answer, fails the stream. Both are
+     * answered with action 1, so the key is kept for 24 hours like VLC's own player does. Any other
+     * question is dismissed, which is libVLC's behaviour without a handler.
+     *
+     * The title is matched in English: the bundled VLC ships no translations (prepareDesktopVlc).
+     */
+    private fun acceptInsecureSites(factory: VlcFactory): Dialogs? = runCatching {
+        factory.dialogs().newDialogs(DialogType.QUESTION).apply {
+            addDialogHandler(object : DialogHandlerAdapter() {
+                override fun displayQuestion(
+                    userData: Long?, id: DialogId, title: String?, text: String?,
+                    type: DialogQuestionType?, cancel: String?, action1: String?, action2: String?,
+                ) {
+                    val accept = title == "Insecure site" && action1 != null
+                    // Never call back into libVLC from its own callback thread.
+                    coroutineScope.launch(Dispatchers.IO) {
+                        if (accept) factory.dialogs().postAction(id, 1) else factory.dialogs().dismiss(id)
+                    }
+                }
+            })
+            factory.dialogs().enable(this)
+        }
+    }.onFailure { println("libVLC dialogs unavailable: $it") }.getOrNull()
 
     override suspend fun prepare(mediaItem: MediaItem) {
         _currentMedia.value = mediaItem
@@ -263,6 +299,7 @@ class DesktopMediaPlayer(
 
     override suspend fun release() {
         vlcjMediaPlayer?.release()
+        if (vlcDialogs != null) vlcFactory?.dialogs()?.disable()
         vlcFactory?.release()
         _isPlaying.value = false
         _playbackState.value = PlaybackState.IDLE

@@ -1,11 +1,14 @@
 package tss.t.tsiptv.feature.auth.presentation.viewmodel
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import tss.t.tsiptv.core.firebase.models.DeactivationRequest
 import tss.t.tsiptv.core.firebase.models.FirebaseUser
-import tss.t.tsiptv.core.network.NetworkConnectivityCheckerFactory
+import tss.t.tsiptv.core.network.NetworkConnectivityChecker
 import tss.t.tsiptv.core.permission.PermissionCheckerFactory
 import tss.t.tsiptv.core.tracking.DefaultUserTrackingService
 import tss.t.tsiptv.feature.auth.domain.model.AuthResult
@@ -14,6 +17,8 @@ import tss.t.tsiptv.feature.auth.domain.model.AuthToken
 import tss.t.tsiptv.feature.auth.domain.repository.AuthRepository
 import tss.t.tsiptv.ui.screens.login.AuthViewModel
 import tss.t.tsiptv.ui.screens.login.models.LoginEvents
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -78,12 +83,25 @@ private class FakeAuthRepository : AuthRepository {
     override suspend fun getCurrentUser(): FirebaseUser? = null
 }
 
+/** The platform checkers need an Android Context, which host tests do not have. */
+private object OnlineChecker : NetworkConnectivityChecker {
+    override fun isNetworkAvailable(): Boolean = true
+    override fun observeNetworkStatus(): Flow<Boolean> = flowOf(true)
+}
+
 class AuthViewModelTest {
+
+    // viewModelScope runs on Main; Android host tests have no main looper.
+    @BeforeTest
+    fun setUp() = Dispatchers.setMain(Dispatchers.Unconfined)
+
+    @AfterTest
+    fun tearDown() = Dispatchers.resetMain()
 
     private fun viewModelWith(repository: AuthRepository) = AuthViewModel(
         authRepository = repository,
         userTrackingService = DefaultUserTrackingService(PermissionCheckerFactory.create()),
-        networkConnectivityChecker = NetworkConnectivityCheckerFactory.create()
+        networkConnectivityChecker = OnlineChecker
     )
 
     @Test

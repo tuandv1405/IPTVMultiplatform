@@ -8,12 +8,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withTimeout
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackError
 import tss.t.tsiptv.player.models.PlaybackState
 import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -47,8 +50,15 @@ class MediaProgressTrackerTest {
     private val player = FakeMediaPlayer()
     private val tracker = MediaProgressTracker(player, history, scope, intervalMs = 50)
 
+    // The tracker seeks on Main; Android host tests have no main looper.
+    @BeforeTest
+    fun setUp() = Dispatchers.setMain(Dispatchers.Default)
+
     @AfterTest
-    fun tearDown() = scope.cancel()
+    fun tearDown() {
+        scope.cancel()
+        Dispatchers.resetMain()
+    }
 
     private val context = MediaPlaybackContext(
         sourceAddonId = "a", itemType = "movie", itemId = "m", videoId = "m", title = "Movie", subtitle = null,
