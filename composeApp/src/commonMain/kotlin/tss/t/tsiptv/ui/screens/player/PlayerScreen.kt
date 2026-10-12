@@ -124,7 +124,12 @@ fun PlayerScreen(
     @Suppress("NAME_SHADOWING")
     val homeUIState = remember(homeUIState, mediaItem.id) {
         if (isAddonItemId(mediaItem.id)) {
-            homeUIState.copy(relatedChannels = emptyList(), currentProgram = null, currentProgramList = null)
+            homeUIState.copy(
+                relatedChannels = emptyList(),
+                widePlayerChannels = emptyList(),
+                currentProgram = null,
+                currentProgramList = null,
+            )
         } else homeUIState
     }
     val isPlaying by mediaPlayer.isPlaying.collectAsState()
@@ -249,7 +254,7 @@ fun PlayerScreen(
             mediaPlayer = mediaPlayer,
             playerControlState = playerControlState,
             adsViewModel = adsViewModel,
-            channelRows = playerChannelRows,
+            channelRows = rememberPlayerChannelRows(homeUIState.widePlayerChannels),
             programListState = programListState,
             onEvent = onEvent,
         )
