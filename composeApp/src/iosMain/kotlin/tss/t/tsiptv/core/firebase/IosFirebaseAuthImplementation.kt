@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.Foundation.NSError
-import tss.t.tsiptv.core.firebase.auth.InMemoryFirebaseAuth
 import tss.t.tsiptv.core.firebase.exceptions.FirebaseAuthException
 import tss.t.tsiptv.core.firebase.models.FirebaseUser
 import kotlin.coroutines.resume
@@ -206,27 +205,21 @@ class IosFirebaseAuthImplementation : IFirebaseAuth {
     }
 
     override suspend fun updateEmail(email: String) {
-        // In a real implementation, this would be:
-        /*
+        val currentUser = FIRAuth.auth().currentUser() ?: throw FirebaseAuthException(
+            "auth/no-current-user",
+            "No current user"
+        )
         return suspendCancellableCoroutine { continuation ->
-            bridge.updateEmail(email = email) { error ->
+            currentUser.updateEmail(email) { error ->
                 if (error != null) {
-                    val nsError = error as NSError
-                    continuation.resumeWithException(
-                        FirebaseAuthException(
-                            nsError.domain,
-                            nsError.localizedDescription ?: "Unknown error"
-                        )
-                    )
+                    // FIRAuthErrorCodeEmailAlreadyInUse == 17007, as on Android.
+                    val code = if (error.code == 17007L) "auth/email-already-in-use" else "auth/unknown"
+                    continuation.resumeWithException(FirebaseAuthException(code, error.localizedDescription))
                 } else {
                     continuation.resume(Unit)
                 }
             }
         }
-        */
-
-        // For now, we'll use the InMemoryFirebaseAuth implementation
-        InMemoryFirebaseAuth().updateEmail(email)
     }
 
     override suspend fun updateDisplayName(displayName: String) {
@@ -265,27 +258,21 @@ class IosFirebaseAuthImplementation : IFirebaseAuth {
     }
 
     override suspend fun updatePassword(password: String) {
-        // In a real implementation, this would be:
-        /*
+        val currentUser = FIRAuth.auth().currentUser() ?: throw FirebaseAuthException(
+            "auth/no-current-user",
+            "No current user"
+        )
         return suspendCancellableCoroutine { continuation ->
-            bridge.updatePassword(password = password) { error ->
+            currentUser.updatePassword(password) { error ->
                 if (error != null) {
-                    val nsError = error as NSError
                     continuation.resumeWithException(
-                        FirebaseAuthException(
-                            nsError.domain,
-                            nsError.localizedDescription ?: "Unknown error"
-                        )
+                        FirebaseAuthException("auth/unknown", error.localizedDescription)
                     )
                 } else {
                     continuation.resume(Unit)
                 }
             }
         }
-        */
-
-        // For now, we'll use the InMemoryFirebaseAuth implementation
-        InMemoryFirebaseAuth().updatePassword(password)
     }
 
     override suspend fun deleteUser() {

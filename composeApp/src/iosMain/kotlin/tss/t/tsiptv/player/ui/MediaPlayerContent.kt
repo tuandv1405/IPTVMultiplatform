@@ -16,6 +16,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import platform.AVFoundation.AVLayerVideoGravityResizeAspect
 import platform.AVFoundation.AVPlayerLayer
 import platform.AVKit.AVPlayerViewController
+import platform.AVKit.AVPlayerViewControllerDelegateProtocol
 import platform.CoreGraphics.CGRectMake
 import platform.Foundation.NSNotificationCenter
 import platform.UIKit.UIApplication
@@ -23,8 +24,7 @@ import platform.UIKit.UIApplicationDidEnterBackgroundNotification
 import platform.UIKit.UIApplicationWillEnterForegroundNotification
 import platform.UIKit.UIColor
 import platform.UIKit.UIView
-import platform.UIKit.UIViewAutoresizingFlexibleHeight
-import platform.UIKit.UIViewAutoresizingFlexibleWidth
+import platform.darwin.NSObject
 import tss.t.tsiptv.player.IOSMediaPlayer
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.PlaybackState
@@ -53,8 +53,18 @@ actual fun MediaPlayerContent(
     // Track whether the app is in background
     var isInBackground by remember { mutableStateOf(false) }
 
-    // Create a player view controller to display the video
-    val playerViewController = remember { AVPlayerViewController() }
+    val pipDelegate = remember { PictureInPictureDelegate() }
+
+    // Video surface only: the shared Compose controls drive playback, as on Android.
+    val playerViewController = remember {
+        AVPlayerViewController().apply {
+            delegate = pipDelegate
+            showsPlaybackControls = false
+            updatesNowPlayingInfoCenter = true
+            // Leaving the app continues in Picture in Picture, like Android's PiP.
+            canStartPictureInPictureAutomaticallyFromInline = true
+        }
+    }
 
     // Set up app lifecycle observers
     DisposableEffect(Unit) {
@@ -105,70 +115,78 @@ actual fun MediaPlayerContent(
             UIKitView(
                 modifier = modifier.fillMaxSize(),
                 factory = {
-                    val containerView = UIView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0))
-                    containerView.setBackgroundColor(UIColor.blackColor)
-                    dashView.removeFromSuperview()
-                    containerView.addSubview(dashView)
-                    dashView.setFrame(containerView.bounds)
-                    dashView.setAutoresizingMask(UIViewAutoresizingFlexibleWidth or UIViewAutoresizingFlexibleHeight)
-                    containerView
+                    PlayerSurfaceContainer(dashView).apply { setBackgroundColor(UIColor.blackColor) }
                 },
-                update = { view -> dashView.setFrame(view.bounds) },
                 properties = remember {
                     UIKitInteropProperties(
-                        isInteractive = true,
+                        // Taps go to the Compose controls drawn over the video.
+                        isInteractive = false,
                         isNativeAccessibilityEnabled = true
                     )
                 },
-                onRelease = {
-                    // The engine keeps its view; only detach it from this container.
-                    dashView.removeFromSuperview()
+                onRelease = { container ->
+                    // The engine keeps its view. A newer container may already hold it.
+                    if (dashView.superview == container) dashView.removeFromSuperview()
                 }
             )
         }
         return
     }
 
-    // Only show the player UI when the app is in foreground
-    if (!isInBackground) {
-        // Use UIKitView to embed the AVPlayerViewController's view in Compose
-        UIKitView(
-            modifier = modifier.fillMaxSize(),
-            factory = {
-                // Create a container view
-                val containerView = UIView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0))
+    // The AVPlayer surface stays attached in the background: Picture in Picture restores into it
+    // when the app comes back, and the player's background policy keeps the audio going.
+    UIKitView(
+        modifier = modifier.fillMaxSize(),
+        factory = {
+            // onRelease cleared the player when the DASH engine's view replaced this one:
+            // attach it again whenever this surface is (re)created.
+            playerViewController.setPlayer(iosPlayer.getAVPlayer())
+            playerViewController.title = mediaItem?.title
+            (playerViewController.view.layer as? AVPlayerLayer)?.videoGravity = AVLayerVideoGravityResizeAspect
+            PlayerSurfaceContainer(playerViewController.view)
+        },
+        properties = remember {
+            UIKitInteropProperties(
+                // Taps go to the Compose controls drawn over the video.
+                isInteractive = false,
+                isNativeAccessibilityEnabled = true
+            )
+        },
+        onRelease = { container ->
+            // Entering or leaving full screen builds the new surface before releasing this one.
+            if (playerViewController.view.superview == container) playerViewController.setPlayer(null)
+        }
+    )
+}
 
-                // onRelease cleared the player when the DASH engine's view replaced this one:
-                // attach it again whenever this surface is (re)created.
-                playerViewController.setPlayer(iosPlayer.getAVPlayer())
+/**
+ * Holds the video view and keeps it at its own size on every layout. Compose resizes the
+ * interop view without recomposing (rotation into full screen), so `update` alone left the
+ * video at its old frame: black in landscape until the next recomposition.
+ */
+@OptIn(ExperimentalForeignApi::class)
+private class PlayerSurfaceContainer(private val content: UIView) : UIView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0)) {
+    init {
+        content.removeFromSuperview()
+        addSubview(content)
+    }
 
-                // Add the player view controller's view to the container
-                val playerView = playerViewController.view
-                containerView.addSubview(playerView)
-                playerViewController.title = mediaItem?.title
+    override fun layoutSubviews() {
+        super.layoutSubviews()
+        content.setFrame(bounds)
+    }
+}
 
-                // Configure the player layer
-                (playerView.layer as? AVPlayerLayer)?.videoGravity = AVLayerVideoGravityResizeAspect
-
-                // Position the player view to fill the container
-                playerView.setFrame(containerView.bounds)
-                playerView.setAutoresizingMask(UIViewAutoresizingFlexibleWidth or UIViewAutoresizingFlexibleHeight)
-
-                containerView
-            },
-            update = { view ->
-                playerViewController.updatesNowPlayingInfoCenter()
-                playerViewController.view.setFrame(view.bounds)
-            },
-            properties = remember {
-                UIKitInteropProperties(
-                    isInteractive = true,
-                    isNativeAccessibilityEnabled = true
-                )
-            },
-            onRelease = {
-                playerViewController.setPlayer(null)
-            }
-        )
+/**
+ * Lets Picture in Picture restore into the app: as in Apple's own apps, the floating window
+ * stays when the app comes back, and its restore button brings the video back here.
+ */
+private class PictureInPictureDelegate : NSObject(), AVPlayerViewControllerDelegateProtocol {
+    override fun playerViewController(
+        playerViewController: AVPlayerViewController,
+        restoreUserInterfaceForPictureInPictureStopWithCompletionHandler: (Boolean) -> Unit,
+    ) {
+        // The surface stays attached, so there is always a place to restore into.
+        restoreUserInterfaceForPictureInPictureStopWithCompletionHandler(true)
     }
 }

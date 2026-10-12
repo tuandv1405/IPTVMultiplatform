@@ -89,7 +89,6 @@ import tss.t.tsiptv.ui.screens.player.PlayerEvent
 import tss.t.tsiptv.ui.screens.player.PlayerUIState
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.themes.TSShapes
-import tss.t.tsiptv.utils.PlatformUtils
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -120,7 +119,6 @@ fun MediaPlayerView(
     val isMuted by player.isMuted.collectAsState()
     val playbackError by player.playbackError.collectAsState()
     val coroutineScope = rememberCoroutineScope()
-    val showCustomControls = remember { !PlatformUtils.platform.isIOS }
     var autoShowControls by remember { mutableStateOf(true) }
     var resetAutoHideTimer by remember { mutableIntStateOf(0) }
 
@@ -239,29 +237,27 @@ fun MediaPlayerView(
         if (mediaItem.isRadio) {
             RadioArtwork(mediaItem = mediaItem, modifier = Modifier.matchParentSize())
         }
-        if (showCustomControls) {
-            MediaPlayerControls(
-                playbackState = playbackState,
-                currentPosition = currentPosition,
-                duration = duration,
-                isBuffering = isBuffering,
-                isPlaying = isPlaying,
-                isFullScreen = playerUIState.isFullScreen,
-                isFitWidth = playerUIState.isFitWidth,
-                isFillScreen169 = playerUIState.isFillScreen169,
-                isMuted = isMuted,
-                volume = volume,
-                showControls = if (!isPlaying) {
-                    true
-                } else {
-                    autoShowControls
-                },
-                onPlayerControl = {
-                    resetAutoHideTimer++
-                    onPlayerControl(it)
-                }
-            )
-        }
+        MediaPlayerControls(
+            playbackState = playbackState,
+            currentPosition = currentPosition,
+            duration = duration,
+            isBuffering = isBuffering,
+            isPlaying = isPlaying,
+            isFullScreen = playerUIState.isFullScreen,
+            isFitWidth = playerUIState.isFitWidth,
+            isFillScreen169 = playerUIState.isFillScreen169,
+            isMuted = isMuted,
+            volume = volume,
+            showControls = if (!isPlaying) {
+                true
+            } else {
+                autoShowControls
+            },
+            onPlayerControl = {
+                resetAutoHideTimer++
+                onPlayerControl(it)
+            }
+        )
         playbackError?.let { error ->
             PlaybackErrorOverlay(
                 error = error,

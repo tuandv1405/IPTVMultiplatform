@@ -41,8 +41,10 @@ actual fun rememberPlaylistFilePicker(onResult: (PickedPlaylistFile) -> Unit): P
                     inMode = UIDocumentPickerMode.UIDocumentPickerModeImport,
                 )
                 picker.delegate = delegate
-                UIApplication.sharedApplication.keyWindow?.rootViewController
-                    ?.presentViewController(picker, animated = true, completion = null)
+                // From the top-most controller: the root one cannot present while a sheet is up.
+                var top = UIApplication.sharedApplication.keyWindow?.rootViewController
+                while (top?.presentedViewController != null) top = top.presentedViewController
+                top?.presentViewController(picker, animated = true, completion = null)
             }
         }
     }

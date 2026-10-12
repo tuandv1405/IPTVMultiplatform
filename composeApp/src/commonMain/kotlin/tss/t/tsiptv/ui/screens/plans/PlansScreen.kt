@@ -71,6 +71,7 @@ import tsiptv.composeapp.generated.resources.plans_msg_purchased
 import tsiptv.composeapp.generated.resources.plans_msg_restored
 import tsiptv.composeapp.generated.resources.plans_noads_name
 import tsiptv.composeapp.generated.resources.plans_not_available
+import tsiptv.composeapp.generated.resources.plans_not_available_ios
 import tsiptv.composeapp.generated.resources.plans_price_month
 import tsiptv.composeapp.generated.resources.plans_price_other
 import tsiptv.composeapp.generated.resources.plans_price_year
@@ -108,6 +109,7 @@ import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.tv.TvMenuItem
 import tss.t.tsiptv.ui.tv.requestFocusAfterLayout
 import tss.t.tsiptv.utils.AppLinks
+import tss.t.tsiptv.utils.PlatformUtils
 import tss.t.tsiptv.utils.TimeStampFormat
 import tss.t.tsiptv.utils.formatDynamic
 import tss.t.tsiptv.utils.getUrlOpener
@@ -188,7 +190,13 @@ fun PlansScreen(
 
             if (!state.supported) {
                 item("not_available") {
-                    ConnectBody(stringResource(Res.string.plans_not_available), color = TSColors.TextPrimary, modifier = Modifier.tvReadable(isTvLayout))
+                    // The default text names Google Play; iOS has no store billing yet.
+                    val notAvailable = if (PlatformUtils.platform.isIOS) {
+                        Res.string.plans_not_available_ios
+                    } else {
+                        Res.string.plans_not_available
+                    }
+                    ConnectBody(stringResource(notAvailable), color = TSColors.TextPrimary, modifier = Modifier.tvReadable(isTvLayout))
                 }
             } else if (state.playUnavailable && state.noAdsOffers.isEmpty() && state.unlimitedOffers.isEmpty()) {
                 // Play is there but cannot bill right now: say what to do; Restore below retries.
@@ -278,7 +286,11 @@ fun PlansScreen(
             PlansMessage.PURCHASED -> Res.string.plans_msg_purchased
             PlansMessage.PENDING -> Res.string.plans_msg_pending
             PlansMessage.FAILED -> Res.string.plans_msg_failed
-            PlansMessage.UNAVAILABLE -> Res.string.plans_not_available
+            PlansMessage.UNAVAILABLE -> if (PlatformUtils.platform.isIOS) {
+                Res.string.plans_not_available_ios
+            } else {
+                Res.string.plans_not_available
+            }
             PlansMessage.ALREADY_OWNED -> Res.string.plans_msg_already_owned
             PlansMessage.RESTORED -> Res.string.plans_msg_restored
             PlansMessage.NOTHING_TO_RESTORE -> Res.string.plans_msg_nothing_to_restore

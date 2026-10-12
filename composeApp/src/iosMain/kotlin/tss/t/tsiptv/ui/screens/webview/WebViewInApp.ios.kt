@@ -116,9 +116,8 @@ actual fun WebViewInApp(
                 configuration = configuration
             ).apply {
                 this.navigationDelegate = navigationDelegate
-                val nsUrl = NSURL.URLWithString(url)!!
-                val request = NSURLRequest(uRL = nsUrl)
-                loadRequest(request)
+                // A malformed link shows a blank page instead of crashing.
+                NSURL.URLWithString(url)?.let { loadRequest(NSURLRequest(uRL = it)) }
             }
         },
         update = { webView ->
@@ -144,24 +143,23 @@ private class IOSScriptMessageHandler(
         userContentController: WKUserContentController,
         didReceiveScriptMessage: WKScriptMessage
     ) {
-        val body = didReceiveScriptMessage.body.toString()
-
-        // Simple parsing of the message
-        // In a real app, you'd use a proper JSON parser
-        when {
-            body.contains("method: 'openDialog'") -> {
-                val message = extractMessageParam(body)
+        // postMessage({ method, params }) arrives as an NSDictionary.
+        val body = didReceiveScriptMessage.body as? Map<*, *> ?: return
+        val params = body["params"] as? Map<*, *>
+        when (body["method"] as? String) {
+            "openDialog" -> {
+                val message = params?.get("message") as? String ?: ""
                 dispatch_async(dispatch_get_main_queue()) {
                     bridge.openDialog(message)
                 }
             }
-            body.contains("method: 'close'") -> {
+            "close" -> {
                 dispatch_async(dispatch_get_main_queue()) {
                     bridge.close()
                     onClose()
                 }
             }
-            body.contains("method: 'getAccessToken'") -> {
+            "getAccessToken" -> {
                 // This is handled synchronously in our interface
                 // but WKWebView bridge is asynchronous
                 // For a real implementation, you'd need to use callbacks or promises
@@ -169,10 +167,5 @@ private class IOSScriptMessageHandler(
                 // You would need to inject JavaScript to call a callback with the token
             }
         }
-    }
-
-    private fun extractMessageParam(body: String): String {
-        // Simple extraction - in a real app, use proper JSON parsing
-        return "Message from WebView"
     }
 }

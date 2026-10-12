@@ -1,101 +1,112 @@
 package tss.t.tsiptv.utils
 
 import kotlinx.cinterop.ExperimentalForeignApi
-import platform.AVKit.AVPlayerViewController
+import platform.Foundation.NSNumber
+import platform.Foundation.setValue
 import platform.UIKit.UIApplication
-import platform.UIKit.setStatusBarHidden
+import platform.UIKit.UIDevice
+import platform.UIKit.UIInterfaceOrientationLandscapeRight
+import platform.UIKit.UIInterfaceOrientationMask
+import platform.UIKit.UIInterfaceOrientationMaskAllButUpsideDown
+import platform.UIKit.UIInterfaceOrientationMaskLandscape
+import platform.UIKit.UIInterfaceOrientationMaskPortrait
+import platform.UIKit.UIInterfaceOrientationPortrait
+import platform.UIKit.UIViewController
+import platform.UIKit.attemptRotationToDeviceOrientation
+import platform.UIKit.setNeedsUpdateOfSupportedInterfaceOrientations
+import platform.darwin.DISPATCH_TIME_NOW
+import platform.darwin.dispatch_after
+import platform.darwin.dispatch_get_main_queue
+import platform.darwin.dispatch_time
+import platform.UIKit.UIWindowScene
+import platform.UIKit.UIWindowSceneGeometryPreferencesIOS
 
 /**
- * iOS implementation of ScreenOrientationUtils.
+ * The orientations the app allows right now. The app delegate returns it from
+ * `application(_:supportedInterfaceOrientationsFor:)` (see iOSApp.swift).
+ */
+object IosOrientationLock {
+    var mask: UIInterfaceOrientationMask = UIInterfaceOrientationMaskAllButUpsideDown
+}
+
+/**
+ * iOS implementation of ScreenOrientationUtils: full screen turns the phone to landscape and
+ * leaving it turns it back to portrait, as on Android. In landscape iOS hides the status bar
+ * on its own.
  */
 @OptIn(ExperimentalForeignApi::class)
 class IOSScreenOrientationUtils : ScreenOrientationUtils {
     private var isFullScreen = false
-    private var playerViewController: AVPlayerViewController? = null
 
-    override fun setPlayerViewController(viewController: Any?) {
-       (viewController as? AVPlayerViewController)?.let {
-           playerViewController = it
-       }
-    }
+    override fun setPlayerViewController(viewController: Any?) {}
 
-    /**
-     * Enter full-screen mode.
-     * This will:
-     * 1. Hide the status bar
-     * 2. Set the player view controller to full-screen mode
-     */
     override fun enterFullScreen() {
-        // Hide the status bar
-        UIApplication.sharedApplication.setStatusBarHidden(true, animated = true)
-
-        // In iOS, we rely on the system's built-in full-screen handling
-        // for AVPlayerViewController
-
+        applyOrientation(UIInterfaceOrientationMaskLandscape)
         isFullScreen = true
     }
 
-    /**
-     * Exit full-screen mode.
-     * This will:
-     * 1. Show the status bar
-     * 2. Exit the player view controller's full-screen mode
-     */
     override fun exitFullScreen() {
-        // Show the status bar
-        UIApplication.sharedApplication.setStatusBarHidden(false, animated = true)
-
-        // In iOS, we rely on the system's built-in full-screen handling
-        // for AVPlayerViewController
-
+        applyOrientation(UIInterfaceOrientationMaskPortrait)
         isFullScreen = false
     }
 
-    /**
-     * Toggle full-screen mode.
-     */
     override fun toggleFullScreen() {
-        if (isFullScreen) {
-            exitFullScreen()
+        if (isFullScreen) exitFullScreen() else enterFullScreen()
+    }
+
+    override fun isLandscape(): Boolean = isFullScreen
+
+    override fun isPortrait(): Boolean = !isFullScreen
+
+    override fun isFullScreen(): Boolean = isFullScreen
+
+    override fun hideSystemUI() {}
+
+    override fun showSystemUI() {}
+
+    override fun lockLandscape(locked: Boolean) {
+        if (locked) {
+            applyOrientation(UIInterfaceOrientationMaskLandscape)
         } else {
-            enterFullScreen()
+            // iOS does not turn back on its own when the lock is lifted (Android follows the
+            // sensor): go to portrait, then let the device rotate freely again.
+            applyOrientation(UIInterfaceOrientationMaskPortrait)
+            // The geometry update is asynchronous: free the mask once the rotation has run.
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, UNLOCK_DELAY_NS), dispatch_get_main_queue()) {
+                if (IosOrientationLock.mask == UIInterfaceOrientationMaskPortrait && !isFullScreen) {
+                    IosOrientationLock.mask = UIInterfaceOrientationMaskAllButUpsideDown
+                }
+            }
         }
     }
 
-    /**
-     * Check if the device is in landscape orientation.
-     */
-    override fun isLandscape(): Boolean {
-        // In iOS, we can simply check if the player is in full-screen mode
-        // since we're enforcing landscape orientation in full-screen mode
-        return isFullScreen
-    }
-
-    /**
-     * Check if the device is in portrait orientation.
-     */
-    override fun isPortrait(): Boolean {
-        // In iOS, we can simply check if the player is not in full-screen mode
-        // since we're enforcing portrait orientation when not in full-screen mode
-        return !isFullScreen
-    }
-
-    /**
-     * Check if the device is in full-screen mode.
-     */
-    override fun isFullScreen(): Boolean {
-        return isFullScreen
-    }
-
-    override fun hideSystemUI() {
-        UIApplication.sharedApplication.setStatusBarHidden(true, animated = true)
-    }
-
-    override fun showSystemUI() {
-        UIApplication.sharedApplication.setStatusBarHidden(false, animated = true)
+    private fun applyOrientation(mask: UIInterfaceOrientationMask) {
+        IosOrientationLock.mask = mask
+        val scene = UIApplication.sharedApplication.connectedScenes
+            .filterIsInstance<UIWindowScene>()
+            .firstOrNull()
+        val majorVersion = UIDevice.currentDevice.systemVersion.substringBefore('.').toIntOrNull() ?: 0
+        if (majorVersion >= 16 && scene != null) {
+            scene.keyWindow?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+            scene.requestGeometryUpdateWithPreferences(
+                UIWindowSceneGeometryPreferencesIOS(interfaceOrientations = mask),
+                errorHandler = null,
+            )
+        } else {
+            // iOS 15: the private-but-documented-by-practice device orientation key.
+            val orientation = if (mask == UIInterfaceOrientationMaskLandscape) {
+                UIInterfaceOrientationLandscapeRight
+            } else {
+                UIInterfaceOrientationPortrait
+            }
+            UIDevice.currentDevice.setValue(NSNumber(long = orientation), forKey = "orientation")
+            UIViewController.attemptRotationToDeviceOrientation()
+        }
     }
 
     companion object {
+        private const val UNLOCK_DELAY_NS = 600_000_000L
+
         // Singleton instance
         private val INSTANCE = IOSScreenOrientationUtils()
 

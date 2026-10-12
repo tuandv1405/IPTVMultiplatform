@@ -10,3 +10,16 @@ platform :ios, '15.6'
 target 'iosApp' do
   pod 'MobileVLCKit', '~> 3.7.4'
 end
+
+# `pod install` sets Pods-iosApp.*.xcconfig as the target's base configuration because it cannot
+# see Configuration/Config.xcconfig (attached through the synchronized group). That would drop
+# PRODUCT_NAME and the bundle id. Keep Config.xcconfig as the base; it includes the Pods settings.
+post_integrate do |installer|
+  installer.aggregate_targets.each do |aggregate|
+    project = aggregate.user_project
+    project.targets.select { |t| t.name == 'iosApp' }.each do |target|
+      target.build_configurations.each { |config| config.base_configuration_reference = nil }
+    end
+    project.save
+  end
+end
