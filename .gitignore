@@ -39,3 +39,4 @@ iosApp/Pods/
 
 # Firestore emulator logs
 firestore-debug.log
+/firebase-debug.log
