@@ -1,6 +1,6 @@
 # Đưa TS IPTV lên store của Smart TV
 
-Cập nhật 2026-10-12. App TV nằm ở [`tv-web/`](../tv-web/README.md) (một mã nguồn cho LG webOS và Samsung Tizen).
+Cập nhật 2026-10-13. App TV nằm ở [`tv-web/`](../tv-web/README.md) (một mã nguồn cho LG webOS và Samsung Tizen).
 Thông tin store lấy từ tài liệu chính thức của LG, Samsung, Amazon, Titan OS (đánh dấu **[chính thức]**) hoặc từ
 blog/diễn đàn (**[tham khảo]**). Điểm **[chưa xác minh]** cần hỏi lại store trước khi đầu tư thời gian.
 
@@ -19,20 +19,33 @@ blog/diễn đàn (**[tham khảo]**). Điểm **[chưa xác minh]** cần hỏi
 [tv-web/README.md](../tv-web/README.md), mục "Chưa kiểm tra"), và hỏi LG qua **Seller Lounge > 1:1 Q&A** rằng
 người bán cá nhân ở Việt Nam có đăng ký và phát hành (kể cả ở Việt Nam) được không **[chưa xác minh]**.
 
-## 2. Chuẩn bị chung (dùng cho mọi store)
+## 2. Chuẩn bị chung (đã có sẵn)
 
-1. **Chính sách quyền riêng tư** bằng tiếng Anh: dùng `https://tsiptv-8bdd6.web.app/privacy/` (bổ sung một đoạn
-   về app TV: dữ liệu chỉ lưu trên TV, không gửi đi).
-2. **Playlist demo cho người duyệt**, chỉ chứa stream hợp pháp (stream thử của Apple/Mux/Akamai). Có thể dùng
-   `https://tsiptv-8bdd6.web.app/examples/playlist.m3u` nhưng nên tạo một file riêng, ví dụ
-   `web/public/examples/tv-review.m3u`, gồm 3–5 kênh **đều phát được**. Samsung đánh trượt app khi không thử
-   được tính năng **[chính thức]**.
-3. **Ảnh chụp màn hình** 1920x1080 hoặc 1280x720, chỉ dùng kênh demo: **không** logo kênh có bản quyền, không
-   bóng đá/thể thao, không chữ "miễn phí".
-4. **Mô tả store** trung lập: "Trình phát IPTV cho danh sách M3U của bạn. App không cung cấp nội dung."
-   Không nhắc tên nhà cung cấp IPTV nào.
-5. **Icon**: đã có trong `tv-web/platforms/` (khi đổi logo, chạy lại `python tv-web/scripts/make_icons.py`).
-   Store còn cần icon lớn (LG ≥ 400x400): dùng `brand/app-icon-1024.png`.
+| Việc | Trạng thái |
+|---|---|
+| Privacy policy có mục app TV | `web/public/privacy/`, mục "Smart TV app". **Cần deploy** trang web (bước 2.1) |
+| Playlist cho người duyệt | https://tsiptv-download.web.app/tv/review.m3u (file `tsiptv-releases/public/tv/review.m3u`): 4 stream thử hợp pháp, đã phát thử cả 4, **đã deploy**. Không đặt trong `web/public/examples/` vì trang đó chỉ cho phép stream Mux và phim archive.org (`check_guides.py`) |
+| Icon, ảnh chụp (EN + VI) đúng cỡ từng store | [`tv-web/store/`](../tv-web/store/README.md) |
+| Mô tả EN/VI, từ khoá, ghi chú cho người duyệt, nội dung UX scenario | [`tv-web/store/README.md`](../tv-web/store/README.md) |
+| Gói `.ipk` / `.wgt` | `npm run package:webos` / `npm run package:tizen` trong `tv-web/` |
+
+### 2.1 Đưa privacy policy lên mạng
+
+```bash
+python web/scripts/check_guides.py      # kiểm tra trang web trước khi deploy (xem web/README.md)
+firebase deploy --only hosting:tsiptv-8bdd6
+```
+
+Kiểm tra lại: https://tsiptv-8bdd6.web.app/privacy/?lang=en có mục "Smart TV app".
+
+Playlist demo: sửa `tsiptv-releases/public/tv/review.m3u` rồi `firebase deploy --only hosting` trong
+`tsiptv-releases`. Trước mỗi lần nộp, phát thử lại từng kênh: người duyệt bấm vào kênh hỏng là app bị trả về.
+
+### 2.2 Trước mỗi lần nộp
+
+1. Tăng `version` trong `tv-web/package.json`. Lần đầu giữ `1.0.0`; mỗi lần nộp lại phải lớn hơn bản trước.
+2. Chạy `npm test` và kiểm tra trên trình giả lập (`tv-web/README.md`, mục "Thử trên trình giả lập").
+3. Thử trên TV thật (mục 3.2 và 4.3). Store kiểm tra trên TV thật: lỗi chỉ xảy ra trên TV sẽ làm app bị trả về.
 
 ## 3. LG webOS — LG Content Store
 
@@ -43,7 +56,8 @@ Cổng: Seller Lounge https://seller.lgappstv.com · Tài liệu https://webostv
    đăng ký **[tham khảo]**).
 2. Vào Seller Lounge, đăng ký **Individual Seller** (tên cá nhân; store hiển thị "Seller ID"). Công ty thì chọn
    Corporate Seller (cần giấy phép kinh doanh).
-3. Hỏi 1:1 Q&A về việc đăng ký từ Việt Nam và danh sách quốc gia phát hành **[chưa xác minh]**.
+3. Hỏi **1:1 Q&A**: người bán cá nhân ở Việt Nam có đăng ký được không, và phát hành được ở những nước nào
+   **[chưa xác minh]**. Chờ trả lời rồi mới làm hồ sơ.
 
 ### 3.2 Thử trên TV LG thật (Developer Mode)
 1. Trên TV: mở **LG Content Store**, cài app **Developer Mode**, đăng nhập bằng LG Developer account, bật
@@ -58,27 +72,31 @@ Cổng: Seller Lounge https://seller.lgappstv.com · Tài liệu https://webostv
    npx ares-launch --device tv tss.t.tsiptv
    npx ares-inspect --device tv --app tss.t.tsiptv   # DevTools để xem lỗi
    ```
-3. Phiên Developer Mode có hạn (thường nói khoảng 50 giờ **[chưa xác minh]**); bấm **Extend** trong app để gia
-   hạn, hết hạn thì app đã cài bị xoá.
+3. Thêm playlist demo, phát cả 4 kênh, thử phím Back/CH/đỏ trên remote thật và chuột Magic Remote.
+4. Phiên Developer Mode có hạn (thường nói khoảng 50 giờ **[chưa xác minh]**). Bấm **Extend** trong app để gia
+   hạn; hết hạn thì app đã cài bị xoá.
 
 ### 3.3 Nộp app
 1. Seller Lounge > **Apps > Register App**. App ID: `tss.t.tsiptv` (đúng với `appinfo.json`, không đổi được sau
    khi phát hành).
-2. Điền thông tin: tên, mô tả (EN + VI), danh mục (Entertainment / Video), quốc gia, phiên bản webOS hỗ trợ
-   (chọn webOS 4.0 trở lên), giá (Free), age rating.
+2. Điền thông tin từ `tv-web/store/README.md`: tên, mô tả EN + VI, danh mục, quốc gia, phiên bản webOS hỗ trợ
+   (webOS 4.0 trở lên), giá Free, độ tuổi, privacy policy URL, URL hỗ trợ.
 3. Tải lên:
-   - file `.ipk` (`npm run package:webos`; mỗi lần nộp phải tăng `version` trong `package.json`);
-   - icon ≥ 400x400, màu nền tile (`#03041d`), ảnh chụp 1 chính + 2–5 phụ (960x540 hoặc 1280x720), ảnh nền
-     launcher/splash 1920x1080 **[tham khảo]**;
-   - **UX scenario** (file PowerPoint mẫu tải từ Seller Lounge): mô tả từng màn hình và cách dùng. Ghi rõ:
-     "Bấm Add playlist → nhập `<URL playlist demo>` → Save → chọn kênh → OK để xem". Viết chi tiết: người duyệt
-     làm theo đúng tài liệu này **[chính thức]**;
-   - **Self-checklist** (file Excel mẫu): điền kết quả tự kiểm tra thật; bỏ trống hoặc sơ sài sẽ bị trả về
-     **[chính thức]**.
-4. Gửi QA. LG kiểm tra 3 bước: **Pretest** (thông tin) → **Function test** (lỗi chức năng) → **Content test**
-   (nội dung) **[chính thức]**. Bị từ chối thì nhận danh sách lỗi, sửa, nộp lại. Thời gian: dự trù khoảng
+   - gói `tv-web/dist/tss.t.tsiptv_<version>_all.ipk`;
+   - icon `tv-web/store/lg/icon-400x400.png`, màu nền tile `#03041d`;
+   - ảnh nền `tv-web/store/lg/background-1920x1080.png`;
+   - ảnh chụp trong `tv-web/store/lg/screenshots/en/`: ảnh chính `02-player.jpg`; ảnh phụ `01-channels`,
+     `03-favorites`, `04-add-playlist`, `05-playlists`;
+   - **UX scenario**: tải file PowerPoint mẫu trong Seller Lounge, điền theo mục "LG UX scenario" và "Ghi chú
+     cho người duyệt" trong `tv-web/store/README.md`. Người duyệt làm đúng theo tài liệu này **[chính thức]**;
+   - **Self-checklist**: tải file Excel mẫu, điền kết quả tự kiểm tra **thật** (sau bước 3.2). Bỏ trống, sơ sài
+     hoặc ghi N/A sai đều bị trả về mà không qua QA **[chính thức]**.
+4. Gửi QA. LG kiểm tra 3 bước: **Pretest** (thông tin) → **Function test** (chức năng) → **Content test**
+   (nội dung) **[chính thức]**. Bị từ chối thì nhận danh sách lỗi, sửa, tăng version rồi nộp lại. Dự trù khoảng
    **3 tuần** mỗi vòng **[tham khảo]**.
-5. Mỗi bản cập nhật đều qua QA lại.
+5. Duyệt xong thì chọn ngày phát hành. App xuất hiện trong LG Content Store ở các nước đã chọn; người dùng tìm
+   "TS IPTV" và bấm Install.
+6. Mỗi bản cập nhật: tăng version, chạy `npm run package:webos`, nộp gói mới. Bản cập nhật lại qua QA.
 
 ## 4. Samsung Tizen — Samsung Apps TV
 
@@ -86,44 +104,64 @@ Cổng: TV Seller Office https://seller.samsungapps.com/tv · Tài liệu https:
 
 ### 4.1 Tài khoản và phạm vi phát hành
 - Ai có Samsung Account cũng đăng ký được → **Public Seller**: chỉ phát hành ở **Mỹ** **[chính thức]**.
-- Muốn phát hành ở nước khác (gồm Việt Nam): cần **Partner Seller** = hợp đồng với Samsung (trụ sở hoặc chi nhánh,
-  ví dụ Samsung Vietnam) rồi gửi yêu cầu partnership trong Seller Office, Content Manager duyệt. Một nguồn cũ nói
-  mất 2 tuần–2 tháng **[tham khảo]**. Cá nhân có được làm partner không: **[chưa xác minh]**, khả năng cao cần
-  công ty.
-- Gợi ý: đăng ký Public Seller, phát hành **Mỹ trước** để làm quen quy trình chứng nhận; song song liên hệ Samsung
+- Muốn phát hành ở nước khác (gồm Việt Nam): cần **Partner Seller**, tức là hợp đồng với Samsung (trụ sở hoặc
+  chi nhánh, ví dụ Samsung Vietnam), rồi gửi yêu cầu partnership trong Seller Office để Content Manager duyệt.
+  Một nguồn cũ nói mất 2 tuần–2 tháng **[tham khảo]**. Cá nhân có được làm partner không: **[chưa xác minh]**,
+  khả năng cao cần công ty.
+- Gợi ý: đăng ký Public Seller, phát hành ở **Mỹ trước** để làm quen quy trình chứng nhận; song song hỏi Samsung
   Vietnam (qua 1:1 Q&A) về partnership.
 - Privacy policy phải có bản tiếng Anh. App 18+ không được phát hành ở Hàn Quốc, Ả Rập Saudi, UAE **[chính thức]**.
 
-### 4.2 Công cụ và chứng chỉ
-1. Cài **Tizen Studio** (kèm **TV Extensions**) hoặc VS Code extension **Tizen TV** (`tizensdk.tizentv`).
-2. Mở **Certificate Manager** → tạo profile **Samsung** tên `TSIPTV`:
-   - **Author certificate**: tạo một lần, **sao lưu file .p12 và mật khẩu**. Mọi bản cập nhật phải ký cùng author.
-   - **Distributor certificate**: thêm **DUID** của TV thử (Device Manager đọc được khi TV đã kết nối).
-   - Khi phát hành, Samsung thay chữ ký distributor bằng chữ ký chính thức.
+### 4.2 Công cụ và chứng chỉ (bắt buộc, kể cả để thử trên emulator)
+1. Tizen Studio + TV Extension: máy này đã cài ở `C:\Users\Admin\tv-tools\tizen-studio` (cách cài không cần
+   quyền admin: `tv-web/README.md`).
+2. Mở `tools\certificate-manager\certificate-manager.exe` → **+** → chọn **Samsung** → **TV** → đặt tên profile
+   `TSIPTV` → đăng nhập Samsung Account:
+   - **Author certificate**: tạo một lần, **sao lưu file .p12 và mật khẩu** ở nơi an toàn. Mất là không cập nhật
+     được app nữa, vì mọi bản cập nhật phải ký bằng cùng author certificate.
+   - **Distributor certificate**: privilege **Public**, thêm **DUID** của TV thử và của emulator (xem trong
+     Device Manager khi thiết bị đã kết nối).
+   - Khi phát hành, Samsung thay chữ ký distributor bằng chữ ký chính thức của họ.
+3. Chứng chỉ Tizen thường (không phải của Samsung) bị cả TV và Samsung TV Emulator từ chối:
+   `install failed[118, -12] ... Invalid certificate chain`.
 
-### 4.3 Thử trên TV Samsung thật
-1. Trên TV: mở **Apps**, bấm `1 2 3 4 5` trên remote → bật **Developer mode**, nhập IP máy tính → khởi động lại TV.
-2. Trên máy tính: `sdb connect <IP TV>` (hoặc Device Manager), rồi trong `tv-web/`:
+### 4.3 Thử trên TV Samsung thật hoặc emulator
+1. TV: mở **Apps**, bấm `1 2 3 4 5` trên remote → bật **Developer mode**, nhập IP máy tính → khởi động lại TV,
+   rồi chạy `sdb connect <IP TV>`. Emulator: `em-cli launch -n tsiptv-tv` (máy ảo đã tạo sẵn trên máy này).
+2. Trong `tv-web/`:
    ```bash
-   npm run package:tizen
-   tizen install -n "TS IPTV.wgt" -t <tên TV trong "sdb devices"> -- dist/tizen
-   tizen run -p TSIPTVtv01.TSIPTV -t <tên TV>
+   npm run package:tizen        # ký bằng profile TSIPTV -> dist/TSIPTV.wgt
+   tizen install -n TSIPTV.wgt -s <serial trong "sdb devices"> -- dist
+   tizen run -p TSIPTVtv01.TSIPTV -s <serial>
    ```
-   Lỗi cài đặt **1010** gần như luôn là do certificate không có DUID của TV.
+   Lỗi cài đặt **1010** gần như luôn do distributor certificate thiếu DUID của thiết bị.
+3. Thêm playlist demo, phát cả 4 kênh bằng AVPlay, thử phím Back/CH/đỏ, thử mất mạng (rút dây mạng).
 
 ### 4.4 Nộp app
 1. Seller Office > **Applications > Create**. Tên ở ngôn ngữ mặc định phải **trùng** `<name>` trong `config.xml`
    ("TS IPTV") **[chính thức]**.
-2. Tải `.wgt`, điền mô tả, ảnh, quốc gia (Public Seller: chỉ Mỹ), age rating, privacy policy URL.
-3. Ô **thông tin cho người kiểm tra**: ghi URL playlist demo và các bước thêm playlist.
-4. Samsung kiểm tra: **Pre-test** (thông tin, gói, privilege) → **chứng nhận QA**; kết quả gửi qua email.
-5. Danh sách bắt buộc https://developer.samsung.com/smarttv/develop/development-checklist/mandatory-features.html
-   — app đã có sẵn:
+2. Tải gói `tv-web/dist/TSIPTV.wgt` (ký bằng profile Samsung `TSIPTV`).
+3. **App Images**: icon `tv-web/store/samsung/icon-512x423.png`; icon 1920x1080 gồm
+   `icon-1920x1080-logo.png` và `icon-1920x1080-background.png`; ảnh chụp `samsung/screenshots/en/*.jpg`
+   (5 ảnh, tối thiểu 4). Trong lúc chứng nhận không đổi được icon.
+4. Mô tả, từ khoá, danh mục, độ tuổi, privacy policy URL, quốc gia (Public Seller: chỉ Mỹ): lấy từ
+   `tv-web/store/README.md`.
+5. Ô **thông tin cho người kiểm tra**: dán mục "Ghi chú cho người duyệt".
+6. Gửi chứng nhận: **Pre-test** (thông tin, gói, privilege) → **chứng nhận QA**; kết quả gửi qua email. Bị trả
+   về thì sửa, tăng version rồi nộp lại.
+7. Duyệt xong thì chọn ngày phát hành; app có trong Samsung Apps TV ở các nước đã chọn.
+8. Danh sách bắt buộc https://developer.samsung.com/smarttv/develop/development-checklist/mandatory-features.html.
+   App đã có sẵn:
    - [x] Back lùi một màn; ở màn chính hỏi thoát;
    - [x] báo khi mất mạng;
    - [x] tắt screensaver khi đang phát;
    - [x] dữ liệu chỉ nằm trong localStorage của app (gỡ app là xoá);
    - [ ] không treo/crash: cần tự kiểm tra trên TV thật với playlist lớn.
+
+### 4.5 Sau khi phát hành (cả hai store)
+- Sửa mục Smart TV trong `tsiptv-releases/public/releases.json` từ "soon" sang link store, rồi chạy
+  `firebase deploy --only hosting` trong project đó để https://tsiptv-download.web.app hiện link.
+- Mỗi bản cập nhật đều qua duyệt lại. Giữ `version` của bản LG và Samsung giống nhau cho dễ theo dõi.
 
 ## 5. Android TV, Google TV, Fire TV (dùng app Android)
 
