@@ -1,0 +1,16 @@
+{
+  "name": "tsiptv-tv",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TS IPTV for LG webOS and Samsung Tizen TVs",
+  "scripts": {
+    "test": "node --test",
+    "serve": "node scripts/serve.js",
+    "build": "node scripts/build.js",
+    "package:webos": "node scripts/build.js && ares-package dist/webos -o dist --no-minify",
+    "package:tizen": "node scripts/build.js && tizen package -t wgt -s TSIPTV -- dist/tizen"
+  },
+  "devDependencies": {
+    "@webos-tools/cli": "3.2.5"
+  }
+}

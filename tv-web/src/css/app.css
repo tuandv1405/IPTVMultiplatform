@@ -1,0 +1,260 @@
+/* TS IPTV for TV. Designed on a 1920x1080 canvas: 1rem = 16px at 1920 wide, scaled with the viewport. */
+:root {
+  --navy-900: #03041d;
+  --navy-800: #0c0d2c;
+  --navy-700: #161a32;
+  --navy-600: #222744;
+  --stroke: #2a3350;
+  --accent: #00f5a0;
+  --accent-cyan: #00d9e9;
+  --text: #f3f4f6;
+  --text-dim: #9ca3af;
+  --danger: #ff5c7a;
+}
+
+html { font-size: calc(100vw / 120); }
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--navy-900);
+  color: var(--text);
+  font-family: "LG Smart UI", "SamsungOne", "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 1.5rem;
+  line-height: 1.35;
+  cursor: default;
+  user-select: none;
+}
+
+/* Samsung AVPlay draws under the web page: the page must be transparent while it plays. */
+body.playing, html.playing { background: transparent; }
+
+[hidden] { display: none !important; }
+
+button { font: inherit; color: inherit; }
+
+.layer, .screen { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+
+#player-layer { background: #000; display: none; }
+body.playing #player-layer { display: block; background: transparent; }
+#video, #av-player { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #000; }
+#video { object-fit: contain; }
+
+/* ---------- focus ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.5rem;
+  padding: 0.6rem 1.6rem;
+  border-radius: 0.8rem;
+  border: 0.15rem solid var(--stroke);
+  background: var(--navy-700);
+  font-size: 1.4rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--navy-900); }
+.btn.danger { color: var(--danger); }
+
+.focused {
+  outline: 0.25rem solid var(--accent);
+  outline-offset: 0.15rem;
+  transform: scale(1.04);
+  z-index: 2;
+}
+.btn.focused { background: var(--accent); color: var(--navy-900); border-color: var(--accent); }
+.btn.danger.focused { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+/* ---------- home ---------- */
+#home { display: flex; flex-direction: column; padding: 2.5rem 3.5rem 1.5rem; }
+
+.bar { display: flex; align-items: center; gap: 1.5rem; height: 5rem; flex: none; }
+.logo { width: 4.2rem; height: 4.2rem; border-radius: 1rem; }
+.titles { min-width: 0; flex: 1; }
+.app-name { font-size: 2rem; font-weight: 700; }
+.playlist-title { color: var(--text-dim); font-size: 1.3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-actions { display: flex; gap: 1rem; }
+
+.body { display: flex; gap: 2rem; flex: 1; min-height: 0; margin-top: 2rem; }
+
+.groups {
+  width: 22rem;
+  flex: none;
+  overflow: hidden;
+  position: relative;
+  padding: 0.4rem;
+}
+.group {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.2rem;
+  margin-bottom: 0.4rem;
+  border-radius: 0.8rem;
+  color: var(--text-dim);
+  font-size: 1.45rem;
+}
+.group .count { font-size: 1.15rem; opacity: 0.8; flex: none; }
+.group .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.group.selected { color: var(--text); background: var(--navy-700); }
+.group.focused { background: var(--accent); color: var(--navy-900); transform: none; outline: none; }
+
+.grid { flex: 1; position: relative; overflow: hidden; }
+.grid-inner { position: absolute; left: 0; top: 0; right: 0; }
+
+.card {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: var(--navy-800);
+  border: 0.15rem solid var(--stroke);
+  overflow: hidden;
+}
+.card .thumb { flex: 1; width: 100%; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.card img { max-width: 80%; max-height: 100%; object-fit: contain; }
+.card .initials { font-size: 2.6rem; font-weight: 700; color: var(--accent-cyan); }
+.card .name { width: 100%; text-align: center; font-size: 1.3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .num { position: absolute; left: 0.8rem; top: 0.5rem; font-size: 1.05rem; color: var(--text-dim); }
+.card .star { position: absolute; right: 0.8rem; top: 0.4rem; color: var(--accent); font-size: 1.3rem; }
+.card.drm { opacity: 0.5; }
+.card.focused { border-color: var(--accent); background: var(--navy-700); }
+
+.grid-message {
+  position: absolute;
+  left: 0; right: 0; top: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-dim);
+  padding: 0 6rem;
+}
+.grid-message h2 { color: var(--text); font-size: 2.2rem; margin: 0 0 1rem; }
+
+.hint { color: var(--text-dim); font-size: 1.2rem; padding-top: 1rem; flex: none; }
+
+/* ---------- player OSD ---------- */
+#player-ui { pointer-events: none; }
+#player-ui .btn { pointer-events: auto; }
+.osd { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transition: opacity 0.25s; }
+.osd.hidden { opacity: 0; }
+.osd-top {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 3rem 4rem 6rem;
+  background: linear-gradient(rgba(3, 4, 29, 0.9), rgba(3, 4, 29, 0));
+}
+.osd-number { font-size: 3.4rem; font-weight: 700; color: var(--accent); min-width: 5rem; }
+.osd-name { font-size: 2.6rem; font-weight: 700; }
+.osd-group { font-size: 1.5rem; color: var(--text-dim); }
+.osd-fav { margin-left: auto; font-size: 2.6rem; color: var(--accent); visibility: hidden; }
+.osd-fav.on { visibility: visible; }
+.osd-bottom {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 6rem 4rem 2.5rem;
+  background: linear-gradient(rgba(3, 4, 29, 0), rgba(3, 4, 29, 0.9));
+}
+.osd-controls { display: flex; gap: 1.2rem; }
+.osd-controls .btn { min-width: 5.5rem; font-size: 1.8rem; }
+.osd-status {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 70%;
+  padding: 1.6rem 2.6rem;
+  border-radius: 1rem;
+  background: rgba(3, 4, 29, 0.85);
+  font-size: 1.8rem;
+  text-align: center;
+}
+.osd-status.error { color: var(--danger); }
+
+/* ---------- dialogs ---------- */
+.overlay {
+  position: absolute;
+  left: 0; top: 0; width: 100%; height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 4, 29, 0.82);
+  z-index: 10;
+}
+.dialog {
+  width: 64rem;
+  max-height: 90%;
+  overflow: hidden;
+  padding: 3rem 3.5rem;
+  border-radius: 1.6rem;
+  background: var(--navy-800);
+  border: 0.15rem solid var(--stroke);
+}
+.dialog h2 { margin: 0 0 1.5rem; font-size: 2.4rem; }
+.dialog p { color: var(--text-dim); margin: 0 0 1.5rem; }
+.dialog label { display: block; margin: 1.2rem 0 0.5rem; color: var(--text-dim); font-size: 1.3rem; }
+.dialog input {
+  width: 100%;
+  font: inherit;
+  font-size: 1.6rem;
+  padding: 1rem 1.2rem;
+  border-radius: 0.8rem;
+  border: 0.15rem solid var(--stroke);
+  background: var(--navy-900);
+  color: var(--text);
+}
+.dialog input.focused { transform: none; border-color: var(--accent); }
+.dialog .actions { display: flex; gap: 1.2rem; margin-top: 2.2rem; }
+.dialog .error { color: var(--danger); min-height: 2rem; margin-top: 1rem; font-size: 1.3rem; }
+
+.pl-list { max-height: 34rem; overflow: hidden; position: relative; }
+.pl-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 0.1rem solid var(--stroke);
+}
+.pl-row .pl-text { flex: 1; min-width: 0; }
+.pl-row .pl-name { font-weight: 700; }
+.pl-row .pl-url { color: var(--text-dim); font-size: 1.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-row.active .pl-name::after { content: " ✓"; color: var(--accent); }
+.pl-row .btn { min-height: 3rem; padding: 0.4rem 1.2rem; font-size: 1.2rem; }
+
+/* ---------- toast / offline ---------- */
+.toast, .offline {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 2rem;
+  border-radius: 0.8rem;
+  font-size: 1.4rem;
+  z-index: 20;
+}
+.toast { bottom: 4rem; background: var(--navy-600); }
+.offline { top: 2rem; background: var(--danger); color: #fff; }
+
+.spinner {
+  display: inline-block;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-right: 1rem;
+  vertical-align: -0.2rem;
+  border-radius: 50%;
+  border: 0.25rem solid var(--stroke);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

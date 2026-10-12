@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets"
+        id="https://tsiptv-8bdd6.web.app/tv" version="0.0.0" viewmodes="maximized">
+    <tizen:application id="TSIPTVtv01.TSIPTV" package="TSIPTVtv01" required_version="4.0"/>
+    <tizen:profile name="tv-samsung"/>
+    <content src="index.html"/>
+    <name>TS IPTV</name>
+    <icon src="icon.png"/>
+    <description>IPTV player for your own M3U playlists. No content included.</description>
+    <author href="https://tsiptv-8bdd6.web.app/">TS IPTV</author>
+    <access origin="*" subdomains="true"/>
+    <tizen:privilege name="http://tizen.org/privilege/internet"/>
+    <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+    <tizen:privilege name="http://developer.samsung.com/privilege/network.public"/>
+    <tizen:setting screen-orientation="landscape" context-menu="disable" background-support="disable"
+                   encryption="disable" install-location="auto" hwkey-event="enable"/>
+    <tizen:allow-navigation>*</tizen:allow-navigation>
+    <tizen:content-security-policy>default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; media-src * blob: data:; img-src * data: blob:; connect-src *</tizen:content-security-policy>
+</widget>
