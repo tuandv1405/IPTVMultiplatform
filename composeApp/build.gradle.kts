@@ -163,6 +163,8 @@ kotlin {
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            // Dispatchers.setMain: Android host tests have no main looper.
+            implementation(libs.kotlinx.coroutinesTest)
         }
 
         // Room migration tests run on the JVM against the exported schemas/.

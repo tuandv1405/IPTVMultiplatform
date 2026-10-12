@@ -82,5 +82,8 @@ class TSAndroidApplication : Application() {
 
     companion object {
         lateinit var instance: TSAndroidApplication
+
+        /** Null before onCreate, and in JVM unit tests, which never create the Application. */
+        val instanceOrNull: TSAndroidApplication? get() = if (::instance.isInitialized) instance else null
     }
 }

@@ -71,6 +71,7 @@ ktor-serialization-kotlinx-xml = { module = "io.ktor:ktor-serialization-kotlinx-
 navigation-common-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "androidx-navigation" }
 compose-ui-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.ref = "composeMultiplatform" }
 kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 androidx-compose-animation = { module = "androidx.compose.animation:animation", version = "+" }
 androidx-compose-material-iconsExtended = { module = "androidx.compose.material:material-icons-extended", version = "+" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3", version = "+" }
