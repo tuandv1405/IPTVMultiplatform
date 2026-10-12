@@ -206,7 +206,7 @@ kotlin {
 // versionCode ceiling of 2,100,000,000 is a concern.
 val versionMajor = 1
 val versionMinor = 1
-val versionPatch = 3
+val versionPatch = 4
 
 // 1.0.1 -> 1_000_001. Strictly increasing as long as the three parts only go up,
 // and already above the 26301 this replaced.
@@ -808,7 +808,9 @@ val packageDesktopPortableZip by tasks.registering(Zip::class) {
 
 // Lambdas below take the version from a local: a script-level val would drag the build script
 // into the configuration cache, which cannot store it.
-val packageDesktopMsi by tasks.registering(Copy::class) {
+// Sync, not Copy: packageDesktopRelease takes this whole folder, so an MSI of an earlier version
+// left here would be published again.
+val packageDesktopMsi by tasks.registering(Sync::class) {
     val msiName = "TS-IPTV-$desktopVersion-Windows-x64.msi"
     from(tasks.named("packageReleaseMsi"))
     include("*.msi")

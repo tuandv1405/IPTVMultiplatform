@@ -19,6 +19,9 @@ chưa kiểm thử.
 
 ### Phát hành Windows (một lệnh)
 
+Hướng dẫn từng bước (chuẩn bị máy, tăng phiên bản, kiểm tra, phát hành, xử lý lỗi):
+[desktop-windows-release.md](desktop-windows-release.md).
+
 ```bash
 ./gradlew :composeApp:packageDesktopRelease
 ```
