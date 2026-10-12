@@ -131,6 +131,7 @@ private val REMOVE_ADS_ROW = 48.dp
  */
 @Composable
 fun RemoveAdsLink(modifier: Modifier = Modifier, visible: Boolean = true) {
+    if (houseAdsReplaceAds) return
     val open = LocalOpenPlans.current ?: return
     Column(modifier.fillMaxWidth()) {
         Spacer(Modifier.height(REMOVE_ADS_GAP))

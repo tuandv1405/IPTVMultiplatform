@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
@@ -113,6 +112,7 @@ import tss.t.tsiptv.ui.screens.discover.DiscoverNav
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.tv.TvDefaults
 import tss.t.tsiptv.ui.tv.requestFocusAfterLayout
+import tss.t.tsiptv.ui.widgets.TSLazyRow
 import tss.t.tsiptv.ui.widgets.TSTextField
 
 /** What Source Home can ask of its host (the phone Home tab or the TV home). */
@@ -393,7 +393,7 @@ private fun LazyListScope.searchResults(
         return
     }
     item(key = "results") {
-        LazyRow(
+        TSLazyRow(
             contentPadding = PaddingValues(horizontal = horizontal, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -454,7 +454,7 @@ private fun RowSection(
         SectionHeading(built.section, uiLanguage, horizontal) {
             if (showSeeAll && !isTv) PillButton(stringResource(Res.string.discover_see_all), onClick = onSeeAll, primary = false)
         }
-        LazyRow(
+        TSLazyRow(
             // TV: ▼ then ▲ comes back to the card that had focus in this row.
             modifier = Modifier.focusRestorer(),
             state = rememberLazyListState(),
@@ -536,7 +536,7 @@ internal fun LazyListScope.gridSection(
     item(key = built.key + "|head") { SectionHeading(built.section, uiLanguage, horizontal) }
     if (groups.isNotEmpty()) {
         item(key = built.key + "|chips") {
-            LazyRow(
+            TSLazyRow(
                 modifier = Modifier.focusRestorer(),
                 contentPadding = PaddingValues(horizontal = horizontal),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -620,7 +620,7 @@ private fun CatalogRow(
                 SectionHeading(built.section, uiLanguage, horizontal) {
                     if (showSeeAll && !isTv) PillButton(stringResource(Res.string.discover_see_all), onClick = seeAll, primary = false)
                 }
-                LazyRow(
+                TSLazyRow(
                     modifier = Modifier.focusRestorer(),
                     contentPadding = PaddingValues(horizontal = horizontal, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(if (isTv) 20.dp else 12.dp),

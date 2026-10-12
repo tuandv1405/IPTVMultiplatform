@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -87,6 +86,7 @@ import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.tv.TvDefaults
 import tss.t.tsiptv.ui.tv.TvFocusableSurface
 import tss.t.tsiptv.ui.tv.requestFocusAfterLayout
+import tss.t.tsiptv.ui.widgets.TSLazyRow
 import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
 import tss.t.tsiptv.utils.PlatformUtils
 import tss.t.tsiptv.utils.getUrlOpener
@@ -339,7 +339,7 @@ private fun DetailBody(
                 // Only stremio:/// links are handled; all other links are not shown.
                 val links = meta.links.orEmpty().filter { it.isInternal && viewModel.routeFor(it.url) != null }
                 if (links.isNotEmpty()) {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TSLazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         itemsIndexed(links) { _, link ->
                             AddonChip(link.name.orEmpty(), selected = false, onClick = { viewModel.routeFor(link.url)?.let(onNavigate) })
                         }
@@ -349,7 +349,7 @@ private fun DetailBody(
         }
         if (state.isSeries && state.seasons.isNotEmpty()) {
             item(key = "seasons") {
-                LazyRow(
+                TSLazyRow(
                     contentPadding = PaddingValues(horizontal = horizontal, vertical = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {

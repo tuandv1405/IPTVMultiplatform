@@ -79,6 +79,8 @@ class MainActivity : ComponentActivity(), KoinComponent {
         tss.t.tsiptv.feature.push.PushPermissionRequests.launcher = notificationPermission
         // Not on a configuration change: the link was handled already.
         if (savedInstanceState == null) handlePushIntent(intent)
+        // A launch of the UI (cold start, or a relaunch after Back in a live process): PRD R2.
+        if (savedInstanceState == null) AppOpenAdController.onLaunch(this)
 
         // Google UMP consent (form where required), then the ads SDK if allowed. Not on TV.
         if (!PlatformUtils.platform.isTv) AndroidAdsPlatform.gatherConsent(this)
@@ -103,6 +105,12 @@ class MainActivity : ComponentActivity(), KoinComponent {
         super.onResume()
         // The cold-start app open ad shows here at most once per process (PRD R2).
         AppOpenAdController.onActivityResumed(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // To background (not a rotation): preload an app open ad for the next launch (PRD R2).
+        if (!isChangingConfigurations) AppOpenAdController.onAppBackground(applicationContext)
     }
 
     override fun onPause() {

@@ -10,21 +10,25 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -56,14 +60,17 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import tsiptv.composeapp.generated.resources.home_nav_programs
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.ic_dislike
 import tsiptv.composeapp.generated.resources.ic_like
@@ -73,6 +80,7 @@ import tsiptv.composeapp.generated.resources.player_dislike
 import tsiptv.composeapp.generated.resources.player_like
 import tsiptv.composeapp.generated.resources.player_report
 import tsiptv.composeapp.generated.resources.player_share
+import tsiptv.composeapp.generated.resources.type_channel
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.ui.MediaPlayerView
@@ -93,6 +101,7 @@ import tss.t.tsiptv.ui.ads.rememberAdsState
 import tss.t.tsiptv.ui.screens.ads.rememberShopeeFallback
 import tss.t.tsiptv.ui.widgets.HorizontalDividersGradient
 import tss.t.tsiptv.utils.KeepScreenOnState
+import tss.t.tsiptv.utils.PlatformUtils
 import tss.t.tsiptv.utils.getScreenOrientationUtils
 
 
@@ -231,6 +240,22 @@ fun PlayerScreen(
         return
     }
 
+    val windowWidth = LocalWindowInfo.current.containerSize.width
+    if (PlatformUtils.platform.isDesktop && with(density) { windowWidth.toDp() } >= WIDE_PLAYER_MIN_WIDTH) {
+        WidePlayerLayout(
+            mediaItem = mediaItem,
+            mediaItemDescription = mediaItemDescription,
+            homeUIState = homeUIState,
+            mediaPlayer = mediaPlayer,
+            playerControlState = playerControlState,
+            adsViewModel = adsViewModel,
+            channelRows = playerChannelRows,
+            programListState = programListState,
+            onEvent = onEvent,
+        )
+        return
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize()
             .background(TSColors.DeepBlue),
@@ -345,6 +370,119 @@ fun PlayerScreen(
             showDetailsUnderStickyHeader = it
         }
     }
+}
+
+/** Desktop windows at least this wide get [WidePlayerLayout]. */
+private val WIDE_PLAYER_MIN_WIDTH = 960.dp
+
+/** Room kept under the video for the title and the first rows of the guide. */
+private val WIDE_PLAYER_UNDER_VIDEO = 180.dp
+
+/**
+ * Desktop, large window: the video as large as fits on the left with the title and the programme
+ * guide under it, the channels in a column on the right, so switching channel never covers the
+ * video. The phone layout stacked all of it under a full-width video, out of sight on a laptop.
+ */
+@Composable
+private fun WidePlayerLayout(
+    mediaItem: MediaItem,
+    mediaItemDescription: String,
+    homeUIState: HomeUiState,
+    mediaPlayer: MediaPlayer,
+    playerControlState: PlayerUIState,
+    adsViewModel: AdsViewModel,
+    channelRows: List<AdsPolicy.Row<Channel>>,
+    programListState: LazyListState,
+    onEvent: (PlayerEvent) -> Unit,
+) {
+    Row(modifier = Modifier.fillMaxSize().background(TSColors.DeepBlue)) {
+        BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            val videoHeight = min(maxWidth * 9f / 16f, maxHeight - WIDE_PLAYER_UNDER_VIDEO)
+                .coerceAtLeast(maxHeight / 2)
+            Column(modifier = Modifier.fillMaxSize()) {
+                MediaPlayerView(
+                    mediaItem = mediaItem,
+                    currentProgram = homeUIState.currentProgram,
+                    player = mediaPlayer,
+                    modifier = Modifier.fillMaxWidth().background(TSColors.PlayerBackgroundColor),
+                    playerUIState = playerControlState,
+                    onPlayerControl = onEvent,
+                    inlineHeight = videoHeight,
+                )
+                Text(
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp),
+                    text = mediaItem.title,
+                    style = TSTextStyles.bold19.copy(TSColors.TextPrimary),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (mediaItemDescription.isNotBlank()) {
+                    Text(
+                        modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 2.dp),
+                        text = mediaItemDescription,
+                        style = TSTextStyles.normal13.copy(TSColors.TextSecondary),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                BannerAdSlot(
+                    placement = AdPlacement.PLAYER_BANNER,
+                    modifier = Modifier.padding(top = 12.dp),
+                    fallback = rememberShopeeFallback(adsViewModel),
+                    removeAdsLink = true,
+                )
+                val programs = homeUIState.currentProgramList
+                if (!programs.isNullOrEmpty()) {
+                    WidePaneTitle(stringResource(Res.string.home_nav_programs))
+                    LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f), state = programListState) {
+                        items(programs) {
+                            ProgramItem(
+                                program = it,
+                                isCurrentProgram = homeUIState.currentProgram?.id == it.id,
+                                paddingValues = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        Column(
+            modifier = Modifier.width(WIDE_PLAYER_CHANNELS_WIDTH)
+                .fillMaxHeight()
+                .background(TSColors.SecondaryBackgroundColor.copy(alpha = 0.5f))
+        ) {
+            WidePaneTitle(stringResource(Res.string.type_channel))
+            val channelListState = rememberLazyListState()
+            // The playing channel is brought into view when it changes, unless it is already
+            // visible (a click in this list must not make the list jump).
+            LaunchedEffect(mediaItem.id, channelRows.size) {
+                val index = channelRows.indexOfFirst { it is AdsPolicy.Row.Item && it.item.id == mediaItem.id }
+                if (index < 0) return@LaunchedEffect
+                val visible = channelListState.layoutInfo.visibleItemsInfo
+                if (visible.none { it.index == index }) {
+                    channelListState.scrollToItem((index - 2).coerceAtLeast(0))
+                }
+            }
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                state = channelListState,
+                contentPadding = PaddingValues(bottom = 16.dp),
+            ) {
+                playerChannelList(channelRows, adsViewModel, AdPlacement.PLAYER_NATIVE, onEvent, playingId = mediaItem.id)
+            }
+        }
+    }
+}
+
+private val WIDE_PLAYER_CHANNELS_WIDTH = 380.dp
+
+@Composable
+private fun WidePaneTitle(text: String) {
+    Text(
+        modifier = Modifier.padding(start = 24.dp, end = 16.dp, top = 20.dp, bottom = 4.dp),
+        text = text,
+        style = TSTextStyles.semiBold15.copy(TSColors.TextSecondary),
+    )
 }
 
 @Composable
@@ -656,6 +794,7 @@ private fun LazyListScope.playerChannelList(
     adsViewModel: AdsViewModel,
     nativePlacement: AdPlacement,
     onEvent: (PlayerEvent) -> Unit,
+    playingId: String? = null,
 ) {
     items(
         count = rows.size,
@@ -672,7 +811,12 @@ private fun LazyListScope.playerChannelList(
                 row.item,
                 modifier = Modifier.fillMaxWidth()
                     .padding(top = 16.dp)
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp)
+                    .then(
+                        if (row.item.id == playingId) {
+                            Modifier.border(2.dp, TSColors.GradientGreen, TSShapes.roundedShape12)
+                        } else Modifier
+                    ),
                 onItemClick = { channel ->
                     onEvent(PlayerEvent.PlayIptv(channel))
                 }

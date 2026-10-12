@@ -14,3 +14,6 @@ web/guides-src/** text eol=lf
 *.woff binary
 *.woff2 binary
 *.pdf binary
+
+# Windows release files (composeApp/packaging/windows): cmd.exe and Notepad users need CRLF.
+composeApp/packaging/windows/** text eol=crlf

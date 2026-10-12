@@ -154,7 +154,8 @@ fun App() {
             // Home after logging out.
             // QA only (debug build with -Ptsiptv.debugSkipLogin=true): the phone layout signed
             // out, as the TV layout already works, to check screens without a real account.
-            isTvMode || tss.t.tsiptv.utils.DebugFlags.skipLogin -> {
+            // Desktop has no account system at all (AppFlags.worksSignedOut).
+            isTvMode || tss.t.tsiptv.utils.DebugFlags.skipLogin || tss.t.tsiptv.utils.AppFlags.worksSignedOut -> {
                 if (navController.currentBackStackEntry?.destination
                         ?.hasRoute<NavRoutes.Splash>() != false
                 ) {

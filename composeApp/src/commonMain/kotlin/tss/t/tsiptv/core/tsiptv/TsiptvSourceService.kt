@@ -143,6 +143,8 @@ class TsiptvSourceService(
     private val nowMs: () -> Long,
     private val uiLanguage: () -> String? = { null },
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    /** The name the user typed when importing (device QC 1), kept over refreshes. */
+    private val displayNames: SourceDisplayNames = SourceDisplayNames.None,
 ) {
     private val store get() = database.tsiptvStore
     private val resolver = TsiptvSourceResolver(http, addons, nowMs)
@@ -280,7 +282,11 @@ class TsiptvSourceService(
      * @throws TsiptvAdultConfirmationRequiredException when the root or an include is adult and
      *   neither this call nor an earlier import confirmed 18+ (QC F3 #23)
      */
-    suspend fun store(pending: TsiptvPendingImport, adultConfirmed: Boolean): TsiptvStoreResult = withContext(dispatcher) {
+    suspend fun store(
+        pending: TsiptvPendingImport,
+        adultConfirmed: Boolean,
+        displayName: String? = null,
+    ): TsiptvStoreResult = withContext(dispatcher) {
         if (pending.nothingLoaded) throw TsiptvNothingLoadedException()
         val preview = pending.preview
         val confirmed = adultConfirmed || (preview.existing?.adultConfirmed ?: false)
@@ -289,6 +295,11 @@ class TsiptvSourceService(
         }
         val playlistId = preview.existing?.playlistId ?: TsiptvSourceIds.playlistIdFor(preview.document.id)
         writeLock(playlistId).withLock {
+            // A typed name is a local display name; the source's own name when none (or the same).
+            val typed = displayName?.trim()?.take(MAX_DISPLAY_NAME)?.takeIf { it.isNotEmpty() }
+            if (typed != null) {
+                displayNames.set(playlistId, typed.takeIf { it != preview.document.meta.name.resolve(uiLanguage()) })
+            }
             storeResolved(
                 playlistId = playlistId,
                 document = preview.document,
@@ -339,7 +350,7 @@ class TsiptvSourceService(
         val previousPlaylist = database.getPlaylistById(playlistId)
         val playlist = Playlist(
             id = playlistId,
-            name = document.meta.name.resolve(uiLanguage()),
+            name = displayNames.get(playlistId) ?: document.meta.name.resolve(uiLanguage()),
             url = rootUrl ?: previousPlaylist?.url?.takeIf { fileName == null } ?: "file:${fileName ?: document.id}",
             lastUpdated = now,
             sourceType = if (rootUrl != null) PlaylistSourceType.URL else PlaylistSourceType.FILE,
@@ -585,6 +596,7 @@ class TsiptvSourceService(
             mediaHistory.deleteForSource(MediaSourceKind.TSIPTV, playlistId)
             database.deleteProgramsForPlaylist(playlistId)
             database.deletePlaylistById(playlistId)
+            displayNames.set(playlistId, null)
         }
     }
 
@@ -595,6 +607,7 @@ class TsiptvSourceService(
     companion object {
         /** "Add by link" for any format: F1 had no cap; this only stops a runaway download. */
         const val MAX_LINK_BYTES: Long = 512L * 1024 * 1024
+        private const val MAX_DISPLAY_NAME = 120
         private const val HOUR_MS = 3_600_000L
         private const val ROOT_STALE_MS = 24 * HOUR_MS
 
@@ -624,3 +637,32 @@ internal class TsiptvSourceRemovedException : Exception("Source removed")
 
 /** Network failure without a status (timeout, DNS, connection). Carries a code, never a URL. */
 class SourceNetworkException(val code: String) : Exception("Network error: $code")
+
+/**
+ * Local display names of TS IPTV Sources (device QC 1): the name the user typed on import replaces
+ * the source's own name in the app, and survives refreshes. null = use the source's name.
+ */
+interface SourceDisplayNames {
+    suspend fun get(playlistId: String): String?
+    suspend fun set(playlistId: String, name: String?)
+
+    object None : SourceDisplayNames {
+        override suspend fun get(playlistId: String): String? = null
+        override suspend fun set(playlistId: String, name: String?) = Unit
+    }
+}
+
+class StorageSourceDisplayNames(private val storage: tss.t.tsiptv.core.storage.KeyValueStorage) : SourceDisplayNames {
+    override suspend fun get(playlistId: String): String? =
+        runCatching { storage.getString(KEY_PREFIX + playlistId, "") }.getOrDefault("").ifEmpty { null }
+
+    override suspend fun set(playlistId: String, name: String?) {
+        runCatching {
+            if (name.isNullOrEmpty()) storage.remove(KEY_PREFIX + playlistId) else storage.putString(KEY_PREFIX + playlistId, name)
+        }
+    }
+
+    private companion object {
+        const val KEY_PREFIX = "source_display_name:"
+    }
+}

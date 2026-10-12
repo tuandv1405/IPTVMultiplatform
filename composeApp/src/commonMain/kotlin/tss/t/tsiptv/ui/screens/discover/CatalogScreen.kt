@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -56,6 +55,7 @@ import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.addon_partial_failure
 import tsiptv.composeapp.generated.resources.addon_retry
 import tsiptv.composeapp.generated.resources.discover_empty_catalog
+import tss.t.tsiptv.ui.widgets.TSLazyRow
 
 /** Catalogue screen ("See all", `stremio:///discover/…`): genre chips + paged grid (PRD §5). */
 @Composable
@@ -108,7 +108,7 @@ fun CatalogScreen(route: NavRoutes.AddonCatalog, onNavigate: (NavRoutes.RootRout
                 Text(title, color = TSColors.TextPrimary, fontSize = if (isTv) 24.sp else 19.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             if (state.genreOptions.isNotEmpty()) {
-                LazyRow(
+                TSLazyRow(
                     contentPadding = PaddingValues(horizontal = horizontal, vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {

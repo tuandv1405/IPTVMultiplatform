@@ -11,6 +11,12 @@ object AdsPolicy {
     /** R2: the app open ad is shown only if it is ready this long after the first screen appears. */
     const val APP_OPEN_TIMEOUT_MS: Long = 4_000
 
+    /**
+     * R2: at most one app open ad per this interval, across launches of one process (a user who
+     * backs out and relaunches repeatedly is not shown one every time).
+     */
+    const val APP_OPEN_MIN_INTERVAL_MS: Long = 30L * 60 * 1000
+
     /** R2: AdMob app open ads expire after 4 hours. */
     const val APP_OPEN_MAX_AGE_MS: Long = 4L * 60 * 60 * 1000
 
@@ -114,6 +120,8 @@ object AdsPolicy {
      * @param isPlaying The player is playing (never cover playback)
      * @param adsAllowed [AdsState.adMob] (24 h gate, consent, not TV)
      * @param timeoutMs [APP_OPEN_TIMEOUT_MS]; debug builds may raise it for slow emulators
+     * @param lastShownAtMs When an app open ad was last shown in this process (null: never);
+     *   [APP_OPEN_MIN_INTERVAL_MS] must have passed
      */
     fun canShowAppOpen(
         alreadyHandled: Boolean,
@@ -124,8 +132,10 @@ object AdsPolicy {
         loadedAtMs: Long?,
         nowMs: Long,
         timeoutMs: Long = APP_OPEN_TIMEOUT_MS,
+        lastShownAtMs: Long? = null,
     ): Boolean =
         !alreadyHandled &&
+            (lastShownAtMs == null || nowMs - lastShownAtMs !in 0 until APP_OPEN_MIN_INTERVAL_MS) &&
             adsAllowed &&
             appInForeground &&
             !isPlaying &&

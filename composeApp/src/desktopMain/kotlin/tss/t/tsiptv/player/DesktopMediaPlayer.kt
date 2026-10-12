@@ -10,11 +10,11 @@ import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackError
 import tss.t.tsiptv.player.models.PlaybackPreflight
 import tss.t.tsiptv.player.models.PlaybackState
-import uk.co.caprica.vlcj.player.component.EmbeddedMediaPlayerComponent
 import uk.co.caprica.vlcj.player.base.MediaPlayer
 import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter
-import java.awt.Canvas
-import java.awt.Component
+import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer
+import kotlin.math.roundToInt
+import uk.co.caprica.vlcj.factory.MediaPlayerFactory as VlcFactory
 
 /**
  * Desktop implementation of the MediaPlayer interface using VLCj.
@@ -54,38 +54,62 @@ class DesktopMediaPlayer(
     private val _playbackError = MutableStateFlow<PlaybackError?>(null)
     override val playbackError: StateFlow<PlaybackError?> = _playbackError.asStateFlow()
 
-    // VLCj player component
-    private val mediaPlayerComponent = EmbeddedMediaPlayerComponent()
+    // Frames are drawn by Compose (MediaPlayerContent), not by a native window: see VideoFrameSink.
+    private val frameSink = VideoFrameSink()
 
-    // Get the VLCj MediaPlayer instance
-    private val vlcjMediaPlayer: MediaPlayer = mediaPlayerComponent.mediaPlayer()
+    /** The picture to draw; null before the first frame and for audio-only streams. */
+    val videoFrame: StateFlow<VideoFrame?> = frameSink.frame
 
-    // Canvas for rendering video
-    private val videoSurface: Canvas = mediaPlayerComponent.videoSurfaceComponent() as Canvas
+    // Null when libVLC cannot be loaded (macOS / Linux without VLC installed). The app still runs;
+    // every channel then fails with the generic stream error instead of the app crashing at start.
+    private val vlcFactory: VlcFactory? = runCatching { VlcFactory("--quiet") }
+        .onFailure { println("libVLC unavailable, desktop playback is off: $it") }
+        .getOrNull()
+
+    private val vlcjMediaPlayer: EmbeddedMediaPlayer? = vlcFactory?.let { factory ->
+        factory.mediaPlayers().newEmbeddedMediaPlayer().apply {
+            videoSurface().set(factory.videoSurfaces().newVideoSurface(frameSink, frameSink, true))
+        }
+    }
 
     init {
-        // Add event listener
-        vlcjMediaPlayer.events().addMediaPlayerEventListener(object : MediaPlayerEventAdapter() {
+        vlcjMediaPlayer?.events()?.addMediaPlayerEventListener(object : MediaPlayerEventAdapter() {
+            override fun opening(mediaPlayer: MediaPlayer) {
+                _isBuffering.value = true
+            }
+
             override fun playing(mediaPlayer: MediaPlayer) {
                 _playbackState.value = PlaybackState.PLAYING
+                _isPlaying.value = true
+                _isBuffering.value = false
+                // libVLC creates the audio output per stream, so a volume set before it is lost.
+                // Never call back into libVLC on its event thread: submit() runs it elsewhere.
+                mediaPlayer.submit { applyAudio(mediaPlayer) }
             }
 
             override fun paused(mediaPlayer: MediaPlayer) {
                 _playbackState.value = PlaybackState.PAUSED
+                _isPlaying.value = false
             }
 
             override fun stopped(mediaPlayer: MediaPlayer) {
+                _isPlaying.value = false
+                _isBuffering.value = false
                 // The stop after a refusal must not turn ERROR back into IDLE.
                 if (_playbackError.value == null) _playbackState.value = PlaybackState.IDLE
             }
 
             override fun finished(mediaPlayer: MediaPlayer) {
                 _playbackState.value = PlaybackState.ENDED
+                _isPlaying.value = false
+                _isBuffering.value = false
             }
 
             override fun error(mediaPlayer: MediaPlayer) {
                 _playbackError.value = PlaybackError.STREAM_FAILED
                 _playbackState.value = PlaybackState.ERROR
+                _isPlaying.value = false
+                _isBuffering.value = false
             }
 
             override fun buffering(mediaPlayer: MediaPlayer, newCache: Float) {
@@ -101,35 +125,36 @@ class DesktopMediaPlayer(
         coroutineScope.launch(Dispatchers.Main) {
             while (true) {
                 if (_playbackState.value == PlaybackState.PLAYING) {
-                    _currentPosition.value = vlcjMediaPlayer.status().time()
+                    vlcjMediaPlayer?.let { _currentPosition.value = it.status().time() }
                 }
                 kotlinx.coroutines.delay(500) // Update every 500ms
             }
         }
     }
 
-    /**
-     * Get the video surface component for rendering
-     */
-    fun getVideoSurface(): Component = videoSurface
-
     override suspend fun prepare(mediaItem: MediaItem) {
         _currentMedia.value = mediaItem
         _currentPosition.value = 0L
         _duration.value = 0L
+        _isPlaying.value = false
 
         // VLC has no Widevine / PlayReady CDM: refuse before the stream is requested.
         _playbackError.value = PlaybackPreflight.check(mediaItem, platformSupportsDrm = false)
-        if (_playbackError.value != null) {
-            vlcjMediaPlayer.controls().stop()
+            ?: PlaybackError.STREAM_FAILED.takeIf { vlcjMediaPlayer == null }
+        val player = vlcjMediaPlayer
+        if (_playbackError.value != null || player == null) {
+            player?.controls()?.stop()
+            frameSink.clear()
             _playbackState.value = PlaybackState.ERROR
             return
         }
 
-        // Prepare the media
-        vlcjMediaPlayer.media().play(mediaItem.uri, *vlcHeaderOptions(mediaItem.headers))
-        addSubtitles(mediaItem)
-        vlcjMediaPlayer.controls().pause()
+        // Loaded, not started: play() starts it. This used to start playback and pause straight
+        // after, which raced with libVLC's asynchronous start.
+        // prepare() stops the old stream before it returns, so its frames are all in by now.
+        player.media().prepare(mediaItem.uri, *vlcHeaderOptions(mediaItem.headers))
+        frameSink.clear()
+        addSubtitles(player, mediaItem)
 
         _playbackState.value = PlaybackState.READY
     }
@@ -138,37 +163,37 @@ class DesktopMediaPlayer(
      * F3: side-loaded subtitles (WebVTT / SubRip) as VLC slaves. The track in the system
      * language is selected; the others stay available. URLs are never logged.
      */
-    private fun addSubtitles(mediaItem: MediaItem) {
+    private fun addSubtitles(player: MediaPlayer, mediaItem: MediaItem) {
         if (mediaItem.subtitles.isEmpty()) return
         // Not preselected (spec §8.7 has no default): the viewer picks one in the track menu.
         mediaItem.subtitles.forEach { track ->
             runCatching {
-                vlcjMediaPlayer.media().addSlave(uk.co.caprica.vlcj.media.MediaSlaveType.SUBTITLE, track.url, false)
+                player.media().addSlave(uk.co.caprica.vlcj.media.MediaSlaveType.SUBTITLE, track.url, false)
             }
         }
     }
 
+    // vlcj 4 (libVLC 3) lists subtitle tracks as descriptions; id -1 is VLC's "Disable" entry.
     override fun textTracks(): List<tss.t.tsiptv.player.TextTrackOption> = runCatching {
-        val list = vlcjMediaPlayer.tracks().textTracks()
-        try {
-            list.tracks().mapIndexed { i, track ->
+        val player = vlcjMediaPlayer ?: return emptyList()
+        val current = player.subpictures().track()
+        player.subpictures().trackDescriptions()
+            .filter { it.id() >= 0 }
+            .mapIndexed { i, track ->
                 tss.t.tsiptv.player.TextTrackOption(
-                    id = track.trackId(),
-                    label = track.name()?.takeIf { it.isNotBlank() } ?: track.description()?.takeIf { it.isNotBlank() }
-                        ?: track.language() ?: "${i + 1}",
-                    language = track.language(),
-                    selected = track.selected(),
+                    id = track.id().toString(),
+                    label = track.description()?.takeIf { it.isNotBlank() } ?: "${i + 1}",
+                    language = null,
+                    selected = track.id() == current,
                 )
             }
-        } finally {
-            list.release()
-        }
     }.getOrDefault(emptyList())
 
     override fun selectTextTrack(id: String?) {
         runCatching {
-            if (id == null) vlcjMediaPlayer.tracks().deselect(uk.co.caprica.vlcj.media.TrackType.TEXT)
-            else vlcjMediaPlayer.tracks().select(uk.co.caprica.vlcj.media.TrackType.TEXT, id)
+            val player = vlcjMediaPlayer ?: return
+            if (id == null) player.subpictures().setTrack(-1)
+            else id.toIntOrNull()?.let { player.subpictures().setTrack(it) }
         }
     }
 
@@ -194,38 +219,52 @@ class DesktopMediaPlayer(
     // After a refusal VLC still holds the previous channel; play() would restart it.
     override suspend fun play() {
         if (_playbackError.value != null) return
-        vlcjMediaPlayer.controls().play()
+        vlcjMediaPlayer?.controls()?.play()
     }
 
     override suspend fun pause() {
         if (_playbackError.value != null) return
-        vlcjMediaPlayer.controls().pause()
+        // setPause(true), not pause(): libVLC's pause toggles, so a second Pause would resume.
+        vlcjMediaPlayer?.controls()?.setPause(true)
     }
 
     override suspend fun stop() {
-        vlcjMediaPlayer.controls().stop()
+        vlcjMediaPlayer?.controls()?.stop()
+        frameSink.clear()
     }
 
     override suspend fun seekTo(positionMs: Long) {
-        vlcjMediaPlayer.controls().setTime(positionMs)
+        vlcjMediaPlayer?.controls()?.setTime(positionMs)
         _currentPosition.value = positionMs
     }
 
     override suspend fun setPlaybackSpeed(speed: Float) {
-        vlcjMediaPlayer.controls().setRate(speed)
+        vlcjMediaPlayer?.controls()?.setRate(speed)
         _playbackSpeed.value = speed
     }
 
     override suspend fun setVolume(volume: Float) {
-        TODO("Not yet implemented")
+        _volume.value = volume.coerceIn(0f, 1f)
+        // The slider shows 0 while muted, so moving it up unmutes.
+        if (_volume.value > 0f) _isMuted.value = false
+        vlcjMediaPlayer?.let(::applyAudio)
     }
 
     override suspend fun setMuted(muted: Boolean) {
-        TODO("Not yet implemented")
+        _isMuted.value = muted
+        vlcjMediaPlayer?.let(::applyAudio)
+    }
+
+    // libVLC's volume runs 0..200 with 100 as unchanged; the app's runs 0..1.
+    private fun applyAudio(player: MediaPlayer) {
+        player.audio().setVolume((_volume.value * 100).roundToInt())
+        player.audio().setMute(_isMuted.value)
     }
 
     override suspend fun release() {
-        vlcjMediaPlayer.release()
+        vlcjMediaPlayer?.release()
+        vlcFactory?.release()
+        _isPlaying.value = false
         _playbackState.value = PlaybackState.IDLE
     }
 }

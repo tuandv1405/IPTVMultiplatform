@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="support_title">Ủng hộ TS IPTV</string>
+    <string name="support_banner_body">Bản máy tính miễn phí và không có quảng cáo. Một ly cà phê giúp mình duy trì điều đó.</string>
+    <string name="support_button">Ủng hộ</string>
+    <string name="support_android_title">TS IPTV cho Android</string>
+    <string name="support_android_body">Đã có bản Android trên Google Play. Một đánh giá ở đó giúp mình rất nhiều.</string>
+    <string name="support_android_button">Google Play</string>
+    <string name="support_dialog_title">Ủng hộ nhà phát triển</string>
+    <string name="support_dialog_body">TS IPTV do một người phát triển. Nếu app hữu ích với bạn, ủng hộ bao nhiêu cũng giúp bản máy tính tiếp tục miễn phí và không quảng cáo.</string>
+    <string name="support_bank_title">Chuyển khoản (VietQR)</string>
+    <string name="support_bank_hint">Quét bằng app ngân hàng</string>
+    <string name="support_online_button">Ủng hộ online</string>
+    <string name="support_later">Để sau</string>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="support_title">支持 TS IPTV</string>
+    <string name="support_banner_body">桌面版免费且无广告。一杯咖啡的支持能让它保持下去。</string>
+    <string name="support_button">支持</string>
+    <string name="support_android_title">TS IPTV 安卓版</string>
+    <string name="support_android_body">安卓版已在 Google Play 上架。在那里留个评分会很有帮助。</string>
+    <string name="support_android_button">Google Play</string>
+    <string name="support_dialog_title">支持开发者</string>
+    <string name="support_dialog_body">TS IPTV 由一个人开发。如果它对你有用，任何金额都能帮助桌面版保持免费和无广告。</string>
+    <string name="support_bank_title">银行转账 (VietQR)</string>
+    <string name="support_bank_hint">用银行 App 扫码</string>
+    <string name="support_online_button">在线支持</string>
+    <string name="support_later">以后再说</string>
+</resources>

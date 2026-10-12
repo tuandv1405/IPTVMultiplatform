@@ -2,8 +2,6 @@ package tss.t.tsiptv.ui.screens.addons
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.analytics.analytics
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -20,6 +18,7 @@ import tss.t.tsiptv.core.stremio.AddonRefreshResult
 import tss.t.tsiptv.core.stremio.AddonRepository
 import tss.t.tsiptv.core.stremio.InstalledAddon
 import tss.t.tsiptv.core.stremio.ManifestUrlError
+import tss.t.tsiptv.core.tracking.AppAnalytics
 
 /** The add-addon flow (PRD §1): URL → preview (warnings, notice) → saved. */
 sealed interface AddAddonState {
@@ -101,7 +100,7 @@ class AddonsViewModel(private val repository: AddonRepository) : ViewModel() {
             }
             _addState.value = AddAddonState.Idle
             // Host and scheme only: addon paths hold the user's configuration (service keys).
-            Firebase.analytics.logEvent(
+            AppAnalytics.logEvent(
                 AnalyticsConstants.EVENT_ADD_ADDON,
                 mapOf(
                     AnalyticsConstants.PARAMS_LINK_HOST to preview.transport.host.take(AnalyticsLinks.MAX_VALUE_LENGTH),

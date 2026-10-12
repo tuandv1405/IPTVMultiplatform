@@ -176,6 +176,7 @@ private class NativeRowViews(context: Context, style: NativeAdStyle, adLabel: St
     private val headline = TextView(context)
     private val body = TextView(context)
     private val cta = TextView(context)
+    private val adChoices = com.google.android.gms.ads.nativead.AdChoicesView(context)
     private var bound: NativeAd? = null
 
     private fun dp(value: Float): Int =
@@ -260,9 +261,18 @@ private class NativeRowViews(context: Context, style: NativeAdStyle, adLabel: St
             topMargin = dp(10f)
         })
 
-        // AdChoices (AdMob policy): drawn by the SDK in the top-right corner of the NativeAdView
-        // (NativeAdOptions.ADCHOICES_TOP_RIGHT); the CTA's top margin keeps that corner free.
-        adView.addView(row, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        // AdChoices (AdMob policy): an explicit AdChoicesView in the top-right corner, registered as
+        // adView.adChoicesView. Relying on the SDK overlay alone left it missing on a real device
+        // (device QC 1). Fixed size, never wrap_content (0×0 before the SDK fills it). The "Ad" badge
+        // sits top-left before the headline and the CTA's top margin keeps this corner free.
+        val frame = android.widget.FrameLayout(context)
+        frame.addView(row, android.widget.FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+        frame.addView(
+            adChoices,
+            android.widget.FrameLayout.LayoutParams(dp(ADCHOICES_SIZE_DP), dp(ADCHOICES_SIZE_DP), Gravity.TOP or Gravity.END),
+        )
+        adView.addView(frame, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        adView.adChoicesView = adChoices
         adView.headlineView = headline
         adView.bodyView = body
         adView.iconView = icon
@@ -296,6 +306,11 @@ private class NativeRowViews(context: Context, style: NativeAdStyle, adLabel: St
                 override fun onViewDetachedFromWindow(v: View) = Unit
             })
         }
+    }
+
+    private companion object {
+        /** AdChoices icon box (AdMob: 15×15 dp at least; 20 dp leaves room for the tap target). */
+        const val ADCHOICES_SIZE_DP = 20f
     }
 
     fun destroy() {

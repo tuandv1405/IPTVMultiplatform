@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="support_title">Apoya TS IPTV</string>
+    <string name="support_banner_body">La app de escritorio es gratis y sin anuncios. Un café ayuda a que siga así.</string>
+    <string name="support_button">Apoyar</string>
+    <string name="support_android_title">TS IPTV para Android</string>
+    <string name="support_android_body">La app de Android está en Google Play. Una valoración allí ayuda mucho.</string>
+    <string name="support_android_button">Google Play</string>
+    <string name="support_dialog_title">Apoya al desarrollador</string>
+    <string name="support_dialog_body">TS IPTV lo hace una sola persona. Si te resulta útil, cualquier cantidad ayuda a que la app de escritorio siga gratis y sin anuncios.</string>
+    <string name="support_bank_title">Transferencia bancaria (VietQR)</string>
+    <string name="support_bank_hint">Escanea con tu app del banco</string>
+    <string name="support_online_button">Apoyar en línea</string>
+    <string name="support_later">Más tarde</string>
+</resources>

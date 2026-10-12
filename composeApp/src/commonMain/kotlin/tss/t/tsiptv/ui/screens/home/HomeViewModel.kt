@@ -4,8 +4,6 @@ package tss.t.tsiptv.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.analytics.analytics
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -34,6 +32,7 @@ import tss.t.tsiptv.core.parser.model.IPTVProgram
 import tss.t.tsiptv.core.parser.model.SkipReason
 import tss.t.tsiptv.core.repository.IHistoryRepository
 import tss.t.tsiptv.core.storage.KeyValueStorage
+import tss.t.tsiptv.core.tracking.AppAnalytics
 import tss.t.tsiptv.platform.PickedPlaylistFile
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.usecase.playlist.GetCurrentPlaylistUseCase
@@ -93,6 +92,11 @@ class HomeViewModel(
                 // Opening the playlist is when the daily refresh runs (and, after the v4
                 // migration, the one-off re-parse that brings in headers and DRM).
                 val currentPlaylist = playlistImporter.refreshIfStale(playlistId)
+                // Device QC 1 #6: the refresh of a source can take a while. If the user imported or
+                // picked another playlist meanwhile, this start-up load must not switch Home back.
+                if (getCurrentPlaylistUC() != playlistId || _uiState.value.playListId.let { it != null && it != playlistId }) {
+                    return@launch
+                }
                 if (currentPlaylist != null) {
                     onHandleEvent(HomeEvent.LoadHistory)
                     _uiState.update {
@@ -256,7 +260,12 @@ class HomeViewModel(
 
     private suspend fun storeSource(pending: TsiptvPendingImport, adultConfirmed: Boolean) {
         pendingSource = null
-        val result = sourceService.store(pending, adultConfirmed)
+        // The name typed in the import form is kept as the playlist's local name (device QC 1).
+        // A phone that sent no name gets one made from the link: that is not a typed name.
+        val typed = importName?.takeUnless { name ->
+            importFromLan && pending.preview.rootUrl?.let { name == tss.t.tsiptv.feature.lan.LanValidation.nameFromUrl(it) } == true
+        }
+        val result = sourceService.store(pending, adultConfirmed, displayName = typed)
         onSourceStored(result, fromRefresh = false)
     }
 
@@ -265,7 +274,7 @@ class HomeViewModel(
         rememberPrevious(playlist.id)
         // Format, size and the sanitized link (AnalyticsLinks); never names or the raw link.
         if (!fromRefresh) {
-            Firebase.analytics.logEvent(
+            AppAnalytics.logEvent(
                 AnalyticsConstants.EVENT_ADD_IPTV,
                 mapOf(
                     AnalyticsConstants.PARAMS_IPTV_FORMAT to tss.t.tsiptv.core.parser.model.IPTVFormat.TSIPTV_SOURCE.name,
@@ -346,7 +355,7 @@ class HomeViewModel(
         rememberPrevious(playlist.id)
         // Format, size and the sanitized link: raw links carry tokens and |Authorization=
         // suffixes (AnalyticsLinks strips them), and the name the user typed is never sent.
-        Firebase.analytics.logEvent(
+        AppAnalytics.logEvent(
             AnalyticsConstants.EVENT_ADD_IPTV,
             mapOf(
                 AnalyticsConstants.PARAMS_IPTV_FORMAT to result.format.name,

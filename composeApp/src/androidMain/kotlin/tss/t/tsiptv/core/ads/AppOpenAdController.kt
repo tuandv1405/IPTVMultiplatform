@@ -16,12 +16,17 @@ import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.PlaybackState
 
 /**
- * App open ad, cold start only (PRD R2): requested as soon as the process may load ads (stored
- * consent, 24 h over), shown at most once per process, only if it is ready within
+ * App open ad, app launches only (PRD R2): requested as soon as the process may load ads (stored
+ * consent, 24 h over), shown at most once per launch, only if it is ready within
  * [AdsPolicy.APP_OPEN_TIMEOUT_MS] of the first screen becoming visible (first activity resume) and
- * while that screen is resumed, never over playback, never older than 4 h. After
- * returning from background, or a configuration change, the process-level [handled] flag keeps it
- * from showing again.
+ * while that screen is resumed, never over playback, never older than 4 h, at most once per
+ * [AdsPolicy.APP_OPEN_MIN_INTERVAL_MS]. After returning from background to a live screen, or a
+ * configuration change, the per-launch [handled] flag keeps it from showing again.
+ *
+ * Smarter preload (device QC 1): an ad that loads after the window, or that could not be shown, is
+ * kept (≤ 4 h) instead of dropped, and one is preloaded when the app goes to background. It is used
+ * by the next launch in the same process: the first screen created again from scratch after the user
+ * left with Back ([onLaunch]); there it is ready at once instead of racing the 4 s window.
  */
 object AppOpenAdController {
     /** `SystemClock.elapsedRealtime()` when the process started (for timing logs). */
@@ -35,9 +40,18 @@ object AppOpenAdController {
     private var loadedAtMs: Long? = null
     private var loading = false
 
-    /** Shown, skipped or timed out in this process: never again until the next cold start. */
+    /** Shown, skipped or timed out for this launch: never again until the next launch. */
     var handled = false
         private set
+
+    /** Launches of the UI in this process (see [onLaunch]); also tags the window's timeout. */
+    private var launch = 0
+
+    /** When an app open ad was last shown in this process ([AdsPolicy.APP_OPEN_MIN_INTERVAL_MS]). */
+    private var lastShownAtMs: Long? = null
+
+    /** The ad is on screen (its activity stops ours: no preload then). */
+    private var showing = false
 
     private var resumed = false
 
@@ -83,6 +97,32 @@ object AppOpenAdController {
 
     private val ACTIVE_STATES = setOf(PlaybackState.PLAYING, PlaybackState.BUFFERING, PlaybackState.READY)
 
+    /**
+     * MainActivity was created without saved state: a launch of the UI. The first one is the cold
+     * start (process-level state is already fresh). A later one (the user left with Back, the process
+     * stayed alive, and the app is opened again) is a new launch with its own 4 s window. A kept ad
+     * shows at once, or one is requested now. Returning to a live screen never calls this.
+     */
+    fun onLaunch(context: Context) {
+        launch++
+        // No screen was visible yet in this process: this is the cold start itself.
+        if (windowStartElapsed == 0L) return
+        handled = false
+        windowStartElapsed = 0L
+        AdsLog.i { "New launch in a running process (kept ad: ${ad != null})" }
+        if (ad == null && !loading && adsAllowed()) requestAd(context.applicationContext)
+    }
+
+    /**
+     * The app went to background (not a configuration change): preload one for the next launch if
+     * none is kept. Nothing is shown now; the ad expires after 4 h like any other.
+     */
+    fun onAppBackground(context: Context) {
+        if (ad != null || loading || showing || !adsAllowed()) return
+        AdsLog.i { "App open ad: preload for the next launch" }
+        requestAd(context.applicationContext)
+    }
+
     private fun load(context: Context) {
         if (handled || loading || ad != null) return
         if (sinceWindowStart() > timeoutMs) {
@@ -102,17 +142,21 @@ object AppOpenAdController {
             object : AppOpenAd.AppOpenAdLoadCallback() {
                 override fun onAdLoaded(loaded: AppOpenAd) {
                     loading = false
-                    AdsLog.i { "App open ad loaded at +${sinceProcessStart()} ms" }
-                    if (handled) return // timed out meanwhile: discard
                     ad = loaded
                     loadedAtMs = System.currentTimeMillis()
+                    if (handled) {
+                        // Too late for this launch: kept (≤ 4 h) for the next one instead of dropped.
+                        AdsLog.i { "App open ad loaded at +${sinceProcessStart()} ms, kept for the next launch" }
+                        return
+                    }
+                    AdsLog.i { "App open ad loaded at +${sinceProcessStart()} ms" }
                     tryShow()
                 }
 
                 override fun onAdFailedToLoad(error: LoadAdError) {
                     loading = false
                     AdsLog.i { "App open ad not loaded: ${error.code}" }
-                    skip("no fill")
+                    if (windowStartElapsed != 0L) skip("no fill")
                 }
             },
         )
@@ -123,8 +167,9 @@ object AppOpenAdController {
         if (windowStartElapsed == 0L) {
             windowStartElapsed = SystemClock.elapsedRealtime()
             AdsLog.i { "First screen visible at +${sinceProcessStart()} ms" }
-            // Past the window nothing will be shown: drop the ad then (no late show, no leak).
-            main.postDelayed({ if (!handled) skip("timeout") }, timeoutMs)
+            // Past the window nothing is shown for this launch (a late ad is kept for the next one).
+            val thisLaunch = launch
+            main.postDelayed({ if (!handled && launch == thisLaunch) skip("timeout") }, timeoutMs)
         }
         AndroidAdsPlatform.onActivityResumed(activity)
         tryShow()
@@ -136,6 +181,12 @@ object AppOpenAdController {
 
     private fun tryShow() {
         val current = ad ?: return
+        val loaded = loadedAtMs
+        if (loaded == null || !AdsPolicy.isAppOpenFresh(loaded, System.currentTimeMillis())) {
+            release() // older than 4 h: never shown
+            return
+        }
+        if (windowStartElapsed == 0L) return // not a launch window (background preload)
         val activity = AndroidAdsPlatform.currentActivity() ?: return
         val allowed = AdsPolicy.canShowAppOpen(
             alreadyHandled = handled,
@@ -146,24 +197,44 @@ object AppOpenAdController {
             loadedAtMs = loadedAtMs,
             nowMs = System.currentTimeMillis(),
             timeoutMs = timeoutMs,
+            lastShownAtMs = lastShownAtMs,
         )
         if (!allowed) {
-            if (isPlaying() || !adsAllowed()) skip("not allowed now")
+            when {
+                !adsAllowed() -> {
+                    skip("not allowed now")
+                    release() // e.g. a subscriber now: drop it
+                }
+                isPlaying() -> skip("playback (kept for the next launch)")
+                lastShownAtMs?.let { System.currentTimeMillis() - it in 0 until AdsPolicy.APP_OPEN_MIN_INTERVAL_MS } == true ->
+                    skip("shown recently (kept)")
+            }
             return
         }
         handled = true
+        lastShownAtMs = System.currentTimeMillis()
+        ad = null // one show per ad object; the callback still releases it
+        loadedAtMs = null
         current.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdDismissedFullScreenContent() = release()
-            override fun onAdFailedToShowFullScreenContent(error: AdError) = release()
+            override fun onAdDismissedFullScreenContent() {
+                showing = false
+                current.fullScreenContentCallback = null
+            }
+
+            override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                showing = false
+                current.fullScreenContentCallback = null
+            }
         }
+        showing = true
         current.show(activity)
     }
 
+    /** Nothing more for this launch. A loaded ad is kept (≤ 4 h) for the next launch. */
     private fun skip(reason: String) {
         if (handled) return
         handled = true
         AdsLog.i { "App open ad skipped: $reason" }
-        release()
     }
 
     private fun release() {

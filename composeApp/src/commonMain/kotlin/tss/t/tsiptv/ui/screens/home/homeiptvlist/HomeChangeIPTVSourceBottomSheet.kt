@@ -110,7 +110,13 @@ fun HomeChangeIPTVSourceBottomSheet(
             }
         }
     ) {
-        BodyContent(totalPlaylist, currentPlaylistId, onChange)
+        // Device QC 1: picking a playlist closes the sheet (animated), like the close button.
+        BodyContent(totalPlaylist, currentPlaylistId) { picked ->
+            onChange(picked)
+            coroutineScope.launch {
+                if (sheetState.isVisible) sheetState.hide()
+            }.invokeOnCompletion { onDismissRequest() }
+        }
     }
 }
 

@@ -115,6 +115,25 @@ class AdsPolicyTest {
         assertFalse(can(loadedAt = null))
     }
 
+    /** Device QC 1: a relaunch in the same process may show a kept ad, but not more often than 30 min. */
+    @Test
+    fun appOpenAtMostOncePerIntervalAcrossLaunches() {
+        val now = 10_000_000L
+        fun can(lastShown: Long?) = AdsPolicy.canShowAppOpen(
+            alreadyHandled = false, sinceProcessStartMs = 100, appInForeground = true, isPlaying = false,
+            adsAllowed = true, loadedAtMs = now - 60_000, nowMs = now, lastShownAtMs = lastShown,
+        )
+        assertTrue(can(null))
+        assertFalse(can(now - 60_000))
+        assertFalse(can(now - AdsPolicy.APP_OPEN_MIN_INTERVAL_MS + 1))
+        assertTrue(can(now - AdsPolicy.APP_OPEN_MIN_INTERVAL_MS))
+        assertTrue(can(now + 5_000)) // clock went back: not blocked forever
+        // A kept ad older than 4 h is never shown.
+        assertFalse(
+            AdsPolicy.canShowAppOpen(false, 100, true, false, true, now - AdsPolicy.APP_OPEN_MAX_AGE_MS, now),
+        )
+    }
+
     // --- AdsGate --------------------------------------------------------------------------------
 
     private class FakePlatform(
