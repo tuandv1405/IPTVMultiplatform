@@ -1,0 +1,15 @@
+{
+  "id": "tss.t.tsiptv",
+  "version": "0.0.0",
+  "vendor": "TS IPTV",
+  "type": "web",
+  "main": "index.html",
+  "title": "TS IPTV",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "splashBackground": "splash.png",
+  "bgColor": "#03041d",
+  "resolution": "1920x1080",
+  "disableBackHistoryAPI": true,
+  "requiredMemory": 200
+}

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TS IPTV</title>
+<link rel="stylesheet" href="css/app.css">
+<!-- platform-scripts -->
+</head>
+<body>
+<div id="player-layer" class="layer" aria-hidden="true">
+  <video id="video" playsinline preload="none"></video>
+  <object id="av-player" type="application/avplayer"></object>
+</div>
+
+<section id="home" class="screen" hidden>
+  <header class="bar">
+    <img class="logo" src="img/logo.png" alt="">
+    <div class="titles">
+      <div class="app-name" data-i18n="appName">TS IPTV</div>
+      <div id="playlist-title" class="playlist-title"></div>
+    </div>
+    <div class="bar-actions">
+      <button id="btn-playlists" class="btn" data-zone="header" data-index="0" data-i18n="playlists">Danh sách phát</button>
+      <button id="btn-add" class="btn" data-zone="header" data-index="1" data-i18n="addPlaylist">Thêm danh sách</button>
+      <button id="btn-lang" class="btn" data-zone="header" data-index="2" data-i18n="language">English</button>
+    </div>
+  </header>
+  <div class="body">
+    <nav id="groups" class="groups" aria-label="Groups"></nav>
+    <div id="grid" class="grid">
+      <div id="grid-inner" class="grid-inner"></div>
+      <div id="grid-message" class="grid-message" hidden></div>
+    </div>
+  </div>
+  <footer id="home-hint" class="hint"></footer>
+</section>
+
+<section id="player-ui" class="screen" hidden>
+  <div id="osd" class="osd">
+    <div class="osd-top">
+      <div id="osd-number" class="osd-number"></div>
+      <div class="osd-titles">
+        <div id="osd-name" class="osd-name"></div>
+        <div id="osd-group" class="osd-group"></div>
+      </div>
+      <div id="osd-fav" class="osd-fav" aria-hidden="true">★</div>
+    </div>
+    <div class="osd-bottom">
+      <div class="osd-controls">
+        <button class="btn" data-osd="fav">★</button>
+        <button class="btn" data-osd="pause">❚❚</button>
+        <button class="btn" data-osd="list">☰</button>
+      </div>
+      <div id="player-hint" class="hint"></div>
+    </div>
+  </div>
+  <div id="osd-status" class="osd-status" hidden></div>
+</section>
+
+<div id="overlay" class="overlay" hidden></div>
+<div id="toast" class="toast" hidden></div>
+<div id="offline" class="offline" hidden></div>
+
+<script src="vendor/hls.js/hls.min.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/m3u.js"></script>
+<script src="js/store.js"></script>
+<script src="js/platform.js"></script>
+<script src="js/player.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
