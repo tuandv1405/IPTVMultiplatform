@@ -546,6 +546,7 @@ fun App() {
                                         homeUIState = homeUIState,
                                         mediaPlayer = playerViewModel.player,
                                         playerControlState = playerUIState,
+                                        reaction = playerViewModel.reaction.collectAsStateWithLifecycle().value,
                                         onEvent = onPlayerEvent,
                                     )
                                 }

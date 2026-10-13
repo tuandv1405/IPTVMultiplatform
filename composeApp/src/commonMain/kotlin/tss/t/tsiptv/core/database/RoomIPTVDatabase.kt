@@ -46,6 +46,7 @@ class RoomIPTVDatabase(
         get() = database.programDao()
     override val stremioStores: tss.t.tsiptv.core.stremio.StremioStores by lazy { RoomStremioStores(database) }
     override val tsiptvStore: tss.t.tsiptv.core.tsiptv.TsiptvStore by lazy { RoomTsiptvStore(database, this) }
+    override val reactionStore: tss.t.tsiptv.core.reaction.ReactionStore by lazy { RoomReactionStore(database) }
     override val channelHistoryDao
         get() = database.channelHistoryDao()
 

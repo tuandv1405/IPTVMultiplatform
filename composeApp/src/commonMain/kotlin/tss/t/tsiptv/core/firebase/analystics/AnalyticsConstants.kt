@@ -37,6 +37,10 @@ object AnalyticsConstants {
     const val EVENT_PLAY_ADDON_STREAM = "play_addon_stream"
     const val PARAMS_ADDON_CONTENT_TYPE = "content_type"
 
+    /** Like/dislike tapped in the player. Only the new state (`like`, `dislike`, `none`); never what plays. */
+    const val EVENT_PLAYER_REACTION = "player_reaction"
+    const val PARAMS_REACTION = "reaction"
+
     /**
      * F2: an addon was added, with [PARAMS_LINK_HOST] and [PARAMS_URL_SCHEME] only: addon
      * paths hold the user's configuration (often service keys), so no path is sent.

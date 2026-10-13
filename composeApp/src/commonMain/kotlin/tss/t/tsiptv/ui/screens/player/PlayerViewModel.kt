@@ -4,14 +4,20 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.first
@@ -20,6 +26,9 @@ import tss.t.tsiptv.core.firebase.analystics.AnalyticsConstants
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.rating.AppRatingController
+import tss.t.tsiptv.core.reaction.Reaction
+import tss.t.tsiptv.core.reaction.ReactionRecord
+import tss.t.tsiptv.core.reaction.Reactions
 import tss.t.tsiptv.core.stremio.MediaPlaybackContext
 import tss.t.tsiptv.core.stremio.MediaProgressTracker
 import tss.t.tsiptv.core.stremio.StremioType
@@ -112,6 +121,21 @@ class PlayerViewModel(
     val volume: StateFlow<Float> = _mediaPlayer.volume
     val isMuted: StateFlow<Boolean> = _mediaPlayer.isMuted
     val player: MediaPlayer = _mediaPlayer
+
+    /** The viewer's like/dislike of what plays (keyed by media item id); null for none or nothing playing. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val reaction: StateFlow<Reaction?> = _mediaPlayer.currentMedia
+        .map { it?.id.orEmpty() }
+        .distinctUntilChanged()
+        .flatMapLatest { key -> if (key.isEmpty()) flowOf(null) else _iptvDatabase.reactionStore.observe(key) }
+        .stateIn(
+            scope = viewModelScope,
+            started = WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    /** Two quick taps must not both read the old state. */
+    private val reactionMutex = Mutex()
 
     /** The channel asked for last, before the player has taken it; stops a second start. */
     private var requestedChannelId: String? = null
@@ -336,6 +360,8 @@ class PlayerViewModel(
                 }
 
                 is PlayerEvent.ToggleMute -> toggleMute()
+                is PlayerEvent.OnLike -> toggleReaction(Reaction.LIKE)
+                is PlayerEvent.OnDislike -> toggleReaction(Reaction.DISLIKE)
                 is PlayerEvent.SetVolume -> setVolume(event.volume)
                 else -> {}
             }
@@ -427,6 +453,34 @@ class PlayerViewModel(
         }
     }
 
+    /** Turns [tapped] on for what plays (replacing the other one), or off when it already is. */
+    @OptIn(ExperimentalTime::class)
+    private suspend fun toggleReaction(tapped: Reaction) {
+        val item = _mediaPlayer.currentMedia.value?.takeIf { it.id.isNotEmpty() } ?: return
+        val store = _iptvDatabase.reactionStore
+        val next = reactionMutex.withLock {
+            val next = Reactions.next(store.get(item.id)?.reaction, tapped)
+            if (next == null) {
+                store.delete(item.id)
+            } else {
+                store.upsert(
+                    ReactionRecord(
+                        contentKey = item.id,
+                        reaction = next,
+                        title = item.title.ifBlank { null },
+                        artworkUrl = item.artworkUri,
+                        updatedAt = Clock.System.now().toEpochMilliseconds(),
+                    )
+                )
+            }
+            next
+        }
+        AppAnalytics.logEvent(
+            AnalyticsConstants.EVENT_PLAYER_REACTION,
+            mapOf(AnalyticsConstants.PARAMS_REACTION to (next?.name?.lowercase() ?: "none"))
+        )
+    }
+
     /**
      * Toggle mute/unmute
      */
@@ -473,6 +527,10 @@ sealed interface PlayerEvent {
     // Volume control events
     data object ToggleMute : PlayerEvent
     data class SetVolume(val volume: Float) : PlayerEvent
+
+    /** Like/dislike what plays (local only); tapping the active one again clears it. */
+    data object OnLike : PlayerEvent
+    data object OnDislike : PlayerEvent
 
     /** VOD (addon movies/episodes): absolute and relative seeking. */
     data class SeekTo(val positionMs: Long) : PlayerEvent
