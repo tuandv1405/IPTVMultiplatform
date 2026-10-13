@@ -2,12 +2,15 @@ package tss.t.tsiptv.core.language
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import org.koin.compose.koinInject
 import tss.t.tsiptv.utils.LocalAppViewModelStoreOwner
 
 var customAppLocale by mutableStateOf<String?>(null)
@@ -56,6 +59,17 @@ fun AppLocaleProvider(
 ) {
 
     val globalVMStore = LocalViewModelStoreOwner.current!!
+    val languageRepository: LanguageRepository = koinInject()
+
+    // Apply the saved language before the first screen, so a relaunch keeps the user's choice.
+    var restored by remember { mutableStateOf(customAppLocale != null) }
+    LaunchedEffect(Unit) {
+        if (!restored) {
+            languageRepository.getLanguageSettings().languageCode?.let { customAppLocale = it }
+            restored = true
+        }
+    }
+    if (!restored) return
 
     CompositionLocalProvider(
         LocalAppLocale provides customAppLocale,

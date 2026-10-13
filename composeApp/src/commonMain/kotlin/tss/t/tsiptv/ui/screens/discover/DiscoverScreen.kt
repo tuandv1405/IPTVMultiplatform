@@ -56,8 +56,8 @@ import tss.t.tsiptv.core.stremio.BoardRow
 import tss.t.tsiptv.core.stremio.InstalledAddon
 import tss.t.tsiptv.core.stremio.ManifestCatalog
 import tss.t.tsiptv.core.stremio.MediaHistoryRecord
+import tss.t.tsiptv.core.stremio.MediaPreviewStore
 import tss.t.tsiptv.core.stremio.SearchState
-import tss.t.tsiptv.core.stremio.StremioJson
 import tss.t.tsiptv.core.stremio.StremioMeta
 import tss.t.tsiptv.core.uimode.LocalIsTvMode
 import tss.t.tsiptv.navigation.NavRoutes
@@ -87,16 +87,17 @@ import tsiptv.composeapp.generated.resources.discover_type_all
 object DiscoverNav {
     private const val PREVIEW_DESCRIPTION_CHARS = 300
 
-    fun detail(addon: InstalledAddon?, catalogType: String, meta: StremioMeta) = NavRoutes.MediaDetail(
-        type = meta.type ?: catalogType,
-        id = meta.id.orEmpty(),
-        addonId = addon?.id,
-        // Kept small (it travels in the navigation Bundle): no videos or links, a short description.
-        previewJson = StremioJson.encodeToString(
-            StremioMeta.serializer(),
+    fun detail(addon: InstalledAddon?, catalogType: String, meta: StremioMeta): NavRoutes.MediaDetail {
+        val type = meta.type ?: catalogType
+        val id = meta.id.orEmpty()
+        // Kept small: no videos or links, a short description.
+        MediaPreviewStore.put(
+            type,
+            id,
             meta.copy(videos = null, links = null, cast = null, director = null, description = meta.description?.take(PREVIEW_DESCRIPTION_CHARS)),
-        ),
-    )
+        )
+        return NavRoutes.MediaDetail(type = type, id = id, addonId = addon?.id)
+    }
 
     fun continueWatching(record: MediaHistoryRecord) =
         if (record.sourceKind == tss.t.tsiptv.core.stremio.MediaSourceKind.TSIPTV) sourceContinueWatching(record)
@@ -111,17 +112,20 @@ object DiscoverNav {
         sourcePlaylistId = record.sourceId,
     )
 
-    private fun addonContinueWatching(record: MediaHistoryRecord) = NavRoutes.MediaDetail(
-        type = record.itemType,
-        id = record.itemId,
-        addonId = record.sourceId,
-        videoId = record.videoId,
-        openStreams = true,
-        previewJson = StremioJson.encodeToString(
-            StremioMeta.serializer(),
+    private fun addonContinueWatching(record: MediaHistoryRecord): NavRoutes.MediaDetail {
+        MediaPreviewStore.put(
+            record.itemType,
+            record.itemId,
             StremioMeta(id = record.itemId, type = record.itemType, name = record.title, poster = record.posterUrl),
-        ),
-    )
+        )
+        return NavRoutes.MediaDetail(
+            type = record.itemType,
+            id = record.itemId,
+            addonId = record.sourceId,
+            videoId = record.videoId,
+            openStreams = true,
+        )
+    }
 
     fun seeAll(row: BoardRow) = NavRoutes.AddonCatalog(
         addonId = row.addon.id,

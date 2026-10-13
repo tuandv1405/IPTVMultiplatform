@@ -195,25 +195,28 @@ data class StremioMeta(
         get() = videos?.takeIf { it.isNotEmpty() }
             ?: listOfNotNull(id?.let { StremioVideo(id = it, title = name, released = released, thumbnail = poster) })
 
-    /** Fills this meta's missing fields from [other] (first non-empty answer wins, PRD §6). */
+    /**
+     * Fills this meta's missing fields from [other] (first non-empty answer wins, PRD §6). A blank
+     * string counts as missing: some addons send `"poster": ""`, which hid the catalogue poster.
+     */
     fun fillMissingFrom(other: StremioMeta?): StremioMeta {
         if (other == null) return this
         return copy(
-            name = name ?: other.name,
-            poster = poster ?: other.poster,
-            posterShape = posterShape ?: other.posterShape,
-            background = background ?: other.background,
-            logo = logo ?: other.logo,
-            description = description ?: other.description,
-            releaseInfo = releaseInfo ?: other.releaseInfo,
-            released = released ?: other.released,
-            year = year ?: other.year,
-            runtime = runtime ?: other.runtime,
-            language = language ?: other.language,
-            country = country ?: other.country,
-            awards = awards ?: other.awards,
-            website = website ?: other.website,
-            imdbRating = imdbRating ?: other.imdbRating,
+            name = name.or(other.name),
+            poster = poster.or(other.poster),
+            posterShape = posterShape.or(other.posterShape),
+            background = background.or(other.background),
+            logo = logo.or(other.logo),
+            description = description.or(other.description),
+            releaseInfo = releaseInfo.or(other.releaseInfo),
+            released = released.or(other.released),
+            year = year.or(other.year),
+            runtime = runtime.or(other.runtime),
+            language = language.or(other.language),
+            country = country.or(other.country),
+            awards = awards.or(other.awards),
+            website = website.or(other.website),
+            imdbRating = imdbRating.or(other.imdbRating),
             genres = genres?.takeIf { it.isNotEmpty() } ?: other.genres,
             director = director?.takeIf { it.isNotEmpty() } ?: other.director,
             cast = cast?.takeIf { it.isNotEmpty() } ?: other.cast,
@@ -609,3 +612,5 @@ object StreamBehaviorHintsSerializer : KSerializer<StreamBehaviorHints> {
 internal fun JsonElement?.isPresent(): Boolean = this != null && this !is JsonNull &&
     !(this is JsonPrimitive && this.isString && content.isBlank()) &&
     !(this is JsonArray && isEmpty())
+
+private fun String?.or(fallback: String?): String? = this?.takeIf { it.isNotBlank() } ?: fallback

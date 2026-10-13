@@ -210,6 +210,17 @@ class StremioModelsTest {
         assertEquals(listOf("Drama"), merged.genres)
     }
 
+    @Test
+    fun fillMissingFromTreatsBlankAsMissing() {
+        // hh3d's meta answers "poster": "" while its catalogue item has the image.
+        val meta = StremioMeta(id = "hh3d:x", type = "series", name = "Name", poster = "", background = " ")
+        val preview = StremioMeta(id = "hh3d:x", type = "series", name = "Preview", poster = "p.webp", background = "b.webp")
+        val merged = meta.fillMissingFrom(preview)
+        assertEquals("Name", merged.name)
+        assertEquals("p.webp", merged.poster)
+        assertEquals("b.webp", merged.background)
+    }
+
     // --- Streams -------------------------------------------------------------------------------
 
     @Test

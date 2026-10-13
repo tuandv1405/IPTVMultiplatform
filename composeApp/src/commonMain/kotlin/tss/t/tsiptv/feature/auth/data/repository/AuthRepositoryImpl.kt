@@ -441,9 +441,12 @@ class AuthRepositoryImpl(
 
     override suspend fun changePassword(currentPassword: String, newPassword: String): AuthResult {
         return try {
-            // Note: Firebase updatePassword() only requires the new password
-            // Current password verification would typically be done by re-authenticating the user
-            // For simplicity, we'll just update the password directly
+            // Signing in again checks the current password and makes this a recent login:
+            // Firebase refuses updatePassword() a few minutes after sign-in otherwise
+            // ("requires recent authentication").
+            val email = _authState.value.user?.email
+                ?: throw FirebaseAuthException("auth/no-current-user", "No signed-in email account")
+            firebaseAuth.signInWithEmailAndPassword(email, currentPassword)
             firebaseAuth.updatePassword(newPassword)
             
             Success(

@@ -32,6 +32,7 @@
     <string name="plans_status_paused">你的订阅已暂停。</string>
     <string name="plans_status_device_only">已在此设备（Google Play 账号）上生效。登录后可在其他设备上使用。</string>
     <string name="plans_not_available">订阅需要 Google Play，但此设备上无法使用 Google Play。</string>
+    <string name="plans_not_available_ios">iPhone 和 iPad 版应用暂不支持订阅。</string>
     <string name="plans_loading_prices">正在加载价格…</string>
     <string name="plans_prices_unavailable">无法从 Google Play 加载价格，请稍后再试。</string>
     <string name="plans_msg_purchased">谢谢！你的方案已生效。</string>

@@ -96,6 +96,17 @@ Steps:
 5. Build: the Gradle phase (`embedAndSignAppleFrameworkForXcode`) builds `ComposeApp` first. The
    Swift file uses the exported Kotlin API, so any mismatch shows up there.
 
+### Update 2026-10-13 (Mac build, `docs/qc-report-2026-10-13-ios.md`)
+
+- `pod install` would replace the target's base configuration; the Podfile `post_integrate`
+  hook keeps `Configuration/Config.xcconfig`, which includes the Pods xcconfig.
+- The app does **not** link `-framework MobileVLCKit`: VLCKit exports its own libpng, zlib and
+  libc's `clock_gettime`, and ld-prime bound app calls to them non-deterministically (PNG crash,
+  gRPC abort at launch). It links `iosApp/VLCKitLinkStub/MobileVLCKit.tbd` (only the `VLC*` API)
+  and Swift auto-linking of MobileVLCKit is off. After `pod update`, run
+  `python3 iosApp/VLCKitLinkStub/generate.py` and check `OTHER_LDFLAGS` in `Config.xcconfig`
+  against the Pods xcconfig.
+
 ## Mac verification checklist
 
 **Build**

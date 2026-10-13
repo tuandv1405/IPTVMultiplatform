@@ -185,4 +185,17 @@ class StremioUrlTest {
         assertNull(StremioDeepLink.parse("stremio:///search"))
         assertNull(StremioDeepLink.parse("https://example.org/detail/movie/tt1"))
     }
+
+    @Test
+    fun strayWhitespaceInTheHostIsDropped() {
+        // iOS autocorrect split "beamup"; a wrapped paste brings a line break.
+        val expected = ok("https://7a82163c306e-stremio-netflix-catalog-addon.baby-beamup.club/manifest.json")
+        assertEquals(expected, ok("https://7a82163c306e-stremio-netflix-catalog-addon.baby-beam up.club/manifest.json"))
+        assertEquals(expected, ok("https://7a82163c306e-stremio-netflix-catalog-\naddon.baby-beamup.club/manifest.json"))
+    }
+
+    @Test
+    fun spacesInThePathAreKept() {
+        assertEquals("https://example.org/a b/manifest.json", ManifestUrlNormalizer.withoutStrayWhitespace(" https://exam ple.org/a b/manifest.json "))
+    }
 }

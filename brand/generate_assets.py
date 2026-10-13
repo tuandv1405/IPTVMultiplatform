@@ -9,6 +9,11 @@ Outputs
   brand/                                 Play Console upload set
   composeApp/src/androidMain/res/        launcher icons (adaptive + legacy)
   composeApp/src/androidMain/            ic_launcher-playstore.png
+  iosApp/iosApp/Assets.xcassets/         iOS app icon (default, dark, tinted)
+
+Only the iOS icon, without touching the other assets:
+
+    python brand/generate_assets.py ios
 
 The mark is a rounded play triangle with two broadcast arcs to its left,
 filled with the app's accent gradient over the app's deep-navy background.
@@ -23,6 +28,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BRAND_DIR = os.path.join(ROOT, "brand")
 RES_DIR = os.path.join(ROOT, "composeApp", "src", "androidMain", "res")
 ANDROID_MAIN = os.path.join(ROOT, "composeApp", "src", "androidMain")
+IOS_APP_ICON = os.path.join(ROOT, "iosApp", "iosApp", "Assets.xcassets", "AppIcon.appiconset")
 
 # Palette lifted from TSColors.kt so the icon matches the running app.
 NAVY_TOP = (12, 13, 44)       # #0C0D2C  backgroundGradientColor1
@@ -249,6 +255,20 @@ def save(img, path):
     print("wrote", os.path.relpath(path, ROOT))
 
 
+def save_ios_icons():
+    """
+    iOS app icon: the same art as the Android launcher icon, full-bleed and opaque (iOS
+    applies its own corner mask, and App Store icons must not have an alpha channel).
+    """
+    size = 1024
+    save(square_icon(size).convert("RGB"), os.path.join(IOS_APP_ICON, "app-icon.png"))
+    save(square_icon(size).convert("RGB"), os.path.join(IOS_APP_ICON, "app-icon-dark.png"))
+    # Tinted (iOS 18+): a grayscale image the system colours; the mark in white on black.
+    tinted = Image.new("RGB", (size, size), (0, 0, 0))
+    tinted.paste(Image.new("RGB", (size, size), (255, 255, 255)), (0, 0), mark_mask(size))
+    save(tinted, os.path.join(IOS_APP_ICON, "app-icon-tinted.png"))
+
+
 def main():
     # --- Play Console upload set -------------------------------------------
     save(square_icon(512).convert("RGB"), os.path.join(BRAND_DIR, "play-icon-512.png"))
@@ -281,4 +301,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    if sys.argv[1:] == ["ios"]:
+        save_ios_icons()
+    else:
+        main()
+        save_ios_icons()

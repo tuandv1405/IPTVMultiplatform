@@ -4,7 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import platform.StoreKit.SKStoreReviewController
 import platform.UIKit.UIApplication
-import platform.UIKit.UISceneActivationState
+import platform.UIKit.UISceneActivationStateForegroundActive
 import platform.UIKit.UIWindowScene
 
 /**
@@ -18,8 +18,8 @@ class IosAppReviewPlatform : AppReviewPlatform {
     override suspend fun requestInAppReview(): Boolean = withContext(Dispatchers.Main) {
         val scene = UIApplication.sharedApplication.connectedScenes
             .filterIsInstance<UIWindowScene>()
-            // NS_ENUM, so Kotlin/Native exposes it as an enum class entry.
-            .firstOrNull { it.activationState == UISceneActivationState.UISceneActivationStateForegroundActive }
+            // NSInteger typedef, so Kotlin/Native exposes the values as top-level Long constants.
+            .firstOrNull { it.activationState == UISceneActivationStateForegroundActive }
             ?: return@withContext false
         SKStoreReviewController.requestReviewInScene(scene)
         true

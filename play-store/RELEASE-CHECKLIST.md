@@ -41,11 +41,10 @@ curl -s -X POST "https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?
 `{}` means it works. `CONFIGURATION_NOT_FOUND` means step 1 is still missing,
 `OPERATION_NOT_ALLOWED` means step 2 is.
 
-### 0b. iOS still points at the retired Firebase project
+### 0b. ✅ iOS Firebase project (done 2026-10-13)
 
-`iosApp/iosApp/GoogleService-Info.plist` carries `tsiptv-76d8f`. Download the
-replacement from the new project's console and overwrite it, or the iOS build
-talks to a project the app no longer uses.
+`iosApp/iosApp/GoogleService-Info.plist` now carries `tsiptv-8bdd6`, the project
+Android uses (see `docs/qc-report-2026-10-13-ios.md`).
 
 
 ### ~~1. The Settings tab is a developer sample screen~~ — WRONG, and now fixed

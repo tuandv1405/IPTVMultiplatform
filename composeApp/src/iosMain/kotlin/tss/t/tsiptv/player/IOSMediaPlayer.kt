@@ -3,23 +3,32 @@ package tss.t.tsiptv.player
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import platform.AVFoundation.AVPlayer
+import platform.AVFoundation.AVPlayerAudiovisualBackgroundPlaybackPolicyContinuesIfPossible
 import platform.AVFoundation.AVPlayerItem
 import platform.AVFoundation.AVPlayerItemDidPlayToEndTimeNotification
+import platform.AVFoundation.AVPlayerItemErrorLogEvent
 import platform.AVFoundation.AVPlayerItemStatusFailed
 import platform.AVFoundation.AVPlayerItemStatusReadyToPlay
+import platform.AVFoundation.AVPlayerTimeControlStatusWaitingToPlayAtSpecifiedRate
 import platform.AVFoundation.addPeriodicTimeObserverForInterval
 import platform.AVFoundation.audiovisualBackgroundPlaybackPolicy
 import platform.AVFoundation.currentItem
 import platform.AVFoundation.currentTime
 import platform.AVFoundation.duration
+import platform.AVFoundation.error
+import platform.AVFoundation.errorLog
+import platform.AVFoundation.timeControlStatus
 import platform.AVFoundation.pause
 import platform.AVFoundation.play
 import platform.AVFoundation.playbackBufferEmpty
@@ -32,7 +41,6 @@ import platform.CoreMedia.CMTimeGetSeconds
 import platform.CoreMedia.CMTimeMake
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSURL
-import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDidEnterBackgroundNotification
 import platform.UIKit.UIApplicationWillEnterForegroundNotification
 import platform.UIKit.UIImage
@@ -147,17 +155,18 @@ class IOSMediaPlayer(
     }
 
     private var avPlayer: AVPlayer? = AVPlayer()
-    override val isPlaying: StateFlow<Boolean>
-        get() = _playbackState.map {
-            when (it) {
-                PlaybackState.PLAYING -> true
-                else -> false
-            }
-        }.stateIn(
+
+    // One shared flow (a getter built a new stateIn on every read).
+    override val isPlaying: StateFlow<Boolean> = _playbackState
+        .map { it == PlaybackState.PLAYING }
+        .stateIn(
             scope = coroutineScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Eagerly,
             initialValue = false
         )
+
+    /** Watches the AVPlayer item's status, so a stream that fails before it starts shows the error. */
+    private var itemStatusJob: Job? = null
 
     // AVPlayer instance
 
@@ -178,17 +187,14 @@ class IOSMediaPlayer(
         // Start position update job
         startPositionUpdateJob()
 
-        // Request notification permissions
-        requestNotificationPermissions()
-
         // Configure audio session for background playback
         IOSAudioSessionManager.configureAudioSessionForBackgroundPlayback()
 
-        // Log silence mode configuration guidance
-        IOSAudioSessionManager.logSilenceModeConfiguration()
-
         // Set initial volume on the AVPlayer
         avPlayer?.let { player ->
+            // Audio keeps playing in the background while the video surface stays attached.
+            player.audiovisualBackgroundPlaybackPolicy =
+                AVPlayerAudiovisualBackgroundPlaybackPolicyContinuesIfPossible
             player.setVolume(_volume.value)
             println("Initial AVPlayer volume set to: ${_volume.value}")
         }
@@ -235,9 +241,6 @@ class IOSMediaPlayer(
         if (_playbackState.value == PlaybackState.PLAYING) {
             // Make sure audio continues to play (the DASH engine keeps playing on its own).
             if (!engineActive) avPlayer?.play()
-
-            // Show notification for background playback
-            showPlaybackNotification()
         }
     }
 
@@ -250,33 +253,6 @@ class IOSMediaPlayer(
 //        if (_playbackState.value == PlaybackState.PLAYING) {
 //            avPlayer?.play()
 //        }
-    }
-
-    /**
-     * Requests permission to display notifications
-     */
-    private fun requestNotificationPermissions() {
-        try {
-            val notificationCenter =
-                platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter()
-
-            // Request authorization for notifications
-            notificationCenter.requestAuthorizationWithOptions(
-                platform.UserNotifications.UNAuthorizationOptionAlert.or(
-                    platform.UserNotifications.UNAuthorizationOptionBadge.or(
-                        platform.UserNotifications.UNAuthorizationOptionSound
-                    )
-                )
-            ) { granted, error ->
-                if (granted) {
-                    println("Notification permission granted")
-                } else {
-                    println("Notification permission denied: ${error?.localizedDescription}")
-                }
-            }
-        } catch (e: Exception) {
-            println("Error requesting notification permissions: ${e.message}")
-        }
     }
 
     private fun startPositionUpdateJob() {
@@ -299,6 +275,10 @@ class IOSMediaPlayer(
 
     @OptIn(ExperimentalForeignApi::class)
     override suspend fun prepare(mediaItem: MediaItem) {
+        if (backgroundObserver == null) {
+            IOSAudioSessionManager.configureAudioSessionForBackgroundPlayback()
+            setupAppLifecycleObservers()
+        }
         _currentMedia.value = mediaItem
         _currentPosition.value = 0L
         _duration.value = 0L
@@ -307,6 +287,7 @@ class IOSMediaPlayer(
         // and stop the previous channel so it does not keep playing under the message.
         _playbackError.value = PlaybackPreflight.check(mediaItem, platformSupportsDrm = false)
         if (_playbackError.value != null) {
+            itemStatusJob?.cancel()
             avPlayer?.pause()
             avPlayer?.replaceCurrentItemWithPlayerItem(null)
             deactivateEngine()
@@ -359,6 +340,7 @@ class IOSMediaPlayer(
 
         // Add observers
         setupObservers()
+        watchItemStatus()
 
         // Update duration when available
         updateDuration()
@@ -369,6 +351,7 @@ class IOSMediaPlayer(
     /** Stops AVPlayer's item and plays [mediaItem] on the DASH engine. */
     private fun prepareOnEngine(mediaItem: MediaItem, factory: IosPlaybackEngineFactory) {
         removeAvObservers()
+        itemStatusJob?.cancel()
         avPlayer?.pause()
         avPlayer?.replaceCurrentItemWithPlayerItem(null)
 
@@ -426,9 +409,8 @@ class IOSMediaPlayer(
                         if (_playbackState.value == PlaybackState.PLAYING) {
                             player.play()
                         }
-                    } else if (item.status == AVPlayerItemStatusFailed) { //
-                        _playbackError.value = PlaybackError.STREAM_FAILED
-                        _playbackState.value = PlaybackState.ERROR
+                    } else if (item.status == AVPlayerItemStatusFailed) {
+                        reportItemFailed(item)
                     }
 
                     // Check buffering state
@@ -452,6 +434,50 @@ class IOSMediaPlayer(
         }
     }
 
+    /**
+     * The periodic observer only ticks once time moves, so a stream that fails or stalls before
+     * it starts would spin forever: poll the item until it is ready or failed, then keep the
+     * buffering flag in step with it.
+     */
+    private fun watchItemStatus() {
+        itemStatusJob?.cancel()
+        val item = avPlayer?.currentItem ?: return
+        itemStatusJob = coroutineScope.launch(Dispatchers.Main) {
+            while (isActive && avPlayer?.currentItem == item && !engineActive) {
+                when (item.status) {
+                    AVPlayerItemStatusFailed -> {
+                        reportItemFailed(item)
+                        return@launch
+                    }
+                    AVPlayerItemStatusReadyToPlay -> {
+                        updateDuration()
+                        // The rate stays 1 while AVPlayer waits for data; this status does not.
+                        val waiting = avPlayer?.timeControlStatus ==
+                            AVPlayerTimeControlStatusWaitingToPlayAtSpecifiedRate
+                        _isBuffering.value = waiting && _playbackState.value == PlaybackState.PLAYING
+                    }
+                }
+                delay(STATUS_POLL_MS)
+            }
+        }
+    }
+
+    /** Same mapping as Android: 401/403 on a channel with its own headers means they expired. */
+    private fun reportItemFailed(item: AVPlayerItem) {
+        if (_playbackState.value == PlaybackState.ERROR) return
+        val status = (item.errorLog()?.events?.lastOrNull() as? AVPlayerItemErrorLogEvent)
+            ?.errorStatusCode
+        val hasOwnHeaders = _currentMedia.value?.headers?.isNotEmpty() == true
+        _isBuffering.value = false
+        _playbackError.value = if ((status == 401L || status == 403L) && hasOwnHeaders) {
+            PlaybackError.FORBIDDEN_HEADERS
+        } else {
+            PlaybackError.STREAM_FAILED
+        }
+        _playbackState.value = PlaybackState.ERROR
+        println("AVPlayer item failed (HTTP status ${status ?: "none"}): ${item.error?.localizedDescription}")
+    }
+
     @OptIn(ExperimentalForeignApi::class)
     private fun updateDuration() {
         avPlayer?.currentItem?.let { item ->
@@ -470,7 +496,6 @@ class IOSMediaPlayer(
             engine?.changeVolume(if (_isMuted.value) 0f else _volume.value)
             engine?.play()
             _playbackState.value = PlaybackState.PLAYING
-            showPlaybackNotification()
             return
         }
         avPlayer?.let { player ->
@@ -482,86 +507,6 @@ class IOSMediaPlayer(
             player.play()
         }
         _playbackState.value = PlaybackState.PLAYING
-        showPlaybackNotification()
-    }
-
-    /**
-     * Shows a notification for the currently playing media
-     */
-    private fun showPlaybackNotification() {
-        try {
-            // Get current media item
-            val mediaItem = _currentMedia.value ?: return
-
-            // Format title and description for better display
-            val formattedTitle = if (mediaItem.title.isNotEmpty()) {
-                "Now Playing: ${mediaItem.title}"
-            } else {
-                "Now Playing"
-            }
-
-            // Create a more detailed description
-            val description = buildString {
-                if (mediaItem.artist?.isNotEmpty() == true) {
-                    append(mediaItem.artist)
-                }
-
-                // Add stream type info if available
-                if (mediaItem.uri.contains(".m3u8") || mediaItem.uri.contains("live")) {
-                    if (isNotEmpty()) append(" • ")
-                    append("Live Stream")
-                } else if (mediaItem.mimeType?.isNotEmpty() == true) {
-                    if (isNotEmpty()) append(" • ")
-                    append(mediaItem.mimeType)
-                }
-
-                // Add a default if nothing else is available
-                if (isEmpty()) {
-                    append("Streaming media content")
-                }
-            }
-
-            // Create notification content with improved formatting
-            val content = platform.UserNotifications.UNMutableNotificationContent().apply {
-                setTitle(formattedTitle)
-                setBody(description)
-                setSound(null) // No sound for media notifications
-
-                // Set category for media playback
-                setThreadIdentifier("media_playback")
-                setCategoryIdentifier("media_playback")
-
-                // Add user info for handling notification actions
-                val userInfo = mapOf<Any?, Any?>(
-                    "mediaUri" to mediaItem.uri,
-                    "mediaId" to mediaItem.id,
-                    "mediaTitle" to mediaItem.title,
-                    "mediaArtist" to mediaItem.artist,
-                    "mediaArtworkUri" to (mediaItem.artworkUri ?: "")
-                )
-                setUserInfo(userInfo)
-            }
-
-            // Create a unique identifier for this notification
-            val requestIdentifier =
-                "media_playback_${platform.Foundation.NSUUID.UUID().UUIDString()}"
-
-            // Create the notification request
-            val request = platform.UserNotifications.UNNotificationRequest.requestWithIdentifier(
-                requestIdentifier,
-                content,
-                null // No trigger, show immediately
-            )
-
-            // Add the notification request
-            platform.UserNotifications.UNUserNotificationCenter
-                .currentNotificationCenter()
-                .addNotificationRequest(request, null)
-
-            println("Enhanced media playback notification shown")
-        } catch (e: Exception) {
-            println("Error showing notification: ${e.message}")
-        }
     }
 
     override suspend fun pause() {
@@ -622,16 +567,18 @@ class IOSMediaPlayer(
         }
 
         foregroundObserver?.let { observer ->
-//            notificationCenter.removeObserver(observer)
+            notificationCenter.removeObserver(observer)
             foregroundObserver = null
         }
+        itemStatusJob?.cancel()
 
         // Deactivate audio session
         IOSAudioSessionManager.deactivateAudioSession()
 
-        // Stop and release player
+        // Stop the player. The instance stays: the video surface holds it, and a later
+        // prepare() reuses it.
         avPlayer?.pause()
-        avPlayer = null
+        avPlayer?.replaceCurrentItemWithPlayerItem(null)
 
         // And the DASH engine.
         deactivateEngine()
@@ -671,4 +618,8 @@ class IOSMediaPlayer(
      * This is needed for the MediaPlayerContent composable to display the video.
      */
     fun getAVPlayer(): AVPlayer? = avPlayer
+
+    private companion object {
+        const val STATUS_POLL_MS = 250L
+    }
 }

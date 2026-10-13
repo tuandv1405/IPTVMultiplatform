@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5CF827E820C9A25721AD0DA3 /* libPods-iosApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67A77658D4D08DECF2B47393 /* libPods-iosApp.a */; };
 		A530CC7E2E944BDD00B3E712 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = A530CC7D2E944BDD00B3E712 /* FirebaseRemoteConfig */; };
 		A537D3B42E1B7F4800DD9725 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = A537D3B32E1B7F4800DD9725 /* GoogleSignIn */; };
 		A537D3B62E1B7F4800DD9725 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = A537D3B52E1B7F4800DD9725 /* GoogleSignInSwift */; };
@@ -32,7 +33,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		67A77658D4D08DECF2B47393 /* libPods-iosApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-iosApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C0237694B5DDC58EA0F6F3F /* Pods-iosApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iosApp.debug.xcconfig"; path = "Target Support Files/Pods-iosApp/Pods-iosApp.debug.xcconfig"; sourceTree = "<group>"; };
 		B9DA97B12DC1472C00A4DA20 /* TSIPTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TSIPTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C099C9A70EFBCFCDF98AEFB3 /* Pods-iosApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iosApp.release.xcconfig"; path = "Target Support Files/Pods-iosApp/Pods-iosApp.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -75,6 +79,7 @@
 				A5A0E7422E9648080069D76E /* FirebaseCrashlytics in Frameworks */,
 				A5B7B1E02E13A4A8003F7BBD /* FirebaseCore in Frameworks */,
 				A5B7B1DE2E13A4A8003F7BBD /* FirebaseAnalyticsCore in Frameworks */,
+				5CF827E820C9A25721AD0DA3 /* libPods-iosApp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,6 +89,7 @@
 		A5B7B1DA2E13A4A8003F7BBD /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				67A77658D4D08DECF2B47393 /* libPods-iosApp.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -95,6 +101,7 @@
 				B9DA97B32DC1472C00A4DA20 /* iosApp */,
 				A5B7B1DA2E13A4A8003F7BBD /* Frameworks */,
 				B9DA97B22DC1472C00A4DA20 /* Products */,
+				C8A2521F4B9D137F82AEA2B8 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -106,6 +113,15 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		C8A2521F4B9D137F82AEA2B8 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				9C0237694B5DDC58EA0F6F3F /* Pods-iosApp.debug.xcconfig */,
+				C099C9A70EFBCFCDF98AEFB3 /* Pods-iosApp.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -113,12 +129,14 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B9DA97BF2DC1472D00A4DA20 /* Build configuration list for PBXNativeTarget "iosApp" */;
 			buildPhases = (
+				7188A065F480B9289FB5828E /* [CP] Check Pods Manifest.lock */,
 				B9DA97F42DC1497100A4DA20 /* Compile Kotlin Framework */,
 				B9DA97AD2DC1472C00A4DA20 /* Sources */,
 				B9DA97AE2DC1472C00A4DA20 /* Frameworks */,
 				B9DA97AF2DC1472C00A4DA20 /* Resources */,
 				A537D3E72E1B8C5700DD9725 /* Embed Frameworks */,
 				A5A0E7402E96474C0069D76E /* ShellScript */,
+				1E87B691D1AF292BBEEE4C5E /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -192,6 +210,49 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		1E87B691D1AF292BBEEE4C5E /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		7188A065F480B9289FB5828E /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-iosApp-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
 		A5A0E7402E96474C0069D76E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -416,6 +477,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_TEAM = 57N5M3BU77;
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",

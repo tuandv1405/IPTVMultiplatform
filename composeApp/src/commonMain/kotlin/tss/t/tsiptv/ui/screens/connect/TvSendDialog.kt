@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -247,7 +248,11 @@ private fun PickTv(
         onValueChange = { address = it.trim().take(64) },
         singleLine = true,
         placeholder = { Text(stringResource(Res.string.lan_ip_hint), fontSize = 14.sp) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.None,
+            autoCorrectEnabled = false,
+            keyboardType = KeyboardType.Uri,
+        ),
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = TSColors.TextPrimary,
             unfocusedTextColor = TSColors.TextPrimary,

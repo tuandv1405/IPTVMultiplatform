@@ -13,12 +13,12 @@ import tss.t.tsiptv.core.stremio.ClassifiedStream
 import tss.t.tsiptv.core.stremio.MediaHistoryRecord
 import tss.t.tsiptv.core.stremio.MediaHistoryRepository
 import tss.t.tsiptv.core.stremio.MediaPlaybackContext
+import tss.t.tsiptv.core.stremio.MediaPreviewStore
 import tss.t.tsiptv.core.stremio.MediaRules
 import tss.t.tsiptv.core.stremio.NextEpisodeInfo
 import tss.t.tsiptv.core.stremio.SeasonGroup
 import tss.t.tsiptv.core.stremio.StreamGroup
 import tss.t.tsiptv.core.stremio.StreamsState
-import tss.t.tsiptv.core.stremio.StremioJson
 import tss.t.tsiptv.core.stremio.StremioMeta
 import tss.t.tsiptv.core.stremio.StremioType
 import tss.t.tsiptv.core.stremio.StremioVideo
@@ -124,16 +124,14 @@ class MediaDetailViewModel(
         }
     }
 
-    fun open(type: String, id: String, addonId: String?, videoId: String?, openStreams: Boolean, previewJson: String) {
+    fun open(type: String, id: String, addonId: String?, videoId: String?, openStreams: Boolean) {
         val key = "$type|$id|$addonId|$videoId|$openStreams"
         if (key == openedKey) return
         openedKey = key
         sourceDetail = null
         this.type = type
         routeAddonId = addonId
-        val preview = previewJson.takeIf { it.isNotBlank() }?.let {
-            runCatching { StremioJson.decodeFromString(StremioMeta.serializer(), it) }.getOrNull()
-        } ?: StremioMeta(id = id, type = type)
+        val preview = MediaPreviewStore.get(type, id) ?: StremioMeta(id = id, type = type)
         // A series preview has no videos yet: never offer Play for it while the meta loads.
         _state.value = MediaDetailUiState(
             loading = true,
