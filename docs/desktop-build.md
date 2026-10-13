@@ -161,7 +161,8 @@ Sau khi đổi giá trị thì build lại MSI. Task `generateDesktopSupportConf
 | Vị trí | Mobile (Android) | Desktop |
 |---|---|---|
 | App open | AdMob app open | Màn hình "Ủng hộ nhà phát triển": QR VietQR, nút "Ủng hộ online", "Google Play", "Để sau" |
-| Banner Home / Player | AdMob banner → fallback Shopee | Thẻ "Ủng hộ TS IPTV" (bấm để mở màn hình ủng hộ) |
+| Banner Home | AdMob banner → fallback Shopee | Thẻ "Ủng hộ TS IPTV" (bấm để mở màn hình ủng hộ) |
+| Dưới tiêu đề player (cửa sổ rộng) | AdMob banner → fallback Shopee | Thẻ Shopee khi được hiện quảng cáo (đã qua 24 giờ đầu, không có gói "No ads") và đã tải được offer. Nếu không có thì hiện thẻ "Ủng hộ TS IPTV", kể cả trong 24 giờ đầu (`WidePlayerPromo` trong `PlayerScreen.kt`) |
 | Native trong danh sách (Home, Player, Programs) | AdMob native → fallback Shopee | Xen kẽ: ô chẵn là thẻ ủng hộ, ô lẻ là thẻ "TS IPTV cho Android" |
 | Link "Xoá quảng cáo" | Có | Không (desktop không có quảng cáo để xoá) |
 | Tab History (thẻ Shopee riêng) | Như cũ | Như cũ: thẻ Shopee vẫn hiện, không đổi |

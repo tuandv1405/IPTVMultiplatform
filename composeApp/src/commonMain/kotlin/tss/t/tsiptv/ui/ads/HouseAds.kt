@@ -14,3 +14,11 @@ expect fun rememberHouseAd(slot: Int?): (@Composable () -> Unit)?
 
 /** House promos replace ads on this platform, so there is nothing to "remove": no Remove ads link. */
 expect val houseAdsReplaceAds: Boolean
+
+/**
+ * The "support the developer" card for a slot that shows no ad (desktop, docs/desktop-build.md), or
+ * null where there is none (Android, iOS). Unlike [rememberHouseAd] it is not an ad: it may show in
+ * the first 24 h.
+ */
+@Composable
+expect fun rememberSupportPromo(): (@Composable () -> Unit)?

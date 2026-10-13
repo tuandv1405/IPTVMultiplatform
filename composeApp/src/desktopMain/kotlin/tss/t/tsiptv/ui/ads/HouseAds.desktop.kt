@@ -21,3 +21,10 @@ actual fun rememberHouseAd(slot: Int?): (@Composable () -> Unit)? {
 }
 
 actual val houseAdsReplaceAds: Boolean = true
+
+/** "Support TS IPTV"; the Android app promo when no way to give is configured. */
+@Composable
+actual fun rememberSupportPromo(): (@Composable () -> Unit)? {
+    val promo = if (SupportLinks.canDonate) SupportPromo.DONATE else SupportPromo.ANDROID_APP
+    return { SupportPromoCard(promo) }
+}

@@ -8,3 +8,6 @@ import androidx.compose.runtime.Composable
 actual fun rememberHouseAd(slot: Int?): (@Composable () -> Unit)? = null
 
 actual val houseAdsReplaceAds: Boolean = false
+
+@Composable
+actual fun rememberSupportPromo(): (@Composable () -> Unit)? = null
