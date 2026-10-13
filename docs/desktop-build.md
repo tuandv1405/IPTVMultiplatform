@@ -273,9 +273,11 @@ Nguồn chính:
 
 ## 7. Giới hạn đã biết
 
-- **Không có đăng nhập trên desktop.** Firebase Auth chỉ chạy trong bộ nhớ. Đăng nhập Google/Apple là
-  `TODO()` của thư viện gitlive và sẽ crash nếu ai đó mở màn hình Login từ Profile rồi bấm. App mặc
-  định bỏ qua Login (`AppFlags.worksSignedOut`), nhưng màn hình vẫn truy cập được từ Profile.
+- **Không có đăng nhập trên desktop.** Firebase Auth và Firestore trên desktop chỉ chạy trong bộ nhớ
+  (`InMemoryFirebaseAuth`, `InMemoryFirebaseFirestore`). Nút Google/Apple báo lỗi "not implemented". App mặc
+  định bỏ qua Login (`AppFlags.worksSignedOut`), nhưng màn hình vẫn truy cập được từ Profile. Kế hoạch tích hợp
+  Firebase thật, đăng nhập bằng QR quét từ điện thoại và màn Thiết bị đăng nhập:
+  [plan-desktop-login-sync.md](plan-desktop-login-sync.md).
 - **Không có analytics trên desktop.** `Firebase.analytics` trên JVM là `TODO()` và đã từng làm app
   crash khi thêm playlist. Mọi lệnh gọi giờ đi qua `AppAnalytics` và bị bỏ qua trên desktop.
 - **macOS:** chưa ký số, chưa notarize (xem mục 2, macOS). Mới kiểm thử bản arm64.
