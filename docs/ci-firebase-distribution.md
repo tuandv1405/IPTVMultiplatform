@@ -1,6 +1,6 @@
 # CI: pull request → AAB → Firebase App Distribution
 
-Workflow: `.github/workflows/pr-firebase-distribution.yml`.
+Workflow: `.github/workflows/pr-firebase-distribution.yml`. Bản iOS: `docs/ci-ios-firebase-distribution.md`.
 
 Mỗi khi một pull request được mở, có commit mới hoặc chuyển từ draft sang ready, workflow sẽ:
 

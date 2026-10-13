@@ -1,0 +1,189 @@
+# Builds a signed iOS .ipa for every pull request and uploads it to Firebase App Distribution.
+# Setup (certificate, provisioning profile, secrets, testers): docs/ci-ios-firebase-distribution.md
+name: PR build → Firebase App Distribution (iOS)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+concurrency:
+  group: pr-distribution-ios-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write # only used by the keyless (Workload Identity Federation) fallback
+
+jobs:
+  # Until the Apple signing secrets are set (docs/ci-ios-firebase-distribution.md) the iOS build is
+  # skipped with a notice instead of failing every pull request.
+  signing-check:
+    # Pull requests from forks get no secrets, so they cannot be signed or uploaded.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       github.event.pull_request.draft == false)
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        env:
+          HAS_CERT: ${{ secrets.IOS_CERT_P12_BASE64 != '' }}
+          HAS_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 != '' }}
+        run: |
+          if [ "$HAS_CERT" = true ] && [ "$HAS_PROFILE" = true ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::iOS build skipped: set IOS_CERT_P12_BASE64, IOS_CERT_PASSWORD and IOS_PROVISIONING_PROFILE_BASE64 (docs/ci-ios-firebase-distribution.md)."
+          fi
+
+  distribute-ios:
+    needs: signing-check
+    if: needs.signing-check.outputs.ready == 'true'
+    # Xcode 26, as used locally. IOS_XCODE_VERSION (e.g. 26.3) picks another installed Xcode.
+    runs-on: ${{ vars.IOS_RUNNER || 'macos-26' }}
+    timeout-minutes: 90
+    env:
+      HAS_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON != '' }}
+      SIGNING_DIR: ${{ github.workspace }}/../ios-signing
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select Xcode
+        env:
+          XCODE_VERSION: ${{ vars.IOS_XCODE_VERSION }}
+        run: |
+          if [ -n "$XCODE_VERSION" ]; then sudo xcode-select -s "/Applications/Xcode_$XCODE_VERSION.app"; fi
+          xcodebuild -version
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      # Kotlin/Native compiler and its iOS toolchain (about 1 GB on the first run).
+      - name: Cache Kotlin/Native
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+
+      - name: Cache CocoaPods (MobileVLCKit)
+        uses: actions/cache@v4
+        with:
+          path: |
+            iosApp/Pods
+            ~/Library/Caches/CocoaPods
+          key: pods-${{ runner.os }}-${{ hashFiles('iosApp/Podfile.lock') }}
+
+      - name: Cache Swift packages (Firebase, GoogleSignIn)
+        uses: actions/cache@v4
+        with:
+          path: build/ios-derived-data/SourcePackages
+          key: spm-${{ runner.os }}-${{ hashFiles('iosApp/iosApp.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+
+      # The Podfile needs CocoaPods >= 1.16.2 (Xcode 16 project format).
+      - name: Install CocoaPods
+        run: |
+          if ! pod --version 2>/dev/null | awk -F. '{ exit !($1 > 1 || ($1 == 1 && ($2 > 16 || ($2 == 16 && $3 >= 2)))) }'; then
+            sudo gem install cocoapods -v '>= 1.16.2' --no-document
+          fi
+          pod --version
+
+      - name: Restore signing certificate and provisioning profile
+        env:
+          IOS_CERT_P12_BASE64: ${{ secrets.IOS_CERT_P12_BASE64 }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          mkdir -p "$SIGNING_DIR"
+          echo "$IOS_CERT_P12_BASE64" | base64 --decode > "$SIGNING_DIR/cert.p12"
+          echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$SIGNING_DIR/app.mobileprovision"
+
+      # The Kotlin framework (Release, iosArm64) is built by the project's Gradle build phase.
+      - name: Build and sign the IPA
+        env:
+          IOS_CERT_P12: ${{ env.SIGNING_DIR }}/cert.p12
+          IOS_CERT_PASSWORD: ${{ secrets.IOS_CERT_PASSWORD }}
+          IOS_PROFILE: ${{ env.SIGNING_DIR }}/app.mobileprovision
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          # CFBundleVersion <project build>.<run>, so every CI build is a distinct release.
+          base=$(grep -m1 'CURRENT_PROJECT_VERSION = ' iosApp/iosApp.xcodeproj/project.pbxproj | tr -dc '0-9')
+          BUILD_NUMBER="$base.$RUN_NUMBER" iosApp/ci/build-ipa.sh
+
+      - name: Locate IPA
+        id: out
+        run: |
+          ipa=$(cat build/ios-ipa/ipa-path.txt)
+          test -f "$ipa"
+          echo "ipa=$ipa" >> "$GITHUB_OUTPUT"
+
+      - name: Release notes
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          HEAD_REF: ${{ github.head_ref || github.ref_name }}
+        run: |
+          {
+            if [ -n "$PR_NUMBER" ]; then echo "PR #$PR_NUMBER: $PR_TITLE"; fi
+            echo "Branch: $HEAD_REF"
+            echo "Commit: ${GITHUB_SHA::7}"
+          } > release-notes.txt
+          cat release-notes.txt
+
+      - name: Authenticate to Google Cloud (service-account key)
+        if: env.HAS_SA_KEY == 'true'
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
+        if: env.HAS_SA_KEY != 'true'
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Upload to Firebase App Distribution
+        env:
+          FIREBASE_APP_ID: ${{ vars.FIREBASE_IOS_APP_ID || '1:234600934735:ios:503f6df8ba12a94cd4a93a' }}
+          # Group ALIASES, comma-separated; empty = upload only. Testers' devices must be in the profile.
+          TESTER_GROUPS: ${{ vars.FIREBASE_IOS_TESTER_GROUPS }}
+          TESTERS: ${{ vars.FIREBASE_IOS_TESTERS }}
+          IPA: ${{ steps.out.outputs.ipa }}
+        run: |
+          args=(appdistribution:distribute "$IPA" --app "$FIREBASE_APP_ID" --release-notes-file release-notes.txt)
+          if [ -n "$TESTER_GROUPS" ]; then args+=(--groups "$TESTER_GROUPS"); fi
+          if [ -n "$TESTERS" ]; then args+=(--testers "$TESTERS"); fi
+          set +e
+          npx --yes firebase-tools@14 "${args[@]}" 2>&1 | tee distribute.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ]; then
+            if grep -q 'failed to distribute to testers/groups' distribute.log; then
+              echo "::error::The build was uploaded, but distributing it failed: no tester group with alias '$TESTER_GROUPS'. Create the group in Firebase Console › App Distribution › Testers & Groups or fix FIREBASE_IOS_TESTER_GROUPS."
+            else
+              reason=$(grep -iE 'error|denied|permission|not found|invalid' distribute.log | tail -n 3 | tr '\n' ' ')
+              echo "::error::App Distribution upload failed: ${reason:-see the step log}"
+            fi
+            exit 1
+          fi
+
+      - name: Keep the IPA and dSYMs as workflow artifacts
+        if: always() && steps.out.outputs.ipa != ''
+        uses: actions/upload-artifact@v5
+        with:
+          name: tsiptv-ios-${{ github.event.pull_request.number || github.run_number }}
+          path: |
+            ${{ steps.out.outputs.ipa }}
+            build/ios-ipa/TSIPTV.xcarchive/dSYMs
+          retention-days: 14
+
+      - name: Clean up secrets
+        if: always()
+        run: rm -rf "$SIGNING_DIR"

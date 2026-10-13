@@ -21,6 +21,10 @@ OTHER_LDFLAGS = $(OTHER_LDFLAGS) -weak_framework UIKit
 // `import MobileVLCKit` in Swift would auto-link the real framework again.
 OTHER_SWIFT_FLAGS = $(inherited) -Xfrontend -disable-autolink-framework -Xfrontend MobileVLCKit
 
+// Manual signing on CI (iosApp/ci/build-ipa.sh) passes the profile UUID in TSIPTV_PROVISIONING_PROFILE,
+// which only this target reads. Empty locally, where Xcode signs automatically.
+PROVISIONING_PROFILE_SPECIFIER = $(TSIPTV_PROVISIONING_PROFILE)
+
 // Team ID for code signing (replace with your actual team ID)
 TEAM_ID=57N5M3BU77
 
