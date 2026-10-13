@@ -39,6 +39,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -80,6 +81,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.hello_format
 import tsiptv.composeapp.generated.resources.home_search_placeholder
+import tss.t.tsiptv.utils.PlatformUtils
 import tss.t.tsiptv.navigation.NavRoutes
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.ui.screens.ads.AdsViewModel
@@ -89,6 +91,7 @@ import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.CategoryRow
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.HomeMiniPlayer
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.MiniPlayerHeight
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.homeEmptyIptvSource
+import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.homeGridColumns
 import tss.t.tsiptv.ui.screens.home.homeiptvlist.widgets.homeItemList
 import tss.t.tsiptv.ui.screens.login.AuthUiState
 import tss.t.tsiptv.ui.screens.login.provider.LocalAuthProvider
@@ -239,7 +242,9 @@ fun HomeIPTVPlaylistScreen(
                     )
                 }
             ) { targetState ->
-                Box {
+                BoxWithConstraints {
+                    // Desktop: two or three channel cards per line, by window width.
+                    val columns = homeGridColumns(maxWidth, PlatformUtils.platform.isDesktop)
                     LazyColumn(
                         state = scrollState,
                         modifier = Modifier.fillMaxSize()
@@ -269,6 +274,7 @@ fun HomeIPTVPlaylistScreen(
                                     onHomeEvent = onHomeEvent,
                                     categoryListState = categoryListState,
                                     bannerSpace = bannerSpace,
+                                    columns = columns,
                                 )
                             }
                         }
