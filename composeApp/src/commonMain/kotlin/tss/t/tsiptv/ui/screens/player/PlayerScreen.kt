@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -85,6 +86,7 @@ import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.ui.MediaPlayerView
 import tss.t.tsiptv.ui.screens.ads.AdsViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import tss.t.tsiptv.ui.screens.home.HomeUiState
 import tss.t.tsiptv.ui.screens.home.widget.HomeChannelItem
 import tss.t.tsiptv.ui.screens.programs.ProgramItem
@@ -98,6 +100,8 @@ import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.ui.ads.BannerAdSlot
 import tss.t.tsiptv.ui.ads.NativeAdSlot
 import tss.t.tsiptv.ui.ads.rememberAdsState
+import tss.t.tsiptv.ui.ads.rememberSupportPromo
+import tss.t.tsiptv.ui.widgets.AdsItem
 import tss.t.tsiptv.ui.screens.ads.rememberShopeeFallback
 import tss.t.tsiptv.ui.widgets.HorizontalDividersGradient
 import tss.t.tsiptv.utils.KeepScreenOnState
@@ -430,12 +434,7 @@ private fun WidePlayerLayout(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                BannerAdSlot(
-                    placement = AdPlacement.PLAYER_BANNER,
-                    modifier = Modifier.padding(top = 12.dp),
-                    fallback = rememberShopeeFallback(adsViewModel),
-                    removeAdsLink = true,
-                )
+                WidePlayerPromo(adsViewModel, Modifier.padding(top = 12.dp))
                 val programs = homeUIState.currentProgramList
                 if (!programs.isNullOrEmpty()) {
                     WidePaneTitle(stringResource(Res.string.home_nav_programs))
@@ -480,6 +479,31 @@ private fun WidePlayerLayout(
 }
 
 private val WIDE_PLAYER_CHANNELS_WIDTH = 380.dp
+
+/**
+ * Under the title of the desktop wide player: the Shopee offer while ads may show (24 h passed, no
+ * "No ads" plan) and one has loaded, otherwise the "support the developer" card. A platform without
+ * that card keeps the usual banner slot.
+ */
+@Composable
+private fun WidePlayerPromo(adsViewModel: AdsViewModel, modifier: Modifier = Modifier) {
+    val support = rememberSupportPromo()
+    if (support == null) {
+        BannerAdSlot(
+            placement = AdPlacement.PLAYER_BANNER,
+            modifier = modifier,
+            fallback = rememberShopeeFallback(adsViewModel),
+            removeAdsLink = true,
+        )
+        return
+    }
+    val ads = rememberAdsState()
+    val offer by adsViewModel.displayAd.collectAsStateWithLifecycle()
+    Box(modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+        val shown = offer
+        if (ads.fallback && shown != null) AdsItem(shown) else support()
+    }
+}
 
 @Composable
 private fun WidePaneTitle(text: String) {
