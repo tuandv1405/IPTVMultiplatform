@@ -233,6 +233,8 @@ class DesktopMediaPlayer(
         }
     }
 
+    override suspend fun captureFrame(): VideoSnapshot? = frameSink.snapshot()
+
     /**
      * VLC takes per-media options for User-Agent and Referer only (the same keys as
      * `#EXTVLCOPT`); any other header cannot be sent. Only the names are logged: values are

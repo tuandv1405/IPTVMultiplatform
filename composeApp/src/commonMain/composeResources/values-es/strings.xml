@@ -92,6 +92,17 @@
     <string name="player_dislike">No me gusta</string>
     <string name="player_share">Compartir</string>
     <string name="player_report">Reportar</string>
+    <string name="share_text">Estoy viendo %1$s en TS IPTV. Descarga la app: %2$s</string>
+    <string name="share_card_watching">Viendo en TS IPTV</string>
+    <string name="share_card_get_app">Disponible en Google Play</string>
+    <string name="share_more">Más</string>
+    <string name="share_copy_image">Copiar imagen</string>
+    <string name="share_save_image">Guardar imagen</string>
+    <string name="share_no_frame">No se puede capturar este vídeo, así que la tarjeta muestra el logo del canal.</string>
+    <string name="share_caption_copied">Texto copiado. Pégalo en tu publicación.</string>
+    <string name="share_image_copied">Imagen copiada. Pégala (Ctrl+V) en tu publicación.</string>
+    <string name="share_saved">Guardado en %1$s</string>
+    <string name="share_failed">No se pudo compartir. Inténtalo de nuevo.</string>
 
     <string name="channel_count_format">%1$d Canales</string>
     <string name="programs_today_format">%1$d Programas</string>

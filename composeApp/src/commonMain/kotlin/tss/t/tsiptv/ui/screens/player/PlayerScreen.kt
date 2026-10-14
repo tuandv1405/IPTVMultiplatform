@@ -569,7 +569,7 @@ private fun InteractionsSpace(
             iconPainter = painterResource(Res.drawable.ic_share),
             title = stringResource(Res.string.player_share)
         ) {
-
+            onEvent(PlayerEvent.OnShare)
         }
         InteractionItem(
             iconPainter = painterResource(Res.drawable.ic_report),

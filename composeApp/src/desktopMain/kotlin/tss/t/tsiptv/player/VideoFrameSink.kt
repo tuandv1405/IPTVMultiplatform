@@ -100,6 +100,21 @@ internal class VideoFrameSink : BufferFormatCallback, RenderCallback {
     }
 
     /**
+     * A copy of the picture on screen (share card), or null when none is shown. The published
+     * [frame] cannot be kept: its pixels are replaced in place by the next frame.
+     */
+    fun snapshot(): VideoSnapshot? {
+        synchronized(lock) {
+            val info = info ?: return null
+            if (_frame.value == null) return null
+            val copy = Bitmap()
+            if (!copy.installPixels(info, bytes.copyOf(), info.minRowBytes)) return null
+            copy.setImmutable()
+            return VideoSnapshot(copy.asComposeImageBitmap(), aspect)
+        }
+    }
+
+    /**
      * Drops the current picture, so a new channel does not open on the last frame of the old one.
      * Call it once libVLC has stopped the old stream (after `media().prepare()` or `stop()`), or a
      * late frame of that stream shows again.

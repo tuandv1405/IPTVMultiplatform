@@ -67,6 +67,7 @@ import tss.t.tsiptv.ui.screens.player.PlayerEvent
 import tss.t.tsiptv.ui.screens.player.PlayerOptionsDialog
 import tss.t.tsiptv.ui.screens.player.PlayerScreen
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
+import tss.t.tsiptv.ui.screens.player.ShareSheet
 import tss.t.tsiptv.ui.screens.programs.details.ProgramForChannelScreen
 import tss.t.tsiptv.ui.screens.settings.LanguageSettingsScreen
 import tss.t.tsiptv.ui.screens.splash.SplashScreen
@@ -484,6 +485,7 @@ fun App() {
 
                             val channelId = it.toRoute<NavRoutes.Player>().mediaItemId
                             var showPlayerOptions by remember { mutableStateOf(false) }
+                            var showShareSheet by remember { mutableStateOf(false) }
 
                             val mediaItem by playerViewModel.mediaItemState.collectAsStateWithLifecycle()
                             val homeUIState by homeViewModel.uiState.collectAsStateWithLifecycle()
@@ -510,8 +512,16 @@ fun App() {
                                     PlayerEvent.OnVerticalPlayerBack -> navController.popBackStack()
                                     // F3: streams of a source channel and subtitle tracks (AC-T21).
                                     PlayerEvent.OnSettings -> showPlayerOptions = true
+                                    PlayerEvent.OnShare -> showShareSheet = true
                                     else -> playerViewModel.onHandleEvent(event)
                                 }
+                            }
+                            if (showShareSheet) {
+                                ShareSheet(
+                                    mediaItem = mediaItem,
+                                    capture = playerViewModel::captureShareFrame,
+                                    onDismiss = { showShareSheet = false },
+                                )
                             }
                             if (showPlayerOptions) {
                                 val channelStreams by playerViewModel.channelStreams.collectAsStateWithLifecycle()

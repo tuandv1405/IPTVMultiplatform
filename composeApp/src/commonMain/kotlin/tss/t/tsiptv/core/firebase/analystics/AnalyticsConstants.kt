@@ -42,6 +42,15 @@ object AnalyticsConstants {
     const val PARAMS_REACTION = "reaction"
 
     /**
+     * Player › Share: the target ([tss.t.tsiptv.feature.share.ShareTarget] name, lower-case), the
+     * outcome and whether the card had a video picture; never what plays.
+     */
+    const val EVENT_PLAYER_SHARE = "player_share"
+    const val PARAMS_SHARE_TARGET = "target"
+    const val PARAMS_SHARE_RESULT = "result"
+    const val PARAMS_SHARE_HAS_FRAME = "has_frame"
+
+    /**
      * F2: an addon was added, with [PARAMS_LINK_HOST] and [PARAMS_URL_SCHEME] only: addon
      * paths hold the user's configuration (often service keys), so no path is sent.
      */

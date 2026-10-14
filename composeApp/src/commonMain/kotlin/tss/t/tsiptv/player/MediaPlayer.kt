@@ -118,6 +118,12 @@ interface MediaPlayer {
 
     /** F3: shows the text track [id] (from [textTracks]), or turns subtitles off when null. */
     fun selectTextTrack(id: String?) {}
+
+    /**
+     * The picture on screen now (share card), or null when there is none or the platform cannot
+     * read it (iOS in this release). Never call it for DRM items: callers check first.
+     */
+    suspend fun captureFrame(): VideoSnapshot? = null
 }
 
 /** One entry of the player's subtitle menu. */

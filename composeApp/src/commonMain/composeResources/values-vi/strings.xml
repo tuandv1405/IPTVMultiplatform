@@ -92,6 +92,17 @@
     <string name="player_dislike">Không thích</string>
     <string name="player_share">Chia sẻ</string>
     <string name="player_report">Báo cáo</string>
+    <string name="share_text">Đang xem %1$s trên TS IPTV. Tải ứng dụng: %2$s</string>
+    <string name="share_card_watching">Đang xem trên TS IPTV</string>
+    <string name="share_card_get_app">Tải trên Google Play</string>
+    <string name="share_more">Khác</string>
+    <string name="share_copy_image">Sao chép ảnh</string>
+    <string name="share_save_image">Lưu ảnh</string>
+    <string name="share_no_frame">Không chụp được hình của video này nên ảnh dùng logo kênh.</string>
+    <string name="share_caption_copied">Đã sao chép nội dung. Dán vào bài đăng nhé.</string>
+    <string name="share_image_copied">Đã sao chép ảnh. Dán (Ctrl+V) vào bài đăng nhé.</string>
+    <string name="share_saved">Đã lưu vào %1$s</string>
+    <string name="share_failed">Không chia sẻ được. Thử lại nhé.</string>
     <string name="channel_count_format">%1$d Kênh</string>
     <string name="programs_today_format">%1$d Chương trình</string>
 

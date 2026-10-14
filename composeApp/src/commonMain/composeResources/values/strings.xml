@@ -92,6 +92,17 @@
     <string name="player_dislike">Dislike</string>
     <string name="player_share">Share</string>
     <string name="player_report">Report</string>
+    <string name="share_text">Watching %1$s on TS IPTV. Get the app: %2$s</string>
+    <string name="share_card_watching">Watching on TS IPTV</string>
+    <string name="share_card_get_app">Get it on Google Play</string>
+    <string name="share_more">More</string>
+    <string name="share_copy_image">Copy image</string>
+    <string name="share_save_image">Save image</string>
+    <string name="share_no_frame">This video can’t be captured, so the card shows the channel logo.</string>
+    <string name="share_caption_copied">Caption copied. Paste it into your post.</string>
+    <string name="share_image_copied">Image copied. Paste it (Ctrl+V) into your post.</string>
+    <string name="share_saved">Saved to %1$s</string>
+    <string name="share_failed">Couldn’t share. Try again.</string>
 
     <string name="channel_count_format">%1$d Channels</string>
     <string name="programs_today_format">%1$d Programs</string>

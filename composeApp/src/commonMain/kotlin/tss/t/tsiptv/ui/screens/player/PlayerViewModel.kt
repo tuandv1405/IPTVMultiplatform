@@ -33,7 +33,10 @@ import tss.t.tsiptv.core.stremio.MediaPlaybackContext
 import tss.t.tsiptv.core.stremio.MediaProgressTracker
 import tss.t.tsiptv.core.stremio.StremioType
 import tss.t.tsiptv.core.tracking.AppAnalytics
+import tss.t.tsiptv.feature.share.FrameCheck
 import tss.t.tsiptv.player.MediaPlayer
+import tss.t.tsiptv.player.VideoSnapshot
+import kotlin.coroutines.cancellation.CancellationException
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackState
 import tss.t.tsiptv.player.models.toMediaItem
@@ -453,6 +456,23 @@ class PlayerViewModel(
         }
     }
 
+    /**
+     * The picture on screen for the share card, or null: never read for DRM items or radio, and a
+     * black read-back (secure surface, nothing drawn yet) counts as none.
+     */
+    suspend fun captureShareFrame(): VideoSnapshot? {
+        val item = _mediaPlayer.currentMedia.value ?: return null
+        if (item.drm != null || item.isRadio) return null
+        val snapshot = try {
+            _mediaPlayer.captureFrame()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        } ?: return null
+        return snapshot.takeUnless { withContext(Dispatchers.Default) { FrameCheck.isBlank(it.image) } }
+    }
+
     /** Turns [tapped] on for what plays (replacing the other one), or off when it already is. */
     @OptIn(ExperimentalTime::class)
     private suspend fun toggleReaction(tapped: Reaction) {
@@ -531,6 +551,9 @@ sealed interface PlayerEvent {
     /** Like/dislike what plays (local only); tapping the active one again clears it. */
     data object OnLike : PlayerEvent
     data object OnDislike : PlayerEvent
+
+    /** Opens the share sheet (handled by the screen host, like [OnSettings]). */
+    data object OnShare : PlayerEvent
 
     /** VOD (addon movies/episodes): absolute and relative seeking. */
     data class SeekTo(val positionMs: Long) : PlayerEvent
