@@ -1,0 +1,70 @@
+# Firebase App Testing agent (AI-driven tests, Android) — smoke set.
+# Runs on every pull-request build (.github/workflows/pr-firebase-distribution.yml); setup and how to
+# write cases: docs/ci-app-testing.md. Only displayName, id, prerequisiteTestCaseId and steps
+# (goal, hint, finalScreenAssertion) are allowed: any other key fails the import.
+#
+# Every run starts from a fresh install on a fresh device, so each case reaches its screen through
+# its prerequisites. The release build requires a sign-in; the CI passes the test account with
+# --test-username/--test-password-file.
+tests:
+  - displayName: Sign in with the test account
+    id: sign-in
+    steps:
+      - goal: Wait for the splash screen to finish and reach the sign-in screen.
+        hint: >-
+          The splash shows only the app logo. If a Google consent form appears, tap "Consent".
+        finalScreenAssertion: >-
+          The screen shows the title "TSIPTV", an "Email" field, a "Password" field and a "Login" button.
+      - goal: Sign in with the provided test account.
+        hint: >-
+          Type the test account email in "Email" and its password in "Password", then tap "Login".
+          If a dialog "Limit of 4 devices reached" appears, tap the first device in its list (its text
+          ends with "Sign out remotely"); the dialog then closes. If a "Device sync" dialog appears,
+          tap "Later".
+        finalScreenAssertion: >-
+          The Home screen is shown: a greeting starting with "Hello" at the top and a bottom bar with
+          "Home", "History", "Programs" and "Profile".
+
+  - displayName: Add a playlist from a link
+    id: add-playlist-url
+    prerequisiteTestCaseId: sign-in
+    steps:
+      - goal: Open the screen for adding a playlist.
+        hint: >-
+          If the Home screen shows "No IPTV Source Connected", tap its "Add IPTV" button. Otherwise tap
+          the tune (sliders) icon at the top right of Home, labelled "Sources and options", then tap
+          "Import Playlist".
+        finalScreenAssertion: >-
+          The "Add IPTV Source" screen is shown with the fields "Source Name" and "Source Link".
+      - goal: >-
+          Enter "QA Review" as the source name and https://tsiptv-download.web.app/tv/review.m3u as the
+          source link, then add it.
+        hint: >-
+          Tap the "Add IPTV" button below the fields and wait up to 30 seconds while it shows a spinner.
+          If a dialog "Replace playlist?" appears, tap "Replace".
+        finalScreenAssertion: >-
+          A dialog titled "Congratulation" says "Parse channel successfully! Found 4 channels".
+      - goal: Close the dialog and go back to the channel list.
+        hint: Tap "OK".
+        finalScreenAssertion: >-
+          The Home screen lists the channels "Big Buck Bunny (Blender, CC BY)" and "Tears of Steel
+          (Blender, CC BY)", with group chips "All Channels", "Demo VOD" and "Demo Live".
+
+  - displayName: Play a channel and return
+    id: play-channel
+    prerequisiteTestCaseId: add-playlist-url
+    steps:
+      - goal: Start playing the channel "Big Buck Bunny (Blender, CC BY)".
+        hint: >-
+          Tap the channel's card in the list on Home. Video may need up to 15 seconds to start; it can
+          appear black in screenshots, which is fine.
+        finalScreenAssertion: >-
+          The player screen is shown with a video area at the top, the title "Big Buck Bunny (Blender,
+          CC BY)" below it and the buttons "Like", "Dislike", "Share" and "Report". No error message
+          such as "This channel could not be played" is shown.
+      - goal: Leave the player.
+        hint: >-
+          Tap the video once to show its controls, then tap the back arrow at its top left, or press the
+          system Back button.
+        finalScreenAssertion: >-
+          The Home screen with the bottom bar "Home", "History", "Programs", "Profile" is shown again.

@@ -7,6 +7,8 @@ Mỗi khi một pull request được mở, có commit mới hoặc chuyển t�
 1. Build `bundleRelease` (có R8) và ký bằng upload key.
 2. Đẩy file AAB lên Firebase App Distribution, kèm release notes gồm số PR, tiêu đề, branch và commit.
 3. Lưu AAB làm artifact của workflow trong 14 ngày.
+4. Import test case trong `qa/app-testing/` và cho App Testing agent chạy bộ smoke trên bản vừa upload
+   (`docs/ci-app-testing.md`).
 
 PR mở từ fork hoặc đang ở trạng thái draft sẽ không chạy, vì GitHub không cấp secret cho fork. Có thể chạy tay
 bằng **Actions › PR build → Firebase App Distribution › Run workflow**.

@@ -99,6 +99,7 @@ jobs:
       # Google Play; if the AAB is refused (or FIREBASE_DISTRIBUTE_FORMAT=apk), the APK built
       # from the same commit is uploaded instead.
       - name: Upload to Firebase App Distribution
+        id: upload
         env:
           FIREBASE_APP_ID: ${{ vars.FIREBASE_ANDROID_APP_ID || '1:234600934735:android:c8d65b7ef4741dacd4a93a' }}
           # Group ALIASES (Testers & Groups › the group › alias), comma-separated; empty = upload only.
@@ -114,7 +115,9 @@ jobs:
             if [ -n "$TESTER_GROUPS" ]; then args+=(--groups "$TESTER_GROUPS"); fi
             if [ -n "$TESTERS" ]; then args+=(--testers "$TESTERS"); fi
             npx --yes firebase-tools@14 "${args[@]}" 2>&1 | tee distribute.log
-            return "${PIPESTATUS[0]}"
+            local status="${PIPESTATUS[0]}"
+            if [ "$status" -eq 0 ]; then echo "binary=$1" >> "$GITHUB_OUTPUT"; fi
+            return "$status"
           }
           # The build was uploaded but handing it to the groups failed (404 = unknown group alias).
           # Retrying with the APK would fail the same way, so stop here with a clear message.
@@ -135,6 +138,44 @@ jobs:
           reason=$(grep -iE 'error|denied|permission|not found|invalid' distribute.log | tail -n 3 | tr '\n' ' ')
           echo "::error::App Distribution upload failed: ${reason:-see the step log}"
           exit 1
+      # AI test cases in qa/app-testing (Firebase App Testing agent, Android only; docs/ci-app-testing.md).
+      # They are imported into the console (App Distribution › Test cases) so they can also be run by hand,
+      # then the smoke cases run on the build just uploaded. Each case on each device takes one test of the
+      # project's monthly quota (200 in the preview). FIREBASE_APP_TESTING: smoke (default) | all | off.
+      - name: Firebase App Testing (AI test cases)
+        if: vars.FIREBASE_APP_TESTING != 'off'
+        # A failing or over-quota AI test does not fail the build unless FIREBASE_APP_TESTING_BLOCKING=true.
+        continue-on-error: ${{ vars.FIREBASE_APP_TESTING_BLOCKING != 'true' }}
+        env:
+          FIREBASE_APP_ID: ${{ vars.FIREBASE_ANDROID_APP_ID || '1:234600934735:android:c8d65b7ef4741dacd4a93a' }}
+          SCOPE: ${{ vars.FIREBASE_APP_TESTING || 'smoke' }}
+          BLOCKING: ${{ vars.FIREBASE_APP_TESTING_BLOCKING }}
+          # Semicolon-separated 'model=…,version=…,locale=…,orientation=…'; empty = the CLI's default
+          # (MediumPhone.arm, Android 16, en_US, portrait).
+          TEST_DEVICES: ${{ vars.FIREBASE_TEST_DEVICES }}
+          # The release build cannot be used signed out: a dedicated test account (never a real user's).
+          TEST_USERNAME: ${{ vars.FIREBASE_TEST_USERNAME }}
+          TEST_PASSWORD: ${{ secrets.FIREBASE_TEST_PASSWORD }}
+          BINARY: ${{ steps.upload.outputs.binary }}
+        run: |
+          # smoke.yaml first: regression.yaml's cases name its cases as prerequisites.
+          for file in qa/app-testing/smoke.yaml qa/app-testing/regression.yaml; do
+            npx --yes firebase-tools@15 appdistribution:testcases:import "$file" --app "$FIREBASE_APP_ID"
+          done
+          if [ -z "$TEST_USERNAME" ] || [ -z "$TEST_PASSWORD" ]; then
+            echo "::notice::Test cases imported; not run: set FIREBASE_TEST_USERNAME and FIREBASE_TEST_PASSWORD (docs/ci-app-testing.md)."
+            exit 0
+          fi
+          password_file="$RUNNER_TEMP/test-password.txt"
+          printf '%s' "$TEST_PASSWORD" > "$password_file"
+          trap 'rm -f "$password_file"' EXIT
+          args=(apptesting:execute "$BINARY" --app "$FIREBASE_APP_ID" --test-dir qa/app-testing
+            --test-username "$TEST_USERNAME" --test-password-file "$password_file")
+          if [ "$SCOPE" != "all" ]; then args+=(--test-file-pattern 'smoke'); fi
+          if [ -n "$TEST_DEVICES" ]; then args+=(--test-devices "$TEST_DEVICES"); fi
+          if [ "$BLOCKING" != "true" ]; then args+=(--test-non-blocking); fi
+          npx --yes firebase-tools@15 "${args[@]}"
+
       - name: Keep the AAB and APK as workflow artifacts
         if: always() && steps.out.outputs.aab != ''
         uses: actions/upload-artifact@v5
