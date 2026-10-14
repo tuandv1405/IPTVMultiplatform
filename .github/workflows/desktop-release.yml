@@ -209,7 +209,8 @@ jobs:
 
   download-page:
     needs: [version, publish]
-    if: vars.DEPLOY_DOWNLOAD_PAGE != 'false'
+    # The implicit success() would skip this job whenever one platform was skipped upstream.
+    if: ${{ !cancelled() && needs.publish.result == 'success' && vars.DEPLOY_DOWNLOAD_PAGE != 'false' }}
     runs-on: ubuntu-latest
     env:
       HAS_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON != '' }}
