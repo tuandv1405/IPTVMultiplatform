@@ -174,10 +174,15 @@ jobs:
           if [ "$SCOPE" != "all" ]; then args+=(--test-file-pattern 'smoke'); fi
           if [ -n "$TEST_DEVICES" ]; then args+=(--test-devices "$TEST_DEVICES"); fi
           if [ "$BLOCKING" != "true" ]; then args+=(--test-non-blocking); fi
-          if ! npx --yes firebase-tools@15 "${args[@]}"; then
-            # The CLI only says "Test invocation failed"; the API's reason is in firebase-debug.log.
-            reason=$(grep -oE '"(message|status)": ?"[^"]*"' firebase-debug.log 2>/dev/null | tail -n 3 | tr '\n' ' ')
-            rm -f firebase-debug.log # its request bodies hold the test password
+          # --debug to a file: the CLI alone only says "Test invocation failed". The file is not printed,
+          # because its request bodies hold the test password; only the API's error lines are.
+          debug_log="$RUNNER_TEMP/apptesting-debug.log"
+          status=0
+          npx --yes firebase-tools@15 "${args[@]}" --debug > "$debug_log" 2>&1 || status=$?
+          grep -vE '^\[[0-9TZ:.-]+\] ' "$debug_log" | grep -v 'Download the release binary' || true
+          reason=$(grep -oE '"(message|status)": ?"[^"]*"' "$debug_log" | tail -n 3 | tr '\n' ' ')
+          rm -f "$debug_log"
+          if [ "$status" -ne 0 ]; then
             echo "::warning::App Testing did not start: ${reason:-see the step log}. A PERMISSION_DENIED here means the CI service account needs another role (docs/ci-app-testing.md)."
             exit 1
           fi
