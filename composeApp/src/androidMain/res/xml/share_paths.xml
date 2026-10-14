@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- FileProvider: only the share card folder is reachable (AndroidImageSharer). -->
+<!-- FileProvider: only the share card folder (AndroidImageSharer) and, before Android 10, the
+     app's own clips folder (AndroidClipRecorder) are reachable. -->
 <paths>
     <cache-path
         name="share"
         path="share/" />
+    <external-files-path
+        name="clips"
+        path="Movies/TS IPTV/" />
 </paths>

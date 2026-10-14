@@ -39,6 +39,8 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -80,11 +82,12 @@ import tsiptv.composeapp.generated.resources.home_nav_programs
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.ic_dislike
 import tsiptv.composeapp.generated.resources.ic_like
-import tsiptv.composeapp.generated.resources.ic_report
+import tsiptv.composeapp.generated.resources.ic_clip
 import tsiptv.composeapp.generated.resources.ic_share
 import tsiptv.composeapp.generated.resources.player_dislike
 import tsiptv.composeapp.generated.resources.player_like
-import tsiptv.composeapp.generated.resources.player_report
+import tsiptv.composeapp.generated.resources.player_clip
+import tsiptv.composeapp.generated.resources.clip_saving
 import tsiptv.composeapp.generated.resources.player_share
 import tsiptv.composeapp.generated.resources.type_channel
 import tss.t.tsiptv.player.MediaPlayer
@@ -121,6 +124,7 @@ import tss.t.tsiptv.utils.getScreenOrientationUtils
  * @param mediaItem The media item to be played, containing title, artist and source information
  * @param mediaPlayer The media player instance that handles playback functionality
  * @param reaction The viewer's like/dislike of what plays, or null
+ * @param clip Player › Clip's state; null where clips cannot be made (no Clip button)
  * @param onEvent Callback to handle player events like play/pause, PiP mode etc.
  */
 @Composable
@@ -130,6 +134,7 @@ fun PlayerScreen(
     mediaPlayer: MediaPlayer,
     playerControlState: PlayerUIState,
     reaction: Reaction? = null,
+    clip: ClipUiState? = null,
     onEvent: (PlayerEvent) -> Unit,
 ) {
     // F2: addon movies/episodes are not channels: no related channels or EPG under them.
@@ -269,6 +274,7 @@ fun PlayerScreen(
             channelRows = rememberPlayerChannelRows(homeUIState.widePlayerChannels),
             programListState = programListState,
             reaction = reaction,
+            clip = clip,
             onEvent = onEvent,
         )
         return
@@ -347,7 +353,7 @@ fun PlayerScreen(
                 }
 
                 item("Interaction") {
-                    InteractionsSpace(reaction = reaction, onEvent = onEvent)
+                    InteractionsSpace(reaction = reaction, clip = clip, onEvent = onEvent)
                 }
 
                 playerChannelList(playerChannelRows, adsViewModel, AdPlacement.PLAYER_NATIVE, onEvent)
@@ -412,6 +418,7 @@ private fun WidePlayerLayout(
     channelRows: List<AdsPolicy.Row<Channel>>,
     programListState: LazyListState,
     reaction: Reaction?,
+    clip: ClipUiState?,
     onEvent: (PlayerEvent) -> Unit,
 ) {
     Row(modifier = Modifier.fillMaxSize().background(TSColors.DeepBlue)) {
@@ -428,7 +435,7 @@ private fun WidePlayerLayout(
                     onPlayerControl = onEvent,
                     inlineHeight = videoHeight,
                 )
-                // Title on the left, like/dislike/share/report on the right: no extra height
+                // Title on the left, like/dislike/share/clip on the right: no extra height
                 // under the video, which WIDE_PLAYER_UNDER_VIDEO budgets for.
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp),
@@ -453,6 +460,7 @@ private fun WidePlayerLayout(
                     }
                     InteractionsSpace(
                         reaction = reaction,
+                        clip = clip,
                         onEvent = onEvent,
                         modifier = Modifier.padding(start = 16.dp).width(WIDE_PLAYER_INTERACTIONS_WIDTH),
                     )
@@ -541,6 +549,7 @@ private fun WidePaneTitle(text: String) {
 @Composable
 private fun InteractionsSpace(
     reaction: Reaction?,
+    clip: ClipUiState?,
     onEvent: (PlayerEvent) -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
 ) {
@@ -571,11 +580,24 @@ private fun InteractionsSpace(
         ) {
             onEvent(PlayerEvent.OnShare)
         }
-        InteractionItem(
-            iconPainter = painterResource(Res.drawable.ic_report),
-            title = stringResource(Res.string.player_report)
-        ) {
-
+        if (clip != null) {
+            // While recording: the time so far, in red; a tap stops the clip and keeps it.
+            val recording = clip as? ClipUiState.Recording
+            InteractionItem(
+                iconPainter = if (recording != null && !recording.finishing) rememberVectorPainter(Icons.Rounded.Stop)
+                else painterResource(Res.drawable.ic_clip),
+                title = when {
+                    recording == null -> stringResource(Res.string.player_clip)
+                    recording.finishing -> stringResource(Res.string.clip_saving)
+                    else -> formatClipTime(recording.recordedMs)
+                },
+                highlight = if (recording != null) TSColors.ErrorRed else null,
+            ) {
+                when {
+                    recording == null -> onEvent(PlayerEvent.OnClip)
+                    !recording.finishing -> onEvent(PlayerEvent.OnStopClip)
+                }
+            }
         }
     }
 }
@@ -809,17 +831,21 @@ private fun StickyChannelTitle(
 
 /**
  * @param selected on/off state of a toggle (like, dislike), announced as such; null for a plain
- * action (share, report)
+ * action (share, clip)
+ * @param highlight the colour of an action under way (a clip recording)
  */
 @Composable
 private fun RowScope.InteractionItem(
     iconPainter: Painter,
     title: String,
     selected: Boolean? = null,
+    highlight: Color? = null,
     onClick: () -> Unit = {},
 ) {
     val haptic = LocalHapticFeedback.current
-    val tint by animateColorAsState(if (selected == true) TSColors.AccentCyan else TSColors.White.copy(0.8f))
+    val tint by animateColorAsState(
+        highlight ?: if (selected == true) TSColors.AccentCyan else TSColors.White.copy(0.8f)
+    )
     Column(
         modifier = Modifier
             .weight(1f)

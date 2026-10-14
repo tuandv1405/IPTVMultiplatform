@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import tss.t.tsiptv.feature.clip.AndroidClipRecorder
+import tss.t.tsiptv.feature.clip.ClipRecorder
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackError
 import tss.t.tsiptv.player.models.PlaybackPreflight
@@ -321,6 +323,8 @@ class AndroidMediaPlayer(
         }
         if (copied) VideoSnapshot(bitmap.asImageBitmap(), surface.width.toFloat() / surface.height) else null
     }
+
+    override val clipRecorder: ClipRecorder = AndroidClipRecorder(context)
 
     override suspend fun release() = onMain {
         exoPlayer?.removeListener(playerListener)

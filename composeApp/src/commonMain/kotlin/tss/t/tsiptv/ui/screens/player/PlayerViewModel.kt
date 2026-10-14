@@ -21,6 +21,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.firebase.analystics.AnalyticsConstants
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
@@ -33,6 +34,11 @@ import tss.t.tsiptv.core.stremio.MediaPlaybackContext
 import tss.t.tsiptv.core.stremio.MediaProgressTracker
 import tss.t.tsiptv.core.stremio.StremioType
 import tss.t.tsiptv.core.tracking.AppAnalytics
+import tss.t.tsiptv.feature.clip.ClipFailure
+import tss.t.tsiptv.feature.clip.ClipRecorder
+import tss.t.tsiptv.feature.clip.ClipResult
+import tss.t.tsiptv.feature.clip.ClipSession
+import tss.t.tsiptv.feature.clip.Clips
 import tss.t.tsiptv.feature.share.FrameCheck
 import tss.t.tsiptv.player.MediaPlayer
 import tss.t.tsiptv.player.VideoSnapshot
@@ -365,6 +371,7 @@ class PlayerViewModel(
                 is PlayerEvent.ToggleMute -> toggleMute()
                 is PlayerEvent.OnLike -> toggleReaction(Reaction.LIKE)
                 is PlayerEvent.OnDislike -> toggleReaction(Reaction.DISLIKE)
+                is PlayerEvent.OnStopClip -> stopClip()
                 is PlayerEvent.SetVolume -> setVolume(event.volume)
                 else -> {}
             }
@@ -473,6 +480,75 @@ class PlayerViewModel(
         return snapshot.takeUnless { withContext(Dispatchers.Default) { FrameCheck.isBlank(it.image) } }
     }
 
+    private val _clip = MutableStateFlow<ClipUiState>(ClipUiState.Idle)
+
+    /** Player › Clip: the clip being made, or the last one's result until it is dismissed. */
+    val clip: StateFlow<ClipUiState> = _clip
+    private var clipSession: ClipSession? = null
+
+    /** Clips on this platform; null hides the Clip button (iOS). */
+    val clipRecorder: ClipRecorder? get() = _mediaPlayer.clipRecorder
+
+    /** What a clip of what plays would start from: null for live (now on), else the position. */
+    fun clipStartMs(): Long? = if (_mediaPlayer.duration.value <= 0L) null else _mediaPlayer.currentPosition.value
+
+    /**
+     * Records [lengthMs] of what plays: live from now, VOD from [fromMs] (the position the clip
+     * sheet showed, as playback went on behind it). Playback goes on; switching channel ends the
+     * clip there and keeps it.
+     */
+    fun startClip(lengthMs: Long, fromMs: Long?) {
+        val recorder = _mediaPlayer.clipRecorder ?: return
+        if (_clip.value is ClipUiState.Recording) return
+        val item = _mediaPlayer.currentMedia.value?.takeIf { it.id.isNotEmpty() } ?: return
+        val startMs = clipStartMs()?.let { fromMs ?: it }
+        val session = ClipSession(lengthMs.coerceIn(Clips.MIN_MS, Clips.MAX_MS))
+        clipSession = session
+        _clip.value = ClipUiState.Recording(0L, session.lengthMs, finishing = false)
+        viewModelScope.launch {
+            val progress = launch {
+                combine(session.recordedMs, session.finishing) { recorded, finishing ->
+                    ClipUiState.Recording(recorded, session.lengthMs, finishing)
+                }.collect { _clip.value = it }
+            }
+            val channelSwitch = launch {
+                _mediaPlayer.currentMedia.first { it?.id != item.id }
+                session.stop()
+            }
+            val result = try {
+                recorder.record(item, live = startMs == null, fromMs = startMs ?: 0L, session = session)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                ClipResult.Failed(ClipFailure.CONVERT)
+            }
+            progress.cancel()
+            channelSwitch.cancel()
+            clipSession = null
+            AppAnalytics.logEvent(
+                AnalyticsConstants.EVENT_PLAYER_CLIP,
+                mapOf(
+                    AnalyticsConstants.PARAMS_CLIP_RESULT to when (result) {
+                        is ClipResult.Saved -> "saved"
+                        is ClipResult.Failed -> result.reason.name.lowercase()
+                    },
+                    AnalyticsConstants.PARAMS_CLIP_SECONDS to (session.lengthMs / 1000).toString(),
+                    AnalyticsConstants.PARAMS_CLIP_LIVE to (startMs == null).toString(),
+                )
+            )
+            _clip.value = ClipUiState.Done(result, item.title)
+        }
+    }
+
+    /** Ends the clip being recorded early, keeping it. */
+    fun stopClip() {
+        clipSession?.stop()
+    }
+
+    fun dismissClipResult() {
+        if (_clip.value is ClipUiState.Done) _clip.value = ClipUiState.Idle
+    }
+
     /** Turns [tapped] on for what plays (replacing the other one), or off when it already is. */
     @OptIn(ExperimentalTime::class)
     private suspend fun toggleReaction(tapped: Reaction) {
@@ -554,6 +630,10 @@ sealed interface PlayerEvent {
 
     /** Opens the share sheet (handled by the screen host, like [OnSettings]). */
     data object OnShare : PlayerEvent
+
+    /** Opens the clip sheet (screen host); [OnStopClip] ends the clip being recorded. */
+    data object OnClip : PlayerEvent
+    data object OnStopClip : PlayerEvent
 
     /** VOD (addon movies/episodes): absolute and relative seeking. */
     data class SeekTo(val positionMs: Long) : PlayerEvent

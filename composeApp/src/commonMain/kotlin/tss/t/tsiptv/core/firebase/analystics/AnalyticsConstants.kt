@@ -51,6 +51,15 @@ object AnalyticsConstants {
     const val PARAMS_SHARE_HAS_FRAME = "has_frame"
 
     /**
+     * Player › Clip finished: `saved` or the [tss.t.tsiptv.feature.clip.ClipFailure] name
+     * (lower-case), the length asked for in seconds and whether it was live; never what plays.
+     */
+    const val EVENT_PLAYER_CLIP = "player_clip"
+    const val PARAMS_CLIP_RESULT = "result"
+    const val PARAMS_CLIP_SECONDS = "seconds"
+    const val PARAMS_CLIP_LIVE = "live"
+
+    /**
      * F2: an addon was added, with [PARAMS_LINK_HOST] and [PARAMS_URL_SCHEME] only: addon
      * paths hold the user's configuration (often service keys), so no path is sent.
      */

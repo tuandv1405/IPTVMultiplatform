@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import tss.t.tsiptv.feature.clip.ClipRecorder
+import tss.t.tsiptv.feature.clip.VlcClipRecorder
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackError
 import tss.t.tsiptv.player.models.PlaybackPreflight
@@ -234,6 +236,10 @@ class DesktopMediaPlayer(
     }
 
     override suspend fun captureFrame(): VideoSnapshot? = frameSink.snapshot()
+
+    override val clipRecorder: ClipRecorder? = vlcFactory?.let { factory ->
+        VlcClipRecorder(factory, headerOptions = { vlcHeaderOptions(it.headers) })
+    }
 
     /**
      * VLC takes per-media options for User-Agent and Referer only (the same keys as

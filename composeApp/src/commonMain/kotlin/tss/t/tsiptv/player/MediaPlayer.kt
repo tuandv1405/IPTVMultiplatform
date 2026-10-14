@@ -1,6 +1,7 @@
 package tss.t.tsiptv.player
 
 import kotlinx.coroutines.flow.StateFlow
+import tss.t.tsiptv.feature.clip.ClipRecorder
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackError
 import tss.t.tsiptv.player.models.PlaybackState
@@ -124,6 +125,9 @@ interface MediaPlayer {
      * read it (iOS in this release). Never call it for DRM items: callers check first.
      */
     suspend fun captureFrame(): VideoSnapshot? = null
+
+    /** Player › Clip on this platform; null where clips cannot be made (iOS in this release). */
+    val clipRecorder: ClipRecorder? get() = null
 }
 
 /** One entry of the player's subtitle menu. */

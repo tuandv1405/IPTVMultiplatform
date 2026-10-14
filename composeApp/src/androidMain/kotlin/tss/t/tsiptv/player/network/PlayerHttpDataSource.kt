@@ -46,15 +46,26 @@ private val playerClient: OkHttpClient by lazy {
  */
 @UnstableApi
 internal fun playerHttpDataSourceFactory(rawHeaders: Map<String, String> = emptyMap()): HttpDataSource.Factory {
+    val (userAgent, others) = playerHeaders(rawHeaders)
+    // OkHttpDataSource adds its user agent on top of the request properties, so a
+    // "User-Agent" left in the map would be sent twice.
+    return OkHttpDataSource.Factory(playerClient)
+        .setUserAgent(userAgent)
+        .setDefaultRequestProperties(others)
+}
+
+/** The player's client, for the requests Player › Clip makes next to it (AndroidClipHttp). */
+internal val playerOkHttpClient: OkHttpClient get() = playerClient
+
+/**
+ * A channel's headers as the player sends them: the user agent (the channel's own, or the Dalvik
+ * agent HttpURLConnection sent, not "okhttp/x", which some servers block) and the others.
+ */
+internal fun playerHeaders(rawHeaders: Map<String, String>): Pair<String?, Map<String, String>> {
     // OkHttp throws on control characters or non-ASCII; rows stored before the parser checked
     // for that must not crash playback.
     val headers = HeaderSuffixParser.sanitize(rawHeaders)
     val userAgent = headers.entries.firstOrNull { it.key.equals("User-Agent", ignoreCase = true) }?.value
-    // OkHttpDataSource adds its user agent on top of the request properties, so a
-    // "User-Agent" left in the map would be sent twice.
-    val others = headers.filterKeys { !it.equals("User-Agent", ignoreCase = true) }
-    return OkHttpDataSource.Factory(playerClient)
-        // The Dalvik agent HttpURLConnection sent, not "okhttp/x", which some servers block.
-        .setUserAgent(userAgent ?: System.getProperty("http.agent"))
-        .setDefaultRequestProperties(others)
+    return (userAgent ?: System.getProperty("http.agent")) to
+        headers.filterKeys { !it.equals("User-Agent", ignoreCase = true) }
 }
