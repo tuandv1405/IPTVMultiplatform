@@ -1,6 +1,7 @@
 package tss.t.tsiptv.player
 
 import kotlinx.coroutines.flow.StateFlow
+import tss.t.tsiptv.feature.clip.ClipRecorder
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackError
 import tss.t.tsiptv.player.models.PlaybackState
@@ -118,6 +119,15 @@ interface MediaPlayer {
 
     /** F3: shows the text track [id] (from [textTracks]), or turns subtitles off when null. */
     fun selectTextTrack(id: String?) {}
+
+    /**
+     * The picture on screen now (share card), or null when there is none or the platform cannot
+     * read it (iOS in this release). Never call it for DRM items: callers check first.
+     */
+    suspend fun captureFrame(): VideoSnapshot? = null
+
+    /** Player › Clip on this platform; null where clips cannot be made (iOS in this release). */
+    val clipRecorder: ClipRecorder? get() = null
 }
 
 /** One entry of the player's subtitle menu. */

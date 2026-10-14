@@ -37,6 +37,28 @@ object AnalyticsConstants {
     const val EVENT_PLAY_ADDON_STREAM = "play_addon_stream"
     const val PARAMS_ADDON_CONTENT_TYPE = "content_type"
 
+    /** Like/dislike tapped in the player. Only the new state (`like`, `dislike`, `none`); never what plays. */
+    const val EVENT_PLAYER_REACTION = "player_reaction"
+    const val PARAMS_REACTION = "reaction"
+
+    /**
+     * Player › Share: the target ([tss.t.tsiptv.feature.share.ShareTarget] name, lower-case), the
+     * outcome and whether the card had a video picture; never what plays.
+     */
+    const val EVENT_PLAYER_SHARE = "player_share"
+    const val PARAMS_SHARE_TARGET = "target"
+    const val PARAMS_SHARE_RESULT = "result"
+    const val PARAMS_SHARE_HAS_FRAME = "has_frame"
+
+    /**
+     * Player › Clip finished: `saved` or the [tss.t.tsiptv.feature.clip.ClipFailure] name
+     * (lower-case), the length asked for in seconds and whether it was live; never what plays.
+     */
+    const val EVENT_PLAYER_CLIP = "player_clip"
+    const val PARAMS_CLIP_RESULT = "result"
+    const val PARAMS_CLIP_SECONDS = "seconds"
+    const val PARAMS_CLIP_LIVE = "live"
+
     /**
      * F2: an addon was added, with [PARAMS_LINK_HOST] and [PARAMS_URL_SCHEME] only: addon
      * paths hold the user's configuration (often service keys), so no path is sent.

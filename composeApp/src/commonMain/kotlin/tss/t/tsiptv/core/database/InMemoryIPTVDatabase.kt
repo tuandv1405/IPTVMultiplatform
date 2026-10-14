@@ -223,6 +223,8 @@ class InMemoryIPTVDatabase : IPTVDatabase {
     /** Same semantics as the Room v6 tables. */
     override val tsiptvStore: tss.t.tsiptv.core.tsiptv.TsiptvStore get() = inMemoryTsiptv
 
+    override val reactionStore: tss.t.tsiptv.core.reaction.ReactionStore = tss.t.tsiptv.core.reaction.InMemoryReactionStore()
+
     override suspend fun deleteChannelsInPlaylist(playlistId: String) {
         val removed = channels.value.values.filter { it.playlistId == playlistId }.map { it.id }.toSet()
         channels.value = channels.value.filterNot { it.value.playlistId == playlistId }

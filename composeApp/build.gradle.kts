@@ -80,6 +80,8 @@ kotlin {
             implementation(libs.media3.session)
             implementation(libs.media3.common)
             implementation(libs.media3.datasource.okhttp)
+            // Player › Clip: recordings rewritten as MP4 (no re-encoding for live clips).
+            implementation(libs.media3.transformer)
             implementation(libs.okhttp.dnsoverhttps)
 
             // Add Firebase dependencies for Android
@@ -552,6 +554,14 @@ val prepareDesktopVlc by tasks.registering(Sync::class) {
         exclude("${root}plugins/access/*.jar")
         eachFile { path = path.removePrefix(root) }
     }
+    // Except the file output Player > Clip writes through (`#std{access=file}`, about 120 KB).
+    from(zipTree(downloadVlcWin64.flatMap { it.destination })) {
+        include(
+            "${root}plugins/stream_out/libstream_out_standard_plugin.dll",
+            "${root}plugins/access_output/libaccess_output_file_plugin.dll",
+        )
+        eachFile { path = path.removePrefix(root) }
+    }
     includeEmptyDirs = false
     into(layout.buildDirectory.dir("desktop-resources/windows/vlc"))
 }
@@ -599,6 +609,10 @@ abstract class ExtractMacVlc : DefaultTask() {
                     // Same cuts as Windows: streaming output and visualisations.
                     exclude("plugins/libaccess_output_*", "plugins/libstream_out_*")
                     exclude("plugins/libgoom_plugin.dylib", "plugins/libvisual_plugin.dylib")
+                }
+                // Except the file output Player > Clip writes through, as on Windows.
+                from(File(mount, "VLC.app/Contents/MacOS")) {
+                    include("plugins/libstream_out_standard_plugin.dylib", "plugins/libaccess_output_file_plugin.dylib")
                 }
                 from(license) { rename { "COPYING.txt" } }
                 into(destination)

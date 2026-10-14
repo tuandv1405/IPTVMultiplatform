@@ -60,7 +60,7 @@ tests:
           appear black in screenshots, which is fine.
         finalScreenAssertion: >-
           The player screen is shown with a video area at the top, the title "Big Buck Bunny (Blender,
-          CC BY)" below it and the buttons "Like", "Dislike", "Share" and "Report". No error message
+          CC BY)" below it and the buttons "Like", "Dislike", "Share" and "Clip". No error message
           such as "This channel could not be played" is shown.
       - goal: Leave the player.
         hint: >-

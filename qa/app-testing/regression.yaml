@@ -53,7 +53,7 @@ tests:
     steps:
       - goal: Open the channel "Big Buck Bunny (Blender, CC BY)".
         hint: Tap its card on Home.
-        finalScreenAssertion: The player shows the buttons "Like", "Dislike", "Share" and "Report".
+        finalScreenAssertion: The player shows the buttons "Like", "Dislike", "Share" and "Clip".
       - goal: Like the channel.
         hint: Tap "Like" below the channel title.
         finalScreenAssertion: >-
@@ -81,6 +81,20 @@ tests:
         hint: Press the system Back button.
         finalScreenAssertion: The player is shown again with the buttons "Like", "Dislike" and "Share".
 
+  - displayName: Save a 15-second clip
+    id: player-clip
+    prerequisiteTestCaseId: add-playlist-url
+    steps:
+      - goal: Open the channel "Big Buck Bunny (Blender, CC BY)" and wait 10 seconds for the video.
+        hint: Tap its card on Home.
+        finalScreenAssertion: The player shows the button "Clip" next to "Share".
+      - goal: Record a 15-second clip.
+        hint: >-
+          Tap "Clip" below the channel title, choose "15 s", then tap "Start". Saving takes about
+          15 seconds; wait until it finishes.
+        finalScreenAssertion: >-
+          A message titled "Clip saved" is shown with an "Open" button. No "No clip" message is shown.
+
   - displayName: Switch channel from the player
     id: player-switch-channel
     prerequisiteTestCaseId: add-playlist-url
@@ -90,7 +104,7 @@ tests:
         finalScreenAssertion: The player shows the title "Big Buck Bunny (Blender, CC BY)".
       - goal: Switch to "Tears of Steel (Blender, CC BY)" from the list under the player.
         hint: >-
-          Scroll down below the "Like", "Dislike", "Share" and "Report" buttons to the channel list and
+          Scroll down below the "Like", "Dislike", "Share" and "Clip" buttons to the channel list and
           tap "Tears of Steel (Blender, CC BY)".
         finalScreenAssertion: The player now shows the title "Tears of Steel (Blender, CC BY)".
 

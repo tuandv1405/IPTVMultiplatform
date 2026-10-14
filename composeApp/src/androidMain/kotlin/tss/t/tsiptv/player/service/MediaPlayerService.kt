@@ -499,7 +499,8 @@ class MediaPlayerService : MediaSessionService() {
         val sourceFactory = if (subtitleUris.isEmpty()) dataSourceFactory
         else tss.t.tsiptv.player.network.SubtitleAwareDataSourceFactory(dataSourceFactory, playerHttpDataSourceFactory(), subtitleUris)
         return DefaultMediaSourceFactory(this)
-            .setDataSourceFactory(sourceFactory)
+            // Player › Clip copies a plain live stream from what the player reads (ClipTap).
+            .setDataSourceFactory(tss.t.tsiptv.player.network.ClipTapDataSourceFactory(sourceFactory))
             .setDrmSessionManagerProvider(drmProvider)
             .createMediaSource(mediaItem)
     }

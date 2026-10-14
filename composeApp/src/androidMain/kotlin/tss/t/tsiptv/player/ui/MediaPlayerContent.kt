@@ -55,6 +55,7 @@ actual fun MediaPlayerContent(
                 }
                 useController = false
                 playerView = this
+                VideoSurfaces.attach(this)
             }
         },
         modifier = modifier,
@@ -63,7 +64,8 @@ actual fun MediaPlayerContent(
                 playerView.player = exoPlayer
             }
         },
-        onRelease = {
+        onRelease = { view ->
+            VideoSurfaces.detach(view)
             playerView?.player = null
             playerView = null
         }

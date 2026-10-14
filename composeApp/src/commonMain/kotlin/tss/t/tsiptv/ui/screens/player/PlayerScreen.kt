@@ -1,6 +1,7 @@
 package tss.t.tsiptv.ui.screens.player
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -34,9 +35,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,6 +62,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -75,11 +82,12 @@ import tsiptv.composeapp.generated.resources.home_nav_programs
 import tsiptv.composeapp.generated.resources.Res
 import tsiptv.composeapp.generated.resources.ic_dislike
 import tsiptv.composeapp.generated.resources.ic_like
-import tsiptv.composeapp.generated.resources.ic_report
+import tsiptv.composeapp.generated.resources.ic_clip
 import tsiptv.composeapp.generated.resources.ic_share
 import tsiptv.composeapp.generated.resources.player_dislike
 import tsiptv.composeapp.generated.resources.player_like
-import tsiptv.composeapp.generated.resources.player_report
+import tsiptv.composeapp.generated.resources.player_clip
+import tsiptv.composeapp.generated.resources.clip_saving
 import tsiptv.composeapp.generated.resources.player_share
 import tsiptv.composeapp.generated.resources.type_channel
 import tss.t.tsiptv.player.MediaPlayer
@@ -97,6 +105,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import tss.t.tsiptv.core.ads.AdPlacement
 import tss.t.tsiptv.core.ads.AdsPolicy
 import tss.t.tsiptv.core.model.Channel
+import tss.t.tsiptv.core.reaction.Reaction
 import tss.t.tsiptv.ui.ads.BannerAdSlot
 import tss.t.tsiptv.ui.ads.NativeAdSlot
 import tss.t.tsiptv.ui.ads.rememberAdsState
@@ -114,6 +123,8 @@ import tss.t.tsiptv.utils.getScreenOrientationUtils
  *
  * @param mediaItem The media item to be played, containing title, artist and source information
  * @param mediaPlayer The media player instance that handles playback functionality
+ * @param reaction The viewer's like/dislike of what plays, or null
+ * @param clip Player › Clip's state; null where clips cannot be made (no Clip button)
  * @param onEvent Callback to handle player events like play/pause, PiP mode etc.
  */
 @Composable
@@ -122,6 +133,8 @@ fun PlayerScreen(
     homeUIState: HomeUiState,
     mediaPlayer: MediaPlayer,
     playerControlState: PlayerUIState,
+    reaction: Reaction? = null,
+    clip: ClipUiState? = null,
     onEvent: (PlayerEvent) -> Unit,
 ) {
     // F2: addon movies/episodes are not channels: no related channels or EPG under them.
@@ -260,6 +273,8 @@ fun PlayerScreen(
             adsViewModel = adsViewModel,
             channelRows = rememberPlayerChannelRows(homeUIState.widePlayerChannels),
             programListState = programListState,
+            reaction = reaction,
+            clip = clip,
             onEvent = onEvent,
         )
         return
@@ -338,7 +353,7 @@ fun PlayerScreen(
                 }
 
                 item("Interaction") {
-                    InteractionsSpace()
+                    InteractionsSpace(reaction = reaction, clip = clip, onEvent = onEvent)
                 }
 
                 playerChannelList(playerChannelRows, adsViewModel, AdPlacement.PLAYER_NATIVE, onEvent)
@@ -402,6 +417,8 @@ private fun WidePlayerLayout(
     adsViewModel: AdsViewModel,
     channelRows: List<AdsPolicy.Row<Channel>>,
     programListState: LazyListState,
+    reaction: Reaction?,
+    clip: ClipUiState?,
     onEvent: (PlayerEvent) -> Unit,
 ) {
     Row(modifier = Modifier.fillMaxSize().background(TSColors.DeepBlue)) {
@@ -418,20 +435,34 @@ private fun WidePlayerLayout(
                     onPlayerControl = onEvent,
                     inlineHeight = videoHeight,
                 )
-                Text(
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp),
-                    text = mediaItem.title,
-                    style = TSTextStyles.bold19.copy(TSColors.TextPrimary),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (mediaItemDescription.isNotBlank()) {
-                    Text(
-                        modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 2.dp),
-                        text = mediaItemDescription,
-                        style = TSTextStyles.normal13.copy(TSColors.TextSecondary),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                // Title on the left, like/dislike/share/clip on the right: no extra height
+                // under the video, which WIDE_PLAYER_UNDER_VIDEO budgets for.
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = mediaItem.title,
+                            style = TSTextStyles.bold19.copy(TSColors.TextPrimary),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (mediaItemDescription.isNotBlank()) {
+                            Text(
+                                modifier = Modifier.padding(top = 2.dp),
+                                text = mediaItemDescription,
+                                style = TSTextStyles.normal13.copy(TSColors.TextSecondary),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                    InteractionsSpace(
+                        reaction = reaction,
+                        clip = clip,
+                        onEvent = onEvent,
+                        modifier = Modifier.padding(start = 16.dp).width(WIDE_PLAYER_INTERACTIONS_WIDTH),
                     )
                 }
                 WidePlayerPromo(adsViewModel, Modifier.padding(top = 12.dp))
@@ -479,6 +510,7 @@ private fun WidePlayerLayout(
 }
 
 private val WIDE_PLAYER_CHANNELS_WIDTH = 380.dp
+private val WIDE_PLAYER_INTERACTIONS_WIDTH = 360.dp
 
 /**
  * Under the title of the desktop wide player: the Shopee offer while ads may show (24 h passed, no
@@ -515,11 +547,14 @@ private fun WidePaneTitle(text: String) {
 }
 
 @Composable
-private fun InteractionsSpace() {
+private fun InteractionsSpace(
+    reaction: Reaction?,
+    clip: ClipUiState?,
+    onEvent: (PlayerEvent) -> Unit,
+    modifier: Modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+        modifier = modifier
             .clip(TSShapes.roundedShape16)
             .background(TSColors.SecondaryBackgroundColor, TSShapes.roundedShape16),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -527,27 +562,42 @@ private fun InteractionsSpace() {
     ) {
         InteractionItem(
             iconPainter = painterResource(Res.drawable.ic_like),
-            title = stringResource(Res.string.player_like)
+            title = stringResource(Res.string.player_like),
+            selected = reaction == Reaction.LIKE,
         ) {
-
+            onEvent(PlayerEvent.OnLike)
         }
         InteractionItem(
             iconPainter = painterResource(Res.drawable.ic_dislike),
-            title = stringResource(Res.string.player_dislike)
+            title = stringResource(Res.string.player_dislike),
+            selected = reaction == Reaction.DISLIKE,
         ) {
-
+            onEvent(PlayerEvent.OnDislike)
         }
         InteractionItem(
             iconPainter = painterResource(Res.drawable.ic_share),
             title = stringResource(Res.string.player_share)
         ) {
-
+            onEvent(PlayerEvent.OnShare)
         }
-        InteractionItem(
-            iconPainter = painterResource(Res.drawable.ic_report),
-            title = stringResource(Res.string.player_report)
-        ) {
-
+        if (clip != null) {
+            // While recording: the time so far, in red; a tap stops the clip and keeps it.
+            val recording = clip as? ClipUiState.Recording
+            InteractionItem(
+                iconPainter = if (recording != null && !recording.finishing) rememberVectorPainter(Icons.Rounded.Stop)
+                else painterResource(Res.drawable.ic_clip),
+                title = when {
+                    recording == null -> stringResource(Res.string.player_clip)
+                    recording.finishing -> stringResource(Res.string.clip_saving)
+                    else -> formatClipTime(recording.recordedMs)
+                },
+                highlight = if (recording != null) TSColors.ErrorRed else null,
+            ) {
+                when {
+                    recording == null -> onEvent(PlayerEvent.OnClip)
+                    !recording.finishing -> onEvent(PlayerEvent.OnStopClip)
+                }
+            }
         }
     }
 }
@@ -779,33 +829,54 @@ private fun StickyChannelTitle(
     }
 }
 
+/**
+ * @param selected on/off state of a toggle (like, dislike), announced as such; null for a plain
+ * action (share, clip)
+ * @param highlight the colour of an action under way (a clip recording)
+ */
 @Composable
 private fun RowScope.InteractionItem(
     iconPainter: Painter,
     title: String,
+    selected: Boolean? = null,
+    highlight: Color? = null,
     onClick: () -> Unit = {},
 ) {
+    val haptic = LocalHapticFeedback.current
+    val tint by animateColorAsState(
+        highlight ?: if (selected == true) TSColors.AccentCyan else TSColors.White.copy(0.8f)
+    )
     Column(
         modifier = Modifier
             .weight(1f)
             .clip(TSShapes.roundedShape16)
-            .clickable {
-                onClick()
-            },
+            .then(
+                if (selected == null) {
+                    Modifier.clickable { onClick() }
+                } else {
+                    Modifier.toggleable(value = selected, role = Role.Switch) {
+                        haptic.performHapticFeedback(
+                            if (selected) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn
+                        )
+                        onClick()
+                    }
+                }
+            ),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(8.dp))
         Image(
             painter = iconPainter,
-            contentDescription = title,
-            colorFilter = ColorFilter.tint(TSColors.White.copy(0.8f))
+            // The label under it already names the button.
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(tint)
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             modifier = Modifier,
             text = title,
-            style = TSTextStyles.normal13.copy(TSColors.White.copy(0.8f))
+            style = TSTextStyles.normal13.copy(tint)
         )
         Spacer(modifier = Modifier.height(8.dp))
     }
