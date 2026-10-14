@@ -24,7 +24,7 @@ permissions:
   id-token: write # only used by the keyless (Workload Identity Federation) fallback
 
 env:
-  RELEASES_REPO: ${{ vars.RELEASES_REPO || 'tuandv1405/tsiptv-releases' }}
+  RELEASES_REPO: ${{ vars.RELEASES_REPO || 'chintk19/tsiptv-releases' }}
 
 jobs:
   version:

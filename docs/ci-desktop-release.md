@@ -4,7 +4,7 @@ Workflow: `.github/workflows/desktop-release.yml`.
 
 Repo app này sẽ chuyển sang **riêng tư**. Khi đó mọi link `github.com/tuandv1405/IPTVMultiplatform/...` trả về
 404 với người dùng, kể cả link tải file trong GitHub Releases. Vì vậy các bộ cài desktop được đăng ở một repo
-**công khai** khác, `tuandv1405/tsiptv-releases`. Repo đó chỉ chứa Releases và mã nguồn trang tải về
+**công khai** khác, `chintk19/tsiptv-releases`. Repo đó chỉ chứa Releases và mã nguồn trang tải về
 `https://tsiptv-download.web.app/` (thư mục `../tsiptv-releases` cạnh repo này trên máy dev), không có mã app.
 
 Khi đẩy tag `desktop-<v>`, workflow sẽ:
@@ -26,13 +26,13 @@ Chạy tay: **Actions › Desktop release → releases repo › Run workflow**, 
 
 Làm **theo đúng thứ tự** và chỉ chuyển repo app sang riêng tư ở bước cuối.
 
-### 1. Tạo repo công khai `tuandv1405/tsiptv-releases` từ thư mục trang tải về
+### 1. Tạo repo công khai `chintk19/tsiptv-releases` từ thư mục trang tải về
 
 Thư mục `tsiptv-releases` trên máy đã là một git repo (chưa có remote):
 
 ```bash
 cd ../tsiptv-releases
-git remote add origin https://github.com/tuandv1405/tsiptv-releases.git
+git remote add origin https://github.com/chintk19/tsiptv-releases.git
 git push -u origin main
 ```
 
@@ -43,7 +43,7 @@ mới tạo được Release.
 
 GitHub › **Settings › Developer settings › Fine-grained tokens › Generate new token**:
 
-- Repository access: **Only select repositories** › `tuandv1405/tsiptv-releases`.
+- Repository access: **Only select repositories** › `chintk19/tsiptv-releases`.
 - Permissions › Repository › **Contents: Read and write** (Metadata: Read tự bật).
 - Đặt hạn dùng; khi hết hạn thì tạo token mới và thay secret.
 
@@ -71,7 +71,7 @@ Trang tải hiện vẫn trỏ tới Windows 1.1.2 và macOS 1.1.3 trong repo ap
   Windows và macOS lên cùng một phiên bản và trang được cập nhật.
 - Hoặc chép nguyên các bản cũ sang bằng `gh` (README của `tsiptv-releases`, mục "Chép một bản cũ").
 
-Kiểm tra `https://tsiptv-download.web.app/`: mọi nút tải phải trỏ tới `github.com/tuandv1405/tsiptv-releases/...`.
+Kiểm tra `https://tsiptv-download.web.app/`: mọi nút tải phải trỏ tới `github.com/chintk19/tsiptv-releases/...`.
 Log của job `download-page` có dòng `::warning::still links to the private app repo` nếu còn sót link cũ.
 
 ### 5. Chuyển repo app sang riêng tư
@@ -83,7 +83,7 @@ cửa sổ ẩn danh.
 
 | Variable | Mặc định | Ý nghĩa |
 |---|---|---|
-| `RELEASES_REPO` | `tuandv1405/tsiptv-releases` | Repo công khai nhận Release |
+| `RELEASES_REPO` | `chintk19/tsiptv-releases` | Repo công khai nhận Release |
 | `MACOS_RUNNER` | `macos-15` | Runner build `.dmg`. `macos-15` là Apple Silicon, ra bản arm64 |
 | `DEPLOY_DOWNLOAD_PAGE` | (trống) | `false` để bỏ job cập nhật và deploy trang tải về |
 | `TSIPTV_SUPPORT_URL`, `TSIPTV_SUPPORT_BANK_ID`, `TSIPTV_SUPPORT_ACCOUNT_NO`, `TSIPTV_SUPPORT_ACCOUNT_NAME` | (trống) | Thẻ "ủng hộ" trong app desktop (`desktop-build.md` §3). Để trống thì không hiện |

@@ -122,7 +122,7 @@ Dữ liệu người dùng (`%USERPROFILE%\.tsiptv`) và cài đặt được gi
    Release note được đăng công khai, nên không đặt link tới repo app (repo riêng tư).
 2. Commit thay đổi phiên bản và release note, tạo tag `desktop-<v>`, rồi push cả hai.
 3. CI (`.github/workflows/desktop-release.yml`) build lại Windows và macOS từ tag, đăng Release `desktop-<v>`
-   ở repo công khai `tuandv1405/tsiptv-releases` và cập nhật trang tải về. Chi tiết và cài đặt một lần:
+   ở repo công khai `chintk19/tsiptv-releases` và cập nhật trang tải về. Chi tiết và cài đặt một lần:
    [ci-desktop-release.md](ci-desktop-release.md).
 
 Không đăng bộ cài vào Releases của repo app: repo này riêng tư, người dùng không tải được.
