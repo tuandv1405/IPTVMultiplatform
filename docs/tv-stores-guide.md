@@ -24,7 +24,7 @@ người bán cá nhân ở Việt Nam có đăng ký và phát hành (kể cả
 | Việc | Trạng thái |
 |---|---|
 | Privacy policy có mục app TV | `web/public/privacy/`, mục "Smart TV app". **Cần deploy** trang web (bước 2.1) |
-| Playlist cho người duyệt | https://tsiptv-download.web.app/tv/review.m3u (file `tsiptv-releases/public/tv/review.m3u`): 4 stream thử hợp pháp, đã phát thử cả 4, **đã deploy**. Không đặt trong `web/public/examples/` vì trang đó chỉ cho phép stream Mux và phim archive.org (`check_guides.py`) |
+| Playlist cho người duyệt | https://tsiptv-download.web.app/tv/review.m3u (file `tsiptv-releases/public/tv/review.m3u`): 4 stream thử hợp pháp, đã phát thử cả 4, **đã deploy**. Không đặt trong `web/public/examples/` vì trang đó chỉ cho phép stream Mux và phim archive.org (`check_guides.py`). Test case App Testing (`qa/app-testing/`) cũng dùng file này: đổi tên kênh hay nhóm thì sửa test case theo |
 | Icon, ảnh chụp (EN + VI) đúng cỡ từng store | [`tv-web/store/`](../tv-web/store/README.md) |
 | Mô tả EN/VI, từ khoá, ghi chú cho người duyệt, nội dung UX scenario | [`tv-web/store/README.md`](../tv-web/store/README.md) |
 | Gói `.ipk` / `.wgt` | `npm run package:webos` / `npm run package:tizen` trong `tv-web/` |

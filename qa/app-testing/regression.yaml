@@ -1,0 +1,140 @@
+# Firebase App Testing agent (AI-driven tests, Android) — wider regression set.
+# Runs in CI only with FIREBASE_APP_TESTING=all, or by hand from Firebase Console › App Distribution ›
+# Test cases (docs/ci-app-testing.md). Prerequisites (sign-in, add-playlist-url, play-channel) are
+# defined in smoke.yaml.
+tests:
+  - displayName: Search the channel list
+    id: search-channel
+    prerequisiteTestCaseId: add-playlist-url
+    steps:
+      - goal: Search for "tears" on Home.
+        hint: Tap the search bar "Search channel, shows..." under the greeting and type tears.
+        finalScreenAssertion: >-
+          The only channel listed is "Tears of Steel (Blender, CC BY)". "Big Buck Bunny (Blender,
+          CC BY)" is not shown.
+      - goal: Clear the search.
+        hint: Tap the X at the right end of the search bar.
+        finalScreenAssertion: >-
+          The search bar is empty and "Big Buck Bunny (Blender, CC BY)" is listed again.
+
+  - displayName: Filter channels by group
+    id: filter-group
+    prerequisiteTestCaseId: add-playlist-url
+    steps:
+      - goal: Show only the "Demo Live" group.
+        hint: Tap the chip "Demo Live" in the row of chips above the channel list.
+        finalScreenAssertion: >-
+          The channel "Unified Streaming live test" is listed and "Big Buck Bunny (Blender, CC BY)" is
+          not.
+      - goal: Show every channel again.
+        hint: Tap the first chip, "All Channels".
+        finalScreenAssertion: >-
+          "Big Buck Bunny (Blender, CC BY)" and "Unified Streaming live test" are both listed.
+
+  - displayName: A link that is not a playlist is refused
+    id: add-playlist-bad-url
+    prerequisiteTestCaseId: sign-in
+    steps:
+      - goal: Open the screen for adding a playlist.
+        hint: >-
+          If Home shows "No IPTV Source Connected", tap "Add IPTV". Otherwise tap the tune (sliders)
+          icon at the top right of Home, then "Import Playlist".
+        finalScreenAssertion: The "Add IPTV Source" screen is shown.
+      - goal: >-
+          Enter "QA Broken" as the source name and https://tsiptv-download.web.app/tv/missing.m3u as the
+          source link, then try to add it.
+        hint: Tap the "Add IPTV" button below the fields and wait up to 30 seconds.
+        finalScreenAssertion: >-
+          An error is shown (for example a dialog titled "Oops!"). No "Congratulation" dialog appears.
+
+  - displayName: Like and dislike in the player
+    id: player-like-dislike
+    prerequisiteTestCaseId: add-playlist-url
+    steps:
+      - goal: Open the channel "Big Buck Bunny (Blender, CC BY)".
+        hint: Tap its card on Home.
+        finalScreenAssertion: The player shows the buttons "Like", "Dislike", "Share" and "Report".
+      - goal: Like the channel.
+        hint: Tap "Like" below the channel title.
+        finalScreenAssertion: >-
+          "Like" is highlighted (cyan) and "Dislike" is not.
+      - goal: Change the reaction to dislike.
+        hint: Tap "Dislike".
+        finalScreenAssertion: >-
+          "Dislike" is highlighted (cyan) and "Like" is no longer highlighted.
+      - goal: Remove the reaction.
+        hint: Tap "Dislike" again.
+        finalScreenAssertion: Neither "Like" nor "Dislike" is highlighted.
+
+  - displayName: Open the share card
+    id: player-share
+    prerequisiteTestCaseId: add-playlist-url
+    steps:
+      - goal: Open the channel "Big Buck Bunny (Blender, CC BY)" and wait 10 seconds for the video.
+        hint: Tap its card on Home.
+        finalScreenAssertion: The player shows the button "Share".
+      - goal: Open sharing.
+        hint: Tap "Share" below the channel title.
+        finalScreenAssertion: >-
+          A sheet titled "Share" shows a card with "Watching on TS IPTV" and a "More" button.
+      - goal: Close the sheet without sharing.
+        hint: Press the system Back button.
+        finalScreenAssertion: The player is shown again with the buttons "Like", "Dislike" and "Share".
+
+  - displayName: Switch channel from the player
+    id: player-switch-channel
+    prerequisiteTestCaseId: add-playlist-url
+    steps:
+      - goal: Open the channel "Big Buck Bunny (Blender, CC BY)".
+        hint: Tap its card on Home.
+        finalScreenAssertion: The player shows the title "Big Buck Bunny (Blender, CC BY)".
+      - goal: Switch to "Tears of Steel (Blender, CC BY)" from the list under the player.
+        hint: >-
+          Scroll down below the "Like", "Dislike", "Share" and "Report" buttons to the channel list and
+          tap "Tears of Steel (Blender, CC BY)".
+        finalScreenAssertion: The player now shows the title "Tears of Steel (Blender, CC BY)".
+
+  - displayName: Watched channel appears in History
+    id: history-after-play
+    prerequisiteTestCaseId: play-channel
+    steps:
+      - goal: Open the History tab.
+        hint: Tap the clock icon above "History" in the bottom bar.
+        finalScreenAssertion: >-
+          The History screen lists "Big Buck Bunny (Blender, CC BY)". The text "No recent activity" is
+          not shown.
+
+  - displayName: Switch the app language to Vietnamese and back
+    id: change-language
+    prerequisiteTestCaseId: sign-in
+    steps:
+      - goal: Open the language settings.
+        hint: >-
+          Tap the tune (sliders) icon at the top right of Home, labelled "Sources and options", then
+          "Change Language".
+        finalScreenAssertion: >-
+          The "Language Settings" screen lists "English", "Español", "Français", "Deutsch" and
+          "Tiếng Việt".
+      - goal: Choose Vietnamese and go back to Home.
+        hint: Tap "Tiếng Việt", then the back arrow at the top left.
+        finalScreenAssertion: >-
+          The bottom bar reads "Trang chủ", "Lịch sử", "Lịch phát sóng" and "Hồ sơ".
+      - goal: Switch back to English.
+        hint: >-
+          Tap the tune (sliders) icon at the top right of Home, then the language item (globe icon),
+          tap "English", then the back arrow.
+        finalScreenAssertion: The bottom bar reads "Home", "History", "Programs" and "Profile".
+
+  - displayName: Log out
+    id: log-out
+    prerequisiteTestCaseId: sign-in
+    steps:
+      - goal: Open the Profile tab.
+        hint: Tap the icon above "Profile" at the right end of the bottom bar.
+        finalScreenAssertion: The Profile screen shows "Account Settings" and a "Log Out" button.
+      - goal: Log out of the account.
+        hint: >-
+          Scroll down and tap "Log Out". In the dialog "Are you sure to log out this account from this
+          device?", tap "Log Out" (not "Keep Log In").
+        finalScreenAssertion: >-
+          The sign-in screen is shown with the "Email" and "Password" fields and a "Login" button.
