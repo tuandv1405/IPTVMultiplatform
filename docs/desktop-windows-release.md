@@ -119,11 +119,13 @@ Dữ liệu người dùng (`%USERPROFILE%\.tsiptv`) và cài đặt được gi
 ### Bước 7: Phát hành
 
 1. Viết release note `docs/releases/desktop-<v>.md` (xem [desktop-1.1.2.md](releases/desktop-1.1.2.md) làm mẫu).
+   Release note được đăng công khai, nên không đặt link tới repo app (repo riêng tư).
 2. Commit thay đổi phiên bản và release note, tạo tag `desktop-<v>`, rồi push cả hai.
-3. Trên GitHub, vào **Releases > Draft a new release**, chọn tag `desktop-<v>`. Dán nội dung release note,
-   kéo thả cả 5 file trong `build/release/desktop/`, rồi bấm **Publish release**.
+3. CI (`.github/workflows/desktop-release.yml`) build lại Windows và macOS từ tag, đăng Release `desktop-<v>`
+   ở repo công khai `chintk19/tsiptv-releases` và cập nhật trang tải về. Chi tiết và cài đặt một lần:
+   [ci-desktop-release.md](ci-desktop-release.md).
 
-GitHub chỉ nhận file tối đa 2 GB mỗi file, nên các bộ cài khoảng 200 MB tải lên bình thường.
+Không đăng bộ cài vào Releases của repo app: repo này riêng tư, người dùng không tải được.
 
 ## 4. Chỉ build một loại file
 
@@ -155,5 +157,4 @@ GitHub chỉ nhận file tối đa 2 GB mỗi file, nên các bộ cài khoảng
 - **macOS (`.dmg`) và Linux (`.deb`):** cần build trên máy macOS hoặc Linux tương ứng, và chưa đóng gói VLC
   (xem [desktop-build.md §2](desktop-build.md#macos)).
 - **Ký số bộ cài:** chưa làm.
-- **Build trên CI:** chưa có workflow cho desktop. Workflow hiện có (`pr-firebase-distribution.yml`) chỉ build
-  Android.
+- **Build trên CI:** xem [ci-desktop-release.md](ci-desktop-release.md) (chạy khi đẩy tag `desktop-<v>`).
