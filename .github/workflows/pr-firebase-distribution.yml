@@ -174,7 +174,13 @@ jobs:
           if [ "$SCOPE" != "all" ]; then args+=(--test-file-pattern 'smoke'); fi
           if [ -n "$TEST_DEVICES" ]; then args+=(--test-devices "$TEST_DEVICES"); fi
           if [ "$BLOCKING" != "true" ]; then args+=(--test-non-blocking); fi
-          npx --yes firebase-tools@15 "${args[@]}"
+          if ! npx --yes firebase-tools@15 "${args[@]}"; then
+            # The CLI only says "Test invocation failed"; the API's reason is in firebase-debug.log.
+            reason=$(grep -oE '"(message|status)": ?"[^"]*"' firebase-debug.log 2>/dev/null | tail -n 3 | tr '\n' ' ')
+            rm -f firebase-debug.log # its request bodies hold the test password
+            echo "::warning::App Testing did not start: ${reason:-see the step log}. A PERMISSION_DENIED here means the CI service account needs another role (docs/ci-app-testing.md)."
+            exit 1
+          fi
 
       - name: Keep the AAB and APK as workflow artifacts
         if: always() && steps.out.outputs.aab != ''
