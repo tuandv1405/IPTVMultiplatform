@@ -4,27 +4,45 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
 import tss.t.tsiptv.core.database.IPTVDatabase
 import tss.t.tsiptv.core.firebase.analystics.AnalyticsConstants
 import tss.t.tsiptv.core.history.ChannelHistoryTracker
 import tss.t.tsiptv.core.model.Channel
 import tss.t.tsiptv.core.rating.AppRatingController
+import tss.t.tsiptv.core.reaction.Reaction
+import tss.t.tsiptv.core.reaction.ReactionRecord
+import tss.t.tsiptv.core.reaction.Reactions
 import tss.t.tsiptv.core.stremio.MediaPlaybackContext
 import tss.t.tsiptv.core.stremio.MediaProgressTracker
 import tss.t.tsiptv.core.stremio.StremioType
 import tss.t.tsiptv.core.tracking.AppAnalytics
+import tss.t.tsiptv.feature.clip.ClipFailure
+import tss.t.tsiptv.feature.clip.ClipRecorder
+import tss.t.tsiptv.feature.clip.ClipResult
+import tss.t.tsiptv.feature.clip.ClipSession
+import tss.t.tsiptv.feature.clip.Clips
+import tss.t.tsiptv.feature.share.FrameCheck
 import tss.t.tsiptv.player.MediaPlayer
+import tss.t.tsiptv.player.VideoSnapshot
+import kotlin.coroutines.cancellation.CancellationException
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackState
 import tss.t.tsiptv.player.models.toMediaItem
@@ -112,6 +130,21 @@ class PlayerViewModel(
     val volume: StateFlow<Float> = _mediaPlayer.volume
     val isMuted: StateFlow<Boolean> = _mediaPlayer.isMuted
     val player: MediaPlayer = _mediaPlayer
+
+    /** The viewer's like/dislike of what plays (keyed by media item id); null for none or nothing playing. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val reaction: StateFlow<Reaction?> = _mediaPlayer.currentMedia
+        .map { it?.id.orEmpty() }
+        .distinctUntilChanged()
+        .flatMapLatest { key -> if (key.isEmpty()) flowOf(null) else _iptvDatabase.reactionStore.observe(key) }
+        .stateIn(
+            scope = viewModelScope,
+            started = WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    /** Two quick taps must not both read the old state. */
+    private val reactionMutex = Mutex()
 
     /** The channel asked for last, before the player has taken it; stops a second start. */
     private var requestedChannelId: String? = null
@@ -336,6 +369,9 @@ class PlayerViewModel(
                 }
 
                 is PlayerEvent.ToggleMute -> toggleMute()
+                is PlayerEvent.OnLike -> toggleReaction(Reaction.LIKE)
+                is PlayerEvent.OnDislike -> toggleReaction(Reaction.DISLIKE)
+                is PlayerEvent.OnStopClip -> stopClip()
                 is PlayerEvent.SetVolume -> setVolume(event.volume)
                 else -> {}
             }
@@ -428,6 +464,120 @@ class PlayerViewModel(
     }
 
     /**
+     * The picture on screen for the share card, or null: never read for DRM items or radio, and a
+     * black read-back (secure surface, nothing drawn yet) counts as none.
+     */
+    suspend fun captureShareFrame(): VideoSnapshot? {
+        val item = _mediaPlayer.currentMedia.value ?: return null
+        if (item.drm != null || item.isRadio) return null
+        val snapshot = try {
+            _mediaPlayer.captureFrame()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        } ?: return null
+        return snapshot.takeUnless { withContext(Dispatchers.Default) { FrameCheck.isBlank(it.image) } }
+    }
+
+    private val _clip = MutableStateFlow<ClipUiState>(ClipUiState.Idle)
+
+    /** Player › Clip: the clip being made, or the last one's result until it is dismissed. */
+    val clip: StateFlow<ClipUiState> = _clip
+    private var clipSession: ClipSession? = null
+
+    /** Clips on this platform; null hides the Clip button (iOS). */
+    val clipRecorder: ClipRecorder? get() = _mediaPlayer.clipRecorder
+
+    /** What a clip of what plays would start from: null for live (now on), else the position. */
+    fun clipStartMs(): Long? = if (_mediaPlayer.duration.value <= 0L) null else _mediaPlayer.currentPosition.value
+
+    /**
+     * Records [lengthMs] of what plays: live from now, VOD from [fromMs] (the position the clip
+     * sheet showed, as playback went on behind it). Playback goes on; switching channel ends the
+     * clip there and keeps it.
+     */
+    fun startClip(lengthMs: Long, fromMs: Long?) {
+        val recorder = _mediaPlayer.clipRecorder ?: return
+        if (_clip.value is ClipUiState.Recording) return
+        val item = _mediaPlayer.currentMedia.value?.takeIf { it.id.isNotEmpty() } ?: return
+        val startMs = clipStartMs()?.let { fromMs ?: it }
+        val session = ClipSession(lengthMs.coerceIn(Clips.MIN_MS, Clips.MAX_MS))
+        clipSession = session
+        _clip.value = ClipUiState.Recording(0L, session.lengthMs, finishing = false)
+        viewModelScope.launch {
+            val progress = launch {
+                combine(session.recordedMs, session.finishing) { recorded, finishing ->
+                    ClipUiState.Recording(recorded, session.lengthMs, finishing)
+                }.collect { _clip.value = it }
+            }
+            val channelSwitch = launch {
+                _mediaPlayer.currentMedia.first { it?.id != item.id }
+                session.stop()
+            }
+            val result = try {
+                recorder.record(item, live = startMs == null, fromMs = startMs ?: 0L, session = session)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                ClipResult.Failed(ClipFailure.CONVERT)
+            }
+            progress.cancel()
+            channelSwitch.cancel()
+            clipSession = null
+            AppAnalytics.logEvent(
+                AnalyticsConstants.EVENT_PLAYER_CLIP,
+                mapOf(
+                    AnalyticsConstants.PARAMS_CLIP_RESULT to when (result) {
+                        is ClipResult.Saved -> "saved"
+                        is ClipResult.Failed -> result.reason.name.lowercase()
+                    },
+                    AnalyticsConstants.PARAMS_CLIP_SECONDS to (session.lengthMs / 1000).toString(),
+                    AnalyticsConstants.PARAMS_CLIP_LIVE to (startMs == null).toString(),
+                )
+            )
+            _clip.value = ClipUiState.Done(result, item.title)
+        }
+    }
+
+    /** Ends the clip being recorded early, keeping it. */
+    fun stopClip() {
+        clipSession?.stop()
+    }
+
+    fun dismissClipResult() {
+        if (_clip.value is ClipUiState.Done) _clip.value = ClipUiState.Idle
+    }
+
+    /** Turns [tapped] on for what plays (replacing the other one), or off when it already is. */
+    @OptIn(ExperimentalTime::class)
+    private suspend fun toggleReaction(tapped: Reaction) {
+        val item = _mediaPlayer.currentMedia.value?.takeIf { it.id.isNotEmpty() } ?: return
+        val store = _iptvDatabase.reactionStore
+        val next = reactionMutex.withLock {
+            val next = Reactions.next(store.get(item.id)?.reaction, tapped)
+            if (next == null) {
+                store.delete(item.id)
+            } else {
+                store.upsert(
+                    ReactionRecord(
+                        contentKey = item.id,
+                        reaction = next,
+                        title = item.title.ifBlank { null },
+                        artworkUrl = item.artworkUri,
+                        updatedAt = Clock.System.now().toEpochMilliseconds(),
+                    )
+                )
+            }
+            next
+        }
+        AppAnalytics.logEvent(
+            AnalyticsConstants.EVENT_PLAYER_REACTION,
+            mapOf(AnalyticsConstants.PARAMS_REACTION to (next?.name?.lowercase() ?: "none"))
+        )
+    }
+
+    /**
      * Toggle mute/unmute
      */
     private fun toggleMute() {
@@ -473,6 +623,17 @@ sealed interface PlayerEvent {
     // Volume control events
     data object ToggleMute : PlayerEvent
     data class SetVolume(val volume: Float) : PlayerEvent
+
+    /** Like/dislike what plays (local only); tapping the active one again clears it. */
+    data object OnLike : PlayerEvent
+    data object OnDislike : PlayerEvent
+
+    /** Opens the share sheet (handled by the screen host, like [OnSettings]). */
+    data object OnShare : PlayerEvent
+
+    /** Opens the clip sheet (screen host); [OnStopClip] ends the clip being recorded. */
+    data object OnClip : PlayerEvent
+    data object OnStopClip : PlayerEvent
 
     /** VOD (addon movies/episodes): absolute and relative seeking. */
     data class SeekTo(val positionMs: Long) : PlayerEvent

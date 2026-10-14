@@ -7,7 +7,7 @@ Không cần code test hay `testTag`. Tính năng này đang ở giai đoạn pr
 | File | Test case | Khi nào chạy |
 |---|---|---|
 | `smoke.yaml` | `sign-in`, `add-playlist-url`, `play-channel` | Mỗi bản build của pull request |
-| `regression.yaml` | Tìm kênh, lọc nhóm, link hỏng, Like/Dislike, Share, đổi kênh trong player, History, đổi ngôn ngữ, đăng xuất | Khi `FIREBASE_APP_TESTING=all`, hoặc chạy tay trên Console |
+| `regression.yaml` | Tìm kênh, lọc nhóm, link hỏng, Like/Dislike, Share, Clip, đổi kênh trong player, History, đổi ngôn ngữ, đăng xuất | Khi `FIREBASE_APP_TESTING=all`, hoặc chạy tay trên Console |
 
 Playlist dùng trong test: `https://tsiptv-download.web.app/tv/review.m3u` (4 luồng thử hợp pháp, cũng là
 playlist cho người duyệt store, xem `docs/tv-stores-guide.md`). Đổi file đó thì phải sửa test case theo.
@@ -51,7 +51,7 @@ Trong giai đoạn preview, mỗi project Firebase có **200 lượt test mỗi 
 là một lượt; prerequisite chạy gộp vào test case dùng nó nên không tính thêm. Vì vậy:
 
 - `smoke`: 3 lượt cho mỗi lần push vào PR, tức khoảng 65 lần push mỗi tháng.
-- `all`: 12 lượt cho mỗi lần push. Chỉ nên bật tạm, hoặc chạy tay.
+- `all`: 13 lượt cho mỗi lần push. Chỉ nên bật tạm, hoặc chạy tay.
 - Thêm một máy trong `FIREBASE_TEST_DEVICES` thì nhân đôi số lượt.
 
 ## Chạy tay

@@ -67,6 +67,10 @@ import tss.t.tsiptv.ui.screens.player.PlayerEvent
 import tss.t.tsiptv.ui.screens.player.PlayerOptionsDialog
 import tss.t.tsiptv.ui.screens.player.PlayerScreen
 import tss.t.tsiptv.ui.screens.player.PlayerViewModel
+import tss.t.tsiptv.ui.screens.player.ShareSheet
+import tss.t.tsiptv.ui.screens.player.ClipResultDialog
+import tss.t.tsiptv.ui.screens.player.ClipSheet
+import tss.t.tsiptv.ui.screens.player.ClipUiState
 import tss.t.tsiptv.ui.screens.programs.details.ProgramForChannelScreen
 import tss.t.tsiptv.ui.screens.settings.LanguageSettingsScreen
 import tss.t.tsiptv.ui.screens.splash.SplashScreen
@@ -484,6 +488,8 @@ fun App() {
 
                             val channelId = it.toRoute<NavRoutes.Player>().mediaItemId
                             var showPlayerOptions by remember { mutableStateOf(false) }
+                            var showShareSheet by remember { mutableStateOf(false) }
+                            var showClipSheet by remember { mutableStateOf(false) }
 
                             val mediaItem by playerViewModel.mediaItemState.collectAsStateWithLifecycle()
                             val homeUIState by homeViewModel.uiState.collectAsStateWithLifecycle()
@@ -510,8 +516,31 @@ fun App() {
                                     PlayerEvent.OnVerticalPlayerBack -> navController.popBackStack()
                                     // F3: streams of a source channel and subtitle tracks (AC-T21).
                                     PlayerEvent.OnSettings -> showPlayerOptions = true
+                                    PlayerEvent.OnShare -> showShareSheet = true
+                                    PlayerEvent.OnClip -> showClipSheet = true
                                     else -> playerViewModel.onHandleEvent(event)
                                 }
+                            }
+                            if (showShareSheet) {
+                                ShareSheet(
+                                    mediaItem = mediaItem,
+                                    capture = playerViewModel::captureShareFrame,
+                                    onDismiss = { showShareSheet = false },
+                                )
+                            }
+                            val clipRecorder = playerViewModel.clipRecorder
+                            val clipState by playerViewModel.clip.collectAsStateWithLifecycle()
+                            if (showClipSheet) {
+                                val clipStartMs = remember { playerViewModel.clipStartMs() }
+                                ClipSheet(
+                                    mediaItem = mediaItem,
+                                    startMs = clipStartMs,
+                                    onStart = { lengthMs -> playerViewModel.startClip(lengthMs, clipStartMs) },
+                                    onDismiss = { showClipSheet = false },
+                                )
+                            }
+                            (clipState as? ClipUiState.Done)?.let { done ->
+                                ClipResultDialog(done, clipRecorder, onDismiss = playerViewModel::dismissClipResult)
                             }
                             if (showPlayerOptions) {
                                 val channelStreams by playerViewModel.channelStreams.collectAsStateWithLifecycle()
@@ -546,6 +575,8 @@ fun App() {
                                         homeUIState = homeUIState,
                                         mediaPlayer = playerViewModel.player,
                                         playerControlState = playerUIState,
+                                        reaction = playerViewModel.reaction.collectAsStateWithLifecycle().value,
+                                        clip = clipState.takeIf { clipRecorder != null },
                                         onEvent = onPlayerEvent,
                                     )
                                 }

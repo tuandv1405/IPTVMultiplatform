@@ -2,6 +2,7 @@ package tss.t.tsiptv.player
 
 import android.content.Context
 import androidx.annotation.OptIn
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import tss.t.tsiptv.feature.clip.AndroidClipRecorder
+import tss.t.tsiptv.feature.clip.ClipRecorder
 import tss.t.tsiptv.player.models.MediaItem
 import tss.t.tsiptv.player.models.PlaybackError
 import tss.t.tsiptv.player.models.PlaybackPreflight
@@ -295,6 +298,34 @@ class AndroidMediaPlayer(
         player.trackSelectionParameters = builder.build()
     }
 
+    /**
+     * Reads the player view's surface back with PixelCopy. The surface is sized to the picture's
+     * display aspect (PlayerView fits it), so its size gives the aspect. A secure (DRM) surface
+     * fails or reads black; the caller then shows the logo.
+     */
+    override suspend fun captureFrame(): VideoSnapshot? = withContext(Dispatchers.Main) {
+        val surface = tss.t.tsiptv.player.ui.VideoSurfaces.current() ?: return@withContext null
+        val scale = minOf(1f, MAX_SNAPSHOT_WIDTH.toFloat() / surface.width)
+        val width = (surface.width * scale).toInt().coerceAtLeast(1)
+        val height = (surface.height * scale).toInt().coerceAtLeast(1)
+        val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
+        val copied = try {
+            kotlinx.coroutines.suspendCancellableCoroutine { cont ->
+                android.view.PixelCopy.request(
+                    surface,
+                    bitmap,
+                    { result -> if (cont.isActive) cont.resumeWith(Result.success(result == android.view.PixelCopy.SUCCESS)) },
+                    android.os.Handler(android.os.Looper.getMainLooper()),
+                )
+            }
+        } catch (_: IllegalArgumentException) {
+            false // the surface went away between the check and the copy
+        }
+        if (copied) VideoSnapshot(bitmap.asImageBitmap(), surface.width.toFloat() / surface.height) else null
+    }
+
+    override val clipRecorder: ClipRecorder = AndroidClipRecorder(context)
+
     override suspend fun release() = onMain {
         exoPlayer?.removeListener(playerListener)
         MediaPlayerService.stopService(context)
@@ -331,3 +362,6 @@ class AndroidMediaPlayer(
         }
     }
 }
+
+/** Share cards are about 1280 px wide: a larger read-back only costs memory. */
+private const val MAX_SNAPSHOT_WIDTH = 1280

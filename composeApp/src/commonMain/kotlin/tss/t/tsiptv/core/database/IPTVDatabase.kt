@@ -31,6 +31,9 @@ interface IPTVDatabase {
 
     /** F3 (Room v6): TS IPTV Sources, their includes and VOD rows. */
     val tsiptvStore: tss.t.tsiptv.core.tsiptv.TsiptvStore
+
+    /** Room v7: the viewer's likes and dislikes (local only). */
+    val reactionStore: tss.t.tsiptv.core.reaction.ReactionStore
     /**
      * Gets all channel.
      *

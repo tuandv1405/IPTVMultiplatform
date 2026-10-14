@@ -15,6 +15,7 @@ import tss.t.tsiptv.core.database.dao.ChannelDao
 import tss.t.tsiptv.core.database.dao.ChannelHistoryDao
 import tss.t.tsiptv.core.database.dao.PlaylistDao
 import tss.t.tsiptv.core.database.dao.MediaHistoryDao
+import tss.t.tsiptv.core.database.dao.MediaReactionDao
 import tss.t.tsiptv.core.database.dao.ProgramDao
 import tss.t.tsiptv.core.database.dao.StremioAddonDao
 import tss.t.tsiptv.core.database.dao.TsiptvDao
@@ -24,6 +25,7 @@ import tss.t.tsiptv.core.database.entity.VodEpisodeEntity
 import tss.t.tsiptv.core.database.entity.VodItemEntity
 import tss.t.tsiptv.core.database.entity.CategoryEntity
 import tss.t.tsiptv.core.database.entity.MediaHistoryEntity
+import tss.t.tsiptv.core.database.entity.MediaReactionEntity
 import tss.t.tsiptv.core.database.entity.StremioAddonEntity
 import tss.t.tsiptv.core.database.entity.ChannelAttributeEntity
 import tss.t.tsiptv.core.database.entity.ChannelEntity
@@ -48,8 +50,9 @@ import tss.t.tsiptv.core.database.entity.ProgramEntity
         TsiptvIncludeEntity::class,
         VodItemEntity::class,
         VodEpisodeEntity::class,
+        MediaReactionEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(
@@ -71,6 +74,11 @@ import tss.t.tsiptv.core.database.entity.ProgramEntity
         AutoMigration(
             from = 5,
             to = 6
+        ),
+        // Player like/dislike: one new table (media_reactions); existing data is untouched.
+        AutoMigration(
+            from = 6,
+            to = 7
         ),
     ]
 )
@@ -127,6 +135,9 @@ abstract class AppDatabase : RoomDatabase() {
 
     /** F3: TS IPTV Sources, their includes and VOD rows. */
     abstract fun tsiptvDao(): TsiptvDao
+
+    /** v7: the viewer's likes and dislikes. */
+    abstract fun mediaReactionDao(): MediaReactionDao
 }
 
 // The Room compiler generates the `actual` implementations.

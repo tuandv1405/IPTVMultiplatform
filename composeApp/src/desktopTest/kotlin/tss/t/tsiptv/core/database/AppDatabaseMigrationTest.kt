@@ -7,6 +7,8 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import tss.t.tsiptv.core.reaction.Reaction
+import tss.t.tsiptv.core.reaction.ReactionRecord
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -295,6 +297,59 @@ class AppDatabaseMigrationTest {
                 assertTrue(store.getIncludes(pl).isEmpty())
                 // The F1 playlist is untouched.
                 assertEquals(1, iptv.getAllChannelsByPlayListId("p1").first().size)
+            }
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun migrate6To7KeepsV6RowsAndAddsReactions() {
+        helper.createDatabase(6).use { v6 ->
+            v6.execSQL(
+                "INSERT INTO playlists (id, name, url, lastUpdated, format, epgUrl, sourceType, epgUrlsJson) " +
+                    "VALUES ('p1', 'My list', 'https://lists.example.com/a.m3u', 1700000000000, 'M3U', NULL, 'URL', NULL)"
+            )
+            v6.execSQL(
+                "INSERT INTO channel (id, name, url, logoUrl, categoryId, playlistId, isFavorite, lastWatched) " +
+                    "VALUES ('ch1', 'Channel 1', 'https://cdn.example.com/1.m3u8', NULL, 'News', 'p1', 1, 1700000000001)"
+            )
+            v6.execSQL(
+                "INSERT INTO channel_history (channelId, playlistId, lastPlayedTimestamp, totalPlayedTimeMs, playCount, currentPositionMs, totalDurationMs) " +
+                    "VALUES ('ch1', 'p1', 1700000000002, 60000, 3, 0, 0)"
+            )
+            v6.execSQL(
+                "INSERT INTO media_history (sourceKind, sourceId, itemType, itemId, videoId, title, subtitle, posterUrl, season, episode, " +
+                    "lastAddonId, lastBingeGroup, positionMs, durationMs, finished, updatedAt) " +
+                    "VALUES ('STREMIO', 'a', 'movie', 'm', 'm', 'M', NULL, NULL, NULL, NULL, 'a', NULL, 10, 20, 0, 30)"
+            )
+        }
+
+        helper.runMigrationsAndValidate(7).use { v7 ->
+            assertEquals(listOf("Channel 1|1"), v7.rows("SELECT name, isFavorite FROM channel"))
+            assertEquals(listOf("3"), v7.rows("SELECT playCount FROM channel_history"))
+            assertEquals(listOf("10|20"), v7.rows("SELECT positionMs, durationMs FROM media_history"))
+            assertEquals(listOf("0"), v7.rows("SELECT COUNT(*) FROM media_reactions"))
+        }
+
+        val db = Room.databaseBuilder<AppDatabase>(dbFile.absolutePath) { AppDatabaseConstructor.initialize() }
+            .setDriver(BundledSQLiteDriver())
+            .build()
+        try {
+            runBlocking {
+                val reactions = RoomIPTVDatabase(db).reactionStore
+                reactions.upsert(ReactionRecord("ch1", Reaction.LIKE, "Channel 1", null, 1))
+                reactions.upsert(ReactionRecord("stremio:a:m", Reaction.LIKE, "M", null, 2))
+                assertEquals(Reaction.LIKE, reactions.observe("ch1").first())
+                assertEquals(listOf("stremio:a:m", "ch1"), reactions.observeAll(Reaction.LIKE).first().map { it.contentKey })
+
+                // One row per key: switching to dislike replaces the like.
+                reactions.upsert(ReactionRecord("ch1", Reaction.DISLIKE, "Channel 1", null, 3))
+                assertEquals(listOf("stremio:a:m"), reactions.observeAll(Reaction.LIKE).first().map { it.contentKey })
+                assertEquals(Reaction.DISLIKE, reactions.get("ch1")!!.reaction)
+
+                reactions.delete("ch1")
+                assertNull(reactions.observe("ch1").first())
             }
         } finally {
             db.close()
