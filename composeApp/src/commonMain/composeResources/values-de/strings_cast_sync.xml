@@ -18,6 +18,12 @@
     <string name="lan_paired_badge">Gekoppelt</string>
     <string name="lan_paired_tvs">Gekoppelte Fernseher</string>
     <string name="lan_no_paired_tvs">Noch kein TV gekoppelt</string>
+    <string name="lan_your_tvs">Deine Fernseher</string>
+    <string name="lan_other_tvs">Andere Fernseher in diesem WLAN</string>
+    <string name="lan_tv_status_ready">Gekoppelt · Bereit</string>
+    <string name="lan_tv_status_checking">Gekoppelt · Wird gesucht…</string>
+    <string name="lan_tv_status_offline">Gekoppelt · Nicht gefunden. Öffne TS IPTV auf dem Fernseher.</string>
+    <string name="lan_search_again">Erneut suchen</string>
     <string name="lan_pair_title">Mit %1$s koppeln</string>
     <string name="lan_pair_enter_code">Gib den 6-stelligen Code vom TV ein</string>
     <string name="lan_pair_wrong_code">Falscher Code. Prüfe den Code auf dem TV.</string>

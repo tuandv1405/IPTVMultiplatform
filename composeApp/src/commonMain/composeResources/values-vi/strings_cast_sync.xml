@@ -19,6 +19,12 @@
     <string name="lan_paired_badge">Đã ghép nối</string>
     <string name="lan_paired_tvs">TV đã ghép nối</string>
     <string name="lan_no_paired_tvs">Chưa ghép nối TV nào</string>
+    <string name="lan_your_tvs">TV của bạn</string>
+    <string name="lan_other_tvs">TV khác trong Wi-Fi này</string>
+    <string name="lan_tv_status_ready">Đã ghép nối · Sẵn sàng</string>
+    <string name="lan_tv_status_checking">Đã ghép nối · Đang tìm…</string>
+    <string name="lan_tv_status_offline">Đã ghép nối · Không thấy. Hãy mở TS IPTV trên TV.</string>
+    <string name="lan_search_again">Tìm lại</string>
     <string name="lan_pair_title">Ghép nối với %1$s</string>
     <string name="lan_pair_enter_code">Nhập mã 6 số đang hiển thị trên TV</string>
     <string name="lan_pair_wrong_code">Mã không đúng. Kiểm tra lại mã trên TV.</string>

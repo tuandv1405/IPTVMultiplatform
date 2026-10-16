@@ -9,8 +9,11 @@ import kotlinx.serialization.builtins.ListSerializer
 import tss.t.tsiptv.core.security.SecretCipher
 import tss.t.tsiptv.core.storage.KeyValueStorage
 
-/** A device this one is paired with. The key itself never leaves [PairingStore]. */
-data class PairedPeer(val id: String, val name: String, val pairedAt: Long)
+/**
+ * A device this one is paired with. The key itself never leaves [PairingStore]. [host] and [port]
+ * are where it last answered (a phone keeps them for its TVs, so they show without mDNS).
+ */
+data class PairedPeer(val id: String, val name: String, val pairedAt: Long, val host: String? = null, val port: Int? = null)
 
 /**
  * Pair keys at rest: one list per role (a TV keeps phones, a phone keeps TVs), each key wrapped
@@ -24,7 +27,15 @@ class PairingStore(
     enum class Role(val storageKey: String) { RECEIVER("lan_paired_senders"), SENDER("lan_paired_receivers") }
 
     @Serializable
-    private data class Entry(val id: String, val name: String, val key: String, val pairedAt: Long)
+    private data class Entry(
+        val id: String,
+        val name: String,
+        val key: String,
+        val pairedAt: Long,
+        // Where the TV answered last; entries from older builds have none until it answers once.
+        val host: String? = null,
+        val port: Int? = null,
+    )
 
     private val mutex = Mutex()
     private var loaded: MutableList<Entry>? = null
@@ -48,7 +59,7 @@ class PairingStore(
     }
 
     // Names stored by older builds are cleaned on the way out too.
-    private fun Entry.toPeer() = PairedPeer(id, LanValidation.cleanName(name), pairedAt)
+    private fun Entry.toPeer() = PairedPeer(id, LanValidation.cleanName(name), pairedAt, host, port)
 
     suspend fun load(): List<PairedPeer> = mutex.withLock { entries().map { it.toPeer() } }
 
@@ -59,12 +70,24 @@ class PairingStore(
 
     suspend fun nameOf(id: String): String? = mutex.withLock { entries().firstOrNull { it.id == id }?.name?.let(LanValidation::cleanName) }
 
-    suspend fun put(id: String, name: String, key: ByteArray, now: Long) = mutex.withLock {
+    suspend fun put(id: String, name: String, key: ByteArray, now: Long, host: String? = null, port: Int? = null) = mutex.withLock {
         val list = entries()
         list.removeAll { it.id == id }
-        list.add(Entry(id, LanValidation.cleanName(name), cipher.encrypt(LanCrypto.b64(key)), now))
+        list.add(Entry(id, LanValidation.cleanName(name), cipher.encrypt(LanCrypto.b64(key)), now, host, port))
         // Bounded: the oldest pairing goes first.
         while (list.size > MAX_PEERS) list.removeAt(0)
+        save(list)
+    }
+
+    /** Where paired [id] answered last (and its current name); nothing for an unknown id. */
+    suspend fun remember(id: String, name: String, host: String, port: Int) = mutex.withLock {
+        val list = entries()
+        val index = list.indexOfFirst { it.id == id }
+        if (index < 0) return@withLock
+        val old = list[index]
+        val clean = LanValidation.cleanName(name).ifBlank { old.name }
+        if (old.host == host && old.port == port && old.name == clean) return@withLock
+        list[index] = old.copy(name = clean, host = host, port = port)
         save(list)
     }
 

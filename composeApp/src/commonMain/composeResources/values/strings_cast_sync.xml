@@ -19,6 +19,12 @@
     <string name="lan_paired_badge">Paired</string>
     <string name="lan_paired_tvs">Paired TVs</string>
     <string name="lan_no_paired_tvs">No paired TV yet</string>
+    <string name="lan_your_tvs">Your TVs</string>
+    <string name="lan_other_tvs">Other TVs on this Wi-Fi</string>
+    <string name="lan_tv_status_ready">Paired · Ready</string>
+    <string name="lan_tv_status_checking">Paired · Looking for it…</string>
+    <string name="lan_tv_status_offline">Paired · Not found. Open TS IPTV on the TV.</string>
+    <string name="lan_search_again">Search again</string>
     <string name="lan_pair_title">Pair with %1$s</string>
     <string name="lan_pair_enter_code">Enter the 6-digit code shown on the TV</string>
     <string name="lan_pair_wrong_code">Wrong code. Check the code on the TV.</string>

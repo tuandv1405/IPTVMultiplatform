@@ -3,7 +3,9 @@ package tss.t.tsiptv.feature.lan
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
+import android.net.wifi.WifiManager
 import android.os.Build
+import android.util.Log
 import android.provider.Settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -93,10 +95,16 @@ internal fun InputStream.readLineCapped(max: Int): String? {
 /** One request per TCP connection (protocol v1). */
 object SocketLanTransport : LanTransport {
     override suspend fun exchange(host: String, port: Int, line: String, maxAnswerBytes: Int): String =
+        exchange(host, port, line, maxAnswerBytes, LanProtocol.CONNECT_TIMEOUT_MS, LanProtocol.READ_TIMEOUT_MS)
+
+    override suspend fun probe(host: String, port: Int, line: String): String =
+        exchange(host, port, line, LanProtocol.MAX_REQUEST_BYTES, LanProtocol.PROBE_CONNECT_TIMEOUT_MS, LanProtocol.PROBE_READ_TIMEOUT_MS)
+
+    private suspend fun exchange(host: String, port: Int, line: String, maxAnswerBytes: Int, connectTimeoutMs: Int, readTimeoutMs: Int): String =
         withContext(Dispatchers.IO) {
             Socket().use { socket ->
-                socket.connect(InetSocketAddress(host, port), LanProtocol.CONNECT_TIMEOUT_MS)
-                socket.soTimeout = LanProtocol.READ_TIMEOUT_MS
+                socket.connect(InetSocketAddress(host, port), connectTimeoutMs)
+                socket.soTimeout = readTimeoutMs
                 socket.getOutputStream().apply {
                     write((line + "\n").toByteArray(Charsets.UTF_8))
                     flush()
@@ -106,19 +114,55 @@ object SocketLanTransport : LanTransport {
         }
 }
 
-/** Browses `_tsiptv._tcp` with NsdManager and resolves each service (one at a time, as old APIs need). */
+private const val TAG = "TsLan"
+
+/**
+ * Many Wi-Fi chips drop multicast unless an app holds this lock, so mDNS queries and answers never
+ * arrive (the TV is not found, while "connect by IP" works). Held while browsing / receiving only.
+ */
+private fun acquireMulticastLock(context: Context, tag: String): WifiManager.MulticastLock? = runCatching {
+    val wifi = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+    wifi.createMulticastLock(tag).apply {
+        setReferenceCounted(false)
+        acquire()
+    }
+}.onFailure { Log.w(TAG, "No multicast lock", it) }.getOrNull()
+
+private fun WifiManager.MulticastLock.releaseQuietly() {
+    runCatching { if (isHeld) release() }
+}
+
+/**
+ * Browses `_tsiptv._tcp` with NsdManager and resolves each service (one at a time, as old APIs need).
+ * A resolve that fails or times out is tried again ([MAX_RESOLVE_ATTEMPTS]): NSD reports a service
+ * only once, so a single failure used to hide that TV until the sheet was opened again.
+ */
 class NsdLanDiscovery(private val context: Context) : LanDiscovery {
     override val isSupported: Boolean = true
+
+    override fun localNetworks(): List<LanNetwork> = runCatching {
+        val candidates = NetworkInterface.getNetworkInterfaces().toList()
+            .filter { it.isUp && !it.isLoopback && !it.isPointToPoint && !it.isVirtual }
+            .filterNot { iface -> NOT_LAN.any { iface.name.startsWith(it) } }
+        candidates.flatMap { iface ->
+            iface.interfaceAddresses
+                .filter { it.address is Inet4Address && it.address.isSiteLocalAddress }
+                .mapNotNull { a -> a.address.hostAddress?.let { LanNetwork(it, a.networkPrefixLength.toInt()) } }
+        }
+    }.getOrDefault(emptyList())
 
     @Suppress("DEPRECATION")
     override fun discover(): Flow<List<LanDevice>> = callbackFlow {
         val nsd = context.getSystemService(Context.NSD_SERVICE) as NsdManager
+        val lock = acquireMulticastLock(context, "tsiptv-browse")
         val found = ConcurrentHashMap<String, LanDevice>()
+        val attempts = ConcurrentHashMap<String, Int>()
         val toResolve = Channel<NsdServiceInfo>(Channel.UNLIMITED)
         val listener = object : NsdManager.DiscoveryListener {
             override fun onDiscoveryStarted(serviceType: String) = Unit
             override fun onDiscoveryStopped(serviceType: String) = Unit
             override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
+                Log.w(TAG, "mDNS browse failed: $errorCode")
                 trySend(found.values.toList())
             }
             override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) = Unit
@@ -133,19 +177,22 @@ class NsdLanDiscovery(private val context: Context) : LanDiscovery {
         nsd.discoverServices(LanProtocol.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, listener)
         launch(Dispatchers.IO) {
             for (info in toResolve) {
-                val resolved = withTimeoutOrNull(5_000) {
-                    suspendCancellableCoroutine<NsdServiceInfo?> { cont ->
-                        nsd.resolveService(info, object : NsdManager.ResolveListener {
-                            override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                                if (cont.isActive) cont.resume(null)
-                            }
-                            override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
-                                if (cont.isActive) cont.resume(serviceInfo)
-                            }
-                        })
+                val resolved = resolve(nsd, info)
+                // Prefer IPv4: a global IPv6 source address is not a LAN peer for the TV.
+                val address = resolved?.let(::addressesOf)?.let { all -> all.firstOrNull { it is Inet4Address } ?: all.firstOrNull() }
+                val host = address?.hostAddress
+                if (resolved == null || host == null) {
+                    val tries = attempts.merge(info.serviceName, 1, Int::plus) ?: 1
+                    Log.w(TAG, "mDNS resolve failed (try $tries)")
+                    if (tries < MAX_RESOLVE_ATTEMPTS) {
+                        launch {
+                            delay(RESOLVE_RETRY_MS * tries)
+                            toResolve.trySend(info)
+                        }
                     }
-                } ?: continue
-                val host = resolved.host?.hostAddress ?: continue
+                    continue
+                }
+                attempts.remove(info.serviceName)
                 val attrs = resolved.attributes
                 val id = attrs[LanProtocol.TXT_ID]?.toString(Charsets.UTF_8).orEmpty()
                 val version = attrs[LanProtocol.TXT_VERSION]?.toString(Charsets.UTF_8)?.toIntOrNull() ?: 1
@@ -156,7 +203,45 @@ class NsdLanDiscovery(private val context: Context) : LanDiscovery {
         awaitClose {
             toResolve.close()
             runCatching { nsd.stopServiceDiscovery(listener) }
+            lock?.releaseQuietly()
         }
+    }
+
+    /** One resolve, at most [RESOLVE_TIMEOUT_MS]; a timed-out one is stopped where the API allows. */
+    @Suppress("DEPRECATION")
+    private suspend fun resolve(nsd: NsdManager, info: NsdServiceInfo): NsdServiceInfo? {
+        var listener: NsdManager.ResolveListener? = null
+        val resolved = withTimeoutOrNull(RESOLVE_TIMEOUT_MS) {
+            suspendCancellableCoroutine<NsdServiceInfo?> { cont ->
+                val l = object : NsdManager.ResolveListener {
+                    override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                        if (cont.isActive) cont.resume(null)
+                    }
+                    override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
+                        if (cont.isActive) cont.resume(serviceInfo)
+                    }
+                }
+                listener = l
+                runCatching { nsd.resolveService(info, l) }.onFailure { if (cont.isActive) cont.resume(null) }
+            }
+        }
+        if (resolved == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            listener?.let { l -> runCatching { nsd.stopServiceResolution(l) } }
+        }
+        return resolved
+    }
+
+    @Suppress("DEPRECATION")
+    private fun addressesOf(info: NsdServiceInfo): List<InetAddress> =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) info.hostAddresses else listOfNotNull(info.host)
+
+    private companion object {
+        const val RESOLVE_TIMEOUT_MS = 5_000L
+        const val RESOLVE_RETRY_MS = 1_000L
+        const val MAX_RESOLVE_ATTEMPTS = 3
+
+        /** Mobile data, VPN and tethering interfaces: never the Wi-Fi the TV is on. */
+        val NOT_LAN = listOf("rmnet", "ccmni", "pdp", "v4-", "tun", "ppp", "ipsec", "dummy", "p2p", "clat")
     }
 }
 
@@ -177,18 +262,19 @@ class NsdSocketLanServer(private val context: Context) : LanServer {
     private var scope: CoroutineScope? = null
     private var server: ServerSocket? = null
     private var registration: NsdManager.RegistrationListener? = null
+    private var multicastLock: WifiManager.MulticastLock? = null
     private val active = AtomicInteger(0)
     private val perAddress = ConcurrentHashMap<InetAddress, AtomicInteger>()
 
     override suspend fun start(
         serviceName: String,
         deviceId: String,
-        preferredPort: Int,
+        preferredPorts: List<Int>,
         largeRequestAllowed: suspend (prefix: String) -> Boolean,
         handler: suspend (String) -> String,
     ): Int = withContext(Dispatchers.IO) {
         stop()
-        val socket = bind(preferredPort)
+        val socket = bind(preferredPorts)
         server = socket
         val serverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         scope = serverScope
@@ -224,17 +310,19 @@ class NsdSocketLanServer(private val context: Context) : LanServer {
                 }
             }
         }
-        register(serviceName, deviceId, socket.localPort)
+        multicastLock = acquireMulticastLock(context, "tsiptv-receiver")
+        register(serviceName, deviceId, socket.localPort, serverScope)
         socket.localPort
     }
 
-    /** [preferred] when it is a free unprivileged port, else a random one. */
-    private fun bind(preferred: Int): ServerSocket {
-        if (preferred in 1024..65535) {
+    /** The first free unprivileged port of [preferred], else a random one. */
+    private fun bind(preferred: List<Int>): ServerSocket {
+        for (port in preferred.distinct()) {
+            if (port !in 1024..65535) continue
             val socket = ServerSocket()
             try {
                 socket.reuseAddress = true
-                socket.bind(InetSocketAddress(preferred))
+                socket.bind(InetSocketAddress(port))
                 return socket
             } catch (_: Exception) {
                 runCatching { socket.close() }
@@ -323,7 +411,7 @@ class NsdSocketLanServer(private val context: Context) : LanServer {
         }
     }
 
-    private fun register(serviceName: String, deviceId: String, port: Int) {
+    private fun register(serviceName: String, deviceId: String, port: Int, serverScope: CoroutineScope, attempt: Int = 1) {
         val nsd = context.getSystemService(Context.NSD_SERVICE) as NsdManager
         val info = NsdServiceInfo().apply {
             this.serviceName = serviceName
@@ -334,7 +422,18 @@ class NsdSocketLanServer(private val context: Context) : LanServer {
         }
         val listener = object : NsdManager.RegistrationListener {
             override fun onServiceRegistered(serviceInfo: NsdServiceInfo) = Unit
-            override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) = Unit
+            override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                // Used to fail silently: the TV then never showed up on phones. Try again a little later.
+                Log.w(TAG, "mDNS registration failed: $errorCode (try $attempt)")
+                val failed = this
+                if (attempt < MAX_REGISTER_ATTEMPTS) {
+                    serverScope.launch {
+                        delay(REGISTER_RETRY_MS * attempt)
+                        // Still this server's registration (not stopped or restarted meanwhile).
+                        if (registration === failed) register(serviceName, deviceId, port, serverScope, attempt + 1)
+                    }
+                }
+            }
             override fun onServiceUnregistered(serviceInfo: NsdServiceInfo) = Unit
             override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) = Unit
         }
@@ -349,6 +448,8 @@ class NsdSocketLanServer(private val context: Context) : LanServer {
                 runCatching { nsd.unregisterService(listener) }
             }
             registration = null
+            multicastLock?.releaseQuietly()
+            multicastLock = null
             runCatching { server?.close() }
             server = null
             scope?.cancel()
@@ -368,6 +469,8 @@ class NsdSocketLanServer(private val context: Context) : LanServer {
     private companion object {
         const val MAX_CONNECTIONS = 8
         const val MAX_PER_IP = 2
+        const val MAX_REGISTER_ATTEMPTS = 3
+        const val REGISTER_RETRY_MS = 2_000L
 
         /** 10 s + MAX_OFFER_BYTES / (100 KB/s), capped at 30 s (about 25.7 s). */
         val LARGE_DEADLINE_MS: Long =
