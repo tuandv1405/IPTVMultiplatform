@@ -12,11 +12,20 @@ import kotlinx.coroutines.flow.flowOf
 interface LanDiscovery {
     val isSupported: Boolean
     fun discover(): Flow<List<LanDevice>>
+
+    /** This device's IPv4 LAN networks (Wi-Fi, Ethernet; never VPN or mobile), for the address scan. */
+    fun localNetworks(): List<LanNetwork> = emptyList()
 }
+
+/** An IPv4 address of this device and its prefix length, e.g. 192.168.1.23/24. */
+data class LanNetwork(val address: String, val prefixLength: Int)
 
 /** Sends one request line and returns the answer line. Throws on any network failure. */
 interface LanTransport {
     suspend fun exchange(host: String, port: Int, line: String, maxAnswerBytes: Int = LanProtocol.MAX_REQUEST_BYTES): String
+
+    /** [exchange] with the short scan timeouts ([LanProtocol.PROBE_CONNECT_TIMEOUT_MS]). */
+    suspend fun probe(host: String, port: Int, line: String): String = exchange(host, port, line)
 }
 
 /** The TV's TCP server and its mDNS registration. */
@@ -25,8 +34,9 @@ interface LanServer {
 
     /**
      * Starts listening and advertises the port as [serviceName] with [deviceId] in TXT. Listens on
-     * [preferredPort] when it is free (a stable port per install, for "connect by IP"), else on a
-     * random one. Every request line goes to [handler]; its result is the answer. Returns the port.
+     * the first free port of [preferredPorts] ([LanProtocol.DEFAULT_PORT], then the port this install
+     * used before, for "connect by IP"), else on a random one. Every request line goes to [handler];
+     * its result is the answer. Returns the port.
      *
      * A request line may exceed [LanProtocol.MAX_REQUEST_BYTES] (up to [LanProtocol.MAX_OFFER_BYTES])
      * only when [largeRequestAllowed] accepts its first [LanProtocol.MAX_REQUEST_BYTES] bytes, i.e.
@@ -35,7 +45,7 @@ interface LanServer {
     suspend fun start(
         serviceName: String,
         deviceId: String,
-        preferredPort: Int = 0,
+        preferredPorts: List<Int> = emptyList(),
         largeRequestAllowed: suspend (prefix: String) -> Boolean = { false },
         handler: suspend (String) -> String,
     ): Int
@@ -61,7 +71,7 @@ object UnsupportedLanServer : LanServer {
     override suspend fun start(
         serviceName: String,
         deviceId: String,
-        preferredPort: Int,
+        preferredPorts: List<Int>,
         largeRequestAllowed: suspend (prefix: String) -> Boolean,
         handler: suspend (String) -> String,
     ): Int = throw UnsupportedOperationException("LAN not supported on this platform")

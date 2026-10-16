@@ -56,8 +56,9 @@ LAN (direct TCP between the two devices, no relay, no cloud).
 1. Both on the **same Wi-Fi network and subnet** (not one on Wi-Fi and one on mobile data, not a
    "Guest" network, not two different routers / mesh SSIDs that are separate subnets).
 2. The router must not use **client isolation / AP isolation** (common on guest and hotel networks).
-3. The router must let **multicast / mDNS** through (some mesh systems and enterprise APs block it).
-   If not, use **Kết nối bằng địa chỉ IP**.
+3. mDNS needs **multicast** (some mesh systems and enterprise APs block it). Where it is blocked the
+   phone still finds the TV by asking each address of its own /24 on port 47123 (§2.4), and paired TVs
+   are tried at their last address; **Kết nối bằng địa chỉ IP** remains the fallback.
 4. **TS IPTV is open on the TV** (in the foreground), or the TV is on the *Nhận từ điện thoại* screen.
 5. Both apps are on a version with this feature (protocol v1).
 6. **VPN off** on both devices (a VPN moves traffic off the LAN).
@@ -69,10 +70,19 @@ LAN (direct TCP between the two devices, no relay, no cloud).
 Discovery
 - mDNS / DNS-SD service type **`_tsiptv._tcp`**. Instance name: the TV's display name.
   TXT: `id` (receiver installation id), `v` (protocol version, `1`).
-- Android: `NsdManager` (register on TV, discover + resolve on the phone).
+- Android: `NsdManager` (register on TV, discover + resolve on the phone). Both sides hold a Wi-Fi
+  `MulticastLock` while browsing / receiving (many Wi-Fi chips drop multicast without one). A resolve
+  that fails or times out is retried (up to 3 tries): NSD reports a service only once. IPv4 is
+  preferred over IPv6 addresses.
+- Address scan (multicast blocked, "connect by IP" works): the phone sends `hello` to every address
+  of its Wi-Fi /24 (never more than its own /24) on the default port **47123** and on the last ports of
+  paired TVs, 48 at a time, 0.7 s connect timeout.
+- Paired TVs (paired by code) are listed first in the picker at once, with where they answered last
+  (host and port kept with the pair key), and checked there: *Ready*, *Looking for it…* or *Not found*.
 
 Transport
-- The TV runs a plain TCP server (`ServerSocket`) on a **random port**, only while the app is in the
+- The TV runs a plain TCP server (`ServerSocket`) on port **47123** when it is free, else on the port
+  this install used before, else a random one (kept per install), only while the app is in the
   foreground (or on the *Nhận từ điện thoại* screen); stopped in `onPause`.
 - One request per connection: a single UTF-8 JSON object terminated by `\n`, one JSON line back,
   then close. Read timeout 10 s. **Size cap**: 64 KiB per request, 1.5 MiB for a playlist offer with

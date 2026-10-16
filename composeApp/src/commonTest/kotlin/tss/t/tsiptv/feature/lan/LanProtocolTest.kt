@@ -96,6 +96,24 @@ class LanProtocolTest {
     }
 
     @Test
+    fun pairedTvKeepsWhereItLastAnswered() = runBlocking<Unit> {
+        val h = Harness()
+        assertEquals(LanResult.Ok, h.pair())
+        val tv = h.phone.pairedTvs().single()
+        assertEquals("tv-1" to "Living room", tv.id to tv.name)
+        assertEquals("192.168.1.20" to 4000, tv.host to tv.port)
+
+        // The TV got a new address (DHCP) and a new port: the next cast there updates the list.
+        val moved = h.tv.copy(host = "192.168.1.31", port = LanProtocol.DEFAULT_PORT)
+        assertEquals(LanResult.Ok, h.phone.send(moved, CastCommand(stream)))
+        assertEquals("192.168.1.31" to LanProtocol.DEFAULT_PORT, h.phone.pairedTvs().single().let { it.host to it.port })
+
+        // An unknown TV is never added by remembering it.
+        h.phone.remember(LanDevice(id = "other", name = "Other", host = "192.168.1.9", port = 1234))
+        assertEquals(listOf("tv-1"), h.phone.pairedTvs().map { it.id })
+    }
+
+    @Test
     fun wrongCodeThreeTimesEndsTheSession() = runBlocking<Unit> {
         val h = Harness()
         val started = h.phone.startPairing(h.tv) as PairStartResult.Started

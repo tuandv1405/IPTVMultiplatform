@@ -3,18 +3,27 @@ package tss.t.tsiptv.feature.lan
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import tss.t.tsiptv.feature.account.DeviceSessionManager
 import tss.t.tsiptv.feature.account.QuotaService
 import tss.t.tsiptv.feature.account.RewardPlacement
 import tss.t.tsiptv.feature.account.RewardResult
 
-/** A TV in the picker. */
-data class TvTarget(val device: LanDevice, val paired: Boolean)
+/**
+ * A TV in the picker. [online]: it answers now (true), it was not found (false), or the phone is
+ * still looking for it (null; only for a paired TV, which is listed before it is found).
+ */
+data class TvTarget(val device: LanDevice, val paired: Boolean, val online: Boolean? = true)
 
 /** Daily send quota, for the playlist sheet. */
 data class SendQuotaInfo(
@@ -55,6 +64,9 @@ enum class TvSendMessage {
 data class TvSendUiState(
     val supported: Boolean = false,
     val searching: Boolean = false,
+    /** The address scan and the paired-TV checks are running ([TvSendViewModel.searchAgain]). */
+    val scanning: Boolean = false,
+    /** Paired TVs first (found or not), then other TVs found on this Wi-Fi. */
     val targets: List<TvTarget> = emptyList(),
     val step: TvSendStep = TvSendStep.Pick,
     val message: TvSendMessage? = null,
@@ -78,6 +90,12 @@ class TvSendViewModel(
 
     private var command: LanCommand? = null
     private var discoveryJob: Job? = null
+    private var scanJob: Job? = null
+
+    // Picker sources, merged by [publishTargets] (main thread only).
+    private var paired: List<PairedPeer> = emptyList()
+    private var browsed: List<LanDevice> = emptyList()
+    private val answered = LinkedHashMap<String, LanDevice>()
     private var pairing: PairingHandle? = null
     private var wrongCodes = 0
     private var target: LanDevice? = null
@@ -100,20 +118,98 @@ class TvSendViewModel(
     fun close() {
         discoveryJob?.cancel()
         discoveryJob = null
+        scanJob?.cancel()
+        scanJob = null
         command = null
-        _state.update { it.copy(searching = false) }
+        _state.update { it.copy(searching = false, scanning = false) }
     }
 
+    /**
+     * Three sources, so a TV shows up even where mDNS never works (multicast blocked by the router
+     * or filtered by the TV's Wi-Fi, while "connect by IP" works):
+     * 1. TVs paired by code, listed at once and checked at the address they last answered on;
+     * 2. mDNS (`_tsiptv._tcp`);
+     * 3. a scan of this Wi-Fi's addresses on [LanProtocol.DEFAULT_PORT] ([LanScan]).
+     */
     private fun startDiscovery() {
         if (!_state.value.supported) return
         discoveryJob?.cancel()
-        _state.update { it.copy(searching = true) }
+        scanJob?.cancel()
+        scanJob = null
+        browsed = emptyList()
+        answered.clear()
+        _state.update { it.copy(searching = true, scanning = false, targets = emptyList()) }
         discoveryJob = viewModelScope.launch {
             discovery.discover().collect { devices ->
-                val targets = devices.sortedBy { it.name.lowercase() }.map { TvTarget(it, sender.isPaired(it)) }
-                _state.update { it.copy(targets = targets) }
+                browsed = devices
+                publishTargets()
             }
         }
+        searchAgain()
+    }
+
+    /** Checks the paired TVs and scans this Wi-Fi again (mDNS keeps browsing meanwhile). */
+    fun searchAgain() {
+        if (!_state.value.supported || _state.value.scanning) return
+        scanJob?.cancel()
+        _state.update { it.copy(scanning = true) }
+        // Lazy: the job is known as [scanJob] before its body runs (Main.immediate).
+        val job = viewModelScope.launch(start = CoroutineStart.LAZY) {
+            try {
+                paired = sender.pairedTvs()
+                publishTargets()
+                coroutineScope {
+                    // A paired TV where it answered last: usually the quickest way to show it ready.
+                    paired.forEach { tv ->
+                        val host = tv.host
+                        val port = tv.port
+                        if (host != null && port != null) launch { probe(host, port) }
+                    }
+                    // Every address of this Wi-Fi, on the default port and on the last ports of
+                    // paired TVs (a TV with an older build, or whose default port was taken).
+                    val ports = (listOf(LanProtocol.DEFAULT_PORT) + paired.mapNotNull { it.port }).distinct().take(MAX_SCAN_PORTS)
+                    val gate = Semaphore(LanScan.PARALLEL)
+                    val hosts = withContext(Dispatchers.Default) { LanScan.hosts(discovery.localNetworks()) }
+                    hosts.forEach { host ->
+                        ports.forEach { port -> launch { gate.withPermit { probe(host, port) } } }
+                    }
+                }
+            } finally {
+                // A scan cancelled by close() must not end the next sheet's scan.
+                if (scanJob === coroutineContext[Job]) {
+                    _state.update { it.copy(scanning = false) }
+                    publishTargets()
+                }
+            }
+        }
+        scanJob = job
+        job.start()
+    }
+
+    private suspend fun probe(host: String, port: Int) {
+        val device = sender.hello(host, port, quick = true) ?: return
+        answered[device.id] = device
+        if (paired.any { it.id == device.id }) sender.remember(device)
+        publishTargets()
+    }
+
+    private fun publishTargets() {
+        // One entry per TV: an answer to hello is checked, so it wins over an mDNS record.
+        val found = LinkedHashMap<String, LanDevice>()
+        browsed.forEach { found[it.id.ifEmpty { "${it.host}:${it.port}" }] = it }
+        answered.forEach { (id, device) -> found[id] = device }
+        val scanning = _state.value.scanning
+        val pairedIds = paired.map { it.id }.toSet()
+        val mine = paired.sortedBy { it.name.lowercase() }.map { tv ->
+            val device = found[tv.id]
+            TvTarget(
+                device = device ?: LanDevice(id = tv.id, name = tv.name, host = tv.host.orEmpty(), port = tv.port ?: 0),
+                paired = true,
+                online = if (device != null) true else if (scanning) null else false,
+            )
+        }
+        val others = found.values.filter { it.id !in pairedIds }.sortedBy { it.name.lowercase() }.map { TvTarget(it, paired = false) }
+        _state.update { it.copy(targets = mine + others) }
     }
 
     private fun refreshQuota() {
@@ -252,6 +348,8 @@ class TvSendViewModel(
         _state.update { it.copy(step = TvSendStep.Sending) }
         when (val result = sender.send(device, cmd)) {
             LanResult.Ok -> {
+                answered[device.id] = device
+                paired = sender.pairedTvs()
                 var counted = true
                 if (cmd is PlaylistCommand) {
                     counted = recordSendWithRetry(LanValidation.networkId(device.host))
@@ -261,9 +359,9 @@ class TvSendViewModel(
                     s.copy(
                         step = TvSendStep.Done(device.name),
                         message = if (counted) null else TvSendMessage.SEND_NOT_COUNTED,
-                        targets = s.targets.map { if (it.device.id == device.id) it.copy(paired = true) else it },
                     )
                 }
+                publishTargets()
             }
             LanResult.Unpaired -> beginPairing(device)
             else -> _state.update { it.copy(step = TvSendStep.Pick, message = messageFor(result)) }
@@ -301,7 +399,8 @@ class TvSendViewModel(
     fun forget(device: LanDevice) {
         viewModelScope.launch {
             sender.forget(device.id)
-            _state.update { s -> s.copy(targets = s.targets.map { if (it.device.id == device.id) it.copy(paired = false) else it }) }
+            paired = sender.pairedTvs()
+            publishTargets()
         }
     }
 
@@ -324,9 +423,13 @@ class TvSendViewModel(
 
     override fun onCleared() {
         discoveryJob?.cancel()
+        scanJob?.cancel()
     }
 
     private companion object {
+        /** Ports asked on each address: the default one and up to two of paired TVs. */
+        const val MAX_SCAN_PORTS = 3
+
         const val RECORD_ATTEMPTS = 3
         const val RECORD_BACKOFF_MS = 1_000L
     }

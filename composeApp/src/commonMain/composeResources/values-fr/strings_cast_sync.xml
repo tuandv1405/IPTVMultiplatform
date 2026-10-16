@@ -18,6 +18,12 @@
     <string name="lan_paired_badge">Associée</string>
     <string name="lan_paired_tvs">Téléviseurs associés</string>
     <string name="lan_no_paired_tvs">Aucune TV associée</string>
+    <string name="lan_your_tvs">Vos téléviseurs</string>
+    <string name="lan_other_tvs">Autres téléviseurs sur ce Wi-Fi</string>
+    <string name="lan_tv_status_ready">Associée · Prête</string>
+    <string name="lan_tv_status_checking">Associée · Recherche…</string>
+    <string name="lan_tv_status_offline">Associée · Introuvable. Ouvrez TS IPTV sur le téléviseur.</string>
+    <string name="lan_search_again">Rechercher à nouveau</string>
     <string name="lan_pair_title">Associer à %1$s</string>
     <string name="lan_pair_enter_code">Saisissez le code à 6 chiffres affiché sur la TV</string>
     <string name="lan_pair_wrong_code">Code incorrect. Vérifiez le code sur la TV.</string>

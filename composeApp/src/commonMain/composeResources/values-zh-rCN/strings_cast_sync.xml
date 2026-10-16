@@ -18,6 +18,12 @@
     <string name="lan_paired_badge">已配对</string>
     <string name="lan_paired_tvs">已配对的电视</string>
     <string name="lan_no_paired_tvs">还没有配对的电视</string>
+    <string name="lan_your_tvs">你的电视</string>
+    <string name="lan_other_tvs">此 Wi-Fi 中的其他电视</string>
+    <string name="lan_tv_status_ready">已配对 · 就绪</string>
+    <string name="lan_tv_status_checking">已配对 · 正在查找…</string>
+    <string name="lan_tv_status_offline">已配对 · 未找到。请在电视上打开 TS IPTV。</string>
+    <string name="lan_search_again">重新搜索</string>
     <string name="lan_pair_title">与 %1$s 配对</string>
     <string name="lan_pair_enter_code">输入电视上显示的 6 位数字代码</string>
     <string name="lan_pair_wrong_code">代码错误。请核对电视上的代码。</string>
