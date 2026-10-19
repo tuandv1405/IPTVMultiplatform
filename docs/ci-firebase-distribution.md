@@ -121,9 +121,31 @@ Vào **Settings › Secrets and variables › Actions › Variables**:
 
 ## Lưu ý
 
-- `versionCode` lấy từ `composeApp/build.gradle.kts`. Các bản build từ PR có cùng version, và App Distribution
-  phân biệt chúng bằng thời điểm upload và release notes.
+- `versionCode` lấy từ `composeApp/build.gradle.kts`. Các bản build từ PR có cùng version với `main` lúc tách
+  nhánh, và App Distribution phân biệt chúng bằng thời điểm upload và release notes. Version tăng tự động khi
+  merge vào `main` (mục *Version* bên dưới).
 - Để CI không bị hết RAM, Kotlin compiler chạy bên trong Gradle daemon (`kotlin.compiler.execution.strategy=in-process`)
   và heap của Gradle được giới hạn ở 4 GB.
 - Rule R8 nằm trong `composeApp/proguard-rules.pro`. Nếu R8 báo "Missing classes", hãy chép các dòng trong
   `composeApp/build/outputs/mapping/release/missing_rules.txt` vào file đó, rồi build release và chạy thử trên máy trước khi merge.
+
+## Version
+
+Workflow `.github/workflows/version-bump.yml` chạy mỗi khi có code vào `main` (merge PR hoặc push). Nó:
+
+1. Tăng `versionPatch` trong `composeApp/build.gradle.kts` thêm 1. Từ đó `versionCode` Android (ví dụ `1010004` →
+   `1010005`), `versionName` (`tsptv.1.1.0005`) và version bản desktop (`1.1.5`) cùng tăng.
+2. Tăng `CURRENT_PROJECT_VERSION` (build number iOS) trong `iosApp/iosApp.xcodeproj/project.pbxproj` thêm 1.
+3. Commit thẳng vào `main` bằng `github-actions[bot]`, với message dạng `Version 1.1.5 (Android 1010005, iOS build 7)`.
+
+Commit này push bằng `GITHUB_TOKEN` nên không kích hoạt workflow nào khác, kể cả chính nó. Nếu `main` vừa có merge
+mới trong lúc chạy, workflow lấy `main` mới nhất rồi thử lại, tối đa 3 lần.
+
+Lưu ý:
+
+- Không sửa tay `versionPatch` hay `CURRENT_PROJECT_VERSION` trong PR. Nếu sửa, PR đó sẽ conflict với commit version
+  trên `main`. Muốn lên version minor hoặc major thì đổi `versionMinor`/`versionMajor` và đặt `versionPatch = 0`
+  trong một PR; lần merge đó sẽ ra `x.y.1`.
+- `versionPatch` tối đa 9999. Khi vượt ngưỡng, workflow báo lỗi và không commit.
+- Sau khi merge, chạy `git pull` trên `main` ở máy local để lấy commit version.
+- Release desktop: tag phải khớp version hiện tại của `main` sau khi đã tăng, ví dụ `desktop-1.1.5`.
