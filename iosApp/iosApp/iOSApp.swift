@@ -22,6 +22,8 @@ struct iOSApp: App {
         FirebaseApp.configure()
         // Clear MPEG-DASH plays on VLCKit; AVPlayer keeps HLS and files (see VLCPlaybackEngine.swift).
         IosPlaybackEngines.shared.dashFactory = VLCPlaybackEngineFactory()
+        // Cast / send to TV over the LAN (see LanBridge.swift).
+        IosLan.shared.bridge = LanBridge()
     }
 
     var body: some Scene {
