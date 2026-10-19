@@ -22,8 +22,12 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_tsiptv._tcp</string>
+	</array>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>TS IPTV reaches playlists, streams and TVs on your local network.</string>
+	<string>TS IPTV reaches playlists, streams and TVs on your local network, to play and send channels to your TV.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>TS IPTV saves the pictures you share from the player to your photos.</string>
 	<key>NSUserTrackingUsageDescription</key>

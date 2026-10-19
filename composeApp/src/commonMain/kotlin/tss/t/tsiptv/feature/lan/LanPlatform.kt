@@ -4,8 +4,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 /**
- * Platform pieces of the LAN link. Android implements them (NSD + sockets, `androidMain`); iOS and
- * desktop use the `Unsupported*` objects below until they get their own (PRD §1 non-goals).
+ * Platform pieces of the LAN link. Android implements them (NSD + sockets, `androidMain`); iOS
+ * implements the sender side (`IosLan.kt` + `LanBridge.swift`) and keeps [UnsupportedLanServer];
+ * desktop uses the `Unsupported*` objects below until it gets its own (PRD §1 non-goals).
  */
 
 /** Browses `_tsiptv._tcp`. Emits the full list each time it changes; stops when collection stops. */
