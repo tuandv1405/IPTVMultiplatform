@@ -35,6 +35,16 @@ object LanProtocol {
     const val READ_TIMEOUT_MS = 10_000
     const val CONNECT_TIMEOUT_MS = 5_000
 
+    /**
+     * The TV listens here when the port is free, so a phone can find it by asking each address of
+     * its Wi-Fi when mDNS (multicast) is blocked by the router or filtered by the TV's Wi-Fi.
+     */
+    const val DEFAULT_PORT = 47123
+
+    /** Scan timeouts: an address with nothing on it must not hold a scan slot for long. */
+    const val PROBE_CONNECT_TIMEOUT_MS = 700
+    const val PROBE_READ_TIMEOUT_MS = 2_000
+
     const val PAIR_CODE_TTL_MS = 120_000L
     const val PAIR_MAX_WRONG_CODES = 3
     const val PAIR_LOCK_AFTER_FAILED_SESSIONS = 5

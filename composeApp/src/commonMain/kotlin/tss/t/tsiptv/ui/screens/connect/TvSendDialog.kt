@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -56,7 +57,12 @@ import tsiptv.composeapp.generated.resources.lan_pair_failed
 import tsiptv.composeapp.generated.resources.lan_pair_locked
 import tsiptv.composeapp.generated.resources.lan_pair_title
 import tsiptv.composeapp.generated.resources.lan_pair_wrong_code
-import tsiptv.composeapp.generated.resources.lan_paired_badge
+import tsiptv.composeapp.generated.resources.lan_other_tvs
+import tsiptv.composeapp.generated.resources.lan_search_again
+import tsiptv.composeapp.generated.resources.lan_tv_status_checking
+import tsiptv.composeapp.generated.resources.lan_tv_status_offline
+import tsiptv.composeapp.generated.resources.lan_tv_status_ready
+import tsiptv.composeapp.generated.resources.lan_your_tvs
 import tsiptv.composeapp.generated.resources.lan_send_failed
 import tsiptv.composeapp.generated.resources.reward_ad_unavailable
 import tsiptv.composeapp.generated.resources.reward_granted
@@ -90,6 +96,7 @@ import tss.t.tsiptv.feature.lan.PlaylistCommand
 import tss.t.tsiptv.feature.lan.TvSendMessage
 import tss.t.tsiptv.feature.lan.TvSendStep
 import tss.t.tsiptv.feature.lan.TvSendViewModel
+import tss.t.tsiptv.feature.lan.TvTarget
 import tss.t.tsiptv.ui.themes.TSColors
 import tss.t.tsiptv.ui.tv.TvMenuItem
 import tss.t.tsiptv.ui.tv.requestFocusAfterLayout
@@ -208,37 +215,39 @@ private fun PickTv(
     }
 
     val firstTarget = remember { FocusRequester() }
-    var showHelp by remember { mutableStateOf(false) }
-    // After a few seconds with nothing found, "No TV found" and the conditions replace the spinner.
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(6_000)
-        if (viewModel.state.value.targets.isEmpty()) showHelp = true
+    var helpOpened by remember { mutableStateOf(false) }
+    // The scan is over and no TV answers: "No TV found" and the conditions.
+    val noneFound = !state.scanning && state.targets.none { it.online == true }
+    val showHelp = helpOpened || noneFound
+
+    // TVs paired by code first, listed at once (also when mDNS finds nothing), then the others.
+    val mine = state.targets.filter { it.paired }
+    val others = state.targets.filterNot { it.paired }
+    if (mine.isNotEmpty()) ConnectSectionTitle(stringResource(Res.string.lan_your_tvs))
+    mine.forEachIndexed { index, target ->
+        TvTargetItem(target, if (index == 0) Modifier.focusRequester(firstTarget) else Modifier) { viewModel.pick(target.device) }
     }
-    if (state.targets.isEmpty() && !showHelp) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)) {
-            if (state.searching) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = TSColors.AccentCyan)
-            Spacer(Modifier.width(10.dp))
-            ConnectBody(stringResource(Res.string.lan_cast_searching))
-        }
-    }
-    state.targets.forEachIndexed { index, target ->
-        TvMenuItem(
-            title = target.device.name,
-            description = if (target.paired) stringResource(Res.string.lan_paired_badge) else null,
-            icon = Icons.Rounded.Tv,
-            modifier = if (index == 0) Modifier.focusRequester(firstTarget) else Modifier,
-            onClick = { viewModel.pick(target.device) },
-            trailing = { if (target.paired) Icon(Icons.Rounded.CheckCircle, null, tint = TSColors.AccentGreen) },
-        )
+    if (others.isNotEmpty() && mine.isNotEmpty()) ConnectSectionTitle(stringResource(Res.string.lan_other_tvs))
+    others.forEachIndexed { index, target ->
+        TvTargetItem(target, if (index == 0 && mine.isEmpty()) Modifier.focusRequester(firstTarget) else Modifier) { viewModel.pick(target.device) }
     }
     LaunchedEffect(state.targets.isNotEmpty()) { if (state.targets.isNotEmpty()) firstTarget.requestFocusAfterLayout() }
 
-    if (state.targets.isEmpty() && showHelp) ConnectBody(stringResource(Res.string.lan_cast_none_found), color = TSColors.TextPrimary)
+    if (state.scanning) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)) {
+            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = TSColors.AccentCyan)
+            Spacer(Modifier.width(10.dp))
+            ConnectBody(stringResource(Res.string.lan_cast_searching))
+        }
+    } else {
+        if (noneFound && others.isEmpty()) ConnectBody(stringResource(Res.string.lan_cast_none_found), color = TSColors.TextPrimary)
+        TvMenuItem(title = stringResource(Res.string.lan_search_again), icon = Icons.Rounded.Refresh, onClick = viewModel::searchAgain)
+    }
     if (showHelp) {
         ConnectSectionTitle(stringResource(Res.string.lan_conditions_title))
         ConnectBody(stringResource(Res.string.lan_conditions_body))
     } else {
-        TvMenuItem(title = stringResource(Res.string.lan_conditions_title), onClick = { showHelp = true })
+        TvMenuItem(title = stringResource(Res.string.lan_conditions_title), onClick = { helpOpened = true })
     }
 
     ConnectSectionTitle(stringResource(Res.string.lan_connect_by_ip))
@@ -264,6 +273,35 @@ private fun PickTv(
         ConnectButton(stringResource(Res.string.lan_close), onDismiss)
         ConnectButton(stringResource(Res.string.lan_connect), { viewModel.connectByIp(address) }, primary = true, enabled = address.isNotBlank())
     }
+}
+
+/** One TV: a paired one says whether it answers now (ready, checking, not found). */
+@Composable
+private fun TvTargetItem(target: TvTarget, modifier: Modifier, onClick: () -> Unit) {
+    TvMenuItem(
+        title = target.device.name,
+        description = if (!target.paired) {
+            null
+        } else {
+            stringResource(
+                when (target.online) {
+                    true -> Res.string.lan_tv_status_ready
+                    null -> Res.string.lan_tv_status_checking
+                    false -> Res.string.lan_tv_status_offline
+                },
+            )
+        },
+        icon = Icons.Rounded.Tv,
+        modifier = modifier,
+        onClick = onClick,
+        trailing = {
+            if (target.paired && target.online == true) {
+                Icon(Icons.Rounded.CheckCircle, null, tint = TSColors.AccentGreen)
+            } else if (target.paired && target.online == null) {
+                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = TSColors.AccentCyan)
+            }
+        },
+    )
 }
 
 @Composable

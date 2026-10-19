@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.view.KeyEvent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -353,8 +354,13 @@ class MediaPlayerService : MediaSessionService() {
                     dismissedByUser: Boolean,
                 ) {
                     startForeground = false
-                    Log.d("TuanDV", "stopSelf")
-                    player?.stop()
+                    Log.d("TuanDV", "notification cancelled, by user: $dismissedByUser")
+                    // Only the viewer swiping the notification away stops playback. The manager also
+                    // cancels it by itself while an item is swapped (player idle for a moment). A TV
+                    // has no shade to swipe: the system removes the notification right after it is
+                    // posted and Media3 reports that as "by user", which stopped every stream on
+                    // Android TV a second after it started.
+                    if (dismissedByUser && !tss.t.tsiptv.getPlatform().isTv) player?.stop()
                 }
 
             })
@@ -371,6 +377,7 @@ class MediaPlayerService : MediaSessionService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (isNotificationStopOnTv(intent)) return START_STICKY
         val result = super.onStartCommand(intent, flags, startId)
 
         // Extract media information from intent
@@ -558,6 +565,18 @@ class MediaPlayerService : MediaSessionService() {
             Log.d("TuanDV", "keeping service running after app closed")
         }
         super.onTaskRemoved(rootIntent)
+    }
+
+    /**
+     * Android TV removes the media notification right after it is posted. Media3 then sends the
+     * notification's "dismissed" action, a media-button STOP, to this service, which stopped every
+     * stream about a second after it started (black screen under a pause icon). A TV has no
+     * notification a viewer could dismiss, and the remote's Stop key goes to the player screen.
+     */
+    private fun isNotificationStopOnTv(intent: Intent?): Boolean {
+        if (intent?.action != Intent.ACTION_MEDIA_BUTTON || !tss.t.tsiptv.getPlatform().isTv) return false
+        val key = androidx.core.content.IntentCompat.getParcelableExtra(intent, Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
+        return key?.keyCode == KeyEvent.KEYCODE_MEDIA_STOP
     }
 
     override fun isPlaybackOngoing(): Boolean {

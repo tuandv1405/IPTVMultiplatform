@@ -74,15 +74,16 @@ class LanReceiverController(
         store.load()
         _state.value = try {
             val name = local.name()
-            val preferred = storage.getInt(KEY_PORT, 0)
+            val previous = storage.getInt(KEY_PORT, 0)
+            // The well-known port first, so phones can find this TV without mDNS; else the port this
+            // install had ("connect by IP" keeps working), else a new one.
             val port = server.start(
                 serviceName = name,
                 deviceId = local.installationId(),
-                preferredPort = preferred,
+                preferredPorts = listOf(LanProtocol.DEFAULT_PORT, previous),
                 largeRequestAllowed = engine::allowsLargeRequest,
             ) { line -> engine.handle(line) }
-            // A stable port per install ("connect by IP" keeps working); a new one when it was busy.
-            if (port != preferred) storage.putInt(KEY_PORT, port)
+            if (port != previous) storage.putInt(KEY_PORT, port)
             ReceiverState.Running(name, port, server.localAddresses())
         } catch (e: CancellationException) {
             throw e

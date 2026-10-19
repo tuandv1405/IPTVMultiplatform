@@ -45,11 +45,16 @@ class LanSender(
 ) {
     val isSupported: Boolean by lazy { keyAgreement.create() != null }
 
-    private suspend fun call(device: LanDevice, request: LanRequest, maxBytes: Int = LanProtocol.MAX_REQUEST_BYTES): LanResponse? {
+    private suspend fun call(
+        device: LanDevice,
+        request: LanRequest,
+        maxBytes: Int = LanProtocol.MAX_REQUEST_BYTES,
+        quick: Boolean = false,
+    ): LanResponse? {
         val line = LanProtocol.json.encodeToString(LanRequest.serializer(), request)
         if (line.encodeToByteArray().size > maxBytes) return LanResponse.error(LanErrorCode.TOO_LARGE)
         return try {
-            val answer = transport.exchange(device.host, device.port, line)
+            val answer = if (quick) transport.probe(device.host, device.port, line) else transport.exchange(device.host, device.port, line)
             LanProtocol.json.decodeFromString(LanResponse.serializer(), answer)
         } catch (e: CancellationException) {
             throw e
@@ -60,15 +65,26 @@ class LanSender(
         }
     }
 
-    /** Connect by IP: asks the TV who it is. null when nothing TS IPTV answers there. */
-    suspend fun hello(host: String, port: Int): LanDevice? {
+    /**
+     * Connect by IP: asks the TV who it is. null when nothing TS IPTV answers there. [quick] uses the
+     * short scan timeouts (address scan, checking a paired TV).
+     */
+    suspend fun hello(host: String, port: Int, quick: Boolean = false): LanDevice? {
         val probe = LanDevice(id = "", name = host, host = host, port = port)
-        val answer = call(probe, HelloRequest()) ?: return null
+        val answer = call(probe, HelloRequest(), quick = quick) ?: return null
         if (!answer.ok || answer.id.isNullOrBlank()) return null
         return probe.copy(id = answer.id, name = answer.name?.let(LanValidation::cleanName)?.ifBlank { null } ?: host, version = answer.v ?: 1)
     }
 
     suspend fun isPaired(device: LanDevice): Boolean = device.id.isNotEmpty() && store.keyFor(device.id) != null
+
+    /** TVs this phone paired with by code, with where each answered last. */
+    suspend fun pairedTvs(): List<PairedPeer> = store.load()
+
+    /** Keeps where a paired TV answered, so it is listed and reachable next time without mDNS. */
+    suspend fun remember(device: LanDevice) {
+        if (device.id.isNotEmpty() && device.port > 0) store.remember(device.id, device.name, device.host, device.port)
+    }
 
     suspend fun startPairing(device: LanDevice): PairStartResult {
         val agreement = keyAgreement.create() ?: return PairStartResult.Failed(LanResult.Refused(LanErrorCode.NOT_ACCEPTING))
@@ -97,7 +113,7 @@ class LanSender(
         val answer = call(handle.device, PairConfirmRequest(handle.sessionId, LanCrypto.pairProof(handle.key, code.trim())))
             ?: return LanResult.Unreachable
         if (!answer.ok) return LanResult.Refused(answer.code ?: LanErrorCode.BAD_REQUEST)
-        store.put(handle.device.id, handle.device.name, handle.key, clock())
+        store.put(handle.device.id, handle.device.name, handle.key, clock(), handle.device.host, handle.device.port)
         return LanResult.Ok
     }
 
@@ -111,7 +127,10 @@ class LanSender(
         val max = if (command is PlaylistCommand) LanProtocol.MAX_OFFER_BYTES else LanProtocol.MAX_REQUEST_BYTES
         val answer = call(device, request, max) ?: return LanResult.Unreachable
         return when {
-            answer.ok -> LanResult.Ok
+            answer.ok -> {
+                remember(device)
+                LanResult.Ok
+            }
             answer.code == LanErrorCode.UNPAIRED -> {
                 store.remove(device.id)
                 LanResult.Unpaired

@@ -18,6 +18,12 @@
     <string name="lan_paired_badge">ペア設定済み</string>
     <string name="lan_paired_tvs">ペア設定済みのテレビ</string>
     <string name="lan_no_paired_tvs">ペア設定済みのテレビはありません</string>
+    <string name="lan_your_tvs">あなたのテレビ</string>
+    <string name="lan_other_tvs">この Wi-Fi のほかのテレビ</string>
+    <string name="lan_tv_status_ready">ペア設定済み · 準備完了</string>
+    <string name="lan_tv_status_checking">ペア設定済み · 探しています…</string>
+    <string name="lan_tv_status_offline">ペア設定済み · 見つかりません。テレビで TS IPTV を開いてください。</string>
+    <string name="lan_search_again">もう一度探す</string>
     <string name="lan_pair_title">%1$s とペア設定</string>
     <string name="lan_pair_enter_code">テレビに表示された 6 桁のコードを入力してください</string>
     <string name="lan_pair_wrong_code">コードが違います。テレビのコードを確認してください。</string>

@@ -101,6 +101,9 @@ class AndroidMediaPlayer(
     // Player listener to update state flows
     private val playerListener = object : Player.Listener {
         override fun onPlaybackStateChanged(playbackState: Int) {
+            // Waiting for data. Not `isLoading`: a live or HLS stream loads its next segments the
+            // whole time it plays, which kept the spinner over a playing video.
+            _isBuffering.value = playbackState == Player.STATE_BUFFERING
             updatePlaybackState(playbackState)
         }
 
@@ -111,10 +114,6 @@ class AndroidMediaPlayer(
             } else if (_playbackState.value == PlaybackState.PLAYING) {
                 _playbackState.value = PlaybackState.PAUSED
             }
-        }
-
-        override fun onIsLoadingChanged(isLoading: Boolean) {
-            _isBuffering.value = isLoading
         }
 
         override fun onPlayerError(error: PlaybackException) {
