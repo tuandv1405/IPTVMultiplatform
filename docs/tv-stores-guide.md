@@ -73,8 +73,11 @@ Cổng: Seller Lounge https://seller.lgappstv.com · Tài liệu https://webostv
    npx ares-inspect --device tv --app tss.t.tsiptv   # DevTools để xem lỗi
    ```
 3. Thêm playlist demo, phát cả 4 kênh, thử phím Back/CH/đỏ trên remote thật và chuột Magic Remote.
-4. Phiên Developer Mode có hạn (thường nói khoảng 50 giờ **[chưa xác minh]**). Bấm **Extend** trong app để gia
-   hạn; hết hạn thì app đã cài bị xoá.
+4. Phiên Developer Mode có hạn: tối đa **1000 giờ** **[chính thức]** (các bài viết năm 2022 ghi 50 giờ, nay đã
+   cũ). Bấm **Extend** trong app để gia hạn, hoặc từ máy tính:
+   `npx ares-launch --device tv com.palmdts.devmode -p extend=true` (`ares-extend-dev` đã bị bỏ từ webOS CLI 3.0).
+   Hết hạn thì app đã cài bị xoá. Đăng nhập cùng LG Developer account trên TV khác cũng làm phiên trên TV này kết
+   thúc **[tham khảo]**.
 
 ### 3.3 Nộp app
 1. Seller Lounge > **Apps > Register App**. App ID: `tss.t.tsiptv` (đúng với `appinfo.json`, không đổi được sau
