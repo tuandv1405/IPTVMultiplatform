@@ -203,7 +203,8 @@ kotlin {
 // The app's version, in one place. Everything else is derived, so the number
 // Play orders releases by and the name a person reads can never disagree.
 //
-// versionPatch has four digits, giving 10,000 builds inside a minor version;
+// versionPatch is raised by CI after every merge to main (.github/workflows/version-bump.yml);
+// do not change it in a pull request. It has four digits, giving 10,000 builds inside a minor version;
 // the encoding leaves room for major versions up to 2100 before Play's
 // versionCode ceiling of 2,100,000,000 is a concern.
 val versionMajor = 1

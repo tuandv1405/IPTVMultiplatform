@@ -1,15 +1,16 @@
-# CI: pull request → iOS IPA → Firebase App Distribution
+# CI: merge vào main → iOS IPA → Firebase App Distribution
 
 Workflow: `.github/workflows/ios-firebase-distribution.yml`, chạy cùng lúc với workflow Android
 (`docs/ci-firebase-distribution.md`). Script build: `iosApp/ci/build-ipa.sh`, chạy được cả trên Mac.
 
-Mỗi khi một pull request được mở, có commit mới hoặc chuyển từ draft sang ready, workflow chạy trên runner
-`macos-26` (Xcode 26) và làm các bước sau:
+CI chỉ build khi có code vào `main`; pull request không được build. Sau khi `.github/workflows/version-bump.yml`
+tăng version và commit lên `main` (`docs/ci-firebase-distribution.md` › *Version*), nó gọi workflow này để build đúng
+commit đó trên runner `macos-26` (Xcode 26). Các bước:
 
 1. Chạy `pod install` để tải MobileVLCKit.
 2. Build Kotlin framework (Release, iosArm64) và archive app `iosApp` bản Release.
 3. Ký bằng certificate và provisioning profile lấy từ secrets.
-4. Đẩy file `.ipa` lên Firebase App Distribution, kèm release notes gồm số PR, tiêu đề, branch và commit.
+4. Đẩy file `.ipa` lên Firebase App Distribution, kèm release notes gồm version, commit merge, tiêu đề PR và mã commit.
 5. Lưu `.ipa` và dSYM làm artifact của workflow trong 14 ngày.
 
 Mỗi bản build có `CFBundleVersion` dạng `<CURRENT_PROJECT_VERSION>.<số run>`, ví dụ `6.12`, nên App Distribution
@@ -19,8 +20,8 @@ Gradle 6 GB (`gradle.properties`). Các lần sau dùng cache nên nhanh hơn. R
 
 Khi chưa có secret ký iOS (mục 2), job build bị bỏ qua và workflow chỉ hiện một thông báo, không báo lỗi.
 
-Có thể chạy tay bằng **Actions › PR build → Firebase App Distribution (iOS) › Run workflow**. PR từ fork hoặc PR
-draft sẽ không chạy.
+Có thể build tay một nhánh bằng **Actions › Build → Firebase App Distribution (iOS) › Run workflow**. Build tay
+không tăng version.
 
 ## Lưu ý quan trọng về thiết bị
 
