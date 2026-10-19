@@ -1,17 +1,19 @@
-# CI: pull request → AAB → Firebase App Distribution
+# CI: merge vào main → AAB → Firebase App Distribution
 
 Workflow: `.github/workflows/pr-firebase-distribution.yml`. Bản iOS: `docs/ci-ios-firebase-distribution.md`.
 
-Mỗi khi một pull request được mở, có commit mới hoặc chuyển từ draft sang ready, workflow sẽ:
+CI chỉ build khi có code vào `main` (merge PR hoặc push); pull request không được build. Mỗi lần như vậy,
+`.github/workflows/version-bump.yml` tăng version và commit lên `main` (mục *Version*), rồi gọi workflow này để
+build đúng commit đó:
 
 1. Build `bundleRelease` (có R8) và ký bằng upload key.
-2. Đẩy file AAB lên Firebase App Distribution, kèm release notes gồm số PR, tiêu đề, branch và commit.
+2. Đẩy file AAB lên Firebase App Distribution, kèm release notes gồm version, commit merge, tiêu đề PR và mã commit.
 3. Lưu AAB làm artifact của workflow trong 14 ngày.
 4. Import test case trong `qa/app-testing/` và cho App Testing agent chạy bộ smoke trên bản vừa upload
    (`docs/ci-app-testing.md`).
 
-PR mở từ fork hoặc đang ở trạng thái draft sẽ không chạy, vì GitHub không cấp secret cho fork. Có thể chạy tay
-bằng **Actions › PR build → Firebase App Distribution › Run workflow**.
+Có thể build tay một nhánh bất kỳ bằng **Actions › Build → Firebase App Distribution (Android) › Run workflow**.
+Build tay không tăng version.
 
 ## Cài đặt một lần
 
@@ -121,9 +123,8 @@ Vào **Settings › Secrets and variables › Actions › Variables**:
 
 ## Lưu ý
 
-- `versionCode` lấy từ `composeApp/build.gradle.kts`. Các bản build từ PR có cùng version với `main` lúc tách
-  nhánh, và App Distribution phân biệt chúng bằng thời điểm upload và release notes. Version tăng tự động khi
-  merge vào `main` (mục *Version* bên dưới).
+- `versionCode` lấy từ `composeApp/build.gradle.kts` và tăng tự động trước mỗi lần build trên `main` (mục *Version*
+  bên dưới), nên mỗi bản trên App Distribution có version riêng.
 - Để CI không bị hết RAM, Kotlin compiler chạy bên trong Gradle daemon (`kotlin.compiler.execution.strategy=in-process`)
   và heap của Gradle được giới hạn ở 4 GB.
 - Rule R8 nằm trong `composeApp/proguard-rules.pro`. Nếu R8 báo "Missing classes", hãy chép các dòng trong
@@ -131,15 +132,20 @@ Vào **Settings › Secrets and variables › Actions › Variables**:
 
 ## Version
 
-Workflow `.github/workflows/version-bump.yml` chạy mỗi khi có code vào `main` (merge PR hoặc push). Nó:
+Workflow `.github/workflows/version-bump.yml` chạy mỗi khi có code vào `main` (merge PR hoặc push). Đây là workflow
+build duy nhất chạy tự động. Nó:
 
 1. Tăng `versionPatch` trong `composeApp/build.gradle.kts` thêm 1. Từ đó `versionCode` Android (ví dụ `1010004` →
    `1010005`), `versionName` (`tsptv.1.1.0005`) và version bản desktop (`1.1.5`) cùng tăng.
 2. Tăng `CURRENT_PROJECT_VERSION` (build number iOS) trong `iosApp/iosApp.xcodeproj/project.pbxproj` thêm 1.
 3. Commit thẳng vào `main` bằng `github-actions[bot]`, với message dạng `Version 1.1.5 (Android 1010005, iOS build 7)`.
+4. Build đúng commit đó và đẩy lên Firebase App Distribution: Android (`pr-firebase-distribution.yml`) và iOS
+   (`ios-firebase-distribution.yml`) chạy song song. Nếu bước tăng version lỗi thì không build.
 
 Commit này push bằng `GITHUB_TOKEN` nên không kích hoạt workflow nào khác, kể cả chính nó. Nếu `main` vừa có merge
-mới trong lúc chạy, workflow lấy `main` mới nhất rồi thử lại, tối đa 3 lần.
+mới trong lúc chạy, workflow lấy `main` mới nhất rồi thử lại, tối đa 3 lần. Mỗi lúc chỉ có một bước tăng version
+chạy. Khi nhiều merge đến dồn dập, GitHub có thể bỏ một lượt đang chờ; lượt sau vẫn tăng version và build `main`
+mới nhất, đã gồm cả code của lượt bị bỏ.
 
 Lưu ý:
 

@@ -1,15 +1,17 @@
-# Builds a signed iOS .ipa for every pull request and uploads it to Firebase App Distribution.
-# Setup (certificate, provisioning profile, secrets, testers): docs/ci-ios-firebase-distribution.md
-name: PR build → Firebase App Distribution (iOS)
+# Builds a signed iOS .ipa after every merge to main (called by version-bump.yml) and uploads it to
+# Firebase App Distribution. Setup (certificate, provisioning profile, secrets, testers): docs/ci-ios-firebase-distribution.md
+name: Build → Firebase App Distribution (iOS)
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+  # Called by version-bump.yml after every merge to main, with the commit carrying the new version.
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to build
+        type: string
+        required: true
+  # By hand: Actions › this workflow › Run workflow, on the branch picked there.
   workflow_dispatch:
-
-concurrency:
-  group: pr-distribution-ios-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -17,13 +19,8 @@ permissions:
 
 jobs:
   # Until the Apple signing secrets are set (docs/ci-ios-firebase-distribution.md) the iOS build is
-  # skipped with a notice instead of failing every pull request.
+  # skipped with a notice instead of failing every merge.
   signing-check:
-    # Pull requests from forks get no secrets, so they cannot be signed or uploaded.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-       github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
     outputs:
       ready: ${{ steps.check.outputs.ready }}
@@ -51,6 +48,11 @@ jobs:
       SIGNING_DIR: ${{ github.workspace }}/../ios-signing
     steps:
       - uses: actions/checkout@v5
+        with:
+          # Empty when run by hand: the branch picked in Run workflow.
+          ref: ${{ inputs.ref }}
+          # The release notes read the last two commits.
+          fetch-depth: 2
 
       - name: Select Xcode
         env:
@@ -123,16 +125,12 @@ jobs:
           test -f "$ipa"
           echo "ipa=$ipa" >> "$GITHUB_OUTPUT"
 
+      # After a merge: the version commit, then the merge commit and its pull request's title.
       - name: Release notes
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          HEAD_REF: ${{ github.head_ref || github.ref_name }}
         run: |
           {
-            if [ -n "$PR_NUMBER" ]; then echo "PR #$PR_NUMBER: $PR_TITLE"; fi
-            echo "Branch: $HEAD_REF"
-            echo "Commit: ${GITHUB_SHA::7}"
+            git log -2 --format='%s%n%b' | sed '/^[[:space:]]*$/d' | head -n 4
+            echo "Commit: $(git rev-parse --short HEAD)"
           } > release-notes.txt
           cat release-notes.txt
 
@@ -178,7 +176,7 @@ jobs:
         if: always() && steps.out.outputs.ipa != ''
         uses: actions/upload-artifact@v5
         with:
-          name: tsiptv-ios-${{ github.event.pull_request.number || github.run_number }}
+          name: tsiptv-ios-${{ github.run_number }}
           path: |
             ${{ steps.out.outputs.ipa }}
             build/ios-ipa/TSIPTV.xcarchive/dSYMs

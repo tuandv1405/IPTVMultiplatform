@@ -1,26 +1,31 @@
-# After every push (merge) to main: versionPatch + 1 in composeApp/build.gradle.kts (Android
-# versionCode and versionName, desktop packageVersion) and CURRENT_PROJECT_VERSION + 1 (iOS build
-# number), committed back to main. Pull requests never touch these lines, so they never conflict
-# over them. Setup and notes: docs/ci-firebase-distribution.md (Version).
-name: Bump version on main
+# The only CI build: after every push (merge) to main,
+# 1. versionPatch + 1 in composeApp/build.gradle.kts (Android versionCode and versionName, desktop
+#    packageVersion) and CURRENT_PROJECT_VERSION + 1 (iOS build number), committed back to main;
+# 2. that commit is built and sent to Firebase App Distribution: Android (pr-firebase-distribution.yml)
+#    and iOS (ios-firebase-distribution.yml).
+# Pull requests are not built, and never touch the version lines, so they never conflict over them.
+# Setup and notes: docs/ci-firebase-distribution.md (Version).
+name: Main → version bump and Firebase App Distribution
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-# One bump at a time. A run waiting behind another may be replaced by a newer one; that is fine,
-# since each run bumps the latest main.
-concurrency:
-  group: version-bump
-  cancel-in-progress: false
-
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   bump:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # One bump at a time. A run waiting behind another may be replaced by a newer one (no bump and no
+    # build for it); that is fine, since the newer run bumps and builds the latest main.
+    concurrency:
+      group: version-bump
+      cancel-in-progress: false
+    outputs:
+      sha: ${{ steps.bump.outputs.sha }}
     # The bump commit is pushed with GITHUB_TOKEN, which never starts another workflow run: no loop.
     steps:
       - uses: actions/checkout@v5
@@ -28,6 +33,7 @@ jobs:
           ref: main
 
       - name: Bump and commit
+        id: bump
         run: |
           gradle_file=composeApp/build.gradle.kts
           pbxproj=iosApp/iosApp.xcodeproj/project.pbxproj
@@ -62,6 +68,7 @@ jobs:
             version_code=$((major * 1000000 + minor * 10000 + next_patch))
             git commit -q -m "Version $major.$minor.$next_patch (Android $version_code, iOS build $next_build)" -- "$gradle_file" "$pbxproj"
             if git push origin HEAD:main; then
+              echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
               echo "Version $major.$minor.$next_patch, Android versionCode $version_code, iOS build $next_build" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
@@ -69,3 +76,24 @@ jobs:
           done
           echo "::error::Could not push the version bump to main"
           exit 1
+
+  # Both build exactly the version commit above, not whatever main is by the time they start.
+  android:
+    needs: bump
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/pr-firebase-distribution.yml
+    with:
+      ref: ${{ needs.bump.outputs.sha }}
+    secrets: inherit
+
+  ios:
+    needs: bump
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/ios-firebase-distribution.yml
+    with:
+      ref: ${{ needs.bump.outputs.sha }}
+    secrets: inherit

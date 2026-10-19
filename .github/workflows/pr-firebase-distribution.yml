@@ -1,15 +1,17 @@
-# Builds a signed release AAB for every pull request and uploads it to
-# Firebase App Distribution. Setup (secrets, testers, Play link): docs/ci-firebase-distribution.md
-name: PR build → Firebase App Distribution
+# Builds a signed release AAB after every merge to main (called by version-bump.yml) and uploads it
+# to Firebase App Distribution. Setup (secrets, testers, Play link): docs/ci-firebase-distribution.md
+name: Build → Firebase App Distribution (Android)
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+  # Called by version-bump.yml after every merge to main, with the commit carrying the new version.
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to build
+        type: string
+        required: true
+  # By hand: Actions › this workflow › Run workflow, on the branch picked there.
   workflow_dispatch:
-
-concurrency:
-  group: pr-distribution-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -17,11 +19,6 @@ permissions:
 
 jobs:
   distribute:
-    # Pull requests from forks get no secrets, so they cannot be signed or uploaded.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-       github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -32,6 +29,11 @@ jobs:
       HAS_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON != '' }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          # Empty when run by hand: the branch picked in Run workflow.
+          ref: ${{ inputs.ref }}
+          # The release notes read the last two commits.
+          fetch-depth: 2
 
       - uses: actions/setup-java@v5
         with:
@@ -67,16 +69,12 @@ jobs:
           test -n "$aab" && test -n "$apk"
           echo "aab=$aab" >> "$GITHUB_OUTPUT"
           echo "apk=$apk" >> "$GITHUB_OUTPUT"
+      # After a merge: the version commit, then the merge commit and its pull request's title.
       - name: Release notes
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          HEAD_REF: ${{ github.head_ref || github.ref_name }}
         run: |
           {
-            if [ -n "$PR_NUMBER" ]; then echo "PR #$PR_NUMBER: $PR_TITLE"; fi
-            echo "Branch: $HEAD_REF"
-            echo "Commit: ${GITHUB_SHA::7}"
+            git log -2 --format='%s%n%b' | sed '/^[[:space:]]*$/d' | head -n 4
+            echo "Commit: $(git rev-parse --short HEAD)"
           } > release-notes.txt
           cat release-notes.txt
 
@@ -191,7 +189,7 @@ jobs:
         if: always() && steps.out.outputs.aab != ''
         uses: actions/upload-artifact@v5
         with:
-          name: tsiptv-release-${{ github.event.pull_request.number || github.run_number }}
+          name: tsiptv-release-${{ github.run_number }}
           path: |
             ${{ steps.out.outputs.aab }}
             ${{ steps.out.outputs.apk }}
