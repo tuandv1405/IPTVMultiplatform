@@ -20,6 +20,12 @@
     <uses-feature
         android:name="android.hardware.touchscreen"
         android:required="false" />
+    <!-- CHANGE_WIFI_MULTICAST_STATE (above) implies a *required* android.hardware.wifi, which
+         hides the app on Play from Ethernet-only TVs and boxes. Wi-Fi is optional: casting
+         also works over Ethernet, and the multicast lock is skipped when there is no Wi-Fi. -->
+    <uses-feature
+        android:name="android.hardware.wifi"
+        android:required="false" />
 
     <!-- "Import from file" is shown only where something can open a document; without this,
          package visibility (API 30+) would hide DocumentsUI from the check on every device. -->
